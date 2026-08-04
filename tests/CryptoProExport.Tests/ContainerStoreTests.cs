@@ -7,7 +7,7 @@ namespace CryptoProExport.Tests
 {
     /// <summary>
     /// Установка контейнера в хранилище CSP. Тесты работают во временной папке,
-    /// системное хранилище КриптоПро не трогается.
+    /// системное хранилище КриптоПро не трогается (и проверка видимости в CSP не запускается).
     /// </summary>
     public class ContainerStoreTests : IDisposable
     {
@@ -47,27 +47,60 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
-        public void Install_CopiesOnlyKeyFilesAndRenamesContainer()
+        public void ReadName_TakesNameFromNameKey()
         {
-            string target = ContainerStore.Install(_source, "Новое имя", _store);
+            Assert.Equal("исходное имя", ContainerStore.ReadName(_source));
+            Assert.Null(ContainerStore.ReadName(Path.Combine(_root, "нет такой папки")));
+        }
 
-            Assert.True(Directory.Exists(target));
-            Assert.EndsWith(".000", target);
+        [Fact]
+        public void Install_CopiesOnlyKeyFiles()
+        {
+            var result = ContainerStore.Install(_source, storeDir: _store);
 
-            var names = Directory.GetFiles(target).Select(Path.GetFileName).OrderBy(n => n).ToArray();
+            Assert.True(Directory.Exists(result.Folder));
+            Assert.EndsWith(".000", result.Folder);
+
+            var names = Directory.GetFiles(result.Folder).Select(Path.GetFileName).OrderBy(n => n).ToArray();
             Assert.Equal(ContainerStore.ContainerFiles.OrderBy(n => n).ToArray(), names);
+        }
 
-            Assert.Equal("Новое имя", NameKey.Parse(File.ReadAllBytes(Path.Combine(target, "name.key"))));
+        [Fact]
+        public void Install_KeepsOriginalNameByDefault()
+        {
+            // По умолчанию имя не трогаем: CSP сверяет name.key с содержимым контейнера
+            var result = ContainerStore.Install(_source, storeDir: _store);
+
+            Assert.False(result.Renamed);
+            Assert.Equal("исходное имя", result.Name);
+            Assert.Equal("исходное имя", NameKey.Parse(File.ReadAllBytes(Path.Combine(result.Folder, "name.key"))));
+        }
+
+        [Fact]
+        public void Install_RenamesWhenAsked()
+        {
+            var result = ContainerStore.Install(_source, "Новое имя", _store);
+
+            Assert.True(result.Renamed);
+            Assert.Equal("Новое имя", result.Name);
+            Assert.Equal("Новое имя", NameKey.Parse(File.ReadAllBytes(Path.Combine(result.Folder, "name.key"))));
+        }
+
+        [Fact]
+        public void Install_DoesNotVerifyForCustomStore()
+        {
+            // Проверка видимости имеет смысл только для системного хранилища
+            Assert.False(ContainerStore.Install(_source, storeDir: _store).Verified);
         }
 
         [Fact]
         public void Install_TwiceGivesDifferentFolders()
         {
-            string first = ContainerStore.Install(_source, "дубль", _store);
-            string second = ContainerStore.Install(_source, "дубль", _store);
-            Assert.NotEqual(first, second);
-            Assert.EndsWith(".000", first);
-            Assert.EndsWith(".001", second);
+            var first = ContainerStore.Install(_source, "дубль", _store);
+            var second = ContainerStore.Install(_source, "дубль", _store);
+            Assert.NotEqual(first.Folder, second.Folder);
+            Assert.EndsWith(".000", first.Folder);
+            Assert.EndsWith(".001", second.Folder);
         }
 
         [Fact]
@@ -91,9 +124,9 @@ namespace CryptoProExport.Tests
         [Fact]
         public void Uninstall_RemovesInstalledContainer()
         {
-            string target = ContainerStore.Install(_source, "на удаление", _store);
-            Assert.True(ContainerStore.Uninstall(target, _store));
-            Assert.False(Directory.Exists(target));
+            var installed = ContainerStore.Install(_source, "на удаление", _store);
+            Assert.True(ContainerStore.Uninstall(installed.Folder, _store));
+            Assert.False(Directory.Exists(installed.Folder));
         }
 
         [Fact]
@@ -105,10 +138,10 @@ namespace CryptoProExport.Tests
         [Fact]
         public void Uninstall_RefusesFolderWithForeignFiles()
         {
-            string target = ContainerStore.Install(_source, "с посторонним файлом", _store);
-            File.WriteAllText(Path.Combine(target, "важный.txt"), "не удалять");
-            Assert.Throws<InvalidOperationException>(() => ContainerStore.Uninstall(target, _store));
-            Assert.True(Directory.Exists(target));
+            var installed = ContainerStore.Install(_source, "с посторонним файлом", _store);
+            File.WriteAllText(Path.Combine(installed.Folder, "важный.txt"), "не удалять");
+            Assert.Throws<InvalidOperationException>(() => ContainerStore.Uninstall(installed.Folder, _store));
+            Assert.True(Directory.Exists(installed.Folder));
         }
 
         [Fact]

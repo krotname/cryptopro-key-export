@@ -72,12 +72,17 @@ namespace CryptoProExport.App
                     case "install":
                     {
                         if (args.Length < 2) { Usage(); return 1; }
-                        string folder = args[1];
-                        string name = args.Length > 2
-                            ? args[2]
-                            : NameKey.Parse(ReadNameKey(folder)) ?? Path.GetFileName(Path.GetFullPath(folder));
-                        string target = ContainerStore.Install(folder, name);
-                        Out($"Контейнер \"{name}\" установлен в КриптоПро: {target}");
+                        var installed = ContainerStore.Install(args[1], args.Length > 2 ? args[2] : null);
+                        Out("Контейнер установлен: " + installed);
+                        if (args.Length > 2 && !installed.Renamed)
+                            Out($"Переименование не применилось: КриптоПро не принял копию с именем \"{args[2]}\". " +
+                                "Так бывает, пока с контейнера не снят запрет на экспорт (--cprepair).");
+                        if (installed.Verified && !installed.VisibleToCsp)
+                        {
+                            Out("КриптоПро пока не видит контейнер. Обычно помогает повторный запуск " +
+                                "или перезаход в систему — CSP кэширует список контейнеров.");
+                            return 2;
+                        }
                         return 0;
                     }
                     case "installed":
@@ -128,12 +133,6 @@ namespace CryptoProExport.App
                 Err("ОШИБКА: " + ex.Message);
                 return 3;
             }
-        }
-
-        private static byte[] ReadNameKey(string folder)
-        {
-            string path = Path.Combine(folder, "name.key");
-            return File.Exists(path) ? File.ReadAllBytes(path) : null;
         }
 
         private static void Usage()

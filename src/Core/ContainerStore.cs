@@ -59,33 +59,107 @@ namespace CryptoProExport
             && File.Exists(Path.Combine(folder, "primary.key"))
             && File.Exists(Path.Combine(folder, "masks.key"));
 
-        /// <summary>
-        /// Установить контейнер из папки в хранилище CSP под именем containerName.
-        /// Копируются только файлы *.key (бэкапы и сертификаты остаются в исходной папке).
-        /// Возвращает путь созданной папки хранилища.
-        /// </summary>
-        public static string Install(string containerFolder, string containerName, string storeDir = null)
+        /// <summary>Результат установки контейнера в хранилище.</summary>
+        public sealed class InstallResult
         {
+            /// <summary>Созданная папка в хранилище.</summary>
+            public string Folder;
+            /// <summary>Имя, под которым контейнер в итоге лежит в name.key.</summary>
+            public string Name;
+            /// <summary>Переименование запрашивалось и применилось.</summary>
+            public bool Renamed;
+            /// <summary>Проверка видимости выполнялась (только для системного хранилища).</summary>
+            public bool Verified;
+            /// <summary>Контейнер действительно виден КриптоПро после установки.</summary>
+            public bool VisibleToCsp;
+
+            public override string ToString() =>
+                !Verified ? $"\"{Name}\" -> {Folder}"
+                : VisibleToCsp ? $"\"{Name}\" -> {Folder} (виден КриптоПро)"
+                : $"\"{Name}\" -> {Folder} (КриптоПро его пока НЕ видит)";
+        }
+
+        /// <summary>
+        /// Установить контейнер из папки в хранилище CSP. Копируются только файлы *.key
+        /// (бэкапы и сертификаты остаются в исходной папке).
+        ///
+        /// По умолчанию имя контейнера не трогается: CSP сверяет содержимое name.key с самим
+        /// контейнером и копию с переписанным именем может не принять. Если newName задано,
+        /// имя переписывается, но результат проверяется перечислением — и при неудаче
+        /// откатывается к исходному имени.
+        ///
+        /// Итог всегда проверяется: <see cref="InstallResult.VisibleToCsp"/> говорит, увидел ли
+        /// контейнер КриптоПро на самом деле, а не «команда отработала без ошибки».
+        /// </summary>
+        public static InstallResult Install(string containerFolder, string newName = null, string storeDir = null)
+        {
+            bool systemStore = storeDir == null;
             storeDir ??= HdImageDir;
             if (!LooksLikeContainer(containerFolder))
                 throw new DirectoryNotFoundException(
                     $"В папке нет контейнера (нужны header.key, primary.key, masks.key): {containerFolder}");
-            if (string.IsNullOrWhiteSpace(containerName))
-                throw new ArgumentException("Не задано имя контейнера", nameof(containerName));
 
+            string sourceName = ReadName(containerFolder)
+                                ?? Path.GetFileName(Path.GetFullPath(containerFolder));
+            bool wantRename = !string.IsNullOrWhiteSpace(newName) && newName != sourceName;
+
+            string target = CopyInto(storeDir, wantRename ? newName : sourceName, containerFolder);
+            var result = new InstallResult { Folder = target, Name = sourceName };
+
+            if (wantRename)
+            {
+                File.WriteAllBytes(Path.Combine(target, "name.key"), NameKey.Build(newName));
+                if (!systemStore || IsVisibleToCsp(newName))
+                {
+                    result.Name = newName;
+                    result.Renamed = true;
+                }
+                else
+                {
+                    // CSP копию с новым именем не принял — полностью откатываемся к исходному
+                    // имени и раскладке папки, чтобы у пользователя остался рабочий контейнер.
+                    Directory.Delete(target, recursive: true);
+                    result.Folder = CopyInto(storeDir, sourceName, containerFolder);
+                }
+            }
+
+            if (systemStore)
+            {
+                result.Verified = true;
+                result.VisibleToCsp = IsVisibleToCsp(result.Name);
+            }
+            return result;
+        }
+
+        /// <summary>Скопировать файлы контейнера в свободную папку хранилища. Возвращает путь папки.</summary>
+        private static string CopyInto(string storeDir, string folderBase, string containerFolder)
+        {
             Directory.CreateDirectory(storeDir);
-            string target = FreeFolderFor(storeDir, containerName);
+            string target = FreeFolderFor(storeDir, folderBase);
             Directory.CreateDirectory(target);
-
             foreach (string file in ContainerFiles)
             {
                 string src = Path.Combine(containerFolder, file);
                 if (File.Exists(src)) File.Copy(src, Path.Combine(target, file), overwrite: true);
             }
-
-            // Имя, под которым контейнер увидит CSP
-            File.WriteAllBytes(Path.Combine(target, "name.key"), NameKey.Build(containerName));
             return target;
+        }
+
+        /// <summary>Имя контейнера из name.key в папке (null — файла нет или он не разобран).</summary>
+        public static string ReadName(string containerFolder)
+        {
+            string path = Path.Combine(containerFolder, "name.key");
+            if (!File.Exists(path)) return null;
+            try { return NameKey.Parse(File.ReadAllBytes(path)); }
+            catch (IOException) { return null; }
+        }
+
+        private static bool IsVisibleToCsp(string containerName)
+        {
+            if (string.IsNullOrEmpty(containerName)) return false;
+            foreach (var c in CertFromContainer.EnumContainers())
+                if (string.Equals(c.Name, containerName, StringComparison.Ordinal)) return true;
+            return false;
         }
 
         /// <summary>Удалить установленный контейнер. Удаляет только папку, похожую на контейнер внутри хранилища.</summary>

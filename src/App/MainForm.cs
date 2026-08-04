@@ -164,10 +164,12 @@ namespace CryptoProExport.App
                 "Пробует выгрузить ключ (CryptExportKey) и сразу отпускает — сам ключ никуда не сохраняется.\n" +
                 "Так проверяется, что «Сделать экспортируемым» действительно сработало.");
             Tip(_btnInstall,
-                "Установить снятую с токена папку контейнера (6 файлов *.key) в КриптоПро,\n" +
-                "то есть скопировать её в хранилище CSP и задать имя.\n" +
-                "После этого контейнер виден в списке и работает без токена: из него можно\n" +
-                "извлечь сертификат и сделать экспорт в PFX.");
+                "Установить снятую с токена папку контейнера (6 файлов *.key) в КриптоПро —\n" +
+                "скопировать её в хранилище CSP. После этого контейнер виден в списке и работает\n" +
+                "без токена: из него можно извлечь сертификат и сделать экспорт в PFX.\n" +
+                "Имя менять не обязательно: КриптоПро сверяет имя с содержимым контейнера и\n" +
+                "переименованную копию принимает не всегда. Программа проверит результат и скажет,\n" +
+                "увидел ли CSP контейнер на самом деле.");
             Tip(_btnLogs,
                 "Открыть папку с журналами работы программы.\n" +
                 "Каждый запуск пишет отдельный файл — его удобно приложить к вопросу,\n" +
@@ -342,18 +344,24 @@ namespace CryptoProExport.App
                 return;
             }
 
-            string suggested = null;
-            try { suggested = NameKey.Parse(File.ReadAllBytes(Path.Combine(folder, "name.key"))); }
-            catch (IOException) { }
-            suggested ??= Path.GetFileName(folder.TrimEnd(Path.DirectorySeparatorChar));
+            string current = ContainerStore.ReadName(folder)
+                             ?? Path.GetFileName(folder.TrimEnd(Path.DirectorySeparatorChar));
 
             string name = AskText("Установка контейнера в КриптоПро",
-                "Под каким именем установить контейнер? Под ним он появится в списке CSP.",
-                suggested, password: false);
-            if (string.IsNullOrWhiteSpace(name)) { Log("Отменено."); return; }
+                "Имя, под которым контейнер появится в списке КриптоПро.\n" +
+                "Менять не обязательно: переименование копии CSP принимает не всегда.",
+                current, password: false);
+            if (name == null) { Log("Отменено."); return; }
+            name = name.Trim();
 
-            string target = ContainerStore.Install(folder, name.Trim());
-            Log($"Контейнер \"{name.Trim()}\" установлен в КриптоПро: {target}");
+            var installed = ContainerStore.Install(folder, name == current ? null : name);
+            Log("Контейнер установлен: " + installed);
+            if (name != current && !installed.Renamed)
+                Log($"Имя оставлено прежним (\"{installed.Name}\"): КриптоПро не принял копию с новым именем. " +
+                    "Так бывает, пока с контейнера не снят запрет на экспорт.");
+            if (installed.Verified && !installed.VisibleToCsp)
+                Log("КриптоПро пока не видит контейнер — нажмите «Обновить список» ещё раз " +
+                    "или перезайдите в систему: CSP кэширует перечень контейнеров.");
             RefreshList();
         }
 

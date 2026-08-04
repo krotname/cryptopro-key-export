@@ -28,7 +28,7 @@ cert_exchange.cer / cert_signature.cer
    │  p12utility --cprepair --container_folder . --cert … --keyexport
    ▼
 экспортируемый файловый контейнер (header.key вырастает до ~3 КБ)
-   │  установка в CSP: копия папки в хранилище HDIMAGE + имя в name.key
+   │  установка в CSP: копия папки в хранилище HDIMAGE (имя берётся из name.key)
    ▼
 контейнер виден КриптоПро и работает без токена
    │  certmgr -install … && certmgr -export -pfx
