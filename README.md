@@ -86,6 +86,11 @@ CryptoProExport.exe keyexport <folder> <cert.cer> [pass]
 CryptoProExport.exe full <destDir> [cert.cer] [pin]
 ```
 
+## Развитие
+
+План дальнейшей разработки и приоритеты — [ROADMAP.md](ROADMAP.md).
+Контекст и рабочие процессы для разработчика/LLM-агента — [AGENTS.md](AGENTS.md).
+
 ## Происхождение
 
 Логика снятия с токена восстановлена из открытого `tokens.hta` (JScript внутри
