@@ -68,7 +68,7 @@ try {
     if (-not $SkipSelfTest) {
         $log = Join-Path $env:TEMP 'cpx-selftest.txt'
         $p = Start-Process $exe '--selftest' -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput $log
-        $text = [Text.Encoding]::GetEncoding(1251).GetString([IO.File]::ReadAllBytes($log))
+        $text = [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($log))
         Write-Host $text
         if ($p.ExitCode -ne 0) { throw "--selftest вернул код $($p.ExitCode)" }
         Write-Host "Самопроверка пройдена." -ForegroundColor Green

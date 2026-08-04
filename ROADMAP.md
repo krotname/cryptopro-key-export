@@ -3,7 +3,7 @@
 > Документ-handoff для следующего разработчика или LLM-агента. Описывает состояние,
 > приоритеты и подводные камни. Перед работой прочитай также `AGENTS.md` и `README.md`.
 
-## 1. Текущее состояние (v1.1.0)
+## 1. Текущее состояние (v1.2.0)
 
 Готово и проверено на машине автора (Windows 11, КриптоПро CSP 5.0 R2 build 15873, .NET SDK 10):
 
@@ -18,6 +18,12 @@
 | COM без регистрации (`RegFreeCom`) | ✅ работает | `list` из пустой папки: «rtCOMLite: встроенная копия, без регистрации в системе» → `Acquire()` → `EnumReaders()` |
 | Портативная сборка (single-file win-x86) | ✅ работает | `build\publish.ps1` → один exe 63,6 МБ; запуск из пустой папки, `--selftest` и `list` OK |
 | CLI (`deps`/`list`/`extractcert`/…) | ✅ работает | `list`, `extractcert` на реальных данных |
+| Снятие запрета (`--cprepair --keyexport`) | ✅ **проверено e2e** | на синтетическом контейнере: `header.key` 1245 → 3075 байт |
+| Проверка прав ключа (`checkexport`) | ✅ работает | `KP_PERMISSIONS` 0x00130898 → 0x0013089C после снятия запрета |
+| Установка контейнера в CSP (`install`) | ✅ работает | копия в HDIMAGE + `name.key`; контейнер появляется в `list` и работает без токена |
+| Экспорт в PKCS#12 (`topfx`) | ✅ **проверено e2e** | `.pfx` создан (1183 байта, валидный ASN.1); на неисправленном контейнере certmgr отказывает с `0x8009000b` |
+| Юнит-тесты | ✅ 56 тестов | `dotnet test`, зелёные локально и в CI |
+| CI (GitHub Actions) | ✅ работает | `windows-latest`: сборка `-warnaserror`, тесты, `--selftest`, артефакт |
 | `RutokenExporter` — снятие с токена (rtCOMLite) | ⚠️ **не проверено вживую** | COM-цепочка идёт до `EnumReaders` (0 токенов — не был подключён); дальше точный порт `tokens.hta`, но на железе не гонялось |
 | полный `full` (снять→.cer→keyexport) | ⚠️ **не проверено end-to-end** | нет прогона с реальным Рутокеном и снятием запрета |
 
@@ -26,30 +32,29 @@
 ### P1 — довести до реально работающего цикла
 - [ ] **E2E-тест на физическом Рутокене S/Lite.** Вставить токен, прогнать `CryptoProExport.exe full <dir>`.
       Проверить: `RutokenExporter.ReadAllContainers` возвращает 6 `.key`; маппинг имён (`name/header/primary/masks/primary2/masks2`) совпадает с реальной раскладкой; авторизация PIN (дефолт `12345678` и через GUI).
-      Это единственный пункт, который нельзя закрыть без железа.
-- [ ] **Снятие запрета end-to-end.** На копии снятого контейнера прогнать `--cprepair --keyexport`, убедиться что `header.key` вырос (~до 3 КБ) и ключ стал экспортируемым (проверить импортом в CSP).
-- [ ] **Конвертация в PKCS#12 (.pfx).** ⚠️ Прежний план (`p12utility --cptop12`) **невозможен**: в `p12utility` 4.0.8.58630
-      такого режима нет, справка знает только `--p12tocp`, `--p12addtocp`, `--cprepair`, `--cppublic`
-      (обратное направление — PKCS#12 → контейнер). Рабочие варианты:
-      `cptools.exe`/`certmgr.exe` из КриптоПро, либо после `--keyexport` установить контейнер в CSP
-      и экспортировать средствами CAPI (`X509Certificate2.Export(Pkcs12)`), что упирается в пункт
-      «Установка файлового контейнера в CSP» ниже. Начинать стоит с него.
+      **Единственный оставшийся пункт: без железа не закрыть.** Всё, что после снятия с токена, уже проверено на синтетическом контейнере.
+- [x] **Снятие запрета end-to-end** — проверено: `header.key` 1245 → 3075 байт, ключ стал экспортируемым.
+- [x] **Конвертация в PKCS#12 (.pfx)** — через `certmgr` (у `p12utility` 4.0.8 нет режима `--cptop12`,
+      есть только обратный `--p12tocp`). Команда `topfx`, кнопка «Экспорт в PFX».
 
 ### P2 — устойчивость и удобство
-- [ ] **Установка файлового контейнера в CSP.** Для контейнера, снятого с токена, но не видимого CSP: реализовать запись в реестр (`HKLM\SOFTWARE\Crypto Pro\Settings\Users\<SID>\Keys\<name>` — как делает CertFix) или подключение считывателя «Директория». Нужно, если серт извлекать после того как токен вынут, и для экспорта в PFX.
-- [ ] **Единая обработка ошибок КриптоПро/rtCOMLite.** Расшифровка кодов (`0x8009xxxx`, `NTE_BAD_KEYSET`, `SCARD_W_WRONG_CHV` и т.п.) в человекочитаемые сообщения; сейчас показывается только `Message`.
-- [ ] **Прогресс/отмена длинных операций** в GUI (CancellationToken), сейчас только блокировка кнопок.
+- [x] **Установка файлового контейнера в CSP** — оказалось проще, чем правка реестра: контейнер копируется
+      в хранилище HDIMAGE (`%LOCALAPPDATA%\Crypto Pro\<имя>.000`), имя переписывается в `name.key`.
+- [x] **Единая обработка ошибок КриптоПро/rtCOMLite** — `CryptoErrors`: `NTE_*`, `SCARD_*`, COM и Win32.
 - [x] **Всплывающие подсказки в GUI** — у кнопок, полей, списка и лога; `--selftest` следит, чтобы новый элемент не остался без подсказки.
 - [x] **Упаковка внешних зависимостей** — `p12utility.win32.exe` и `rtCOMLite.dll` вшиты в сборку,
       распаковываются в `%LOCALAPPDATA%`, COM создаётся без регистрации в системе. Снаружи остался только КриптоПро CSP.
 - [x] **single-file publish** — `build\publish.ps1`, self-contained win-x86 с компрессией; в папке publish ровно один файл.
+- [ ] **Прогресс/отмена длинных операций** в GUI (CancellationToken), сейчас только блокировка кнопок и курсор ожидания.
+      Ограничение: COM-обход токена и запуск утилит прерываются только вместе с процессом — честная отмена возможна лишь между шагами.
 - [ ] **Иконка + подпись exe** (при наличии сертификата разработчика).
 
 ### P3 — качество и сопровождение
-- [ ] Unit-тесты `Core` (абстрагировать rtCOMLite за интерфейсом, мокать; тестировать `Cp1251`, парсинг `name.key`, сборку аргументов `P12Utility`).
-- [ ] Логи в файл (`%LOCALAPPDATA%`), уровни, кнопка «Сохранить лог».
+- [x] Unit-тесты `Core` — 56 тестов: кодеки, `name.key`, аргументы `P12Utility`, разбор PE, вшитые зависимости, `ContainerStore`.
+- [x] Логи в файл (`%LOCALAPPDATA%\CryptoProExport\logs`), кнопка «Журнал», пароли маскируются.
+- [x] **CI** — GitHub Actions на `windows-latest`; утверждение про блокировку биллингом не подтвердилось.
 - [ ] Английская локализация строк UI.
-- [ ] **CI на self-hosted раннере** (GitHub-hosted заблокирован биллингом для приватных репо; у автора есть раннер «adler»). Workflow: `dotnet build` + `--selftest`.
+- [ ] Уровни логирования (сейчас единый поток сообщений).
 
 ### Идеи / бэклог
 - Поддержка других токенов: JaCarta, eToken (иной COM/PKCS#11 — для них не rtCOMLite, а PKCS#11 `C_*`), Рутокен через PKCS#11 `rtPKCS11ECP.dll`.
@@ -66,17 +71,26 @@
 ## 4. Карта кода
 ```
 src/Core/RutokenExporter.cs   снятие контейнера с токена (COM rtCOMLite, late-binding через dynamic)
-src/Core/CertFromContainer.cs извлечение .cer (CryptoAPI P/Invoke) + EnumContainers + AvailableProviders
+src/Core/CertFromContainer.cs .cer из контейнера, перечисление, права ключа (KP_PERMISSIONS)
 src/Core/P12Utility.cs        обёртка p12utility (--cprepair/--keyexport/--cppublic)
+src/Core/CertMgr.cs           обёртка certmgr: сертификат в хранилище + экспорт .pfx
+src/Core/ContainerStore.cs    установка контейнера в хранилище CSP (HDIMAGE)
 src/Core/ExportPipeline.cs    оркестратор: токен → папка → авто-.cer → keyexport
 src/Core/BundledTools.cs      вшитые зависимости: ресурсы → %LOCALAPPDATA%\CryptoProExport\bundled
 src/Core/RegFreeCom.cs        COM из DLL без регистрации (DllGetClassObject → IClassFactory) + разрядность PE
+src/Core/ProcessRunner.cs     запуск утилит КриптоПро, вывод читается как cp866
+src/Core/CryptoErrors.cs      расшифровка кодов NTE_*/SCARD_*/COM/Win32
+src/Core/NameKey.cs           разбор и сборка name.key
+src/Core/SessionLog.cs        журнал сеанса в %LOCALAPPDATA%\CryptoProExport\logs
 src/Core/Diagnostics.cs       отчёт о зависимостях (команда deps, лог GUI, --selftest)
-src/Core/Cp1251.cs            декодер cp1251 (имена контейнеров)
+src/Core/Cp1251.cs, Cp866.cs  кодеки: имена контейнеров и вывод консольных утилит
 src/App/MainForm.cs           GUI + всплывающие подсказки (CheckTooltips для --selftest)
+src/App/PromptDialog.cs       ввод имени контейнера и пароля PFX
 src/App/Cli.cs                консольный режим
 src/App/Program.cs            entry: GUI / CLI / --selftest
+tests/CryptoProExport.Tests   юнит-тесты (xunit)
 build/publish.ps1             портативная сборка одним exe (self-contained win-x86)
+.github/workflows/ci.yml      CI: сборка, тесты, самопроверка, артефакт
 tools/p12utility.win32.exe    зависимость КриптоПро (v4.0.8.58630), вшивается в сборку
 tools/rtCOMLite.dll           Rutoken COM Lite «Актив» (v1.0.3.1), вшивается в сборку
 ```

@@ -41,7 +41,7 @@ jobs:
         run: |
           $log = "$env:RUNNER_TEMP/deps.txt"
           $p = Start-Process publish/CryptoProExport.exe 'deps' -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput $log
-          [Text.Encoding]::GetEncoding(1251).GetString([IO.File]::ReadAllBytes($log))
+          [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($log))
           # На раннере КриптоПро нет — ждём код 2 и отчёт про недостающий CSP
           if ($p.ExitCode -ne 2) { throw "Ожидался код 2 (нет КриптоПро CSP), получен $($p.ExitCode)" }
 
