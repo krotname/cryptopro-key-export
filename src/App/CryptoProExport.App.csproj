@@ -9,6 +9,7 @@
     <RootNamespace>CryptoProExport.App</RootNamespace>
     <LangVersion>latest</LangVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>app.ico</ApplicationIcon>
     <Version>1.2.0</Version>
     <Product>CryptoPro Key Export</Product>
     <AssemblyTitle>Экспорт ключей КриптоПро с Рутокена</AssemblyTitle>
@@ -29,5 +30,11 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Core\CryptoProExport.Core.csproj" />
+  </ItemGroup>
+  <!-- та же иконка внутрь сборки: форма берёт её оттуда со всеми размерами -->
+  <ItemGroup>
+    <EmbeddedResource Include="app.ico">
+      <LogicalName>CryptoProExport.App.app.ico</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>

@@ -50,6 +50,7 @@ namespace CryptoProExport.App
         private void BuildUi()
         {
             Text = "Экспорт ключей КриптоПро с Рутокена";
+            SetWindowIcon();
             Font = new Font("Segoe UI", 9f);
             ClientSize = new Size(880, 640);
             MinimumSize = new Size(720, 520);
@@ -212,6 +213,17 @@ namespace CryptoProExport.App
             Controls.Add(split);
             Controls.Add(buttons);
             Controls.Add(settings);
+        }
+
+        /// <summary>Иконка окна и панели задач — та же, что у exe, из вшитого ресурса (все размеры).</summary>
+        private void SetWindowIcon()
+        {
+            try
+            {
+                using var stream = typeof(MainForm).Assembly.GetManifestResourceStream("CryptoProExport.App.app.ico");
+                if (stream != null) Icon = new Icon(stream);
+            }
+            catch (ArgumentException) { }
         }
 
         private Button MakeButton(string text, int width, EventHandler onClick)
