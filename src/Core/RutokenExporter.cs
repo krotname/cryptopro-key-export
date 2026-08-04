@@ -249,12 +249,8 @@ namespace CryptoProExport
                 any = true;
 
                 // Имя контейнера — из первого файла (name.key), ASN.1: 30 xx 16 len <name(cp1251)>
-                if (i == 0 && bytes.Length > 4 && bytes[0] == 0x30 && bytes[2] == 0x16)
-                {
-                    int len = bytes[3];
-                    if (len > 0 && 4 + len <= bytes.Length)
-                        cont.ContainerName = Cp1251.GetString(bytes, 4, len);
-                }
+                if (i == 0)
+                    cont.ContainerName = NameKey.Parse(bytes) ?? cont.ContainerName;
             }
 
             // Контейнер валиден, если есть закрытый ключ (primary/primary2)

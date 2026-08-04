@@ -20,7 +20,8 @@ namespace CryptoProExport.App
     {
         private TextBox _txtP12, _txtDest, _txtPin, _txtLog;
         private ListView _lv;
-        private Button _btnRefresh, _btnExport, _btnExtract, _btnFull;
+        private Button _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnInstall, _btnCheck, _btnPfx;
+        private Button[] _actionButtons;
         private ToolTip _tips;
 
         public MainForm()
@@ -117,13 +118,21 @@ namespace CryptoProExport.App
             Tip(lblPin, tipPin); Tip(_txtPin, tipPin); Tip(lblPinHint, tipPin);
 
             // --- Панель кнопок ---
-            var buttons = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 46, Padding = new Padding(10, 4, 10, 4) };
+            var buttons = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                WrapContents = true, Padding = new Padding(10, 4, 10, 4),
+            };
             _btnRefresh = MakeButton("Обновить список", 130, (_, __) => Run(RefreshList));
             _btnExport = MakeButton("Экспорт с токена", 150, (_, __) => Run(DoExport));
             _btnExtract = MakeButton("Извлечь сертификат", 160, (_, __) => Run(DoExtract));
             _btnFull = MakeButton("Сделать экспортируемым", 200, (_, __) => Run(DoFull));
             _btnFull.Font = new Font(Font, FontStyle.Bold);
-            buttons.Controls.AddRange(new Control[] { _btnRefresh, _btnExport, _btnExtract, _btnFull });
+            _btnCheck = MakeButton("Проверить ключ", 130, (_, __) => Run(DoCheckExportable));
+            _btnInstall = MakeButton("Установить в КриптоПро", 190, (_, __) => Run(DoInstall));
+            _btnPfx = MakeButton("Экспорт в PFX", 130, (_, __) => Run(DoExportPfx));
+            _actionButtons = new[] { _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnCheck, _btnInstall, _btnPfx };
+            buttons.Controls.AddRange(_actionButtons);
 
             Tip(_btnRefresh,
                 "Шаг 1. Показать список ключевых контейнеров:\n" +
@@ -146,6 +155,21 @@ namespace CryptoProExport.App
                 "Результат: в папке назначения — копия контейнера с экспортируемым ключом\n" +
                 "(годится для резервной копии, переноса и конвертации в PFX).\n" +
                 "Исходный токен при этом не изменяется; исходный header.key копии сохраняется как header.key.backup.");
+            Tip(_btnCheck,
+                "Проверить выбранный в списке контейнер: снят ли запрет на экспорт закрытого ключа.\n" +
+                "Пробует выгрузить ключ (CryptExportKey) и сразу отпускает — сам ключ никуда не сохраняется.\n" +
+                "Так проверяется, что «Сделать экспортируемым» действительно сработало.");
+            Tip(_btnInstall,
+                "Установить снятую с токена папку контейнера (6 файлов *.key) в КриптоПро,\n" +
+                "то есть скопировать её в хранилище CSP и задать имя.\n" +
+                "После этого контейнер виден в списке и работает без токена: из него можно\n" +
+                "извлечь сертификат и сделать экспорт в PFX.");
+            Tip(_btnPfx,
+                "Выгрузить выбранный в списке контейнер в файл PKCS#12 (.pfx) — сертификат вместе\n" +
+                "с закрытым ключом, для переноса в другую систему.\n" +
+                "Требуется: запрет на экспорт уже снят («Проверить ключ» показывает «экспортируемый»)\n" +
+                "и установлен КриптоПро CSP (используется его certmgr).\n" +
+                "Пароль на .pfx программа спросит отдельно.");
 
             // --- Список + лог ---
             var split = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Horizontal, SplitterDistance = 260 };
@@ -278,7 +302,93 @@ namespace CryptoProExport.App
             Invoke(RefreshList);
         }
 
+        private void DoCheckExportable()
+        {
+            string container = SelectedContainerName();
+            if (container == null) { Log("Выберите контейнер в списке."); return; }
+            var ex = CertFromContainer.CheckExportable(container, CertFromContainer.AT_KEYEXCHANGE);
+            var sg = CertFromContainer.CheckExportable(container, CertFromContainer.AT_SIGNATURE);
+            Log($"Контейнер \"{container}\":");
+            Log($"  ключ обмена:  {ex}");
+            Log($"  ключ подписи: {sg}");
+        }
+
+        private void DoInstall()
+        {
+            string folder = AskFolder("Папка со снятым контейнером (6 файлов *.key)", _txtDest.Text.Trim());
+            if (folder == null) { Log("Отменено."); return; }
+            if (!ContainerStore.LooksLikeContainer(folder))
+            {
+                Log("В выбранной папке нет контейнера (нужны header.key, primary.key, masks.key).");
+                return;
+            }
+
+            string suggested = null;
+            try { suggested = NameKey.Parse(File.ReadAllBytes(Path.Combine(folder, "name.key"))); }
+            catch (IOException) { }
+            suggested ??= Path.GetFileName(folder.TrimEnd(Path.DirectorySeparatorChar));
+
+            string name = AskText("Установка контейнера в КриптоПро",
+                "Под каким именем установить контейнер? Под ним он появится в списке CSP.",
+                suggested, password: false);
+            if (string.IsNullOrWhiteSpace(name)) { Log("Отменено."); return; }
+
+            string target = ContainerStore.Install(folder, name.Trim());
+            Log($"Контейнер \"{name.Trim()}\" установлен в КриптоПро: {target}");
+            RefreshList();
+        }
+
+        private void DoExportPfx()
+        {
+            string container = SelectedContainerName();
+            if (container == null) { Log("Выберите контейнер в списке."); return; }
+
+            string exe = CertMgr.Locate();
+            if (exe == null) { Log("certmgr не найден — нужен установленный КриптоПро CSP."); return; }
+
+            string dest = AskSaveFile("Куда сохранить PFX", "PKCS#12 (*.pfx)|*.pfx|Все файлы|*.*",
+                                      _txtDest.Text.Trim(), Sanitize(container) + ".pfx");
+            if (dest == null) { Log("Отменено."); return; }
+
+            string pass = AskText("Пароль PFX",
+                "Пароль на файл .pfx (можно оставить пустым — тогда файл будет без пароля):",
+                "", password: true);
+            if (pass == null) { Log("Отменено."); return; }
+
+            var cm = new CertMgr(exe) { Log = Log };
+            var r = cm.ExportContainerToPfx(container, dest, pass);
+            Log(r.Success ? "PFX готов: " + dest : "Не удалось выгрузить PFX: " + r.Output);
+        }
+
         // ---------- helpers ----------
+
+        private string AskFolder(string description, string initial)
+        {
+            if (InvokeRequired) return (string)Invoke(new Func<string>(() => AskFolder(description, initial)));
+            using var d = new FolderBrowserDialog { Description = description, UseDescriptionForTitle = true };
+            if (Directory.Exists(initial)) d.SelectedPath = initial;
+            return d.ShowDialog(this) == DialogResult.OK ? d.SelectedPath : null;
+        }
+
+        private string AskSaveFile(string title, string filter, string initialDir, string suggestedName)
+        {
+            if (InvokeRequired)
+                return (string)Invoke(new Func<string>(() => AskSaveFile(title, filter, initialDir, suggestedName)));
+            using var d = new SaveFileDialog
+            {
+                Title = title, Filter = filter, FileName = suggestedName,
+                AddExtension = true, DefaultExt = "pfx", OverwritePrompt = true,
+            };
+            if (Directory.Exists(initialDir)) d.InitialDirectory = initialDir;
+            return d.ShowDialog(this) == DialogResult.OK ? d.FileName : null;
+        }
+
+        private string AskText(string title, string prompt, string initial, bool password)
+        {
+            if (InvokeRequired)
+                return (string)Invoke(new Func<string>(() => AskText(title, prompt, initial, password)));
+            return PromptDialog.Ask(this, title, prompt, initial, password);
+        }
 
         private void Run(Action work)
         {
@@ -294,7 +404,7 @@ namespace CryptoProExport.App
         private void SetBusy(bool busy)
         {
             if (InvokeRequired) { BeginInvoke(new Action(() => SetBusy(busy))); return; }
-            _btnRefresh.Enabled = _btnExport.Enabled = _btnExtract.Enabled = _btnFull.Enabled = !busy;
+            foreach (var b in _actionButtons) b.Enabled = !busy;
             Cursor = busy ? Cursors.WaitCursor : Cursors.Default;
         }
 

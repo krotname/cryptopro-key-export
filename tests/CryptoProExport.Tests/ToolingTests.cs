@@ -1,0 +1,123 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
+using Xunit;
+
+namespace CryptoProExport.Tests
+{
+    /// <summary>Аргументы p12utility, разбор PE, вшитые зависимости и расшифровка ошибок.</summary>
+    public class ToolingTests
+    {
+        [Fact]
+        public void RepairArguments_ExchangeOnly()
+        {
+            string args = P12Utility.BuildRepairArguments(true, false, null, false);
+            Assert.Equal("--cprepair --container_folder \".\" --cert \"cert_exchange.cer\" --keyexport", args);
+        }
+
+        [Fact]
+        public void RepairArguments_SignatureOnly()
+        {
+            string args = P12Utility.BuildRepairArguments(false, true, null, false);
+            Assert.Equal("--cprepair --container_folder \".\" --certsg \"cert_signature.cer\" --keyexport_sg", args);
+        }
+
+        [Fact]
+        public void RepairArguments_BothCertsPasswordAndNormalHeader()
+        {
+            string args = P12Utility.BuildRepairArguments(true, true, "secret", true);
+            Assert.Equal(
+                "--cprepair --container_folder \".\" --cert \"cert_exchange.cer\" --keyexport " +
+                "--certsg \"cert_signature.cer\" --keyexport_sg --passcp secret --normal_header",
+                args);
+        }
+
+        [Fact]
+        public void RepairArguments_EmptyPasswordIsOmitted()
+        {
+            Assert.DoesNotContain("--passcp", P12Utility.BuildRepairArguments(true, false, "", false));
+        }
+
+        [Fact]
+        public void BundledDependencies_AreEmbedded()
+        {
+            // Если этот тест упал — зависимости перестали вшиваться и exe снова неполный
+            Assert.True(BundledTools.Has(BundledTools.P12UtilityResource), "p12utility не вшит в сборку");
+            Assert.True(BundledTools.Has(BundledTools.RtComLiteResource), "rtCOMLite не вшит в сборку");
+        }
+
+        [Fact]
+        public void BundledDependencies_ExtractOnceAndReuse()
+        {
+            string first = BundledTools.P12Utility();
+            Assert.NotNull(first);
+            Assert.True(File.Exists(first));
+            long size = new FileInfo(first).Length;
+
+            string second = BundledTools.P12Utility();
+            Assert.Equal(first, second);
+            Assert.Equal(size, new FileInfo(second).Length);
+            Assert.StartsWith(BundledTools.CacheDir, first, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public void BundledDependencies_AreX86()
+        {
+            // Разрядность критична: 32-битный rtCOMLite грузится только в 32-битный процесс
+            Assert.Equal(Architecture.X86, RegFreeCom.ReadMachine(BundledTools.P12Utility()));
+            Assert.Equal(Architecture.X86, RegFreeCom.ReadMachine(BundledTools.RtComLite()));
+        }
+
+        [Fact]
+        public void ReadMachine_ReturnsNullForNonPeFile()
+        {
+            string path = Path.Combine(Path.GetTempPath(), "cpx-not-a-pe-" + Guid.NewGuid().ToString("N") + ".txt");
+            File.WriteAllText(path, "просто текст, не исполняемый файл");
+            try { Assert.Null(RegFreeCom.ReadMachine(path)); }
+            finally { File.Delete(path); }
+        }
+
+        [Fact]
+        public void MatchesProcess_FollowsProcessArchitecture()
+        {
+            bool matches = RegFreeCom.MatchesProcess(BundledTools.RtComLite(), out string detail);
+            Assert.Equal(RuntimeInformation.ProcessArchitecture == Architecture.X86, matches);
+            Assert.Contains("x86", detail);
+        }
+
+        [Theory]
+        [InlineData(unchecked((int)0x8010006C), "PIN")]
+        [InlineData(unchecked((int)0x80090016), "контейнер")]
+        [InlineData(unchecked((int)0x8009000B), "экспортируемым")]
+        public void CryptoErrors_ExplainsKnownCodes(int code, string expectedFragment)
+        {
+            Assert.Contains(expectedFragment, CryptoErrors.Describe(code));
+        }
+
+        [Fact]
+        public void CryptoErrors_ZeroIsOk() => Assert.Equal("OK", CryptoErrors.Describe(0));
+
+        [Fact]
+        public void CryptoErrors_UnknownHresultStillShowsCode()
+        {
+            Assert.Contains("0x87654321", CryptoErrors.Describe(unchecked((int)0x87654321)));
+        }
+
+        [Fact]
+        public void Diagnostics_ReportCoversEveryDependency()
+        {
+            var report = Diagnostics.Report();
+            Assert.Contains(report, l => l.StartsWith("Процесс:", StringComparison.Ordinal));
+            Assert.Contains(report, l => l.StartsWith("p12utility:", StringComparison.Ordinal));
+            Assert.Contains(report, l => l.StartsWith("rtCOMLite:", StringComparison.Ordinal));
+            Assert.Contains(report, l => l.StartsWith("КриптоПро CSP:", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public void Diagnostics_DetailedReportIsLonger()
+        {
+            Assert.True(Diagnostics.Report(detailed: true).Count > Diagnostics.Report().Count);
+        }
+    }
+}

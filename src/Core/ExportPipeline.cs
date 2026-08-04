@@ -81,7 +81,7 @@ namespace CryptoProExport
                 var r = P12.MakeExportable(folder, ex, sg, containerPassword);
                 Log(r.Success
                     ? $"OK: ключ в \"{folder}\" помечен экспортируемым"
-                    : $"ОШИБКА keyexport ({r.ExitCode}) в \"{folder}\": {r.Output}");
+                    : $"ОШИБКА keyexport в \"{folder}\": {r.Explain()} {r.Output}");
             }
         }
     }
