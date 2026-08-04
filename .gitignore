@@ -1,0 +1,14 @@
+# .NET / Visual Studio
+bin/
+obj/
+.vs/
+*.user
+*.suo
+artifacts/
+publish/
+
+# Rider
+.idea/
+
+# Прочее
+*.log
