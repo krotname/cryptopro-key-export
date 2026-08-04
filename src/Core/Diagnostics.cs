@@ -25,8 +25,11 @@ namespace CryptoProExport
                 : $"{(IsBundled(p12) ? "встроенная копия" : "внешняя копия")}: {p12}"));
             if (detailed) lines.AddRange(P12Utility.DescribeSource());
 
-            // 2. rtCOMLite — вшит, грузится без регистрации
+            // 2. rtCOMLite — вшит, грузится без регистрации (только в 32-битном процессе)
             lines.Add("rtCOMLite: " + RutokenExporter.SourceSummary());
+            if (RuntimeInformation.ProcessArchitecture != Architecture.X86)
+                lines.Add("  внимание: вшитая копия 32-битная и в этот процесс не грузится — " +
+                          "для работы с Рутокеном без установки компонента возьмите портативную сборку x86");
             if (detailed) lines.AddRange(RutokenExporter.DescribeSource());
 
             // 3. КриптоПро CSP — единственная внешняя зависимость, вшить нельзя

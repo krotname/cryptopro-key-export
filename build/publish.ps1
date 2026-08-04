@@ -9,8 +9,9 @@
         в %LOCALAPPDATA%\CryptoProExport\bundled\<версия> при первом запуске).
     Снаружи остаётся единственная зависимость — КриптоПро CSP на целевой машине.
 
-    Разрядность строго x86: вшитый rtCOMLite.dll 32-битный и грузится в процесс
-    без регистрации в системе.
+    Разрядность x86 и есть универсальная: такой exe идёт и на x64 (WOW64), и на
+    ARM64 (эмуляция), а вшитый 32-битный rtCOMLite.dll грузится в процесс без
+    регистрации в системе только при совпадении разрядности.
 
 .EXAMPLE
     pwsh build\publish.ps1
@@ -56,8 +57,10 @@ try {
 
     # 3. Что получилось
     $files = Get-ChildItem $OutDir -File
+    $hash = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLower()
     Write-Host ""
     Write-Host ("Готово: {0} ({1:N1} МБ)" -f $exe, ((Get-Item $exe).Length / 1MB)) -ForegroundColor Green
+    Write-Host "SHA-256: $hash" -ForegroundColor DarkGray
     if ($files.Count -gt 1) {
         Write-Host "Рядом лежат ещё файлы (для запуска не нужны, кроме .exe):" -ForegroundColor DarkGray
         $files | Where-Object { $_.Name -ne 'CryptoProExport.exe' } |

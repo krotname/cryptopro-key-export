@@ -18,6 +18,16 @@ namespace CryptoProExport.App
             {
                 switch (args[0].ToLowerInvariant())
                 {
+                    case "help":
+                    case "--help":
+                    case "-h":
+                    case "/?":
+                    {
+                        string guide = GuideText.Value;
+                        if (string.IsNullOrWhiteSpace(guide)) { Usage(); return 0; }
+                        Out(guide);
+                        return 0;
+                    }
                     case "deps":
                     {
                         foreach (var line in CryptoProExport.Diagnostics.Report(detailed: true))
@@ -149,6 +159,7 @@ namespace CryptoProExport.App
             Out("  uninstall <folder>                     удалить установленный контейнер");
             Out("  topfx <container> <out.pfx> [pass]     выгрузить контейнер в PKCS#12 (certmgr)");
             Out("  full <destDir> [cert.cer] [pin]        снять с токена + авто-.cer + keyexport");
+            Out("  help                                   встроенное руководство целиком");
             Out("  (без аргументов — графический интерфейс)");
         }
     }

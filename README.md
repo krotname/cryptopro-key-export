@@ -48,7 +48,11 @@ PKCS#12 (.pfx) — сертификат вместе с закрытым клю�
   при первом обращении. `rtCOMLite` загружается **без регистрации в системе и без прав
   администратора** (`DllGetClassObject` → `IClassFactory`), устанавливать
   «компонент диагностики Рутокен» не требуется.
-- Приложение **32-битное** — так вшитый 32-битный `rtCOMLite.dll` грузится прямо в процесс.
+- Приложение **32-битное, и это же делает его универсальным**: x86-код идёт на x86, на x64
+  (через WOW64) и на ARM64 (через эмуляцию), а вшитый 32-битный `rtCOMLite.dll` грузится
+  в процесс только при совпадении разрядности. Сборки x64/arm64 тоже собираются, но для
+  работы с Рутокеном им нужен установленный в системе компонент rtCOMLite — программа
+  предупредит об этом в отчёте `deps`.
 - Поддерживаются Рутокен S / Lite (файловый контейнер в памяти токена).
   Рутокен ЭЦП 2.0 с аппаратным неизвлекаемым ключом так не выгрузить.
 
@@ -61,7 +65,7 @@ CryptoProExport.exe deps
 ## Структура
 
 ```
-src/Core/           библиотека (net8.0-windows)
+src/Core/           библиотека (net10.0-windows)
   RutokenExporter.cs   экспорт контейнера с токена (rtCOMLite, late-binding COM)
   CertFromContainer.cs извлечение .cer и проверка прав ключа (CryptoAPI P/Invoke)
   P12Utility.cs        обёртка p12utility (--cprepair/--keyexport/--cppublic)
@@ -76,29 +80,36 @@ src/Core/           библиотека (net8.0-windows)
   SessionLog.cs        журнал сеанса в %LOCALAPPDATA%
   Cp1251.cs / Cp866.cs кодеки для имён контейнеров и вывода утилит
   Diagnostics.cs       отчёт о зависимостях (команда deps, лог GUI)
+  GuideText.cs         встроенное руководство (ресурс guide.txt)
 src/App/            приложение (WinForms + CLI)
   MainForm.cs          графический интерфейс со всплывающими подсказками
+  Guide.cs             окно «Справка»
   PromptDialog.cs      ввод имени контейнера и пароля PFX
   Cli.cs               консольный режим
 tests/              юнит-тесты (xunit)
 build/publish.ps1   портативная сборка одним exe
+build/make-icon.ps1 генератор иконки
 tools/              вшиваемые зависимости (p12utility.win32.exe, rtCOMLite.dll)
-.github/workflows/  CI: сборка, тесты, самопроверка, артефакт
+.github/workflows/  CI: сборка, тесты, самопроверка, сборка под x64/arm64, релиз по тегу
 ```
 
 ## Сборка
 
+Нужен .NET SDK 10.
+
 ```bash
-dotnet build -c Release
+dotnet build CryptoProExport.slnx -c Release -warnaserror
+dotnet test  CryptoProExport.slnx -c Release --no-build
 ```
 
-Портативная сборка — один `.exe`, внутри и .NET, и обе нативные зависимости:
+Портативная сборка — один `.exe`, внутри и .NET, и обе нативные зависимости, и руководство:
 
 ```powershell
 pwsh build\publish.ps1
 ```
 
-На выходе `publish\CryptoProExport.exe` (~64 МБ), в папке больше ничего нет.
+На выходе `publish\CryptoProExport.exe` (~47 МБ) и его SHA-256 — в папке больше ничего нет.
+Тот же файл собирает CI и прикладывает к релизу по тегу `v*`.
 
 ## Использование
 
@@ -114,12 +125,14 @@ pwsh build\publish.ps1
 6. *Установить в КриптоПро* — чтобы снятый контейнер работал без токена.
 7. *Экспорт в PFX* — выгрузить контейнер в `.pfx` вместе с закрытым ключом.
 8. *Журнал* — открыть папку с журналами работы.
+9. *Справка* — встроенное руководство: сценарии, кнопки, команды, разбор ошибок.
 
 В лог при запуске выводится, откуда берутся зависимости и виден ли КриптоПро CSP.
 
 **Консоль:**
 
 ```
+CryptoProExport.exe help
 CryptoProExport.exe deps
 CryptoProExport.exe list
 CryptoProExport.exe extractcert <containerName> <outDir>

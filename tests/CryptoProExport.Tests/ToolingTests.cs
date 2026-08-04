@@ -142,6 +142,14 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void Diagnostics_WarnsAboutBitnessOnlyOutsideX86()
+        {
+            // Вшитый rtCOMLite 32-битный: в x64/arm64 отчёт обязан предупредить, в x86 — молчать
+            bool warned = Diagnostics.Report().Any(l => l.Contains("32-битная", StringComparison.Ordinal));
+            Assert.Equal(RuntimeInformation.ProcessArchitecture != Architecture.X86, warned);
+        }
+
+        [Fact]
         public void Diagnostics_DetailedReportIsLonger()
         {
             Assert.True(Diagnostics.Report(detailed: true).Count > Diagnostics.Report().Count);
