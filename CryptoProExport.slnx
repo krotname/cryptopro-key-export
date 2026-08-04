@@ -6,4 +6,7 @@
   <Folder Name="/src/Core/">
     <Project Path="src/Core/CryptoProExport.Core.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CryptoProExport.Tests/CryptoProExport.Tests.csproj" />
+  </Folder>
 </Solution>

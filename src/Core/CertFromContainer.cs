@@ -26,9 +26,14 @@ namespace CryptoProExport
             (75u, "Crypto-Pro GOST R 34.10-2001 Cryptographic Service Provider"),        // ГОСТ-2001
         };
 
-        private const uint AT_KEYEXCHANGE = 1;
-        private const uint AT_SIGNATURE   = 2;
+        /// <summary>Ключ обмена (AT_KEYEXCHANGE).</summary>
+        public const uint AT_KEYEXCHANGE = 1;
+        /// <summary>Ключ подписи (AT_SIGNATURE).</summary>
+        public const uint AT_SIGNATURE = 2;
+
         private const uint KP_CERTIFICATE = 26;
+        private const uint KP_PERMISSIONS = 6;
+        private const uint CRYPT_EXPORT = 0x0004;
         private const uint PP_ENUMCONTAINERS = 2;
         private const uint CRYPT_FIRST = 1;
         private const uint CRYPT_NEXT  = 2;
@@ -87,6 +92,22 @@ namespace CryptoProExport
             return result;
         }
 
+        /// <summary>
+        /// Типы провайдеров КриптоПро, доступных в системе (проверка CryptAcquireContext
+        /// с CRYPT_VERIFYCONTEXT — без обращения к контейнеру). Пустой список = CSP не установлен.
+        /// </summary>
+        public static List<uint> AvailableProviders()
+        {
+            var list = new List<uint>();
+            foreach (var (type, name) in Providers)
+            {
+                if (!CryptAcquireContext(out IntPtr hProv, null, name, type, CRYPT_VERIFYCONTEXT)) continue;
+                CryptReleaseContext(hProv, 0);
+                list.Add(type);
+            }
+            return list;
+        }
+
         /// <summary>Извлечь DER сертификата для заданного keySpec из контейнера.</summary>
         public static byte[] ExtractCert(string container, string provider, uint provType, uint keySpec, bool silent = true)
         {
@@ -110,6 +131,65 @@ namespace CryptoProExport
                 finally { CryptDestroyKey(hKey); }
             }
             finally { CryptReleaseContext(hProv, 0); }
+        }
+
+        /// <summary>Результат проверки «снят ли запрет на экспорт закрытого ключа».</summary>
+        public sealed class ExportCheck
+        {
+            /// <summary>Контейнер найден и в нём есть ключ такого типа.</summary>
+            public bool KeyFound;
+            /// <summary>Ключ помечен экспортируемым (в KP_PERMISSIONS взведён CRYPT_EXPORT).</summary>
+            public bool Exportable;
+            /// <summary>Сырое значение KP_PERMISSIONS — полезно в логе при разборе.</summary>
+            public uint Permissions;
+            /// <summary>Код ошибки, если права прочитать не удалось.</summary>
+            public int Error;
+
+            public override string ToString() =>
+                !KeyFound ? "ключ не найден"
+                : Error != 0 ? "не удалось прочитать права (" + CryptoErrors.Describe(Error) + ")"
+                : Exportable ? $"экспортируемый (KP_PERMISSIONS=0x{Permissions:X8})"
+                : $"НЕэкспортируемый (KP_PERMISSIONS=0x{Permissions:X8}, нет флага CRYPT_EXPORT)";
+        }
+
+        /// <summary>
+        /// Проверить, снят ли запрет на экспорт закрытого ключа: читает права ключа
+        /// (KP_PERMISSIONS) и смотрит флаг CRYPT_EXPORT. Сам ключ при этом не выгружается.
+        ///
+        /// Именно так проверяется, что «Сделать экспортируемым» сработало. Прямой CryptExportKey
+        /// для проверки не годится: КриптоПро отвечает NTE_BAD_KEY_STATE и на экспортируемый ключ —
+        /// выгрузка идёт другим путём (PFXExportCertStoreEx внутри certmgr).
+        /// </summary>
+        public static ExportCheck CheckExportable(string container, uint keySpec = AT_KEYEXCHANGE)
+        {
+            var result = new ExportCheck();
+            foreach (var (type, name) in Providers)
+            {
+                if (!CryptAcquireContext(out IntPtr hProv, container, name, type, CRYPT_SILENT))
+                    continue;
+                try
+                {
+                    if (!CryptGetUserKey(hProv, keySpec, out IntPtr hKey))
+                        continue;
+                    try
+                    {
+                        result.KeyFound = true;
+                        var buf = new byte[4];
+                        uint len = (uint)buf.Length;
+                        if (!CryptGetKeyParam(hKey, KP_PERMISSIONS, buf, ref len, 0))
+                        {
+                            result.Error = Marshal.GetLastWin32Error();
+                            return result;
+                        }
+                        result.Permissions = BitConverter.ToUInt32(buf, 0);
+                        result.Exportable = (result.Permissions & CRYPT_EXPORT) != 0;
+                        return result;
+                    }
+                    finally { CryptDestroyKey(hKey); }
+                }
+                finally { CryptReleaseContext(hProv, 0); }
+            }
+            return result;
         }
 
         /// <summary>Подобрать провайдер и извлечь оба сертификата (обмена/подписи) по имени контейнера.</summary>
@@ -164,5 +244,6 @@ namespace CryptoProExport
 
         [DllImport("advapi32.dll", CharSet = CharSet.Ansi, SetLastError = true)]
         private static extern bool CryptGetProvParam(IntPtr hProv, uint dwParam, byte[] pbData, ref uint pdwDataLen, uint dwFlags);
+
     }
 }

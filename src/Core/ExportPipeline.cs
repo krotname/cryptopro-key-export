@@ -22,9 +22,9 @@ namespace CryptoProExport
 
         public ExportPipeline(string p12UtilityPath = null)
         {
-            string p12 = p12UtilityPath ?? P12Utility.Locate()
+            string p12 = p12UtilityPath ?? P12Utility.Resolve()
                 ?? throw new FileNotFoundException(
-                    "p12utility не найден. Положите p12utility.win32.exe рядом с приложением или укажите путь.");
+                    "p12utility не найден: встроенная копия недоступна. Положите p12utility.win32.exe рядом с приложением или укажите путь.");
             Exporter = new RutokenExporter();
             P12 = new P12Utility(p12);
             Exporter.Log = m => Log("[rutoken] " + m);
@@ -81,7 +81,7 @@ namespace CryptoProExport
                 var r = P12.MakeExportable(folder, ex, sg, containerPassword);
                 Log(r.Success
                     ? $"OK: ключ в \"{folder}\" помечен экспортируемым"
-                    : $"ОШИБКА keyexport ({r.ExitCode}) в \"{folder}\": {r.Output}");
+                    : $"ОШИБКА keyexport в \"{folder}\": {r.Explain()} {r.Output}");
             }
         }
     }

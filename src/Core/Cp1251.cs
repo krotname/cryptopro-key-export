@@ -1,13 +1,13 @@
-using System;
 using System.Text;
 
 namespace CryptoProExport
 {
     /// <summary>
-    /// Мини-декодер Windows-1251 без зависимости от System.Text.Encoding.CodePages
-    /// (в .NET кодовая страница 1251 по умолчанию недоступна). Хватает для имён контейнеров.
+    /// Мини-кодек Windows-1251 без зависимости от System.Text.Encoding.CodePages
+    /// (в .NET кодовая страница 1251 по умолчанию недоступна). Хватает для имён контейнеров:
+    /// именно в этой кодировке их отдаёт PP_ENUMCONTAINERS и хранит name.key.
     /// </summary>
-    internal static class Cp1251
+    public static class Cp1251
     {
         public static string GetString(byte[] data, int offset, int count)
         {
@@ -28,6 +28,30 @@ namespace CryptoProExport
                 }
             }
             return sb.ToString();
+        }
+
+        /// <summary>Обратное преобразование: строка → cp1251. Непредставимые символы заменяются на «?».</summary>
+        public static byte[] GetBytes(string text)
+        {
+            if (text == null) return new byte[0];
+            var bytes = new byte[text.Length];
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+                if (c < 0x80) { bytes[i] = (byte)c; continue; }
+                switch (c)
+                {
+                    case 'Ё': bytes[i] = 0xA8; break;
+                    case 'ё': bytes[i] = 0xB8; break;
+                    case '№': bytes[i] = 0xB9; break;
+                    default:
+                        bytes[i] = (c >= 0x0410 && c <= 0x044F)
+                            ? (byte)(0xC0 + (c - 0x0410))
+                            : (byte)'?';
+                        break;
+                }
+            }
+            return bytes;
         }
     }
 }

@@ -1,5 +1,5 @@
 using System;
-using System.Diagnostics;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Runtime.Versioning;
@@ -10,6 +10,9 @@ namespace CryptoProExport
     /// Обёртка над КриптоПро p12utility. Реализует «Сделать экспортируемым» точно как CertFix:
     /// собирает командную строку --cprepair --keyexport/--keyexport_sg и запускает процесс
     /// с рабочим каталогом = папка контейнера.
+    ///
+    /// Внимание: у p12utility 4.0.8 нет режима контейнер → PKCS#12 (есть только обратный
+    /// --p12tocp). Экспорт в .pfx делается через certmgr, см. <see cref="CertMgr"/>.
     /// </summary>
     [SupportedOSPlatform("windows")]
     public sealed class P12Utility
@@ -24,7 +27,7 @@ namespace CryptoProExport
                 throw new FileNotFoundException("p12utility не найден", ExePath);
         }
 
-        /// <summary>Найти p12utility в типовых местах (рядом с приложением / в КриптоПро CSP).</summary>
+        /// <summary>Найти внешний p12utility в типовых местах (рядом с приложением / в КриптоПро CSP).</summary>
         public static string Locate()
         {
             string[] cand =
@@ -38,19 +41,56 @@ namespace CryptoProExport
             return null;
         }
 
-        public sealed class Result
+        /// <summary>
+        /// Путь к p12utility: внешняя копия, если она есть, иначе вшитая в приложение
+        /// (распаковывается в <see cref="BundledTools.CacheDir"/>). null — не найдено ничего.
+        /// </summary>
+        public static string Resolve() => Locate() ?? BundledTools.TryExtract(
+            BundledTools.P12UtilityResource, BundledTools.P12UtilityFileName, out _);
+
+        /// <summary>Диагностика: откуда будет взят p12utility.</summary>
+        public static List<string> DescribeSource()
         {
-            public bool Success;
-            public int ExitCode;
-            public string Output;
+            var lines = new List<string>();
+            string external = Locate();
+            lines.Add(external != null ? "  внешняя копия: " + external : "  внешняя копия: нет");
+
+            string bundled = BundledTools.TryExtract(
+                BundledTools.P12UtilityResource, BundledTools.P12UtilityFileName, out string error);
+            lines.Add(bundled != null
+                ? "  встроенная копия: " + bundled
+                : "  встроенная копия: нет" + (error != null ? " (" + error + ")" : " (не вшита в сборку)"));
+
+            string used = Resolve();
+            lines.Add(used != null ? "  будет использован: " + used : "  будет использован: НЕ НАЙДЕН");
+            return lines;
+        }
+
+        /// <summary>
+        /// Сборка аргументов --cprepair — ровно как ветвление в CertFix (адрес 0x40D14F).
+        /// Вынесена отдельно, чтобы покрыть тестами без запуска процесса.
+        /// </summary>
+        internal static string BuildRepairArguments(
+            bool hasExchange, bool hasSignature, string containerPassword, bool normalHeader)
+        {
+            var sb = new StringBuilder();
+            sb.Append("--cprepair --container_folder \".\"");
+            if (hasExchange)
+                sb.Append(" --cert \"cert_exchange.cer\" --keyexport");
+            if (hasSignature)
+                sb.Append(" --certsg \"cert_signature.cer\" --keyexport_sg");
+            if (!string.IsNullOrEmpty(containerPassword))
+                sb.Append(" --passcp \"").Append(containerPassword).Append('"'); // кавычки — пароль может быть с пробелом
+            if (normalHeader)
+                sb.Append(" --normal_header");
+            return sb.ToString();
         }
 
         /// <summary>
         /// Снять запрет на экспорт закрытого ключа контейнера, лежащего в папке containerFolder
         /// (6 файлов .key). Нужен минимум один сертификат (обмена и/или подписи) в формате DER (.cer).
-        /// Порт сборки командной строки из CertFix (адрес 0x40D14F).
         /// </summary>
-        public Result MakeExportable(
+        public ToolResult MakeExportable(
             string containerFolder,
             string certExchangePath = null,
             string certSignaturePath = null,
@@ -64,54 +104,62 @@ namespace CryptoProExport
             if (!File.Exists(header))
                 throw new FileNotFoundException("В папке нет header.key", header);
 
-            // Бэкап header.key (как CertFix: header.key.backup)
-            File.Copy(header, header + ".backup", overwrite: true);
-
             bool hasExchange = !string.IsNullOrEmpty(certExchangePath);
             bool hasSignature = !string.IsNullOrEmpty(certSignaturePath);
             if (!hasExchange && !hasSignature)
                 throw new ArgumentException(
                     "Нужен минимум один сертификат (--cert/--certsg). Экспортируйте .cer из хранилища «Личное» или из контейнера.");
 
+            // Бэкап header.key (как CertFix: header.key.backup)
+            File.Copy(header, header + ".backup", overwrite: true);
+
             // Копируем сертификаты в папку контейнера с ожидаемыми именами
             if (hasExchange)
-                File.Copy(certExchangePath, Path.Combine(containerFolder, "cert_exchange.cer"), true);
+                CopyIfDifferent(certExchangePath, Path.Combine(containerFolder, "cert_exchange.cer"));
             if (hasSignature)
-                File.Copy(certSignaturePath, Path.Combine(containerFolder, "cert_signature.cer"), true);
+                CopyIfDifferent(certSignaturePath, Path.Combine(containerFolder, "cert_signature.cer"));
 
-            // Сборка аргументов — ровно как ветвление в CertFix
-            var sb = new StringBuilder();
-            sb.Append("--cprepair --container_folder \".\"");
-            if (hasExchange)
-                sb.Append(" --cert \"cert_exchange.cer\" --keyexport");
-            if (hasSignature)
-                sb.Append(" --certsg \"cert_signature.cer\" --keyexport_sg");
+            string args = BuildRepairArguments(hasExchange, hasSignature, containerPassword, normalHeader);
+            return Execute(args, containerFolder, timeoutMs);
+        }
+
+        /// <summary>Показать открытый ключ контейнера (--cppublic). Быстрая проверка, что папка — валидный контейнер.</summary>
+        public ToolResult ShowPublic(string containerFolder, string containerPassword = null, int timeoutMs = 15000)
+        {
+            var sb = new StringBuilder("--cppublic --container_folder \".\"");
             if (!string.IsNullOrEmpty(containerPassword))
                 sb.Append(" --passcp ").Append(containerPassword);
-            if (normalHeader)
-                sb.Append(" --normal_header");
+            return Execute(sb.ToString(), containerFolder, timeoutMs);
+        }
 
-            Log($"\"{ExePath}\" {sb}");
+        private ToolResult Execute(string args, string workingDirectory, int timeoutMs)
+        {
+            Log($"\"{ExePath}\" {MaskPassword(args)}");
+            var r = ProcessRunner.Run(ExePath, args, workingDirectory, timeoutMs);
+            if (!string.IsNullOrEmpty(r.Output)) Log(r.Output);
+            if (!r.Success) Log("p12utility: " + r.Explain());
+            return r;
+        }
 
-            var psi = new ProcessStartInfo
-            {
-                FileName = ExePath,
-                Arguments = sb.ToString(),
-                WorkingDirectory = containerFolder,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true,
-            };
-            using var p = Process.Start(psi);
-            string outText = p.StandardOutput.ReadToEnd() + p.StandardError.ReadToEnd();
-            if (!p.WaitForExit(timeoutMs))
-            {
-                try { p.Kill(true); } catch { }
-                return new Result { Success = false, ExitCode = -1, Output = "Таймаут p12utility" };
-            }
-            Log(outText);
-            return new Result { Success = p.ExitCode == 0, ExitCode = p.ExitCode, Output = outText };
+        /// <summary>Пароль контейнера не должен попадать ни в окно лога, ни в файл журнала.</summary>
+        internal static string MaskPassword(string args) => MaskQuotedValue(args, "--passcp ");
+
+        /// <summary>Заменить значение в кавычках после флага на «***».</summary>
+        internal static string MaskQuotedValue(string args, string flag)
+        {
+            int i = args.IndexOf(flag, StringComparison.Ordinal);
+            if (i < 0) return args;
+            int open = args.IndexOf('"', i + flag.Length);
+            int close = open < 0 ? -1 : args.IndexOf('"', open + 1);
+            if (open < 0 || close < 0) return args.Substring(0, i + flag.Length) + "***";
+            return args.Substring(0, open) + "\"***\"" + args.Substring(close + 1);
+        }
+
+        private static void CopyIfDifferent(string source, string target)
+        {
+            if (string.Equals(Path.GetFullPath(source), Path.GetFullPath(target), StringComparison.OrdinalIgnoreCase))
+                return;
+            File.Copy(source, target, overwrite: true);
         }
     }
 }

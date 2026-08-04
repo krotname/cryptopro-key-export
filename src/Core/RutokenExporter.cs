@@ -37,9 +37,10 @@ namespace CryptoProExport
     /// Читает файловую память токена НАПРЯМУЮ, минуя КриптоПро CSP — поэтому запрет на
     /// экспорт закрытого ключа на уровне CSP здесь не действует.
     ///
-    /// Late-binding через dynamic: тип-библиотека rtCOMLite не требуется на этапе сборки,
-    /// но rtComLite.dll должен быть зарегистрирован в системе на этапе выполнения
-    /// (ставится https://help.kontur.ru/rtComLite.exe).
+    /// Late-binding через dynamic: тип-библиотека rtCOMLite не требуется на этапе сборки.
+    /// На этапе выполнения библиотека берётся из вшитой копии и грузится без регистрации
+    /// в системе (<see cref="RegFreeCom"/>); если это невозможно — используется компонент,
+    /// зарегистрированный в системе (устанавливается из https://help.kontur.ru/rtComLite.exe).
     ///
     /// Поддерживаются Рутокен S / Lite / старые (файловый контейнер в памяти токена).
     /// Рутокен ЭЦП 2.0 с аппаратным неизвлекаемым ключом так не выгрузить.
@@ -56,6 +57,11 @@ namespace CryptoProExport
         private const int RT_LEAVE  = 0;   // CloseReader
         private const int OpenTimeoutMs = 5000;
 
+        /// <summary>CLSID coclass rtCOMLite.rtContext (совпадает с записью установленного компонента в реестре).</summary>
+        public static readonly Guid ClsidRtContext = new Guid("0ACACF07-54A6-4230-8FA2-6CBBE9B87BB9");
+
+        public const string ProgId = "rtCOMLite.rtContext";
+
         /// <summary>
         /// PIN пользователя. Если null — при недефолтном PIN откроется системное окно ввода
         /// (AuthenticateOwnerFromGUI). Если на токене PIN по умолчанию — используется 12345678.
@@ -69,8 +75,7 @@ namespace CryptoProExport
         public List<RutokenContainer> ReadAllContainers()
         {
             var result = new List<RutokenContainer>();
-            Type ctxType = Type.GetTypeFromProgID("rtCOMLite.rtContext", throwOnError: true);
-            dynamic ctx = Activator.CreateInstance(ctxType);
+            dynamic ctx = CreateContext();
             Log("Подключаемся к службе смарт-карт...");
             ctx.Acquire();
             try
@@ -105,6 +110,83 @@ namespace CryptoProExport
                 try { ctx.Free(); } catch { }
             }
             return result;
+        }
+
+        /// <summary>
+        /// Создать rtCOMLite.rtContext. Порядок: вшитая копия DLL без регистрации в системе →
+        /// компонент, зарегистрированный в системе (ProgID). Ничего скачивать и ставить не нужно,
+        /// пока работает первый вариант.
+        /// </summary>
+        private dynamic CreateContext()
+        {
+            string dll = BundledTools.TryExtract(
+                BundledTools.RtComLiteResource, BundledTools.RtComLiteFileName, out string extractError);
+
+            if (dll != null)
+            {
+                if (RegFreeCom.MatchesProcess(dll, out string detail))
+                {
+                    try
+                    {
+                        object ctx = RegFreeCom.CreateInstance(dll, ClsidRtContext);
+                        Log("rtCOMLite: встроенная копия, без регистрации в системе");
+                        return ctx;
+                    }
+                    catch (Exception e)
+                    {
+                        Log($"Встроенный rtCOMLite не загрузился ({e.Message}); пробуем зарегистрированный в системе");
+                    }
+                }
+                else
+                {
+                    Log($"Встроенный rtCOMLite не подходит ({detail}); пробуем зарегистрированный в системе");
+                }
+            }
+            else if (extractError != null)
+            {
+                Log($"Не удалось распаковать встроенный rtCOMLite ({extractError}); пробуем зарегистрированный в системе");
+            }
+
+            Type ctxType = Type.GetTypeFromProgID(ProgId, throwOnError: false);
+            if (ctxType == null)
+                throw new InvalidOperationException(
+                    "Компонент rtCOMLite недоступен: встроенная копия не загрузилась, а в системе он не зарегистрирован. " +
+                    "Проверьте разрядность приложения (нужна x86) или установите компонент с https://help.kontur.ru/rtComLite.exe.");
+            object system = Activator.CreateInstance(ctxType);
+            Log("rtCOMLite: компонент, зарегистрированный в системе");
+            return system;
+        }
+
+        /// <summary>Короткая сводка: откуда будет взят rtCOMLite (без обращения к токену).</summary>
+        public static string SourceSummary()
+        {
+            string dll = BundledTools.TryExtract(
+                BundledTools.RtComLiteResource, BundledTools.RtComLiteFileName, out _);
+            if (dll != null && RegFreeCom.MatchesProcess(dll, out _))
+                return "встроенная копия, без регистрации в системе";
+            if (Type.GetTypeFromProgID(ProgId, throwOnError: false) != null)
+                return "компонент, зарегистрированный в системе";
+            return "НЕДОСТУПЕН";
+        }
+
+        /// <summary>Диагностика без обращения к токену: откуда будет взят COM-компонент rtCOMLite.</summary>
+        public static List<string> DescribeSource()
+        {
+            var lines = new List<string>();
+            string dll = BundledTools.TryExtract(
+                BundledTools.RtComLiteResource, BundledTools.RtComLiteFileName, out string extractError);
+
+            if (dll == null)
+                lines.Add("  встроенная копия: нет" + (extractError != null ? " (" + extractError + ")" : " (не вшита в сборку)"));
+            else if (RegFreeCom.MatchesProcess(dll, out string detail))
+                lines.Add($"  встроенная копия: {dll} ({detail}) — грузится без регистрации");
+            else
+                lines.Add($"  встроенная копия: {dll} — не подходит ({detail})");
+
+            lines.Add(Type.GetTypeFromProgID(ProgId, throwOnError: false) != null
+                ? "  в системе: зарегистрирован (запасной вариант)"
+                : "  в системе: не зарегистрирован");
+            return lines;
         }
 
         private void Authenticate(dynamic rt)
@@ -167,12 +249,8 @@ namespace CryptoProExport
                 any = true;
 
                 // Имя контейнера — из первого файла (name.key), ASN.1: 30 xx 16 len <name(cp1251)>
-                if (i == 0 && bytes.Length > 4 && bytes[0] == 0x30 && bytes[2] == 0x16)
-                {
-                    int len = bytes[3];
-                    if (len > 0 && 4 + len <= bytes.Length)
-                        cont.ContainerName = Cp1251.GetString(bytes, 4, len);
-                }
+                if (i == 0)
+                    cont.ContainerName = NameKey.Parse(bytes) ?? cont.ContainerName;
             }
 
             // Контейнер валиден, если есть закрытый ключ (primary/primary2)

@@ -1,0 +1,60 @@
+name: build
+
+# Сборка идёт только на Windows: проект — WinForms + CryptoAPI (net8.0-windows, x86).
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Сборка, тесты, портативный exe
+    runs-on: windows-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Установить .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          # SDK 10 нужен для формата решения .slnx, рантайм 8 — чтобы запускать сборку
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Сборка (предупреждения = ошибки)
+        run: dotnet build CryptoProExport.slnx -c Release -warnaserror
+
+      - name: Юнит-тесты
+        run: dotnet test CryptoProExport.slnx -c Release --no-build --logger "console;verbosity=normal"
+
+      # Самопроверка гоняется на портативной сборке: рантайм .NET внутри неё.
+      # Обычный build даёт framework-dependent x86, а 32-битного рантайма на раннере нет.
+      - name: Портативная сборка + самопроверка GUI
+        shell: pwsh
+        run: pwsh build/publish.ps1
+
+      - name: Проверить работу без КриптоПро CSP
+        shell: pwsh
+        run: |
+          $log = "$env:RUNNER_TEMP/deps.txt"
+          $p = Start-Process publish/CryptoProExport.exe 'deps' -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput $log
+          [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($log))
+          # На раннере КриптоПро нет — ждём код 2 и отчёт про недостающий CSP
+          if ($p.ExitCode -ne 2) { throw "Ожидался код 2 (нет КриптоПро CSP), получен $($p.ExitCode)" }
+
+      - name: Проверить, что в publish ровно один файл
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem publish -File
+          $files | ForEach-Object { "{0} ({1:N1} МБ)" -f $_.Name, ($_.Length / 1MB) }
+          if ($files.Count -ne 1) { throw "Ожидался один файл, а их $($files.Count)" }
+
+      - name: Выложить портативный exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: CryptoProExport-portable-win-x86
+          path: publish/CryptoProExport.exe
+          retention-days: 14
