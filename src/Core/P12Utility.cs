@@ -80,7 +80,7 @@ namespace CryptoProExport
             if (hasSignature)
                 sb.Append(" --certsg \"cert_signature.cer\" --keyexport_sg");
             if (!string.IsNullOrEmpty(containerPassword))
-                sb.Append(" --passcp ").Append(containerPassword);
+                sb.Append(" --passcp \"").Append(containerPassword).Append('"'); // кавычки — пароль может быть с пробелом
             if (normalHeader)
                 sb.Append(" --normal_header");
             return sb.ToString();
@@ -142,14 +142,17 @@ namespace CryptoProExport
         }
 
         /// <summary>Пароль контейнера не должен попадать ни в окно лога, ни в файл журнала.</summary>
-        internal static string MaskPassword(string args)
+        internal static string MaskPassword(string args) => MaskQuotedValue(args, "--passcp ");
+
+        /// <summary>Заменить значение в кавычках после флага на «***».</summary>
+        internal static string MaskQuotedValue(string args, string flag)
         {
-            const string flag = "--passcp ";
             int i = args.IndexOf(flag, StringComparison.Ordinal);
             if (i < 0) return args;
-            int valueStart = i + flag.Length;
-            int end = args.IndexOf(" --", valueStart, StringComparison.Ordinal);
-            return args.Substring(0, valueStart) + "***" + (end < 0 ? "" : args.Substring(end));
+            int open = args.IndexOf('"', i + flag.Length);
+            int close = open < 0 ? -1 : args.IndexOf('"', open + 1);
+            if (open < 0 || close < 0) return args.Substring(0, i + flag.Length) + "***";
+            return args.Substring(0, open) + "\"***\"" + args.Substring(close + 1);
         }
 
         private static void CopyIfDifferent(string source, string target)

@@ -128,14 +128,7 @@ namespace CryptoProExport
         }
 
         /// <summary>Пароль PFX не должен попадать в лог.</summary>
-        private static string Mask(string args)
-        {
-            int i = args.IndexOf("-pin ", StringComparison.Ordinal);
-            if (i < 0) return args;
-            int end = args.IndexOf(" -", i + 5, StringComparison.Ordinal);
-            string tail = end < 0 ? "" : args.Substring(end);
-            return args.Substring(0, i) + "-pin ***" + tail;
-        }
+        private static string Mask(string args) => P12Utility.MaskQuotedValue(args, "-pin ");
 
         private static string Quote(string s) => "\"" + s + "\"";
     }

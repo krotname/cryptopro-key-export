@@ -29,7 +29,7 @@ namespace CryptoProExport.Tests
             string args = P12Utility.BuildRepairArguments(true, true, "secret", true);
             Assert.Equal(
                 "--cprepair --container_folder \".\" --cert \"cert_exchange.cer\" --keyexport " +
-                "--certsg \"cert_signature.cer\" --keyexport_sg --passcp secret --normal_header",
+                "--certsg \"cert_signature.cer\" --keyexport_sg --passcp \"secret\" --normal_header",
                 args);
         }
 
@@ -37,6 +37,33 @@ namespace CryptoProExport.Tests
         public void RepairArguments_EmptyPasswordIsOmitted()
         {
             Assert.DoesNotContain("--passcp", P12Utility.BuildRepairArguments(true, false, "", false));
+        }
+
+        [Fact]
+        public void MaskPassword_HidesContainerPassword()
+        {
+            string args = P12Utility.BuildRepairArguments(true, false, "пароль с пробелом", true);
+            string masked = P12Utility.MaskPassword(args);
+            Assert.DoesNotContain("пароль", masked);
+            Assert.Contains("--passcp \"***\"", masked);
+            Assert.Contains("--normal_header", masked); // остальные аргументы не потерялись
+        }
+
+        [Fact]
+        public void MaskPassword_LeavesArgumentsWithoutPasswordAlone()
+        {
+            string args = P12Utility.BuildRepairArguments(true, false, null, false);
+            Assert.Equal(args, P12Utility.MaskPassword(args));
+        }
+
+        [Fact]
+        public void MaskQuotedValue_HidesCertmgrPin()
+        {
+            string masked = P12Utility.MaskQuotedValue(
+                "-export -pfx -dest \"C:\\out.pfx\" -container \"cpx\" -pin \"тайна\" -silent", "-pin ");
+            Assert.DoesNotContain("тайна", masked);
+            Assert.Contains("-silent", masked);
+            Assert.Contains("C:\\out.pfx", masked);
         }
 
         [Fact]
