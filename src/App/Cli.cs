@@ -13,6 +13,13 @@ namespace CryptoProExport.App
             {
                 switch (args[0].ToLowerInvariant())
                 {
+                    case "deps":
+                    {
+                        foreach (var line in CryptoProExport.Diagnostics.Report(detailed: true))
+                            Console.WriteLine(line);
+                        // Ненулевой код, только если не хватает того, что нельзя вшить, — КриптоПро CSP
+                        return CertFromContainer.AvailableProviders().Count > 0 ? 0 : 2;
+                    }
                     case "list":
                     {
                         Console.WriteLine("Контейнеры, видимые CSP:");
@@ -42,7 +49,7 @@ namespace CryptoProExport.App
                     case "keyexport":
                     {
                         if (args.Length < 3) { Usage(); return 1; }
-                        var p12 = new P12Utility(P12Utility.Locate()) { Log = Console.WriteLine };
+                        var p12 = new P12Utility(P12Utility.Resolve()) { Log = Console.WriteLine };
                         var r = p12.MakeExportable(args[1], args[2], null, args.Length > 3 ? args[3] : null);
                         Console.WriteLine(r.Success ? "Готово: ключ экспортируемый" : $"Ошибка {r.ExitCode}");
                         return r.Success ? 0 : 2;
@@ -72,6 +79,7 @@ namespace CryptoProExport.App
         private static void Usage()
         {
             Console.WriteLine("CryptoProExport — экспорт контейнера с Рутокена + снятие запрета на экспорт ключа");
+            Console.WriteLine("  deps                                   проверить зависимости (встроенные + КриптоПро CSP)");
             Console.WriteLine("  list                                   перечислить контейнеры (CSP + токены)");
             Console.WriteLine("  extractcert <container> <outDir>       извлечь .cer из контейнера (CryptoAPI)");
             Console.WriteLine("  export <destDir> [pin]                 снять контейнеры с токенов на диск");

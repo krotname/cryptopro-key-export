@@ -9,18 +9,22 @@
     <RootNamespace>CryptoProExport.App</RootNamespace>
     <LangVersion>latest</LangVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Product>CryptoPro Key Export</Product>
     <AssemblyTitle>Экспорт ключей КриптоПро с Рутокена</AssemblyTitle>
+    <!--
+      x86 обязателен: вшитый rtCOMLite.dll 32-битный и грузится в процесс без регистрации в системе
+      (RegFreeCom). В x64-процессе он работал бы только через установленный COM-суррогат.
+    -->
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <!-- Портативная сборка: publish одним файлом, все зависимости внутри (см. build/publish.ps1). -->
+  <PropertyGroup>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Core\CryptoProExport.Core.csproj" />
-  </ItemGroup>
-  <!-- p12utility кладём рядом с приложением -->
-  <ItemGroup>
-    <None Include="..\..\tools\p12utility.win32.exe" Condition="Exists('..\..\tools\p12utility.win32.exe')">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>p12utility.win32.exe</Link>
-    </None>
   </ItemGroup>
 </Project>

@@ -30,11 +30,22 @@ namespace CryptoProExport.App
             {
                 ApplicationConfiguration.Initialize();
                 using var f = new MainForm();
+
+                var (withTip, missing) = f.CheckTooltips();
+                if (missing.Count > 0)
+                {
+                    Console.Error.WriteLine("SELFTEST FAIL: без всплывающих подсказок остались элементы: "
+                                            + string.Join(", ", missing));
+                    return 1;
+                }
+
                 f.Load += (_, __) => f.BeginInvoke(new Action(f.Close));
                 f.ShowInTaskbar = false;
                 f.WindowState = FormWindowState.Minimized;
                 Application.Run(f);
-                Console.WriteLine("SELFTEST OK: форма построена и закрыта без ошибок");
+                Console.WriteLine($"SELFTEST OK: форма построена и закрыта без ошибок, подсказок на элементах: {withTip}");
+                foreach (var line in CryptoProExport.Diagnostics.Report())
+                    Console.WriteLine("  " + line);
                 return 0;
             }
             catch (Exception ex)

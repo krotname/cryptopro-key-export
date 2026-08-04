@@ -6,5 +6,20 @@
     <AssemblyName>CryptoProExport.Core</AssemblyName>
     <RootNamespace>CryptoProExport</RootNamespace>
     <LangVersion>latest</LangVersion>
+    <Version>1.1.0</Version>
   </PropertyGroup>
+  <!--
+    Внешние нативные зависимости вшиваются в сборку и распаковываются в кэш при первом запуске
+    (см. BundledTools). Условие Exists — чтобы репозиторий собирался и без бинарников в tools/.
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\tools\p12utility.win32.exe"
+                      Condition="Exists('..\..\tools\p12utility.win32.exe')">
+      <LogicalName>CryptoProExport.Tools.p12utility.win32.exe</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\tools\rtCOMLite.dll"
+                      Condition="Exists('..\..\tools\rtCOMLite.dll')">
+      <LogicalName>CryptoProExport.Tools.rtCOMLite.dll</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
 </Project>

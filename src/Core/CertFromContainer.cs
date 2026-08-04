@@ -87,6 +87,22 @@ namespace CryptoProExport
             return result;
         }
 
+        /// <summary>
+        /// Типы провайдеров КриптоПро, доступных в системе (проверка CryptAcquireContext
+        /// с CRYPT_VERIFYCONTEXT — без обращения к контейнеру). Пустой список = CSP не установлен.
+        /// </summary>
+        public static List<uint> AvailableProviders()
+        {
+            var list = new List<uint>();
+            foreach (var (type, name) in Providers)
+            {
+                if (!CryptAcquireContext(out IntPtr hProv, null, name, type, CRYPT_VERIFYCONTEXT)) continue;
+                CryptReleaseContext(hProv, 0);
+                list.Add(type);
+            }
+            return list;
+        }
+
         /// <summary>Извлечь DER сертификата для заданного keySpec из контейнера.</summary>
         public static byte[] ExtractCert(string container, string provider, uint provType, uint keySpec, bool silent = true)
         {

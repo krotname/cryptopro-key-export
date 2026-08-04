@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -24,7 +25,7 @@ namespace CryptoProExport
                 throw new FileNotFoundException("p12utility не найден", ExePath);
         }
 
-        /// <summary>Найти p12utility в типовых местах (рядом с приложением / в КриптоПро CSP).</summary>
+        /// <summary>Найти внешний p12utility в типовых местах (рядом с приложением / в КриптоПро CSP).</summary>
         public static string Locate()
         {
             string[] cand =
@@ -36,6 +37,31 @@ namespace CryptoProExport
             };
             foreach (var c in cand) if (File.Exists(c)) return c;
             return null;
+        }
+
+        /// <summary>
+        /// Путь к p12utility: внешняя копия, если она есть, иначе вшитая в приложение
+        /// (распаковывается в <see cref="BundledTools.CacheDir"/>). null — не найдено ничего.
+        /// </summary>
+        public static string Resolve() => Locate() ?? BundledTools.TryExtract(
+            BundledTools.P12UtilityResource, BundledTools.P12UtilityFileName, out _);
+
+        /// <summary>Диагностика: откуда будет взят p12utility.</summary>
+        public static List<string> DescribeSource()
+        {
+            var lines = new List<string>();
+            string external = Locate();
+            lines.Add(external != null ? "  внешняя копия: " + external : "  внешняя копия: нет");
+
+            string bundled = BundledTools.TryExtract(
+                BundledTools.P12UtilityResource, BundledTools.P12UtilityFileName, out string error);
+            lines.Add(bundled != null
+                ? "  встроенная копия: " + bundled
+                : "  встроенная копия: нет" + (error != null ? " (" + error + ")" : " (не вшита в сборку)"));
+
+            string used = Resolve();
+            lines.Add(used != null ? "  будет использован: " + used : "  будет использован: НЕ НАЙДЕН");
+            return lines;
         }
 
         public sealed class Result

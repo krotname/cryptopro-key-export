@@ -3,18 +3,21 @@
 > Документ-handoff для следующего разработчика или LLM-агента. Описывает состояние,
 > приоритеты и подводные камни. Перед работой прочитай также `AGENTS.md` и `README.md`.
 
-## 1. Текущее состояние (v1.0.0)
+## 1. Текущее состояние (v1.1.0)
 
 Готово и проверено на машине автора (Windows 11, КриптоПро CSP 5.0 R2 build 15873, .NET SDK 10):
 
 | Компонент | Статус | Как проверено |
 |-----------|--------|---------------|
 | `CertFromContainer` — извлечение .cer через CryptoAPI | ✅ работает | извлёк живой сертификат из контейнера в CSP |
-| `CertFromContainer.EnumContainers` | ✅ работает | видит контейнеры пользователя (провайдеры 75/80/81), дедуп, cp1251 |
+| `CertFromContainer.EnumContainers` | ✅ работает | видит контейнеры пользователя (провайдеры 75/80/81), дедуп, cp1251; после перехода на x86 перепроверено |
 | `P12Utility` — обёртка p12utility | ✅ работает | `--cppublic` на тестовом контейнере 2816 = ExitCode 0 |
 | WinForms GUI | ✅ строится | `--selftest` ExitCode 0 |
-| CLI (`list`/`extractcert`/…) | ✅ работает | `list`, `extractcert` на реальных данных |
-| self-contained publish win-x64 | ✅ работает | published exe запускается автономно |
+| Всплывающие подсказки в GUI | ✅ работает | `--selftest` проверяет наличие подсказок (11 элементов); подсказка снята на скриншоте при наведении |
+| Вшитые зависимости (`BundledTools`) | ✅ работает | `deps`: p12utility и rtCOMLite распаковываются в `%LOCALAPPDATA%\CryptoProExport\bundled\1.1.0.0` |
+| COM без регистрации (`RegFreeCom`) | ✅ работает | `list` из пустой папки: «rtCOMLite: встроенная копия, без регистрации в системе» → `Acquire()` → `EnumReaders()` |
+| Портативная сборка (single-file win-x86) | ✅ работает | `build\publish.ps1` → один exe 63,6 МБ; запуск из пустой папки, `--selftest` и `list` OK |
+| CLI (`deps`/`list`/`extractcert`/…) | ✅ работает | `list`, `extractcert` на реальных данных |
 | `RutokenExporter` — снятие с токена (rtCOMLite) | ⚠️ **не проверено вживую** | COM-цепочка идёт до `EnumReaders` (0 токенов — не был подключён); дальше точный порт `tokens.hta`, но на железе не гонялось |
 | полный `full` (снять→.cer→keyexport) | ⚠️ **не проверено end-to-end** | нет прогона с реальным Рутокеном и снятием запрета |
 
@@ -23,14 +26,23 @@
 ### P1 — довести до реально работающего цикла
 - [ ] **E2E-тест на физическом Рутокене S/Lite.** Вставить токен, прогнать `CryptoProExport.exe full <dir>`.
       Проверить: `RutokenExporter.ReadAllContainers` возвращает 6 `.key`; маппинг имён (`name/header/primary/masks/primary2/masks2`) совпадает с реальной раскладкой; авторизация PIN (дефолт `12345678` и через GUI).
-- [ ] **Снятие запрета end-to-end.** На копии снятого контейнера прогнать `--cprepair --keyexport`, убедиться что `header.key` вырос (~до 3 КБ) и ключ стал экспортируемым (проверить импортом/`--cptop12`).
-- [ ] **Конвертация в PKCS#12 (.pfx) в GUI.** Добавить кнопку «Экспорт в PFX»: `p12utility --cptop12 --container_folder … --infile out.pfx` (+ пароли `--passcp/--passp12`). Это финальный шаг, которого сейчас нет в UI.
+      Это единственный пункт, который нельзя закрыть без железа.
+- [ ] **Снятие запрета end-to-end.** На копии снятого контейнера прогнать `--cprepair --keyexport`, убедиться что `header.key` вырос (~до 3 КБ) и ключ стал экспортируемым (проверить импортом в CSP).
+- [ ] **Конвертация в PKCS#12 (.pfx).** ⚠️ Прежний план (`p12utility --cptop12`) **невозможен**: в `p12utility` 4.0.8.58630
+      такого режима нет, справка знает только `--p12tocp`, `--p12addtocp`, `--cprepair`, `--cppublic`
+      (обратное направление — PKCS#12 → контейнер). Рабочие варианты:
+      `cptools.exe`/`certmgr.exe` из КриптоПро, либо после `--keyexport` установить контейнер в CSP
+      и экспортировать средствами CAPI (`X509Certificate2.Export(Pkcs12)`), что упирается в пункт
+      «Установка файлового контейнера в CSP» ниже. Начинать стоит с него.
 
 ### P2 — устойчивость и удобство
-- [ ] **Установка файлового контейнера в CSP.** Для контейнера, снятого с токена, но не видимого CSP: реализовать запись в реестр (`HKLM\SOFTWARE\Crypto Pro\Settings\Users\<SID>\Keys\<name>` — как делает CertFix) или подключение считывателя «Директория». Нужно, если серт извлекать после того как токен вынут.
+- [ ] **Установка файлового контейнера в CSP.** Для контейнера, снятого с токена, но не видимого CSP: реализовать запись в реестр (`HKLM\SOFTWARE\Crypto Pro\Settings\Users\<SID>\Keys\<name>` — как делает CertFix) или подключение считывателя «Директория». Нужно, если серт извлекать после того как токен вынут, и для экспорта в PFX.
 - [ ] **Единая обработка ошибок КриптоПро/rtCOMLite.** Расшифровка кодов (`0x8009xxxx`, `NTE_BAD_KEYSET`, `SCARD_W_WRONG_CHV` и т.п.) в человекочитаемые сообщения; сейчас показывается только `Message`.
 - [ ] **Прогресс/отмена длинных операций** в GUI (CancellationToken), сейчас только блокировка кнопок.
-- [ ] **single-file publish** (`-p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true`) для раздачи одним exe. Проверить, что WinForms-манифест и запуск p12utility (внешний процесс) не ломаются.
+- [x] **Всплывающие подсказки в GUI** — у кнопок, полей, списка и лога; `--selftest` следит, чтобы новый элемент не остался без подсказки.
+- [x] **Упаковка внешних зависимостей** — `p12utility.win32.exe` и `rtCOMLite.dll` вшиты в сборку,
+      распаковываются в `%LOCALAPPDATA%`, COM создаётся без регистрации в системе. Снаружи остался только КриптоПро CSP.
+- [x] **single-file publish** — `build\publish.ps1`, self-contained win-x86 с компрессией; в папке publish ровно один файл.
 - [ ] **Иконка + подпись exe** (при наличии сертификата разработчика).
 
 ### P3 — качество и сопровождение
@@ -46,21 +58,27 @@
 
 ## 3. Ограничения и риски
 - **Рутокен ЭЦП 2.0** (аппаратный неизвлекаемый ключ) не поддерживается в принципе — как и оригинальный `Tokens.exe`. Ключ физически не покидает чип.
-- **Кодировки.** `name.key` и `PP_ENUMCONTAINERS` — cp1251; при работе с именами не использовать `Encoding.Default` (в .NET это UTF-8). Есть `Cp1251`.
-- **Битность.** Приложение x64; rtCOMLite создаётся в x64 (проверено). `p12utility.win32.exe` 32-битный, но запускается отдельным процессом — битность родителя не важна.
+- **Кодировки.** `name.key` и `PP_ENUMCONTAINERS` — cp1251; при работе с именами не использовать `Encoding.Default` (в .NET это UTF-8). Есть `Cp1251`. Вывод в перенаправленный stdout тоже cp1251, справка `p12utility` — cp866.
+- **Битность — только x86.** `rtCOMLite.dll` 32-битный и грузится в процесс без регистрации; в x64 он работал бы лишь через зарегистрированный COM-суррогат, то есть требовал бы установки компонента. Перевод проекта на x64/AnyCPU сломает главную идею упаковки. `p12utility.win32.exe` тоже 32-битный, но запускается отдельным процессом.
+- **Кэш зависимостей** — `%LOCALAPPDATA%\CryptoProExport\bundled\<версия>`. Ключ по версии сборки: после апдейта файлы перераспаковываются, старые каталоги не чистятся автоматически.
 - **PIN-поток.** Сейчас: если PIN дефолтный — `12345678`; если задан — из поля; иначе `AuthenticateOwnerFromGUI`. На нестандартных сценариях (заблокированный PIN) — проверить ветку разблокировки (`unblockToken` в исходном `tokens.hta` не портирован).
 
 ## 4. Карта кода
 ```
 src/Core/RutokenExporter.cs   снятие контейнера с токена (COM rtCOMLite, late-binding через dynamic)
-src/Core/CertFromContainer.cs извлечение .cer (CryptoAPI P/Invoke) + EnumContainers
-src/Core/P12Utility.cs        обёртка p12utility (--cprepair/--keyexport/--cppublic/--cptop12)
+src/Core/CertFromContainer.cs извлечение .cer (CryptoAPI P/Invoke) + EnumContainers + AvailableProviders
+src/Core/P12Utility.cs        обёртка p12utility (--cprepair/--keyexport/--cppublic)
 src/Core/ExportPipeline.cs    оркестратор: токен → папка → авто-.cer → keyexport
+src/Core/BundledTools.cs      вшитые зависимости: ресурсы → %LOCALAPPDATA%\CryptoProExport\bundled
+src/Core/RegFreeCom.cs        COM из DLL без регистрации (DllGetClassObject → IClassFactory) + разрядность PE
+src/Core/Diagnostics.cs       отчёт о зависимостях (команда deps, лог GUI, --selftest)
 src/Core/Cp1251.cs            декодер cp1251 (имена контейнеров)
-src/App/MainForm.cs           GUI
+src/App/MainForm.cs           GUI + всплывающие подсказки (CheckTooltips для --selftest)
 src/App/Cli.cs                консольный режим
 src/App/Program.cs            entry: GUI / CLI / --selftest
-tools/p12utility.win32.exe    зависимость КриптоПро (v4.0.8.58630)
+build/publish.ps1             портативная сборка одним exe (self-contained win-x86)
+tools/p12utility.win32.exe    зависимость КриптоПро (v4.0.8.58630), вшивается в сборку
+tools/rtCOMLite.dll           Rutoken COM Lite «Актив» (v1.0.3.1), вшивается в сборку
 ```
 
 ## 5. Как продолжить (сборка/тест/грабли)
