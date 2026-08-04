@@ -61,6 +61,7 @@ namespace CryptoProExport.App
                         var sg = CertFromContainer.CheckExportable(args[1], CertFromContainer.AT_SIGNATURE);
                         Out($"Ключ обмена:  {ex}");
                         Out($"Ключ подписи: {sg}");
+                        // 2 — проверять нечего (нет контейнера/ключа), 3 — ключ есть, но запрет не снят
                         if (!ex.KeyFound && !sg.KeyFound) return 2;
                         return (ex.Exportable || sg.Exportable) ? 0 : 3;
                     }

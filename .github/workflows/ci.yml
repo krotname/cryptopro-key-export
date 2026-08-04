@@ -155,8 +155,22 @@ jobs:
           VERSION: ${{ needs.build.outputs.version }}
           SHA256: ${{ needs.build.outputs.sha256 }}
         run: |
-          asset="dist/CryptoProExport-$VERSION-portable-x86.exe"
-          mv dist/CryptoProExport.exe "$asset"
+          set -euo pipefail
+          name="CryptoProExport-$VERSION-portable-x86.exe"
+          cd dist
+          mv CryptoProExport.exe "$name"
+          rm -f CryptoProExport.exe.sha256
+
+          # Контрольную сумму пересчитываем под итоговое имя файла: иначе её нечем проверить.
+          # Заодно сверяем с суммой из сборки — так ловится порча артефакта между job.
+          sha256sum "$name" > "$name.sha256"
+          actual=$(cut -d' ' -f1 < "$name.sha256")
+          if [ "$actual" != "$SHA256" ]; then
+            echo "Сумма разошлась: собрано $SHA256, в артефакте $actual" >&2
+            exit 1
+          fi
+          cd ..
+
           printf '%s\n\n%s\n\n%s\n' \
             'Портативная сборка: один exe, внутри .NET, p12utility, rtCOMLite и руководство.' \
             'Работает на x86, x64 и ARM64. Снаружи нужен только КриптоПро CSP.' \
@@ -165,4 +179,4 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --title "CryptoPro Key Export $GITHUB_REF_NAME" \
             --notes-file notes.md \
-            "$asset" dist/CryptoProExport.exe.sha256
+            "dist/$name" "dist/$name.sha256"

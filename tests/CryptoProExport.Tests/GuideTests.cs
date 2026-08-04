@@ -50,6 +50,17 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void Guide_DocumentsCheckexportExitCodes()
+        {
+            // У checkexport коды отличаются от общего контракта — на них опираются скрипты
+            int codes = Guide.IndexOf("Коды возврата", StringComparison.Ordinal);
+            Assert.True(codes > 0, "раздел про коды возврата пропал");
+            string tail = Guide.Substring(codes);
+            Assert.Contains("checkexport", tail, StringComparison.Ordinal);
+            Assert.Contains("3 — ключ есть, но", tail, StringComparison.Ordinal);
+        }
+
+        [Fact]
         public void Guide_MentionsLogsAndSecurity()
         {
             Assert.Contains(@"%LOCALAPPDATA%\CryptoProExport\logs", Guide, StringComparison.Ordinal);
