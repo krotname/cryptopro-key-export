@@ -279,7 +279,7 @@ namespace CryptoProExport.App
             var pipe = new ExportPipeline(NullIfEmpty(_txtP12.Text)) { Log = Log };
             var saved = pipe.ExportFromTokens(dest, NullIfEmpty(_txtPin.Text));
             Log($"Снято контейнеров: {saved.Count}");
-            Invoke(RefreshList);
+            RefreshList();   // из рабочего потока: внутри всё, что трогает UI, идёт через Invoke
         }
 
         private void DoExtract()
@@ -306,7 +306,7 @@ namespace CryptoProExport.App
             var pipe = new ExportPipeline(NullIfEmpty(_txtP12.Text)) { Log = Log };
             pipe.ExportAndMakeExportable(dest, userPin: NullIfEmpty(_txtPin.Text));
             Log("Полный цикл завершён.");
-            Invoke(RefreshList);
+            RefreshList();   // из рабочего потока: внутри всё, что трогает UI, идёт через Invoke
         }
 
         private void DoCheckExportable()
