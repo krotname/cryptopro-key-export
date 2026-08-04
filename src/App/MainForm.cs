@@ -309,7 +309,9 @@ namespace CryptoProExport.App
         {
             string container = SelectedContainerName();
             if (container == null) { Log("Выберите контейнер в списке."); return; }
-            string dest = Path.Combine(_txtDest.Text.Trim(), "certs_" + Sanitize(container));
+            string destRoot = _txtDest.Text.Trim();
+            if (string.IsNullOrEmpty(destRoot)) { Log("Укажите папку назначения."); return; }
+            string dest = Path.Combine(destRoot, "certs_" + Sanitize(container));
             var (ex, sg) = CertFromContainer.SaveCerts(container, dest);
             Log(ex != null ? "Сертификат обмена:  " + ex : "Сертификат обмена: нет");
             Log(sg != null ? "Сертификат подписи: " + sg : "Сертификат подписи: нет");
@@ -321,9 +323,9 @@ namespace CryptoProExport.App
         {
             string dest = _txtDest.Text.Trim();
             if (string.IsNullOrEmpty(dest)) { Log("Укажите папку назначения."); return; }
-            var confirm = MessageBox.Show(this,
+            var confirm = AskConfirm(
                 "Будут сняты контейнеры со всех подключённых Рутокенов, извлечены сертификаты и снят запрет на экспорт ключей.\n\nПродолжить?",
-                "Подтверждение", MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
+                "Подтверждение");
             if (confirm != DialogResult.OK) { Log("Отменено пользователем."); return; }
 
             var pipe = new ExportPipeline(NullIfEmpty(_txtP12.Text)) { Log = Log };
@@ -407,6 +409,16 @@ namespace CryptoProExport.App
         }
 
         // ---------- helpers ----------
+
+        /// <summary>
+        /// Модальный вопрос из рабочего потока. Диалоги WinForms обязаны жить на потоке окна:
+        /// MessageBox с чужим владельцем ведёт себя непредсказуемо.
+        /// </summary>
+        private DialogResult AskConfirm(string text, string caption)
+        {
+            if (InvokeRequired) return (DialogResult)Invoke(new Func<DialogResult>(() => AskConfirm(text, caption)));
+            return MessageBox.Show(this, text, caption, MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
+        }
 
         private string AskFolder(string description, string initial)
         {
