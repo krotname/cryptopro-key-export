@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Runtime.Versioning;
@@ -20,7 +21,7 @@ namespace CryptoProExport.App
     {
         private TextBox _txtP12, _txtDest, _txtPin, _txtLog;
         private ListView _lv;
-        private Button _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnInstall, _btnCheck, _btnPfx;
+        private Button _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnInstall, _btnCheck, _btnPfx, _btnLogs;
         private Button[] _actionButtons;
         private ToolTip _tips;
 
@@ -41,6 +42,7 @@ namespace CryptoProExport.App
                 Log("Зависимости (скачивать и ставить ничего не нужно, кроме КриптоПро CSP):");
                 foreach (var line in CryptoProExport.Diagnostics.Report())
                     Log("  " + line);
+                Log("Журнал этого сеанса: " + SessionLog.FilePath);
                 Log("");
             });
         }
@@ -131,7 +133,8 @@ namespace CryptoProExport.App
             _btnCheck = MakeButton("Проверить ключ", 130, (_, __) => Run(DoCheckExportable));
             _btnInstall = MakeButton("Установить в КриптоПро", 190, (_, __) => Run(DoInstall));
             _btnPfx = MakeButton("Экспорт в PFX", 130, (_, __) => Run(DoExportPfx));
-            _actionButtons = new[] { _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnCheck, _btnInstall, _btnPfx };
+            _btnLogs = MakeButton("Журнал", 90, (_, __) => OpenLogFolder());
+            _actionButtons = new[] { _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnCheck, _btnInstall, _btnPfx, _btnLogs };
             buttons.Controls.AddRange(_actionButtons);
 
             Tip(_btnRefresh,
@@ -164,6 +167,10 @@ namespace CryptoProExport.App
                 "то есть скопировать её в хранилище CSP и задать имя.\n" +
                 "После этого контейнер виден в списке и работает без токена: из него можно\n" +
                 "извлечь сертификат и сделать экспорт в PFX.");
+            Tip(_btnLogs,
+                "Открыть папку с журналами работы программы.\n" +
+                "Каждый запуск пишет отдельный файл — его удобно приложить к вопросу,\n" +
+                "если что-то не получилось. Пароли в журнал не попадают.");
             Tip(_btnPfx,
                 "Выгрузить выбранный в списке контейнер в файл PKCS#12 (.pfx) — сертификат вместе\n" +
                 "с закрытым ключом, для переноса в другую систему.\n" +
@@ -360,6 +367,16 @@ namespace CryptoProExport.App
             Log(r.Success ? "PFX готов: " + dest : "Не удалось выгрузить PFX: " + r.Output);
         }
 
+        private void OpenLogFolder()
+        {
+            try
+            {
+                Directory.CreateDirectory(SessionLog.Dir);
+                Process.Start(new ProcessStartInfo(SessionLog.Dir) { UseShellExecute = true });
+            }
+            catch (Exception ex) { Log("Не удалось открыть папку журналов: " + ex.Message); }
+        }
+
         // ---------- helpers ----------
 
         private string AskFolder(string description, string initial)
@@ -422,7 +439,13 @@ namespace CryptoProExport.App
 
         private void Log(string msg)
         {
-            if (InvokeRequired) { BeginInvoke(new Action(() => Log(msg))); return; }
+            SessionLog.Write(msg);
+            AppendLog(msg);
+        }
+
+        private void AppendLog(string msg)
+        {
+            if (InvokeRequired) { BeginInvoke(new Action(() => AppendLog(msg))); return; }
             _txtLog.AppendText(msg + Environment.NewLine);
         }
 

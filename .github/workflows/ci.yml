@@ -30,19 +30,20 @@ jobs:
       - name: Юнит-тесты
         run: dotnet test CryptoProExport.slnx -c Release --no-build --logger "console;verbosity=normal"
 
-      - name: Самопроверка GUI и отчёт о зависимостях
+      # Самопроверка гоняется на портативной сборке: рантайм .NET внутри неё.
+      # Обычный build даёт framework-dependent x86, а 32-битного рантайма на раннере нет.
+      - name: Портативная сборка + самопроверка GUI
+        shell: pwsh
+        run: pwsh build/publish.ps1
+
+      - name: Проверить работу без КриптоПро CSP
         shell: pwsh
         run: |
-          $exe = "src/App/bin/Release/net8.0-windows/CryptoProExport.exe"
-          $log = "$env:RUNNER_TEMP/selftest.txt"
-          $p = Start-Process $exe '--selftest' -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput $log
-          # WinExe пишет в stdout только через перенаправление, причём в cp1251
+          $log = "$env:RUNNER_TEMP/deps.txt"
+          $p = Start-Process publish/CryptoProExport.exe 'deps' -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput $log
           [Text.Encoding]::GetEncoding(1251).GetString([IO.File]::ReadAllBytes($log))
-          if ($p.ExitCode -ne 0) { throw "--selftest вернул $($p.ExitCode)" }
-
-      - name: Портативная сборка одним файлом
-        shell: pwsh
-        run: pwsh build/publish.ps1 -SkipSelfTest
+          # На раннере КриптоПро нет — ждём код 2 и отчёт про недостающий CSP
+          if ($p.ExitCode -ne 2) { throw "Ожидался код 2 (нет КриптоПро CSP), получен $($p.ExitCode)" }
 
       - name: Проверить, что в publish ровно один файл
         shell: pwsh

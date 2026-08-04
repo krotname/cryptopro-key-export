@@ -10,6 +10,8 @@ namespace CryptoProExport.App
         [STAThread]
         private static int Main(string[] args)
         {
+            SessionLog.Prune();
+
             // Консольный режим и self-test
             if (args.Length > 0)
             {

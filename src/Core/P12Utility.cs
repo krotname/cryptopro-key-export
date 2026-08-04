@@ -134,11 +134,22 @@ namespace CryptoProExport
 
         private ToolResult Execute(string args, string workingDirectory, int timeoutMs)
         {
-            Log($"\"{ExePath}\" {args}");
+            Log($"\"{ExePath}\" {MaskPassword(args)}");
             var r = ProcessRunner.Run(ExePath, args, workingDirectory, timeoutMs);
             if (!string.IsNullOrEmpty(r.Output)) Log(r.Output);
             if (!r.Success) Log("p12utility: " + r.Explain());
             return r;
+        }
+
+        /// <summary>Пароль контейнера не должен попадать ни в окно лога, ни в файл журнала.</summary>
+        internal static string MaskPassword(string args)
+        {
+            const string flag = "--passcp ";
+            int i = args.IndexOf(flag, StringComparison.Ordinal);
+            if (i < 0) return args;
+            int valueStart = i + flag.Length;
+            int end = args.IndexOf(" --", valueStart, StringComparison.Ordinal);
+            return args.Substring(0, valueStart) + "***" + (end < 0 ? "" : args.Substring(end));
         }
 
         private static void CopyIfDifferent(string source, string target)
