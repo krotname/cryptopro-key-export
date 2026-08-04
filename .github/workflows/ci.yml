@@ -78,6 +78,27 @@ jobs:
           if ($p.ExitCode -ne 0) { throw "help вернул $($p.ExitCode)" }
           if ($text -notmatch 'КОМАНДНАЯ СТРОКА') { throw "руководство не вшито в exe" }
 
+      - name: Проверить коды возврата CLI
+        shell: pwsh
+        run: |
+          # Контракт: 0 — успех, 1 — неверные аргументы, 2 — не выполнено по существу,
+          # 3 — ошибка выполнения. Ломать его нельзя: на коды опираются скрипты.
+          $cases = @(
+            @{ args = 'help';                          want = 0 },
+            @{ args = 'installed';                     want = 0 },
+            @{ args = 'checkexport НетТакогоКонтейнера'; want = 2 },
+            @{ args = 'install нет-такой-папки';        want = 3 },
+            @{ args = 'чепуха';                         want = 1 }
+          )
+          $bad = @()
+          foreach ($c in $cases) {
+            $p = Start-Process publish/CryptoProExport.exe $c.args -Wait -PassThru -WindowStyle Hidden `
+                                -RedirectStandardOutput "$env:RUNNER_TEMP/cli.txt" -RedirectStandardError "$env:RUNNER_TEMP/cli-err.txt"
+            "{0,-34} код={1} (ждали {2})" -f $c.args, $p.ExitCode, $c.want
+            if ($p.ExitCode -ne $c.want) { $bad += "$($c.args): $($p.ExitCode) вместо $($c.want)" }
+          }
+          if ($bad) { throw "Коды возврата разошлись с контрактом: $($bad -join '; ')" }
+
       - name: Выложить портативный exe
         uses: actions/upload-artifact@v4
         with:
