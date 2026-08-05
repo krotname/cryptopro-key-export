@@ -84,12 +84,12 @@ namespace CryptoProExport
             Cancel.ThrowIfCancellationRequested();
             var result = new List<RutokenContainer>();
             dynamic ctx = CreateContext();
-            Log("Подключаемся к службе смарт-карт...");
+            Log(Strings.Get("token.connect"));
             ctx.Acquire();
             try
             {
                 object[] readers = ToArray(ctx.EnumReaders());
-                Log($"Найдено устройств: {readers?.Length ?? 0}");
+                Log(Strings.Format("token.found", readers?.Length ?? 0));
                 if (readers == null) return result;
 
                 foreach (var rObj in readers)
@@ -97,7 +97,7 @@ namespace CryptoProExport
                     Cancel.ThrowIfCancellationRequested();
                     string tokenName = Convert.ToString(rObj);
                     if (string.IsNullOrEmpty(tokenName)) continue;
-                    Log($"Открываем токен: {tokenName}");
+                    Log(Strings.Format("token.open", tokenName));
                     dynamic rt = ctx.OpenReader(tokenName, RT_SHARED, OpenTimeoutMs);
                     rt.BeginTransaction();
                     try
@@ -138,31 +138,29 @@ namespace CryptoProExport
                     try
                     {
                         object ctx = RegFreeCom.CreateInstance(dll, ClsidRtContext);
-                        Log("rtCOMLite: встроенная копия, без регистрации в системе");
+                        Log(Strings.Format("diag.rtcom", Strings.Get("diag.rtcom.bundled")));
                         return ctx;
                     }
                     catch (Exception e)
                     {
-                        Log($"Встроенный rtCOMLite не загрузился ({e.Message}); пробуем зарегистрированный в системе");
+                        Log(Strings.Format("token.rtcom.loadfail", e.Message));
                     }
                 }
                 else
                 {
-                    Log($"Встроенный rtCOMLite не подходит ({detail}); пробуем зарегистрированный в системе");
+                    Log(Strings.Format("token.rtcom.mismatch", detail));
                 }
             }
             else if (extractError != null)
             {
-                Log($"Не удалось распаковать встроенный rtCOMLite ({extractError}); пробуем зарегистрированный в системе");
+                Log(Strings.Format("token.rtcom.extractfail", extractError));
             }
 
             Type ctxType = Type.GetTypeFromProgID(ProgId, throwOnError: false);
             if (ctxType == null)
-                throw new InvalidOperationException(
-                    "Компонент rtCOMLite недоступен: встроенная копия не загрузилась, а в системе он не зарегистрирован. " +
-                    "Проверьте разрядность приложения (нужна x86) или установите компонент с https://help.kontur.ru/rtComLite.exe.");
+                throw new InvalidOperationException(Strings.Get("token.rtcom.unavailable"));
             object system = Activator.CreateInstance(ctxType);
-            Log("rtCOMLite: компонент, зарегистрированный в системе");
+            Log(Strings.Format("diag.rtcom", Strings.Get("diag.rtcom.system")));
             return system;
         }
 
@@ -172,10 +170,10 @@ namespace CryptoProExport
             string dll = BundledTools.TryExtract(
                 BundledTools.RtComLiteResource, BundledTools.RtComLiteFileName, out _);
             if (dll != null && RegFreeCom.MatchesProcess(dll, out _))
-                return "встроенная копия, без регистрации в системе";
+                return Strings.Get("diag.rtcom.bundled");
             if (Type.GetTypeFromProgID(ProgId, throwOnError: false) != null)
-                return "компонент, зарегистрированный в системе";
-            return "НЕДОСТУПЕН";
+                return Strings.Get("diag.rtcom.system");
+            return Strings.Get("diag.rtcom.missing");
         }
 
         /// <summary>Диагностика без обращения к токену: откуда будет взят COM-компонент rtCOMLite.</summary>
@@ -186,15 +184,16 @@ namespace CryptoProExport
                 BundledTools.RtComLiteResource, BundledTools.RtComLiteFileName, out string extractError);
 
             if (dll == null)
-                lines.Add("  встроенная копия: нет" + (extractError != null ? " (" + extractError + ")" : " (не вшита в сборку)"));
+                lines.Add("  " + Strings.Format("diag.rtcom.detail.none",
+                    extractError ?? Strings.Get("diag.notbundled")));
             else if (RegFreeCom.MatchesProcess(dll, out string detail))
-                lines.Add($"  встроенная копия: {dll} ({detail}) — грузится без регистрации");
+                lines.Add("  " + Strings.Format("diag.rtcom.detail.ok", dll, detail));
             else
-                lines.Add($"  встроенная копия: {dll} — не подходит ({detail})");
+                lines.Add("  " + Strings.Format("diag.rtcom.detail.bad", dll, detail));
 
-            lines.Add(Type.GetTypeFromProgID(ProgId, throwOnError: false) != null
-                ? "  в системе: зарегистрирован (запасной вариант)"
-                : "  в системе: не зарегистрирован");
+            lines.Add("  " + Strings.Get(Type.GetTypeFromProgID(ProgId, throwOnError: false) != null
+                ? "diag.rtcom.registered"
+                : "diag.rtcom.unregistered"));
             return lines;
         }
 
@@ -204,17 +203,17 @@ namespace CryptoProExport
             try { pinDefault = (bool)rt.IsPINDefault(RT_USER); } catch { }
             if (pinDefault)
             {
-                Log("PIN по умолчанию — авторизуемся 12345678");
+                Log(Strings.Get("token.pin.default"));
                 rt.AuthenticateOwner(RT_USER, "12345678");
             }
             else if (!string.IsNullOrEmpty(UserPin))
             {
-                Log("Авторизуемся заданным PIN");
+                Log(Strings.Get("token.pin.given"));
                 rt.AuthenticateOwner(RT_USER, UserPin);
             }
             else
             {
-                Log("Авторизуемся через системное окно ввода PIN");
+                Log(Strings.Get("token.pin.system"));
                 rt.AuthenticateOwnerFromGUI();
             }
         }
@@ -266,7 +265,7 @@ namespace CryptoProExport
             // Контейнер валиден, если есть закрытый ключ (primary/primary2)
             if (any && (cont.Files.ContainsKey("primary.key") || cont.Files.ContainsKey("primary2.key")))
             {
-                Log($"Контейнер: {curDir} \"{cont.ContainerName}\" ({cont.Files.Count} файлов)");
+                Log(Strings.Format("token.container", curDir, cont.ContainerName, cont.Files.Count));
                 result.Add(cont);
             }
         }

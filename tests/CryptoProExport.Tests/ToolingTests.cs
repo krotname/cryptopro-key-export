@@ -131,9 +131,12 @@ namespace CryptoProExport.Tests
             Assert.Contains("0x87654321", CryptoErrors.Describe(unchecked((int)0x87654321)));
         }
 
+        // Отчёт локализован, поэтому язык фиксируется явно: иначе тест зависел бы от
+        // культуры машины и на англоязычном раннере CI искал бы русские подстроки.
         [Fact]
         public void Diagnostics_ReportCoversEveryDependency()
         {
+            using var ru = Strings.Scope("ru");
             var report = Diagnostics.Report();
             Assert.Contains(report, l => l.StartsWith("Процесс:", StringComparison.Ordinal));
             Assert.Contains(report, l => l.StartsWith("p12utility:", StringComparison.Ordinal));
@@ -142,9 +145,19 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void Diagnostics_ReportIsTranslated()
+        {
+            using var en = Strings.Scope("en");
+            var report = Diagnostics.Report();
+            Assert.Contains(report, l => l.StartsWith("Process:", StringComparison.Ordinal));
+            Assert.Contains(report, l => l.StartsWith("CryptoPro CSP:", StringComparison.Ordinal));
+        }
+
+        [Fact]
         public void Diagnostics_WarnsAboutBitnessOnlyOutsideX86()
         {
             // Вшитый rtCOMLite 32-битный: в x64/arm64 отчёт обязан предупредить, в x86 — молчать
+            using var ru = Strings.Scope("ru");
             bool warned = Diagnostics.Report().Any(l => l.Contains("32-битная", StringComparison.Ordinal));
             Assert.Equal(RuntimeInformation.ProcessArchitecture != Architecture.X86, warned);
         }

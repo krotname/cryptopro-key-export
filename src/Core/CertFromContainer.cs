@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -146,10 +147,9 @@ namespace CryptoProExport
             public int Error;
 
             public override string ToString() =>
-                !KeyFound ? "ключ не найден"
-                : Error != 0 ? "не удалось прочитать права (" + CryptoErrors.Describe(Error) + ")"
-                : Exportable ? $"экспортируемый (KP_PERMISSIONS=0x{Permissions:X8})"
-                : $"НЕэкспортируемый (KP_PERMISSIONS=0x{Permissions:X8}, нет флага CRYPT_EXPORT)";
+                !KeyFound ? Strings.Get("key.notfound")
+                : Error != 0 ? Strings.Format("key.readfail", CryptoErrors.Describe(Error))
+                : Strings.Format(Exportable ? "key.exportable" : "key.locked", Permissions.ToString("X8", CultureInfo.InvariantCulture));
         }
 
         /// <summary>

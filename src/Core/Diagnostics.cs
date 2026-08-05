@@ -16,30 +16,31 @@ namespace CryptoProExport
         {
             var lines = new List<string>();
             var asm = typeof(Diagnostics).Assembly.GetName();
-            lines.Add($"Процесс: {RegFreeCom.Name(RuntimeInformation.ProcessArchitecture)}, версия {asm.Version}");
+            lines.Add(Strings.Format("diag.process", RegFreeCom.Name(RuntimeInformation.ProcessArchitecture), asm.Version));
 
             // 1. p12utility — вшит
             string p12 = P12Utility.Resolve();
-            lines.Add("p12utility: " + (p12 == null
-                ? "НЕ НАЙДЕН (не вшит в сборку и не найден в системе)"
-                : $"{(IsBundled(p12) ? "встроенная копия" : "внешняя копия")}: {p12}"));
+            lines.Add(p12 == null
+                ? Strings.Get("diag.p12.missing")
+                : Strings.Format("diag.p12.found",
+                    Strings.Get(IsBundled(p12) ? "diag.copy.bundled" : "diag.copy.external"), p12));
             if (detailed) lines.AddRange(P12Utility.DescribeSource());
 
             // 2. rtCOMLite — вшит, грузится без регистрации (только в 32-битном процессе)
-            lines.Add("rtCOMLite: " + RutokenExporter.SourceSummary());
+            lines.Add(Strings.Format("diag.rtcom", RutokenExporter.SourceSummary()));
             if (RuntimeInformation.ProcessArchitecture != Architecture.X86)
-                lines.Add("  внимание: вшитая копия 32-битная и в этот процесс не грузится — " +
-                          "для работы с Рутокеном без установки компонента возьмите портативную сборку x86");
+                lines.Add("  " + Strings.Get("diag.rtcom.warn"));
             if (detailed) lines.AddRange(RutokenExporter.DescribeSource());
 
             // 3. КриптоПро CSP — единственная внешняя зависимость, вшить нельзя
             var provs = CertFromContainer.AvailableProviders();
             lines.Add(provs.Count > 0
-                ? "КриптоПро CSP: установлен, провайдеры " + string.Join(", ", provs)
-                : "КриптоПро CSP: НЕ НАЙДЕН — установите КриптоПро CSP (единственная внешняя зависимость)");
+                ? Strings.Format("diag.csp.ok", string.Join(", ", provs))
+                : Strings.Get("diag.csp.missing"));
             if (detailed)
                 foreach (var (type, name) in CertFromContainer.Providers)
-                    lines.Add($"  {type}: {(provs.Contains(type) ? "доступен" : "нет")} — {name}");
+                    lines.Add("  " + Strings.Format("diag.prov", type,
+                        Strings.Get(provs.Contains(type) ? "diag.prov.yes" : "diag.prov.no"), name));
 
             return lines;
         }

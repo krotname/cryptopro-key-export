@@ -1,0 +1,244 @@
+# Bahasa Indonesia
+
+lang.name = Bahasa Indonesia
+lang.rtl = no
+
+# --- umum ---
+app.title = Ekspor kunci CryptoPro dari Rutoken
+common.ok = OK
+common.cancel = Batal
+common.close = Tutup
+common.browse = Telusuri…
+common.none = tidak ada
+files.all = Semua berkas
+
+# --- panel pengaturan ---
+field.p12 = p12utility.exe:
+field.p12.placeholder = salinan bawaan — tidak perlu diisi
+field.dest = Folder tujuan:
+field.pin = PIN (opsional):
+field.pin.hint = kosong → jendela permintaan
+field.lang = Bahasa antarmuka:
+
+tip.p12 = Jalur ke alat p12utility dari CryptoPro — alat inilah yang mencabut larangan ekspor kunci.\nBiarkan kosong: salinan alat sudah tertanam di dalam program dan membongkar dirinya sendiri.\nIsi hanya jika Anda memerlukan versi p12utility yang lain.
+tip.p12.browse = Pilih berkas p12utility.exe lain sebagai pengganti salinan bawaan.
+tip.dest = Tempat hasil disimpan: folder kontainer yang diambil (*.key) dan berkas sertifikat (.cer).\nPerhatian: ini salinan kunci privat Anda — simpan sebagai rahasia.
+tip.dest.browse = Pilih folder tujuan.
+tip.pin = PIN pengguna Rutoken.\nKosong → PIN akan diminta oleh jendela sistem (dan jika token masih memakai PIN pabrik, dipakai 12345678).\nKarakter disembunyikan; nilainya tidak disimpan di mana pun.
+tip.lang = Bahasa antarmuka, tooltip, dan pesan.\nPilihan diingat dan diterapkan pada peluncuran berikutnya.\nHal yang sama dari baris perintah: --lang id
+
+# --- tombol ---
+btn.refresh = Segarkan daftar
+btn.export = Ekspor dari token
+btn.extract = Ambil sertifikat
+btn.full = Jadikan dapat diekspor
+btn.check = Periksa kunci
+btn.install = Pasang ke CryptoPro
+btn.pfx = Ekspor ke PFX
+btn.logs = Log
+btn.help = Bantuan
+btn.cancel = Batal
+
+tip.refresh = Langkah 1. Tampilkan daftar kontainer kunci:\n  • yang terlihat oleh CryptoPro CSP (termasuk pada token yang terpasang);\n  • yang ditemukan langsung pada Rutoken yang terhubung.\nTidak mengubah apa pun — hanya membaca. Tombol yang nyaman untuk memulai.
+tip.export = Langkah 2. Ambil kontainer dari semua Rutoken yang terhubung ke folder tujuan\n(6 berkas *.key per kontainer). Membaca memori token secara langsung, melewati CSP,\nsehingga tetap bekerja meski ekspor dilarang. Token dan datanya tidak diubah.\nKunci pada salinan tetap tidak dapat diekspor — itu tugas tombol «Jadikan dapat diekspor».
+tip.extract = Langkah 3. Simpan sertifikat kontainer yang dipilih ke berkas .cer\n(data publik, diambil secara normal melalui CryptoAPI).\nDiperlukan kontainer yang dipilih, token terpasang, dan kontainer terlihat oleh CSP.\np12utility memerlukan sertifikat itu untuk mencabut larangan ekspor.
+tip.full = Semuanya dalam satu klik: ambil kontainer dari token → ambil sertifikat →\ncabut larangan ekspor kunci privat (p12utility --cprepair --keyexport).\nHasil: di folder tujuan tersedia salinan kontainer dengan kunci yang dapat diekspor\n(cocok untuk cadangan, pemindahan, dan konversi ke PFX).\nToken asli tidak diubah; header.key asli dari salinan disimpan sebagai header.key.backup.
+tip.check = Periksa kontainer yang dipilih: apakah larangan ekspor kunci privat sudah dicabut.\nProgram membaca izin kunci (KP_PERMISSIONS) — kuncinya sendiri tidak pernah diekspor.\nBegitulah cara memastikan «Jadikan dapat diekspor» benar-benar berhasil.
+tip.install = Pasang ke CryptoPro folder kontainer yang diambil dari token (6 berkas *.key) —\nyaitu menyalinnya ke penyimpanan CSP. Setelah itu kontainer tampil di daftar dan bekerja\ntanpa token: sertifikatnya bisa diambil dan diekspor ke PFX.\nMengganti nama tidak wajib: CryptoPro mencocokkan nama dengan isi kontainer dan\ntidak selalu menerima salinan yang diganti namanya. Program akan memeriksa hasilnya dan\nmemberi tahu apakah CSP benar-benar melihat kontainer itu.
+tip.pfx = Ekspor kontainer yang dipilih ke berkas PKCS#12 (.pfx) — sertifikat beserta\nkunci privat, siap dipindahkan ke sistem lain.\nDiperlukan: larangan ekspor sudah dicabut («Periksa kunci» menampilkan «dapat diekspor»)\ndan CryptoPro CSP terpasang (certmgr miliknya yang dipakai).\nKata sandi berkas .pfx akan ditanyakan tersendiri.
+tip.logs = Buka folder berisi log kerja program.\nSetiap peluncuran menulis berkas tersendiri — praktis dilampirkan ke pertanyaan\njika ada yang tidak berhasil. Kata sandi tidak pernah masuk ke log.
+tip.help = Panduan bawaan: dari mana memulai, apa fungsi tiap tombol,\nperintah mode konsol, dan pembahasan kesalahan yang umum.\nPanduan ada di dalam program — tidak perlu internet maupun berkas tambahan.
+tip.cancel = Hentikan operasi yang sedang berjalan.\nPekerjaan berhenti pada langkah terdekat: panggilan ke token atau utilitas CryptoPro\nyang sudah berjalan harus diselesaikan dulu — utilitas yang berjalan lalu dimatikan.\nBerkas yang sudah tersimpan tetap di tempatnya.
+
+# --- daftar kontainer dan log ---
+col.location = Lokasi
+col.container = Kontainer
+col.details = Rincian
+tip.list = Kontainer kunci yang ditemukan.\n«Lokasi» = CSP (terlihat oleh CryptoPro) atau nama Rutoken (dibaca langsung dari token).\nPilih satu baris — tombol «Ambil sertifikat» bekerja pada kontainer yang dipilih.
+tip.log = Log eksekusi: perintah p12utility, langkah kerja dengan token, dan kesalahan.\nTeks bisa dipilih dan disalin (Ctrl+C) — berguna saat menelusuri masalah.
+
+# --- bilah status ---
+status.ready = Siap
+status.deps = Memeriksa dependensi…
+status.refresh = Menyegarkan daftar kontainer…
+status.export = Mengambil kontainer dari token…
+status.extract = Mengambil sertifikat…
+status.full = Mencabut larangan ekspor…
+status.check = Memeriksa izin kunci…
+status.install = Memasang kontainer…
+status.pfx = Mengekspor ke PFX…
+status.cancelling = Membatalkan…
+
+# --- pesan pada log jendela ---
+log.deps.header = Dependensi (tidak ada yang perlu diunduh atau dipasang selain CryptoPro CSP):
+log.session = Log sesi ini: {0}
+log.done = Selesai.
+log.tokens.unavailable = Rutoken tidak tersedia: {0}
+log.need.dest = Tentukan folder tujuan.
+log.need.container = Pilih kontainer pada daftar.
+log.exported = Kontainer yang diambil: {0}
+log.cert.exchange = Sertifikat pertukaran:  {0}
+log.cert.sign = Sertifikat tanda tangan: {0}
+log.cert.fail = Pengambilan gagal. Pastikan token terpasang dan kontainer terlihat oleh CSP.
+log.full.done = Siklus penuh selesai.
+log.cancelled.user = Dibatalkan oleh pengguna.
+log.cancelled = Dibatalkan.
+log.cancel.requested = Pembatalan diminta — operasi akan berhenti pada langkah terdekat.
+log.cancel.done = Operasi dibatalkan.
+log.error = GALAT: {0}
+log.lang.changed = Bahasa antarmuka: {0}
+log.container.unnamed = (tanpa nama)
+log.container.csp = CSP
+log.container.token = Rutoken: {0}
+log.container.provider = penyedia {0}
+log.container.files = {0}, berkas: {1}
+log.check.container = Kontainer «{0}»:
+log.check.exchange = kunci pertukaran:  {0}
+log.check.sign = kunci tanda tangan: {0}
+log.install.notcontainer = Folder yang dipilih tidak berisi kontainer (perlu header.key, primary.key, masks.key).
+log.install.done = Kontainer terpasang: {0}
+log.install.norename = Nama dibiarkan tetap «{0}»: CryptoPro tidak menerima salinan dengan nama baru. Itu terjadi selama larangan ekspor belum dicabut.
+log.install.invisible = CryptoPro belum melihat kontainer — tekan «Segarkan daftar» sekali lagi atau masuk ulang ke sistem: CSP menyimpan daftar kontainer dalam singgahan.
+log.pfx.nocertmgr = certmgr tidak ditemukan — diperlukan CryptoPro CSP yang terpasang.
+log.pfx.done = PFX siap: {0}
+log.pfx.fail = Gagal mengekspor PFX: {0}
+log.logs.fail = Tidak dapat membuka folder log: {0}
+
+# --- dialog ---
+dlg.confirm.title = Konfirmasi
+dlg.confirm.full = Kontainer akan diambil dari semua Rutoken yang terhubung, sertifikat akan diambil, dan larangan ekspor kunci akan dicabut.\n\nLanjutkan?
+dlg.folder.container = Folder berisi kontainer yang diambil (6 berkas *.key)
+dlg.install.title = Pemasangan kontainer ke CryptoPro
+dlg.install.prompt = Nama yang akan dipakai kontainer di daftar CryptoPro.\nMengubahnya tidak wajib: CSP tidak selalu menerima salinan yang diganti namanya.
+dlg.pfx.save = Tempat menyimpan PFX
+dlg.pfx.pass.title = Kata sandi PFX
+dlg.pfx.pass.prompt = Kata sandi berkas .pfx (boleh dikosongkan — maka berkas tanpa kata sandi):
+guide.title = Bantuan — {0}
+guide.caption = Bantuan
+guide.missing = Panduan tidak tertanam dalam build ini.
+
+# --- laporan dependensi (jendela dan perintah deps) ---
+diag.process = Proses: {0}, versi {1}
+diag.p12.missing = p12utility: TIDAK DITEMUKAN (tidak tertanam dalam build dan tidak ada di sistem)
+diag.p12.found = p12utility: {0}: {1}
+diag.copy.bundled = salinan bawaan
+diag.copy.external = salinan eksternal
+diag.rtcom = rtCOMLite: {0}
+diag.rtcom.bundled = salinan bawaan, tanpa registrasi di sistem
+diag.rtcom.system = komponen yang terdaftar di sistem
+diag.rtcom.missing = TIDAK TERSEDIA
+diag.rtcom.warn = perhatian: salinan bawaan berarsitektur 32-bit dan tidak dimuat ke proses ini — untuk bekerja dengan Rutoken tanpa memasang komponen, gunakan build portabel x86
+diag.csp.ok = CryptoPro CSP: terpasang, penyedia {0}
+diag.csp.missing = CryptoPro CSP: TIDAK DITEMUKAN — pasang CryptoPro CSP (satu-satunya dependensi eksternal)
+diag.prov = {0}: {1} — {2}
+diag.prov.yes = tersedia
+diag.prov.no = tidak
+diag.notfound = TIDAK DITEMUKAN
+diag.notbundled = tidak tertanam dalam build
+diag.p12.external = salinan eksternal: {0}
+diag.p12.bundled = salinan bawaan: {0}
+diag.p12.used = akan dipakai: {0}
+diag.rtcom.detail.none = salinan bawaan: tidak ada ({0})
+diag.rtcom.detail.ok = salinan bawaan: {0} ({1}) — dimuat tanpa registrasi
+diag.rtcom.detail.bad = salinan bawaan: {0} — tidak cocok ({1})
+diag.rtcom.registered = di sistem: terdaftar (jalur cadangan)
+diag.rtcom.unregistered = di sistem: tidak terdaftar
+diag.arch = pustaka {0}, proses {1}
+diag.arch.unknown = arsitektur pustaka tidak dapat ditentukan
+
+# --- alur ekspor ---
+pipe.saved = Kontainer «{0}» disimpan -> {1}
+pipe.cert.found = Sertifikat diambil dari kontainer «{0}» melalui CryptoAPI
+pipe.cert.autofail = Sertifikat tidak dapat diambil secara otomatis: {0}
+pipe.keyexport.skip = keyexport DILEWATI untuk «{0}»: sertifikat (.cer) tidak ditemukan. Tentukan secara manual.
+pipe.keyexport.ok = OK: kunci di «{0}» ditandai dapat diekspor
+pipe.keyexport.fail = GALAT keyexport di «{0}»: {1} {2}
+
+# --- bekerja dengan token ---
+token.connect = Menghubungi layanan kartu pintar…
+token.found = Perangkat yang ditemukan: {0}
+token.open = Membuka token: {0}
+token.rtcom.loadfail = Salinan bawaan rtCOMLite tidak termuat ({0}); mencoba yang terdaftar di sistem
+token.rtcom.mismatch = Salinan bawaan rtCOMLite tidak cocok ({0}); mencoba yang terdaftar di sistem
+token.rtcom.extractfail = Salinan bawaan rtCOMLite tidak dapat dibongkar ({0}); mencoba yang terdaftar di sistem
+token.rtcom.unavailable = Komponen rtCOMLite tidak tersedia: salinan bawaan tidak termuat dan di sistem juga tidak terdaftar. Periksa arsitektur aplikasi (perlu x86) atau pasang komponen dari https://help.kontur.ru/rtComLite.exe.
+token.pin.default = PIN pabrik — autentikasi dengan 12345678
+token.pin.given = Autentikasi dengan PIN yang diberikan
+token.pin.system = Autentikasi melalui jendela PIN sistem
+token.container = Kontainer: {0} «{1}» ({2} berkas)
+
+# --- menjalankan utilitas CryptoPro ---
+tool.certmgr.install = Memasang sertifikat ke penyimpanan «Pribadi» dan menautkannya ke kontainer…
+tool.certmgr.installwarn = certmgr -install mengembalikan {0} — ekspor tetap dicoba: sertifikat mungkin sudah dipasang sebelumnya
+tool.certmgr.export = Mengekspor kontainer ke PKCS#12…
+tool.startfail = Tidak dapat menjalankan {0}
+tool.timeout = Waktu habis {0} ms: {1}
+tool.cancelled = {0} dihentikan karena pembatalan
+
+# --- galat yang dilihat pengguna ---
+err.certmgr.notfound = certmgr tidak ditemukan
+err.container.name = Nama kontainer tidak diberikan
+err.container.nokey = Kontainer «{0}» tidak ditemukan atau tidak memuat kunci dengan tipe yang diperlukan
+err.key.locked = Kunci privat tidak dapat diekspor — cabut dulu larangannya («{0}»). {1}
+err.cert.extract = Sertifikat tidak dapat diambil dari kontainer
+err.pfx.missing = certmgr melaporkan berhasil, tetapi berkas tidak dibuat: {0}
+err.folder.notcontainer = Folder tidak berisi kontainer (perlu header.key, primary.key, masks.key): {0}
+err.folder.outside = Folder berada di luar penyimpanan CryptoPro: {0}
+err.folder.notlike = Folder tidak tampak seperti kontainer: {0}
+err.folder.extra = Folder kontainer berisi berkas asing, penghapusan dibatalkan: {0}
+err.store.full = Tidak ditemukan folder kosong di {0}
+err.name.empty = Nama kontainer kosong
+err.name.toolong = Nama kontainer lebih panjang dari {0} karakter
+err.p12.notfound = p12utility tidak ditemukan
+err.p12.unavailable = p12utility tidak ditemukan: salinan bawaan tidak tersedia. Letakkan p12utility.win32.exe di sebelah aplikasi atau berikan jalurnya.
+err.header.missing = Folder tidak memuat header.key
+err.cert.required = Diperlukan setidaknya satu sertifikat (--cert/--certsg). Ekspor .cer dari penyimpanan «Pribadi» atau dari kontainer.
+err.com.notfound = Pustaka COM tidak ditemukan
+err.com.call = {0} mengembalikan {1}
+
+# --- izin kunci ---
+key.notfound = kunci tidak ditemukan
+key.readfail = izin tidak terbaca ({0})
+key.exportable = dapat diekspor (KP_PERMISSIONS=0x{0})
+key.locked = TIDAK dapat diekspor (KP_PERMISSIONS=0x{0}, tanpa flag CRYPT_EXPORT)
+
+# --- pemasangan kontainer ---
+install.result = «{0}» -> {1}
+install.result.visible = «{0}» -> {1} (terlihat oleh CryptoPro)
+install.result.invisible = «{0}» -> {1} (CryptoPro BELUM melihatnya)
+
+# --- mode konsol ---
+cli.usage.title = CryptoProExport — mengambil kontainer dari Rutoken dan mencabut larangan ekspor kunci
+cli.usage.deps = periksa dependensi (yang tertanam + CryptoPro CSP)
+cli.usage.list = daftar kontainer (CSP + token)
+cli.usage.extractcert = ambil .cer dari kontainer (CryptoAPI)
+cli.usage.checkexport = periksa apakah kunci privat dapat diekspor
+cli.usage.export = ambil kontainer dari token ke disk
+cli.usage.keyexport = jadikan kunci di folder dapat diekspor
+cli.usage.install = pasang folder kontainer ke CryptoPro
+cli.usage.installed = tampilkan kontainer berkas yang terpasang
+cli.usage.uninstall = hapus kontainer yang terpasang
+cli.usage.topfx = ekspor kontainer ke PKCS#12 (certmgr)
+cli.usage.full = ambil dari token + .cer otomatis + keyexport
+cli.usage.help = panduan bawaan selengkapnya
+cli.usage.lang = bahasa antarmuka dan pesan
+cli.usage.gui = (tanpa argumen — antarmuka grafis)
+cli.list.csp = Kontainer yang terlihat oleh CSP:
+cli.list.tokens = Kontainer pada Rutoken yang terhubung:
+cli.list.provider = (penyedia {0})
+cli.list.files = ({0} berkas)
+cli.cert.exchange = Pertukaran:  {0}
+cli.cert.sign = Tanda tangan: {0}
+cli.check.exchange = Kunci pertukaran:  {0}
+cli.check.sign = Kunci tanda tangan: {0}
+cli.keyexport.ok = Selesai: kunci dapat diekspor
+cli.installed.header = Kontainer berkas di penyimpanan CryptoPro ({0}):
+cli.uninstall.done = Dihapus: {0}
+cli.topfx.nocertmgr = certmgr tidak ditemukan — diperlukan CryptoPro CSP yang terpasang
+cli.done = Selesai: {0}
+cli.error = Galat: {0}
+cli.failure = GALAT: {0}
+cli.install.norename = Penggantian nama tidak diterapkan: CryptoPro tidak menerima salinan dengan nama «{0}». Itu terjadi selama larangan ekspor belum dicabut (--cprepair).
+cli.install.invisible = CryptoPro belum melihat kontainer. Biasanya cukup menjalankan program lagi atau masuk ulang ke sistem — CSP menyimpan daftar kontainer dalam singgahan.
+cli.lang.unknown = Bahasa tidak dikenal «{0}». Bahasa yang tersedia: {1}
+cli.lang.missing = --lang memerlukan kode bahasa. Bahasa yang tersedia: {0}

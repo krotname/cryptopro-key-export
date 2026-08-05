@@ -1,0 +1,244 @@
+# 简体中文
+
+lang.name = 中文（简体）
+lang.rtl = no
+
+# --- 通用 ---
+app.title = 从 Rutoken 导出 CryptoPro 密钥
+common.ok = 确定
+common.cancel = 取消
+common.close = 关闭
+common.browse = 浏览…
+common.none = 无
+files.all = 所有文件
+
+# --- 设置面板 ---
+field.p12 = p12utility.exe：
+field.p12.placeholder = 已内置副本 — 无需填写
+field.dest = 目标文件夹：
+field.pin = PIN（可选）：
+field.pin.hint = 留空 → 弹出输入窗口
+field.lang = 界面语言：
+
+tip.p12 = CryptoPro p12utility 工具的路径 — 解除密钥导出禁令靠的就是它。\n请留空：程序已内置一份副本，会自行解压。\n只有需要其他版本的 p12utility 时才填写。
+tip.p12.browse = 选择其他 p12utility.exe，代替内置副本。
+tip.dest = 结果的存放位置：取出的容器文件夹（*.key）和证书文件（.cer）。\n注意：这是您私钥的副本，请当作机密保管。
+tip.dest.browse = 选择目标文件夹。
+tip.pin = Rutoken 用户 PIN。\n留空 → 由系统窗口询问 PIN（若令牌仍是出厂 PIN，则自动使用 12345678）。\n字符已隐藏；该值不会保存到任何地方。
+tip.lang = 界面、提示和消息的语言。\n所选语言会被记住，并在下次启动时生效。\n命令行中的等效写法：--lang zh-Hans
+
+# --- 按钮 ---
+btn.refresh = 刷新列表
+btn.export = 从令牌导出
+btn.extract = 提取证书
+btn.full = 设为可导出
+btn.check = 检查密钥
+btn.install = 安装到 CryptoPro
+btn.pfx = 导出为 PFX
+btn.logs = 日志
+btn.help = 帮助
+btn.cancel = 取消
+
+tip.refresh = 第 1 步。显示密钥容器列表：\n  • CryptoPro CSP 可见的容器（包括已插入的令牌）；\n  • 直接在已连接的 Rutoken 上找到的容器。\n不做任何修改 — 只读取。从这里开始最方便。
+tip.export = 第 2 步。把所有已连接 Rutoken 上的容器取到目标文件夹\n（每个容器 6 个 *.key 文件）。直接读取令牌内存、绕过 CSP，\n因此即便存在导出禁令也能工作。令牌及其数据不会被修改。\n副本中的密钥仍不可导出 — 那是「设为可导出」按钮的工作。
+tip.extract = 第 3 步。把列表中所选容器的证书保存为 .cer 文件\n（公开数据，通过 CryptoAPI 正常提取）。\n需要在列表中选中容器、插入令牌，并且 CSP 能看到该容器。\np12utility 需要这份证书才能解除导出禁令。
+tip.full = 一键完成全部步骤：从令牌取出容器 → 提取证书 →\n解除私钥导出禁令（p12utility --cprepair --keyexport）。\n结果：目标文件夹中会出现一份密钥可导出的容器副本\n（可用于备份、迁移和转换为 PFX）。\n原令牌不会被修改；副本原有的 header.key 会保存为 header.key.backup。
+tip.check = 检查列表中所选的容器：私钥导出禁令是否已经解除。\n程序读取密钥权限（KP_PERMISSIONS）— 密钥本身不会被导出。\n用这种方式确认「设为可导出」确实生效了。
+tip.install = 把从令牌取出的容器文件夹（6 个 *.key 文件）安装到 CryptoPro —\n即复制到 CSP 存储区。之后容器会出现在列表中，并且无需令牌即可使用：\n可以从中提取证书，也可以导出为 PFX。\n改名不是必须的：CryptoPro 会核对名称与容器内容，\n改名后的副本并非总能被接受。程序会验证结果，并告诉您\nCSP 是否真的看到了该容器。
+tip.pfx = 把列表中所选容器导出为 PKCS#12（.pfx）文件 — 证书连同私钥，\n可以迁移到其他系统。\n前提：导出禁令已解除（「检查密钥」显示「可导出」），\n并且已安装 CryptoPro CSP（会使用它的 certmgr）。\n.pfx 的密码会单独询问。
+tip.logs = 打开程序日志所在的文件夹。\n每次运行都会写入单独的文件 — 如果哪里没成功，\n把它附在提问里很方便。密码不会写入日志。
+tip.help = 内置手册：从哪里开始、每个按钮的作用、\n控制台命令以及常见错误的分析。\n它就在程序内部 — 不需要联网，也不需要额外文件。
+tip.cancel = 中断当前操作。\n工作会在最近的一步停下：对令牌的调用或已启动的 CryptoPro\n工具必须先跑完 — 此时已启动的工具会被强制结束。\n已经保存的文件会原地保留。
+
+# --- 容器列表与日志 ---
+col.location = 位置
+col.container = 容器
+col.details = 详情
+tip.list = 已找到的密钥容器。\n「位置」= CSP（CryptoPro 可见）或 Rutoken 名称（直接从令牌读取）。\n选中一行 —「提取证书」按钮会作用于所选容器。
+tip.log = 执行日志：p12utility 命令、令牌操作步骤和错误。\n文本可以选中并复制（Ctrl+C）— 排查问题时很有用。
+
+# --- 状态栏 ---
+status.ready = 就绪
+status.deps = 正在检查依赖…
+status.refresh = 正在刷新容器列表…
+status.export = 正在从令牌取出容器…
+status.extract = 正在提取证书…
+status.full = 正在解除导出禁令…
+status.check = 正在检查密钥权限…
+status.install = 正在安装容器…
+status.pfx = 正在导出为 PFX…
+status.cancelling = 正在取消…
+
+# --- 窗口日志中的消息 ---
+log.deps.header = 依赖（除 CryptoPro CSP 外无需下载或安装任何东西）：
+log.session = 本次会话的日志：{0}
+log.done = 完成。
+log.tokens.unavailable = Rutoken 不可用：{0}
+log.need.dest = 请指定目标文件夹。
+log.need.container = 请在列表中选择一个容器。
+log.exported = 已取出的容器数：{0}
+log.cert.exchange = 交换证书：  {0}
+log.cert.sign = 签名证书：{0}
+log.cert.fail = 提取失败。请确认令牌已插入且 CSP 能看到该容器。
+log.full.done = 完整流程已结束。
+log.cancelled.user = 已被用户取消。
+log.cancelled = 已取消。
+log.cancel.requested = 已请求取消 — 操作将在最近的一步停止。
+log.cancel.done = 操作已取消。
+log.error = 错误：{0}
+log.lang.changed = 界面语言：{0}
+log.container.unnamed = （无名称）
+log.container.csp = CSP
+log.container.token = Rutoken：{0}
+log.container.provider = 提供程序 {0}
+log.container.files = {0}，文件数：{1}
+log.check.container = 容器「{0}」：
+log.check.exchange = 交换密钥：  {0}
+log.check.sign = 签名密钥：{0}
+log.install.notcontainer = 所选文件夹中没有容器（需要 header.key、primary.key、masks.key）。
+log.install.done = 容器已安装：{0}
+log.install.norename = 名称保持为「{0}」：CryptoPro 未接受使用新名称的副本。在导出禁令尚未解除时会这样。
+log.install.invisible = CryptoPro 暂时看不到该容器 — 请再次点击「刷新列表」或重新登录系统：CSP 会缓存容器列表。
+log.pfx.nocertmgr = 未找到 certmgr — 需要已安装的 CryptoPro CSP。
+log.pfx.done = PFX 已就绪：{0}
+log.pfx.fail = 导出 PFX 失败：{0}
+log.logs.fail = 无法打开日志文件夹：{0}
+
+# --- 对话框 ---
+dlg.confirm.title = 确认
+dlg.confirm.full = 将从所有已连接的 Rutoken 取出容器、提取证书并解除密钥导出禁令。\n\n是否继续？
+dlg.folder.container = 存放已取出容器的文件夹（6 个 *.key 文件）
+dlg.install.title = 把容器安装到 CryptoPro
+dlg.install.prompt = 容器在 CryptoPro 列表中显示的名称。\n不改也可以：CSP 并非总能接受改名后的副本。
+dlg.pfx.save = PFX 的保存位置
+dlg.pfx.pass.title = PFX 密码
+dlg.pfx.pass.prompt = .pfx 文件的密码（可以留空，那样文件就没有密码）：
+guide.title = 帮助 — {0}
+guide.caption = 帮助
+guide.missing = 本版本未内置手册。
+
+# --- 依赖报告（窗口和 deps 命令）---
+diag.process = 进程：{0}，版本 {1}
+diag.p12.missing = p12utility：未找到（既未内置于程序，也未在系统中找到）
+diag.p12.found = p12utility：{0}：{1}
+diag.copy.bundled = 内置副本
+diag.copy.external = 外部副本
+diag.rtcom = rtCOMLite：{0}
+diag.rtcom.bundled = 内置副本，无需在系统中注册
+diag.rtcom.system = 已在系统中注册的组件
+diag.rtcom.missing = 不可用
+diag.rtcom.warn = 注意：内置副本是 32 位的，无法加载到本进程 — 要在不安装组件的情况下使用 Rutoken，请改用 x86 便携版
+diag.csp.ok = CryptoPro CSP：已安装，提供程序 {0}
+diag.csp.missing = CryptoPro CSP：未找到 — 请安装 CryptoPro CSP（唯一的外部依赖）
+diag.prov = {0}：{1} — {2}
+diag.prov.yes = 可用
+diag.prov.no = 无
+diag.notfound = 未找到
+diag.notbundled = 未内置于程序
+diag.p12.external = 外部副本：{0}
+diag.p12.bundled = 内置副本：{0}
+diag.p12.used = 将使用：{0}
+diag.rtcom.detail.none = 内置副本：无（{0}）
+diag.rtcom.detail.ok = 内置副本：{0}（{1}）— 无需注册即可加载
+diag.rtcom.detail.bad = 内置副本：{0} — 不适用（{1}）
+diag.rtcom.registered = 系统中：已注册（备用方案）
+diag.rtcom.unregistered = 系统中：未注册
+diag.arch = 库 {0}，进程 {1}
+diag.arch.unknown = 无法判断该库的位数
+
+# --- 导出流程 ---
+pipe.saved = 已保存容器「{0}」-> {1}
+pipe.cert.found = 已通过 CryptoAPI 从容器「{0}」中提取证书
+pipe.cert.autofail = 自动提取证书失败：{0}
+pipe.keyexport.skip = 跳过「{0}」的 keyexport：未找到证书（.cer）。请手动指定。
+pipe.keyexport.ok = OK：「{0}」中的密钥已标记为可导出
+pipe.keyexport.fail = 「{0}」的 keyexport 出错：{1} {2}
+
+# --- 与令牌交互 ---
+token.connect = 正在连接智能卡服务…
+token.found = 找到设备数：{0}
+token.open = 正在打开令牌：{0}
+token.rtcom.loadfail = 内置的 rtCOMLite 未能加载（{0}）；改用系统中已注册的组件
+token.rtcom.mismatch = 内置的 rtCOMLite 不适用（{0}）；改用系统中已注册的组件
+token.rtcom.extractfail = 无法解压内置的 rtCOMLite（{0}）；改用系统中已注册的组件
+token.rtcom.unavailable = rtCOMLite 组件不可用：内置副本未能加载，系统中也未注册。请检查程序位数（需要 x86），或从 https://help.kontur.ru/rtComLite.exe 安装该组件。
+token.pin.default = 出厂 PIN — 使用 12345678 进行认证
+token.pin.given = 使用所填 PIN 进行认证
+token.pin.system = 通过系统 PIN 窗口进行认证
+token.container = 容器：{0}「{1}」（{2} 个文件）
+
+# --- 运行 CryptoPro 工具 ---
+tool.certmgr.install = 正在把证书装入「个人」存储并与容器关联…
+tool.certmgr.installwarn = certmgr -install 返回 {0} — 仍尝试导出：证书可能此前已安装
+tool.certmgr.export = 正在把容器导出为 PKCS#12…
+tool.startfail = 无法启动 {0}
+tool.timeout = 超时 {0} 毫秒：{1}
+tool.cancelled = {0} 因取消而停止
+
+# --- 用户会看到的错误 ---
+err.certmgr.notfound = 未找到 certmgr
+err.container.name = 未指定容器名称
+err.container.nokey = 未找到容器「{0}」，或其中没有所需类型的密钥
+err.key.locked = 私钥不可导出 — 请先解除禁令（「{0}」）。{1}
+err.cert.extract = 无法从容器中提取证书
+err.pfx.missing = certmgr 报告成功，但文件未创建：{0}
+err.folder.notcontainer = 文件夹中没有容器（需要 header.key、primary.key、masks.key）：{0}
+err.folder.outside = 该文件夹不在 CryptoPro 存储区内：{0}
+err.folder.notlike = 该文件夹不像是容器：{0}
+err.folder.extra = 容器文件夹中有无关文件，已取消删除：{0}
+err.store.full = 在 {0} 中找不到空闲文件夹
+err.name.empty = 容器名称为空
+err.name.toolong = 容器名称超过 {0} 个字符
+err.p12.notfound = 未找到 p12utility
+err.p12.unavailable = 未找到 p12utility：内置副本不可用。请把 p12utility.win32.exe 放在程序旁边，或指定其路径。
+err.header.missing = 文件夹中没有 header.key
+err.cert.required = 至少需要一份证书（--cert/--certsg）。请从「个人」存储或容器中导出 .cer。
+err.com.notfound = 未找到 COM 库
+err.com.call = {0} 返回了 {1}
+
+# --- 密钥权限 ---
+key.notfound = 未找到密钥
+key.readfail = 无法读取权限（{0}）
+key.exportable = 可导出（KP_PERMISSIONS=0x{0}）
+key.locked = 不可导出（KP_PERMISSIONS=0x{0}，缺少 CRYPT_EXPORT 标志）
+
+# --- 容器安装 ---
+install.result = 「{0}」-> {1}
+install.result.visible = 「{0}」-> {1}（CryptoPro 可见）
+install.result.invisible = 「{0}」-> {1}（CryptoPro 暂时看不到）
+
+# --- 控制台模式 ---
+cli.usage.title = CryptoProExport — 从 Rutoken 取出容器并解除密钥导出禁令
+cli.usage.deps = 检查依赖（内置依赖 + CryptoPro CSP）
+cli.usage.list = 列出容器（CSP + 令牌）
+cli.usage.extractcert = 从容器中提取 .cer（CryptoAPI）
+cli.usage.checkexport = 检查私钥是否可导出
+cli.usage.export = 把令牌上的容器取到磁盘
+cli.usage.keyexport = 把文件夹中的密钥设为可导出
+cli.usage.install = 把容器文件夹安装到 CryptoPro
+cli.usage.installed = 显示已安装的文件容器
+cli.usage.uninstall = 删除已安装的容器
+cli.usage.topfx = 把容器导出为 PKCS#12（certmgr）
+cli.usage.full = 从令牌取出 + 自动 .cer + keyexport
+cli.usage.help = 完整的内置手册
+cli.usage.lang = 界面和消息的语言
+cli.usage.gui = （无参数 — 图形界面）
+cli.list.csp = CSP 可见的容器：
+cli.list.tokens = 已连接 Rutoken 上的容器：
+cli.list.provider = （提供程序 {0}）
+cli.list.files = （{0} 个文件）
+cli.cert.exchange = 交换：  {0}
+cli.cert.sign = 签名：{0}
+cli.check.exchange = 交换密钥：  {0}
+cli.check.sign = 签名密钥：{0}
+cli.keyexport.ok = 完成：密钥已可导出
+cli.installed.header = CryptoPro 存储区中的文件容器（{0}）：
+cli.uninstall.done = 已删除：{0}
+cli.topfx.nocertmgr = 未找到 certmgr — 需要已安装的 CryptoPro CSP
+cli.done = 完成：{0}
+cli.error = 错误：{0}
+cli.failure = 错误：{0}
+cli.install.norename = 改名未生效：CryptoPro 未接受名称为「{0}」的副本。在导出禁令尚未解除（--cprepair）时会这样。
+cli.install.invisible = CryptoPro 暂时看不到该容器。通常重新运行程序或重新登录系统即可 — CSP 会缓存容器列表。
+cli.lang.unknown = 未知语言「{0}」。可用语言：{1}
+cli.lang.missing = --lang 需要一个语言代码。可用语言：{0}

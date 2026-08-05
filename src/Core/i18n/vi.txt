@@ -1,0 +1,244 @@
+# Tiếng Việt
+
+lang.name = Tiếng Việt
+lang.rtl = no
+
+# --- chung ---
+app.title = Xuất khoá CryptoPro từ Rutoken
+common.ok = OK
+common.cancel = Huỷ
+common.close = Đóng
+common.browse = Duyệt…
+common.none = không có
+files.all = Tất cả tệp
+
+# --- bảng thiết lập ---
+field.p12 = p12utility.exe:
+field.p12.placeholder = bản sao tích hợp — không cần chỉ định gì
+field.dest = Thư mục đích:
+field.pin = PIN (tuỳ chọn):
+field.pin.hint = để trống → cửa sổ hỏi
+field.lang = Ngôn ngữ giao diện:
+
+tip.p12 = Đường dẫn tới công cụ p12utility của CryptoPro — chính nó gỡ lệnh cấm xuất khoá.\nHãy để trống: bản sao công cụ đã nằm sẵn trong chương trình và tự giải nén.\nChỉ điền khi bạn cần một phiên bản p12utility khác.
+tip.p12.browse = Chọn tệp p12utility.exe khác thay cho bản tích hợp.
+tip.dest = Nơi lưu kết quả: các thư mục chứa container đã lấy ra (*.key) và tệp chứng thư (.cer).\nLưu ý: đây là bản sao khoá riêng của bạn — hãy giữ như một bí mật.
+tip.dest.browse = Chọn thư mục đích.
+tip.pin = Mã PIN người dùng của Rutoken.\nĐể trống → cửa sổ hệ thống sẽ hỏi PIN (nếu token còn PIN xuất xưởng thì dùng 12345678).\nCác ký tự bị che; giá trị không được lưu ở đâu cả.
+tip.lang = Ngôn ngữ của giao diện, chú giải và thông báo.\nLựa chọn được ghi nhớ và áp dụng cho những lần chạy sau.\nTương tự từ dòng lệnh: --lang vi
+
+# --- các nút ---
+btn.refresh = Làm mới danh sách
+btn.export = Xuất từ token
+btn.extract = Lấy chứng thư
+btn.full = Làm cho xuất được
+btn.check = Kiểm tra khoá
+btn.install = Cài vào CryptoPro
+btn.pfx = Xuất ra PFX
+btn.logs = Nhật ký
+btn.help = Trợ giúp
+btn.cancel = Huỷ
+
+tip.refresh = Bước 1. Hiển thị danh sách container khoá:\n  • những cái CryptoPro CSP nhìn thấy (kể cả trên token đã cắm);\n  • những cái tìm thấy trực tiếp trên các Rutoken đang kết nối.\nKhông thay đổi gì — chỉ đọc. Bắt đầu từ nút này là tiện nhất.
+tip.export = Bước 2. Lấy các container từ mọi Rutoken đang kết nối vào thư mục đích\n(mỗi container 6 tệp *.key). Đọc thẳng bộ nhớ token, bỏ qua CSP,\nnên vẫn chạy được khi có lệnh cấm xuất. Token và dữ liệu trên đó không bị thay đổi.\nKhoá trong bản sao vẫn chưa xuất được — việc đó do nút «Làm cho xuất được» đảm nhiệm.
+tip.extract = Bước 3. Lưu chứng thư của container được chọn trong danh sách ra tệp .cer\n(dữ liệu công khai, được lấy ra bình thường qua CryptoAPI).\nCần có container được chọn, token đã cắm và CSP nhìn thấy container.\np12utility cần đúng chứng thư này để gỡ lệnh cấm xuất.
+tip.full = Tất cả trong một cú nhấp: lấy container từ token → lấy chứng thư →\ngỡ lệnh cấm xuất khoá riêng (p12utility --cprepair --keyexport).\nKết quả: trong thư mục đích có bản sao container với khoá xuất được\n(dùng để sao lưu, chuyển máy và chuyển đổi sang PFX).\nToken gốc không bị thay đổi; tệp header.key ban đầu của bản sao được giữ lại là header.key.backup.
+tip.check = Kiểm tra container được chọn: lệnh cấm xuất khoá riêng đã được gỡ hay chưa.\nChương trình đọc quyền của khoá (KP_PERMISSIONS) — bản thân khoá không bao giờ bị xuất.\nĐó là cách xác nhận «Làm cho xuất được» thực sự có tác dụng.
+tip.install = Cài vào CryptoPro một thư mục container đã lấy từ token (6 tệp *.key) —\ntức là chép nó vào kho của CSP. Sau đó container xuất hiện trong danh sách và chạy\nđược mà không cần token: có thể lấy chứng thư và xuất ra PFX.\nĐổi tên không bắt buộc: CryptoPro đối chiếu tên với nội dung container và\nkhông phải lúc nào cũng chấp nhận bản sao đã đổi tên. Chương trình sẽ kiểm tra kết quả và\ncho biết CSP có thực sự nhìn thấy container hay không.
+tip.pfx = Xuất container được chọn ra tệp PKCS#12 (.pfx) — chứng thư cùng với\nkhoá riêng, sẵn sàng chuyển sang hệ thống khác.\nCần: lệnh cấm xuất đã được gỡ («Kiểm tra khoá» hiển thị «xuất được»)\nvà đã cài CryptoPro CSP (chương trình dùng certmgr của nó).\nMật khẩu cho tệp .pfx sẽ được hỏi riêng.
+tip.logs = Mở thư mục chứa nhật ký làm việc của chương trình.\nMỗi lần chạy ghi một tệp riêng — rất tiện để đính kèm vào câu hỏi\nnếu có gì đó không thành. Mật khẩu không bao giờ lọt vào nhật ký.
+tip.help = Sổ tay tích hợp: bắt đầu từ đâu, mỗi nút làm gì,\ncác lệnh của chế độ dòng lệnh và phân tích những lỗi thường gặp.\nNó nằm bên trong chương trình — không cần internet hay tệp bên ngoài.
+tip.cancel = Ngắt thao tác đang chạy.\nCông việc sẽ dừng ở bước gần nhất: lời gọi tới token hoặc tiện ích CryptoPro\nđang chạy phải được hoàn tất trước — khi đó tiện ích đang chạy sẽ bị kết thúc.\nCác tệp đã lưu vẫn nằm nguyên chỗ cũ.
+
+# --- danh sách container và nhật ký ---
+col.location = Vị trí
+col.container = Container
+col.details = Chi tiết
+tip.list = Các container khoá đã tìm thấy.\n«Vị trí» = CSP (CryptoPro nhìn thấy) hoặc tên Rutoken (đọc trực tiếp từ token).\nChọn một dòng — nút «Lấy chứng thư» làm việc với container được chọn.
+tip.log = Nhật ký thực thi: các lệnh p12utility, các bước làm việc với token và lỗi.\nCó thể chọn và sao chép văn bản (Ctrl+C) — hữu ích khi phân tích sự cố.
+
+# --- thanh trạng thái ---
+status.ready = Sẵn sàng
+status.deps = Đang kiểm tra phụ thuộc…
+status.refresh = Đang làm mới danh sách container…
+status.export = Đang lấy container từ token…
+status.extract = Đang lấy chứng thư…
+status.full = Đang gỡ lệnh cấm xuất…
+status.check = Đang kiểm tra quyền của khoá…
+status.install = Đang cài container…
+status.pfx = Đang xuất ra PFX…
+status.cancelling = Đang huỷ…
+
+# --- thông báo trong nhật ký cửa sổ ---
+log.deps.header = Phụ thuộc (không phải tải hay cài gì ngoài CryptoPro CSP):
+log.session = Nhật ký của phiên này: {0}
+log.done = Xong.
+log.tokens.unavailable = Không dùng được Rutoken: {0}
+log.need.dest = Hãy chỉ định thư mục đích.
+log.need.container = Hãy chọn một container trong danh sách.
+log.exported = Số container đã lấy: {0}
+log.cert.exchange = Chứng thư trao đổi:  {0}
+log.cert.sign = Chứng thư chữ ký: {0}
+log.cert.fail = Không lấy được. Hãy chắc chắn token đã cắm và CSP nhìn thấy container.
+log.full.done = Đã hoàn tất toàn bộ chu trình.
+log.cancelled.user = Người dùng đã huỷ.
+log.cancelled = Đã huỷ.
+log.cancel.requested = Đã yêu cầu huỷ — thao tác sẽ dừng ở bước gần nhất.
+log.cancel.done = Đã huỷ thao tác.
+log.error = LỖI: {0}
+log.lang.changed = Ngôn ngữ giao diện: {0}
+log.container.unnamed = (không tên)
+log.container.csp = CSP
+log.container.token = Rutoken: {0}
+log.container.provider = nhà cung cấp {0}
+log.container.files = {0}, số tệp: {1}
+log.check.container = Container «{0}»:
+log.check.exchange = khoá trao đổi:  {0}
+log.check.sign = khoá chữ ký: {0}
+log.install.notcontainer = Thư mục đã chọn không có container (cần header.key, primary.key, masks.key).
+log.install.done = Đã cài container: {0}
+log.install.norename = Tên vẫn giữ là «{0}»: CryptoPro không chấp nhận bản sao với tên mới. Điều đó xảy ra chừng nào lệnh cấm xuất chưa được gỡ.
+log.install.invisible = CryptoPro chưa nhìn thấy container — hãy bấm «Làm mới danh sách» lần nữa hoặc đăng nhập lại: CSP có bộ đệm danh sách container.
+log.pfx.nocertmgr = Không tìm thấy certmgr — cần có CryptoPro CSP đã cài.
+log.pfx.done = PFX đã sẵn sàng: {0}
+log.pfx.fail = Không xuất được PFX: {0}
+log.logs.fail = Không mở được thư mục nhật ký: {0}
+
+# --- hộp thoại ---
+dlg.confirm.title = Xác nhận
+dlg.confirm.full = Các container sẽ được lấy từ mọi Rutoken đang kết nối, chứng thư sẽ được lấy ra và lệnh cấm xuất khoá sẽ được gỡ.\n\nTiếp tục?
+dlg.folder.container = Thư mục chứa container đã lấy ra (6 tệp *.key)
+dlg.install.title = Cài container vào CryptoPro
+dlg.install.prompt = Tên mà container sẽ mang trong danh sách của CryptoPro.\nĐổi tên không bắt buộc: CSP không phải lúc nào cũng chấp nhận bản sao đã đổi tên.
+dlg.pfx.save = Lưu PFX ở đâu
+dlg.pfx.pass.title = Mật khẩu PFX
+dlg.pfx.pass.prompt = Mật khẩu cho tệp .pfx (có thể để trống — khi đó tệp không có mật khẩu):
+guide.title = Trợ giúp — {0}
+guide.caption = Trợ giúp
+guide.missing = Sổ tay không được tích hợp trong bản dựng này.
+
+# --- báo cáo phụ thuộc (cửa sổ và lệnh deps) ---
+diag.process = Tiến trình: {0}, phiên bản {1}
+diag.p12.missing = p12utility: KHÔNG TÌM THẤY (không tích hợp trong bản dựng và cũng không có trong hệ thống)
+diag.p12.found = p12utility: {0}: {1}
+diag.copy.bundled = bản sao tích hợp
+diag.copy.external = bản sao bên ngoài
+diag.rtcom = rtCOMLite: {0}
+diag.rtcom.bundled = bản sao tích hợp, không cần đăng ký trong hệ thống
+diag.rtcom.system = thành phần đã đăng ký trong hệ thống
+diag.rtcom.missing = KHÔNG DÙNG ĐƯỢC
+diag.rtcom.warn = chú ý: bản sao tích hợp là 32-bit và không nạp được vào tiến trình này — để làm việc với Rutoken mà không cài thành phần, hãy dùng bản dựng di động x86
+diag.csp.ok = CryptoPro CSP: đã cài, nhà cung cấp {0}
+diag.csp.missing = CryptoPro CSP: KHÔNG TÌM THẤY — hãy cài CryptoPro CSP (phụ thuộc bên ngoài duy nhất)
+diag.prov = {0}: {1} — {2}
+diag.prov.yes = có sẵn
+diag.prov.no = không
+diag.notfound = KHÔNG TÌM THẤY
+diag.notbundled = không tích hợp trong bản dựng
+diag.p12.external = bản sao bên ngoài: {0}
+diag.p12.bundled = bản sao tích hợp: {0}
+diag.p12.used = sẽ dùng: {0}
+diag.rtcom.detail.none = bản sao tích hợp: không có ({0})
+diag.rtcom.detail.ok = bản sao tích hợp: {0} ({1}) — nạp được mà không cần đăng ký
+diag.rtcom.detail.bad = bản sao tích hợp: {0} — không phù hợp ({1})
+diag.rtcom.registered = trong hệ thống: đã đăng ký (phương án dự phòng)
+diag.rtcom.unregistered = trong hệ thống: chưa đăng ký
+diag.arch = thư viện {0}, tiến trình {1}
+diag.arch.unknown = không xác định được kiến trúc của thư viện
+
+# --- luồng xuất ---
+pipe.saved = Đã lưu container «{0}» -> {1}
+pipe.cert.found = Đã lấy chứng thư từ container «{0}» qua CryptoAPI
+pipe.cert.autofail = Không lấy được chứng thư tự động: {0}
+pipe.keyexport.skip = BỎ QUA keyexport cho «{0}»: không tìm thấy chứng thư (.cer). Hãy chỉ định thủ công.
+pipe.keyexport.ok = OK: khoá trong «{0}» đã được đánh dấu xuất được
+pipe.keyexport.fail = LỖI keyexport trong «{0}»: {1} {2}
+
+# --- làm việc với token ---
+token.connect = Đang kết nối tới dịch vụ thẻ thông minh…
+token.found = Số thiết bị tìm thấy: {0}
+token.open = Đang mở token: {0}
+token.rtcom.loadfail = Bản rtCOMLite tích hợp không nạp được ({0}); thử bản đã đăng ký trong hệ thống
+token.rtcom.mismatch = Bản rtCOMLite tích hợp không phù hợp ({0}); thử bản đã đăng ký trong hệ thống
+token.rtcom.extractfail = Không giải nén được bản rtCOMLite tích hợp ({0}); thử bản đã đăng ký trong hệ thống
+token.rtcom.unavailable = Không dùng được thành phần rtCOMLite: bản tích hợp không nạp được và trong hệ thống nó cũng chưa đăng ký. Hãy kiểm tra kiến trúc chương trình (cần x86) hoặc cài thành phần từ https://help.kontur.ru/rtComLite.exe.
+token.pin.default = PIN xuất xưởng — xác thực bằng 12345678
+token.pin.given = Xác thực bằng PIN đã nhập
+token.pin.system = Xác thực qua cửa sổ PIN của hệ thống
+token.container = Container: {0} «{1}» ({2} tệp)
+
+# --- chạy các tiện ích CryptoPro ---
+tool.certmgr.install = Đang cài chứng thư vào kho «Cá nhân» và liên kết với container…
+tool.certmgr.installwarn = certmgr -install trả về {0} — vẫn thử xuất: chứng thư có thể đã được cài trước đó
+tool.certmgr.export = Đang xuất container ra PKCS#12…
+tool.startfail = Không khởi chạy được {0}
+tool.timeout = Hết thời gian chờ {0} ms: {1}
+tool.cancelled = {0} đã dừng do bị huỷ
+
+# --- lỗi người dùng nhìn thấy ---
+err.certmgr.notfound = Không tìm thấy certmgr
+err.container.name = Chưa cho biết tên container
+err.container.nokey = Không tìm thấy container «{0}» hoặc trong đó không có khoá thuộc loại cần thiết
+err.key.locked = Khoá riêng không xuất được — hãy gỡ lệnh cấm trước («{0}»). {1}
+err.cert.extract = Không lấy được chứng thư từ container
+err.pfx.missing = certmgr báo thành công, nhưng tệp lại không được tạo: {0}
+err.folder.notcontainer = Thư mục không chứa container (cần header.key, primary.key, masks.key): {0}
+err.folder.outside = Thư mục nằm ngoài kho của CryptoPro: {0}
+err.folder.notlike = Thư mục trông không giống một container: {0}
+err.folder.extra = Thư mục container có tệp lạ, đã huỷ việc xoá: {0}
+err.store.full = Không tìm được thư mục trống trong {0}
+err.name.empty = Tên container rỗng
+err.name.toolong = Tên container dài hơn {0} ký tự
+err.p12.notfound = Không tìm thấy p12utility
+err.p12.unavailable = Không tìm thấy p12utility: bản sao tích hợp không dùng được. Hãy đặt p12utility.win32.exe cạnh ứng dụng hoặc chỉ ra đường dẫn.
+err.header.missing = Thư mục không có header.key
+err.cert.required = Cần ít nhất một chứng thư (--cert/--certsg). Hãy xuất tệp .cer từ kho «Cá nhân» hoặc từ container.
+err.com.notfound = Không tìm thấy thư viện COM
+err.com.call = {0} trả về {1}
+
+# --- quyền của khoá ---
+key.notfound = không tìm thấy khoá
+key.readfail = không đọc được quyền ({0})
+key.exportable = xuất được (KP_PERMISSIONS=0x{0})
+key.locked = KHÔNG xuất được (KP_PERMISSIONS=0x{0}, thiếu cờ CRYPT_EXPORT)
+
+# --- cài container ---
+install.result = «{0}» -> {1}
+install.result.visible = «{0}» -> {1} (CryptoPro nhìn thấy)
+install.result.invisible = «{0}» -> {1} (CryptoPro CHƯA nhìn thấy)
+
+# --- chế độ dòng lệnh ---
+cli.usage.title = CryptoProExport — lấy container từ Rutoken và gỡ lệnh cấm xuất khoá
+cli.usage.deps = kiểm tra phụ thuộc (các thành phần tích hợp + CryptoPro CSP)
+cli.usage.list = liệt kê container (CSP + token)
+cli.usage.extractcert = lấy .cer từ container (CryptoAPI)
+cli.usage.checkexport = kiểm tra khoá riêng có xuất được không
+cli.usage.export = lấy container từ token ra đĩa
+cli.usage.keyexport = làm cho khoá trong thư mục xuất được
+cli.usage.install = cài thư mục container vào CryptoPro
+cli.usage.installed = hiển thị các container tệp đã cài
+cli.usage.uninstall = xoá một container đã cài
+cli.usage.topfx = xuất container ra PKCS#12 (certmgr)
+cli.usage.full = lấy từ token + .cer tự động + keyexport
+cli.usage.help = toàn bộ sổ tay tích hợp
+cli.usage.lang = ngôn ngữ của giao diện và thông báo
+cli.usage.gui = (không tham số — giao diện đồ hoạ)
+cli.list.csp = Các container CSP nhìn thấy:
+cli.list.tokens = Các container trên Rutoken đang kết nối:
+cli.list.provider = (nhà cung cấp {0})
+cli.list.files = ({0} tệp)
+cli.cert.exchange = Trao đổi:  {0}
+cli.cert.sign = Chữ ký: {0}
+cli.check.exchange = Khoá trao đổi:  {0}
+cli.check.sign = Khoá chữ ký: {0}
+cli.keyexport.ok = Xong: khoá đã xuất được
+cli.installed.header = Container tệp trong kho CryptoPro ({0}):
+cli.uninstall.done = Đã xoá: {0}
+cli.topfx.nocertmgr = Không tìm thấy certmgr — cần có CryptoPro CSP đã cài
+cli.done = Xong: {0}
+cli.error = Lỗi: {0}
+cli.failure = LỖI: {0}
+cli.install.norename = Việc đổi tên không được áp dụng: CryptoPro không chấp nhận bản sao mang tên «{0}». Điều đó xảy ra chừng nào lệnh cấm xuất chưa được gỡ (--cprepair).
+cli.install.invisible = CryptoPro chưa nhìn thấy container. Thường chỉ cần chạy lại chương trình hoặc đăng nhập lại — CSP có bộ đệm danh sách container.
+cli.lang.unknown = Ngôn ngữ không rõ «{0}». Các ngôn ngữ hiện có: {1}
+cli.lang.missing = --lang cần một mã ngôn ngữ. Các ngôn ngữ hiện có: {0}

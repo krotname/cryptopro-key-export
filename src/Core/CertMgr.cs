@@ -26,7 +26,7 @@ namespace CryptoProExport
         {
             ExePath = exePath ?? throw new ArgumentNullException(nameof(exePath));
             if (!File.Exists(ExePath))
-                throw new FileNotFoundException("certmgr не найден", ExePath);
+                throw new FileNotFoundException(Strings.Get("err.certmgr.notfound"), ExePath);
         }
 
         /// <summary>Найти certmgr.exe в установленном КриптоПро CSP. null — CSP не установлен.</summary>
@@ -76,19 +76,18 @@ namespace CryptoProExport
             string container, string destPfx, string password, bool signatureKey = false, string certPath = null)
         {
             if (string.IsNullOrWhiteSpace(container))
-                throw new ArgumentException("Не задано имя контейнера", nameof(container));
+                throw new ArgumentException(Strings.Get("err.container.name"), nameof(container));
 
             var check = CertFromContainer.CheckExportable(
                 container, signatureKey ? CertFromContainer.AT_SIGNATURE : CertFromContainer.AT_KEYEXCHANGE);
             if (!check.KeyFound)
-                return new ToolResult { Success = false, ExitCode = -2, Output = $"Контейнер \"{container}\" не найден или в нём нет ключа нужного типа" };
+                return new ToolResult { Success = false, ExitCode = -2, Output = Strings.Format("err.container.nokey", container) };
             if (!check.Exportable)
                 return new ToolResult
                 {
                     Success = false,
                     ExitCode = -3,
-                    Output = "Закрытый ключ неэкспортируемый — сначала снимите запрет " +
-                             $"(«Сделать экспортируемым»). {CryptoErrors.Describe(check.Error)}",
+                    Output = Strings.Format("err.key.locked", Strings.Get("btn.full"), CryptoErrors.Describe(check.Error)),
                 };
 
             string tempDir = null;
@@ -102,17 +101,17 @@ namespace CryptoProExport
                     certPath ??= signatureKey ? exchange : signature;
                 }
                 if (certPath == null)
-                    return new ToolResult { Success = false, ExitCode = -4, Output = "Не удалось извлечь сертификат из контейнера" };
+                    return new ToolResult { Success = false, ExitCode = -4, Output = Strings.Get("err.cert.extract") };
 
-                Log("Устанавливаем сертификат в хранилище «Личное» и связываем с контейнером…");
+                Log(Strings.Get("tool.certmgr.install"));
                 var install = InstallCertificate(certPath, container, signatureKey);
                 if (!install.Success)
-                    Log("certmgr -install вернул " + install.Explain() + " — пробуем экспорт: сертификат мог быть установлен ранее");
+                    Log(Strings.Format("tool.certmgr.installwarn", install.Explain()));
 
-                Log("Выгружаем контейнер в PKCS#12…");
+                Log(Strings.Get("tool.certmgr.export"));
                 var export = ExportPfx(container, destPfx, password, signatureKey);
                 if (export.Success && !File.Exists(destPfx))
-                    return new ToolResult { Success = false, ExitCode = -5, Output = "certmgr отчитался об успехе, но файл не создан: " + destPfx };
+                    return new ToolResult { Success = false, ExitCode = -5, Output = Strings.Format("err.pfx.missing", destPfx) };
                 return export;
             }
             finally

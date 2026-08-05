@@ -28,7 +28,7 @@ namespace CryptoProExport
         {
             ExePath = exePath ?? throw new ArgumentNullException(nameof(exePath));
             if (!File.Exists(ExePath))
-                throw new FileNotFoundException("p12utility не найден", ExePath);
+                throw new FileNotFoundException(Strings.Get("err.p12.notfound"), ExePath);
         }
 
         /// <summary>Найти внешний p12utility в типовых местах (рядом с приложением / в КриптоПро CSP).</summary>
@@ -56,17 +56,14 @@ namespace CryptoProExport
         public static List<string> DescribeSource()
         {
             var lines = new List<string>();
-            string external = Locate();
-            lines.Add(external != null ? "  внешняя копия: " + external : "  внешняя копия: нет");
+            lines.Add("  " + Strings.Format("diag.p12.external", Locate() ?? Strings.Get("common.none")));
 
             string bundled = BundledTools.TryExtract(
                 BundledTools.P12UtilityResource, BundledTools.P12UtilityFileName, out string error);
-            lines.Add(bundled != null
-                ? "  встроенная копия: " + bundled
-                : "  встроенная копия: нет" + (error != null ? " (" + error + ")" : " (не вшита в сборку)"));
+            lines.Add("  " + Strings.Format("diag.p12.bundled", bundled
+                ?? Strings.Get("common.none") + " (" + (error ?? Strings.Get("diag.notbundled")) + ")"));
 
-            string used = Resolve();
-            lines.Add(used != null ? "  будет использован: " + used : "  будет использован: НЕ НАЙДЕН");
+            lines.Add("  " + Strings.Format("diag.p12.used", Resolve() ?? Strings.Get("diag.notfound")));
             return lines;
         }
 
@@ -106,13 +103,12 @@ namespace CryptoProExport
                 throw new DirectoryNotFoundException(containerFolder);
             string header = Path.Combine(containerFolder, "header.key");
             if (!File.Exists(header))
-                throw new FileNotFoundException("В папке нет header.key", header);
+                throw new FileNotFoundException(Strings.Get("err.header.missing"), header);
 
             bool hasExchange = !string.IsNullOrEmpty(certExchangePath);
             bool hasSignature = !string.IsNullOrEmpty(certSignaturePath);
             if (!hasExchange && !hasSignature)
-                throw new ArgumentException(
-                    "Нужен минимум один сертификат (--cert/--certsg). Экспортируйте .cer из хранилища «Личное» или из контейнера.");
+                throw new ArgumentException(Strings.Get("err.cert.required"));
 
             // Бэкап header.key (как CertFix: header.key.backup)
             File.Copy(header, header + ".backup", overwrite: true);

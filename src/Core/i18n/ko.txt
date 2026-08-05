@@ -1,0 +1,244 @@
+# 한국어
+
+lang.name = 한국어
+lang.rtl = no
+
+# --- 공통 ---
+app.title = Rutoken에서 CryptoPro 키 내보내기
+common.ok = 확인
+common.cancel = 취소
+common.close = 닫기
+common.browse = 찾아보기…
+common.none = 없음
+files.all = 모든 파일
+
+# --- 설정 패널 ---
+field.p12 = p12utility.exe:
+field.p12.placeholder = 내장 사본 — 아무것도 지정할 필요 없음
+field.dest = 대상 폴더:
+field.pin = PIN(선택):
+field.pin.hint = 비우면 → 입력 창
+field.lang = 인터페이스 언어:
+
+tip.p12 = CryptoPro의 p12utility 도구 경로 — 키 내보내기 금지를 푸는 것이 바로 이 도구입니다.\n비워 두세요. 도구 사본이 이미 프로그램에 들어 있고 스스로 풀립니다.\np12utility의 다른 버전이 필요할 때만 입력하세요.
+tip.p12.browse = 내장 사본 대신 다른 p12utility.exe를 선택합니다.
+tip.dest = 결과를 둘 곳: 꺼낸 컨테이너 폴더(*.key)와 인증서 파일(.cer).\n주의: 이것은 개인 키의 사본입니다 — 비밀로 보관하세요.
+tip.dest.browse = 대상 폴더를 선택합니다.
+tip.pin = Rutoken 사용자 PIN.\n비우면 → 시스템 창이 PIN을 묻습니다(토큰에 공장 출하 PIN이 남아 있으면 12345678이 쓰입니다).\n글자는 가려지며, 값은 어디에도 저장되지 않습니다.
+tip.lang = 인터페이스, 도움말 풍선, 메시지의 언어.\n선택은 기억되어 다음 실행부터 적용됩니다.\n명령줄에서도 같습니다: --lang ko
+
+# --- 단추 ---
+btn.refresh = 목록 새로 고침
+btn.export = 토큰에서 내보내기
+btn.extract = 인증서 꺼내기
+btn.full = 내보내기 가능하게 만들기
+btn.check = 키 확인
+btn.install = CryptoPro에 설치
+btn.pfx = PFX로 내보내기
+btn.logs = 로그
+btn.help = 도움말
+btn.cancel = 취소
+
+tip.refresh = 1단계. 키 컨테이너 목록을 표시합니다:\n  • CryptoPro CSP가 보는 것(꽂혀 있는 토큰의 것 포함);\n  • 연결된 Rutoken에서 직접 찾은 것.\n아무것도 바꾸지 않고 읽기만 합니다. 여기서 시작하면 편합니다.
+tip.export = 2단계. 연결된 모든 Rutoken에서 컨테이너를 대상 폴더로 꺼냅니다\n(컨테이너당 *.key 파일 6개). CSP를 거치지 않고 토큰 메모리를 직접 읽으므로\n내보내기 금지가 걸려 있어도 동작합니다. 토큰과 그 안의 자료는 바뀌지 않습니다.\n꺼낸 사본의 키는 여전히 내보낼 수 없습니다 — 그 일은 「내보내기 가능하게 만들기」가 합니다.
+tip.extract = 3단계. 목록에서 선택한 컨테이너의 인증서를 .cer 파일로 저장합니다\n(공개 자료이며 CryptoAPI를 통해 정상적으로 꺼냅니다).\n목록에서 선택한 컨테이너, 꽂힌 토큰, CSP가 컨테이너를 보는 상태가 필요합니다.\n내보내기 금지를 풀려면 p12utility에 바로 이 인증서가 필요합니다.
+tip.full = 한 번의 클릭으로 전부: 토큰에서 컨테이너 꺼내기 → 인증서 꺼내기 →\n개인 키의 내보내기 금지 풀기(p12utility --cprepair --keyexport).\n결과: 대상 폴더에 내보낼 수 있는 키를 가진 컨테이너 사본이 생깁니다\n(백업, 이전, PFX 변환에 쓸 수 있습니다).\n원래 토큰은 바뀌지 않으며, 사본의 원래 header.key는 header.key.backup으로 남습니다.
+tip.check = 목록에서 선택한 컨테이너를 확인합니다: 개인 키의 내보내기 금지가 풀렸는지.\n프로그램은 키 권한(KP_PERMISSIONS)을 읽을 뿐, 키 자체는 절대 내보내지 않습니다.\n이렇게 「내보내기 가능하게 만들기」가 실제로 통했는지 확인합니다.
+tip.install = 토큰에서 꺼낸 컨테이너 폴더(*.key 파일 6개)를 CryptoPro에 설치합니다 —\n즉 CSP 저장소로 복사합니다. 그 뒤 컨테이너가 목록에 나타나고 토큰 없이도\n동작합니다: 인증서를 꺼내거나 PFX로 내보낼 수 있습니다.\n이름 변경은 필수가 아닙니다. CryptoPro는 이름을 컨테이너 내용과 대조하므로\n이름을 바꾼 사본을 항상 받아들이지는 않습니다. 프로그램이 결과를 확인해\nCSP가 정말 컨테이너를 보았는지 알려 줍니다.
+tip.pfx = 목록에서 선택한 컨테이너를 PKCS#12(.pfx) 파일로 내보냅니다 — 인증서와\n개인 키를 함께, 다른 시스템으로 옮기기 위한 것입니다.\n필요 조건: 내보내기 금지가 이미 풀려 있을 것(「키 확인」이 「내보내기 가능」으로 표시)\n그리고 CryptoPro CSP가 설치되어 있을 것(그 certmgr를 사용합니다).\n.pfx 암호는 따로 묻습니다.
+tip.logs = 프로그램 작업 로그가 있는 폴더를 엽니다.\n실행할 때마다 별도의 파일이 기록됩니다 — 잘 안 되었을 때\n질문에 첨부하기 좋습니다. 암호는 로그에 남지 않습니다.
+tip.help = 내장 설명서: 어디서 시작할지, 각 단추가 무엇을 하는지,\n콘솔 모드 명령과 흔한 오류에 대한 설명.\n프로그램 안에 있습니다 — 인터넷도 외부 파일도 필요 없습니다.
+tip.cancel = 진행 중인 작업을 중단합니다.\n작업은 가장 가까운 단계에서 멈춥니다. 토큰 호출이나 이미 시작된 CryptoPro\n유틸리티는 먼저 끝내야 하며, 그때 실행 중인 유틸리티는 강제로 종료됩니다.\n이미 저장된 파일은 그대로 남습니다.
+
+# --- 컨테이너 목록과 로그 ---
+col.location = 위치
+col.container = 컨테이너
+col.details = 세부 정보
+tip.list = 발견된 키 컨테이너.\n「위치」= CSP(CryptoPro가 봄) 또는 Rutoken 이름(토큰에서 직접 읽음).\n행을 선택하세요 — 「인증서 꺼내기」 단추는 선택한 컨테이너에 대해 동작합니다.
+tip.log = 실행 로그: p12utility 명령, 토큰 작업 단계, 오류.\n텍스트는 선택해 복사할 수 있습니다(Ctrl+C) — 문제를 분석할 때 유용합니다.
+
+# --- 상태 표시줄 ---
+status.ready = 준비됨
+status.deps = 의존성을 확인하는 중…
+status.refresh = 컨테이너 목록을 새로 고치는 중…
+status.export = 토큰에서 컨테이너를 꺼내는 중…
+status.extract = 인증서를 꺼내는 중…
+status.full = 내보내기 금지를 푸는 중…
+status.check = 키 권한을 확인하는 중…
+status.install = 컨테이너를 설치하는 중…
+status.pfx = PFX로 내보내는 중…
+status.cancelling = 취소하는 중…
+
+# --- 창 로그의 메시지 ---
+log.deps.header = 의존성(CryptoPro CSP 말고는 내려받거나 설치할 것이 없습니다):
+log.session = 이번 세션의 로그: {0}
+log.done = 완료.
+log.tokens.unavailable = Rutoken을 쓸 수 없습니다: {0}
+log.need.dest = 대상 폴더를 지정하세요.
+log.need.container = 목록에서 컨테이너를 선택하세요.
+log.exported = 꺼낸 컨테이너: {0}
+log.cert.exchange = 교환 인증서:  {0}
+log.cert.sign = 서명 인증서: {0}
+log.cert.fail = 꺼내지 못했습니다. 토큰이 꽂혀 있고 CSP가 컨테이너를 보는지 확인하세요.
+log.full.done = 전체 과정을 마쳤습니다.
+log.cancelled.user = 사용자가 취소했습니다.
+log.cancelled = 취소되었습니다.
+log.cancel.requested = 취소가 요청되었습니다 — 작업은 가장 가까운 단계에서 멈춥니다.
+log.cancel.done = 작업이 취소되었습니다.
+log.error = 오류: {0}
+log.lang.changed = 인터페이스 언어: {0}
+log.container.unnamed = (이름 없음)
+log.container.csp = CSP
+log.container.token = Rutoken: {0}
+log.container.provider = 공급자 {0}
+log.container.files = {0}, 파일: {1}
+log.check.container = 컨테이너 「{0}」:
+log.check.exchange = 교환 키:  {0}
+log.check.sign = 서명 키: {0}
+log.install.notcontainer = 선택한 폴더에 컨테이너가 없습니다(header.key, primary.key, masks.key가 필요합니다).
+log.install.done = 컨테이너를 설치했습니다: {0}
+log.install.norename = 이름은 「{0}」 그대로입니다: CryptoPro가 새 이름의 사본을 받아들이지 않았습니다. 내보내기 금지가 풀릴 때까지는 이렇습니다.
+log.install.invisible = CryptoPro가 아직 컨테이너를 보지 못합니다 — 「목록 새로 고침」을 한 번 더 누르거나 시스템에 다시 로그인하세요. CSP는 컨테이너 목록을 캐시합니다.
+log.pfx.nocertmgr = certmgr를 찾지 못했습니다 — 설치된 CryptoPro CSP가 필요합니다.
+log.pfx.done = PFX 준비 완료: {0}
+log.pfx.fail = PFX를 내보내지 못했습니다: {0}
+log.logs.fail = 로그 폴더를 열지 못했습니다: {0}
+
+# --- 대화 상자 ---
+dlg.confirm.title = 확인
+dlg.confirm.full = 연결된 모든 Rutoken에서 컨테이너를 꺼내고 인증서를 꺼낸 뒤 키의 내보내기 금지를 풉니다.\n\n계속할까요?
+dlg.folder.container = 꺼낸 컨테이너가 있는 폴더(*.key 파일 6개)
+dlg.install.title = CryptoPro에 컨테이너 설치
+dlg.install.prompt = CryptoPro 목록에 표시될 컨테이너 이름.\n바꾸지 않아도 됩니다: CSP가 이름을 바꾼 사본을 항상 받아들이지는 않습니다.
+dlg.pfx.save = PFX를 저장할 위치
+dlg.pfx.pass.title = PFX 암호
+dlg.pfx.pass.prompt = .pfx 파일의 암호(비워 둘 수 있으며, 그러면 암호 없는 파일이 됩니다):
+guide.title = 도움말 — {0}
+guide.caption = 도움말
+guide.missing = 이 빌드에는 설명서가 들어 있지 않습니다.
+
+# --- 의존성 보고(창과 deps 명령) ---
+diag.process = 프로세스: {0}, 버전 {1}
+diag.p12.missing = p12utility: 찾지 못함(빌드에 들어 있지도 않고 시스템에도 없음)
+diag.p12.found = p12utility: {0}: {1}
+diag.copy.bundled = 내장 사본
+diag.copy.external = 외부 사본
+diag.rtcom = rtCOMLite: {0}
+diag.rtcom.bundled = 내장 사본, 시스템 등록 없이
+diag.rtcom.system = 시스템에 등록된 구성 요소
+diag.rtcom.missing = 사용할 수 없음
+diag.rtcom.warn = 주의: 내장 사본은 32비트라 이 프로세스에 올라가지 않습니다 — 구성 요소를 설치하지 않고 Rutoken을 쓰려면 x86 이식형 빌드를 사용하세요
+diag.csp.ok = CryptoPro CSP: 설치됨, 공급자 {0}
+diag.csp.missing = CryptoPro CSP: 찾지 못함 — CryptoPro CSP를 설치하세요(유일한 외부 의존성입니다)
+diag.prov = {0}: {1} — {2}
+diag.prov.yes = 사용 가능
+diag.prov.no = 없음
+diag.notfound = 찾지 못함
+diag.notbundled = 빌드에 들어 있지 않음
+diag.p12.external = 외부 사본: {0}
+diag.p12.bundled = 내장 사본: {0}
+diag.p12.used = 사용될 것: {0}
+diag.rtcom.detail.none = 내장 사본: 없음({0})
+diag.rtcom.detail.ok = 내장 사본: {0}({1}) — 등록 없이 올라감
+diag.rtcom.detail.bad = 내장 사본: {0} — 맞지 않음({1})
+diag.rtcom.registered = 시스템에: 등록됨(대체 수단)
+diag.rtcom.unregistered = 시스템에: 등록되지 않음
+diag.arch = 라이브러리 {0}, 프로세스 {1}
+diag.arch.unknown = 라이브러리의 비트 수를 판별하지 못했습니다
+
+# --- 내보내기 흐름 ---
+pipe.saved = 컨테이너 「{0}」 저장됨 -> {1}
+pipe.cert.found = CryptoAPI로 컨테이너 「{0}」에서 인증서를 꺼냈습니다
+pipe.cert.autofail = 인증서를 자동으로 꺼내지 못했습니다: {0}
+pipe.keyexport.skip = 「{0}」의 keyexport 건너뜀: 인증서(.cer)를 찾지 못했습니다. 직접 지정하세요.
+pipe.keyexport.ok = OK: 「{0}」의 키가 내보내기 가능으로 표시되었습니다
+pipe.keyexport.fail = 「{0}」의 keyexport 오류: {1} {2}
+
+# --- 토큰 작업 ---
+token.connect = 스마트카드 서비스에 연결하는 중…
+token.found = 찾은 장치 수: {0}
+token.open = 토큰을 여는 중: {0}
+token.rtcom.loadfail = 내장 rtCOMLite를 불러오지 못했습니다({0}). 시스템에 등록된 것을 시도합니다
+token.rtcom.mismatch = 내장 rtCOMLite가 맞지 않습니다({0}). 시스템에 등록된 것을 시도합니다
+token.rtcom.extractfail = 내장 rtCOMLite를 풀지 못했습니다({0}). 시스템에 등록된 것을 시도합니다
+token.rtcom.unavailable = rtCOMLite 구성 요소를 쓸 수 없습니다: 내장 사본이 올라가지 않았고 시스템에도 등록되어 있지 않습니다. 프로그램의 비트 수를 확인하거나(x86 필요) https://help.kontur.ru/rtComLite.exe 에서 구성 요소를 설치하세요.
+token.pin.default = 공장 출하 PIN — 12345678로 인증합니다
+token.pin.given = 입력된 PIN으로 인증합니다
+token.pin.system = 시스템 PIN 창으로 인증합니다
+token.container = 컨테이너: {0} 「{1}」(파일 {2}개)
+
+# --- CryptoPro 유틸리티 실행 ---
+tool.certmgr.install = 인증서를 「개인」 저장소에 설치하고 컨테이너와 연결하는 중…
+tool.certmgr.installwarn = certmgr -install가 {0}을(를) 반환했습니다 — 그래도 내보내기를 시도합니다: 인증서가 이전에 설치되었을 수 있습니다
+tool.certmgr.export = 컨테이너를 PKCS#12로 내보내는 중…
+tool.startfail = {0}을(를) 시작하지 못했습니다
+tool.timeout = 시간 초과 {0} ms: {1}
+tool.cancelled = 취소로 인해 {0}이(가) 중지되었습니다
+
+# --- 사용자가 보는 오류 ---
+err.certmgr.notfound = certmgr를 찾지 못했습니다
+err.container.name = 컨테이너 이름이 지정되지 않았습니다
+err.container.nokey = 컨테이너 「{0}」을(를) 찾지 못했거나 필요한 종류의 키가 없습니다
+err.key.locked = 개인 키를 내보낼 수 없습니다 — 먼저 금지를 푸세요(「{0}」). {1}
+err.cert.extract = 컨테이너에서 인증서를 꺼내지 못했습니다
+err.pfx.missing = certmgr는 성공이라고 했지만 파일이 만들어지지 않았습니다: {0}
+err.folder.notcontainer = 폴더에 컨테이너가 없습니다(header.key, primary.key, masks.key가 필요합니다): {0}
+err.folder.outside = 폴더가 CryptoPro 저장소 밖에 있습니다: {0}
+err.folder.notlike = 폴더가 컨테이너로 보이지 않습니다: {0}
+err.folder.extra = 컨테이너 폴더에 관계없는 파일이 있어 삭제를 취소했습니다: {0}
+err.store.full = {0}에서 빈 폴더를 찾지 못했습니다
+err.name.empty = 컨테이너 이름이 비어 있습니다
+err.name.toolong = 컨테이너 이름이 {0}자를 넘습니다
+err.p12.notfound = p12utility를 찾지 못했습니다
+err.p12.unavailable = p12utility를 찾지 못했습니다: 내장 사본을 쓸 수 없습니다. p12utility.win32.exe를 프로그램 옆에 두거나 경로를 지정하세요.
+err.header.missing = 폴더에 header.key가 없습니다
+err.cert.required = 인증서가 최소 하나 필요합니다(--cert/--certsg). 「개인」 저장소나 컨테이너에서 .cer를 내보내세요.
+err.com.notfound = COM 라이브러리를 찾지 못했습니다
+err.com.call = {0}이(가) {1}을(를) 반환했습니다
+
+# --- 키 권한 ---
+key.notfound = 키를 찾지 못함
+key.readfail = 권한을 읽지 못함({0})
+key.exportable = 내보내기 가능(KP_PERMISSIONS=0x{0})
+key.locked = 내보내기 불가(KP_PERMISSIONS=0x{0}, CRYPT_EXPORT 플래그 없음)
+
+# --- 컨테이너 설치 ---
+install.result = 「{0}」-> {1}
+install.result.visible = 「{0}」-> {1}(CryptoPro가 봄)
+install.result.invisible = 「{0}」-> {1}(CryptoPro가 아직 보지 못함)
+
+# --- 콘솔 모드 ---
+cli.usage.title = CryptoProExport — Rutoken에서 컨테이너를 꺼내고 키의 내보내기 금지를 풉니다
+cli.usage.deps = 의존성 확인(내장된 것 + CryptoPro CSP)
+cli.usage.list = 컨테이너 목록(CSP + 토큰)
+cli.usage.extractcert = 컨테이너에서 .cer 꺼내기(CryptoAPI)
+cli.usage.checkexport = 개인 키가 내보내기 가능한지 확인
+cli.usage.export = 토큰에서 컨테이너를 디스크로 꺼내기
+cli.usage.keyexport = 폴더의 키를 내보내기 가능하게 만들기
+cli.usage.install = 컨테이너 폴더를 CryptoPro에 설치
+cli.usage.installed = 설치된 파일 컨테이너 표시
+cli.usage.uninstall = 설치된 컨테이너 삭제
+cli.usage.topfx = 컨테이너를 PKCS#12로 내보내기(certmgr)
+cli.usage.full = 토큰에서 꺼내기 + 자동 .cer + keyexport
+cli.usage.help = 내장 설명서 전문
+cli.usage.lang = 인터페이스와 메시지의 언어
+cli.usage.gui = (인수 없이 — 그래픽 인터페이스)
+cli.list.csp = CSP가 보는 컨테이너:
+cli.list.tokens = 연결된 Rutoken의 컨테이너:
+cli.list.provider = (공급자 {0})
+cli.list.files = (파일 {0}개)
+cli.cert.exchange = 교환:  {0}
+cli.cert.sign = 서명: {0}
+cli.check.exchange = 교환 키:  {0}
+cli.check.sign = 서명 키: {0}
+cli.keyexport.ok = 완료: 키를 내보낼 수 있습니다
+cli.installed.header = CryptoPro 저장소의 파일 컨테이너({0}):
+cli.uninstall.done = 삭제됨: {0}
+cli.topfx.nocertmgr = certmgr를 찾지 못했습니다 — 설치된 CryptoPro CSP가 필요합니다
+cli.done = 완료: {0}
+cli.error = 오류: {0}
+cli.failure = 오류: {0}
+cli.install.norename = 이름 변경이 적용되지 않았습니다: CryptoPro가 「{0}」 이름의 사본을 받아들이지 않았습니다. 내보내기 금지가 풀릴 때까지는 이렇습니다(--cprepair).
+cli.install.invisible = CryptoPro가 아직 컨테이너를 보지 못합니다. 보통 프로그램을 다시 실행하거나 시스템에 다시 로그인하면 해결됩니다 — CSP는 컨테이너 목록을 캐시합니다.
+cli.lang.unknown = 알 수 없는 언어 「{0}」입니다. 사용할 수 있는 언어: {1}
+cli.lang.missing = --lang에는 언어 코드가 필요합니다. 사용할 수 있는 언어: {0}

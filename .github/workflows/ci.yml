@@ -71,12 +71,42 @@ jobs:
       - name: Проверить встроенное руководство
         shell: pwsh
         run: |
-          $log = "$env:RUNNER_TEMP/help.txt"
-          $p = Start-Process publish/CryptoProExport.exe 'help' -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput $log
+          # Язык вывода зависит от культуры машины, поэтому задаём его явно:
+          # на англоязычном раннере поиск русского маркера иначе бы упал.
+          $cases = @(
+            @{ lang = 'ru'; marker = 'КОМАНДНАЯ СТРОКА' },
+            @{ lang = 'en'; marker = 'COMMAND LINE' },
+            @{ lang = 'ja'; marker = 'COMMAND LINE' }   # перевода руководства нет — откат на en
+          )
+          foreach ($c in $cases) {
+            $log = "$env:RUNNER_TEMP/help-$($c.lang).txt"
+            $p = Start-Process publish/CryptoProExport.exe "help --lang $($c.lang)" -Wait -PassThru `
+                               -WindowStyle Hidden -RedirectStandardOutput $log
+            $text = [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($log))
+            "--lang $($c.lang): строк $(($text -split "`n").Count)"
+            if ($p.ExitCode -ne 0) { throw "help --lang $($c.lang) вернул $($p.ExitCode)" }
+            if ($text -notmatch $c.marker) { throw "в руководстве ($($c.lang)) нет маркера $($c.marker)" }
+          }
+
+      - name: Проверить локализацию консольного вывода
+        shell: pwsh
+        run: |
+          # Свои строки переведены на 20 языков; здесь проверяем, что --lang доходит
+          # до вывода и что неизвестный язык — это внятная ошибка, а не молчание.
+          $log = "$env:RUNNER_TEMP/usage-tr.txt"
+          Start-Process publish/CryptoProExport.exe 'чепуха --lang tr' -Wait -WindowStyle Hidden `
+                        -RedirectStandardOutput $log | Out-Null
           $text = [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($log))
-          "строк в руководстве: $(($text -split "`n").Count)"
-          if ($p.ExitCode -ne 0) { throw "help вернул $($p.ExitCode)" }
-          if ($text -notmatch 'КОМАНДНАЯ СТРОКА') { throw "руководство не вшито в exe" }
+          $text
+          if ($text -notmatch 'kapsayıcı') { throw "подсказка по командам не переведена на tr" }
+
+          $err = "$env:RUNNER_TEMP/lang-err.txt"
+          $p = Start-Process publish/CryptoProExport.exe '--lang zz help' -Wait -PassThru -WindowStyle Hidden `
+                            -RedirectStandardOutput "$env:RUNNER_TEMP/lang-out.txt" -RedirectStandardError $err
+          $message = [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($err))
+          $message
+          if ($p.ExitCode -ne 1) { throw "неизвестный --lang должен давать код 1, получен $($p.ExitCode)" }
+          if ($message -notmatch 'zh-Hans') { throw "в сообщении об ошибке нет списка доступных языков" }
 
       - name: Проверить коды возврата CLI
         shell: pwsh

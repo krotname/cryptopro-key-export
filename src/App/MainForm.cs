@@ -16,49 +16,65 @@ namespace CryptoProExport.App
     ///   • Экспорт с токена — снять 6 .key на диск (rtCOMLite, обход CSP);
     ///   • Извлечь .cer — вытащить сертификат из контейнера (CryptoAPI);
     ///   • Сделать экспортируемым — полный цикл: снять + авто-.cer + p12utility --keyexport.
+    ///
+    /// Все надписи берутся из <see cref="Strings"/> и переставляются на лету
+    /// (<see cref="ApplyTexts"/>), поэтому язык можно сменить прямо в окне.
     /// </summary>
     [SupportedOSPlatform("windows")]
     public sealed class MainForm : Form
     {
         private TextBox _txtP12, _txtDest, _txtPin, _txtLog;
         private ListView _lv;
+        private SplitContainer _split;
+        private ColumnHeader _colWhere, _colName, _colDetails;
+        private Label _lblP12, _lblDest, _lblPin, _lblPinHint, _lblLang;
+        private Button _btnP12, _btnDest;
         private Button _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnInstall, _btnCheck, _btnPfx, _btnLogs, _btnHelp;
         private Button _btnCancel;
         private Button[] _actionButtons;
+        private ComboBox _cmbLang;
         private ToolTip _tips;
         private ToolStripStatusLabel _status;
         private ToolStripProgressBar _progress;
         private CancellationTokenSource _cancellation;
+        private bool _busy;
 
         public MainForm()
         {
             BuildUi();
+            ApplyTexts();
             _txtP12.Text = P12Utility.Locate() ?? "";
             _txtDest.Text = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "RutokenExport");
+        }
+
+        /// <summary>Список и журнал делят место пополам — журнал читают не реже перечня.</summary>
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+            if (_split.Height > 200) _split.SplitterDistance = _split.Height / 2;
         }
 
         /// <summary>После показа окна — сводка по зависимостям в лог (что вшито, чего не хватает).</summary>
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
-            Run("Проверка зависимостей…", () =>
+            Run("status.deps", () =>
             {
-                Log("Зависимости (скачивать и ставить ничего не нужно, кроме КриптоПро CSP):");
+                Log(Strings.Get("log.deps.header"));
                 foreach (var line in CryptoProExport.Diagnostics.Report())
                     Log("  " + line);
-                Log("Журнал этого сеанса: " + SessionLog.FilePath);
+                Log(Strings.Format("log.session", SessionLog.FilePath));
                 Log("");
             });
         }
 
         private void BuildUi()
         {
-            Text = "Экспорт ключей КриптоПро с Рутокена";
             SetWindowIcon();
             Font = new Font("Segoe UI", 9f);
-            ClientSize = new Size(880, 640);
-            MinimumSize = new Size(720, 520);
+            ClientSize = new Size(880, 660);
+            MinimumSize = new Size(720, 540);
             StartPosition = FormStartPosition.CenterScreen;
 
             // Всплывающие подсказки: держим долго открытыми — тексты многострочные и объясняют шаг целиком
@@ -69,61 +85,55 @@ namespace CryptoProExport.App
             };
 
             // --- Панель настроек ---
+            // Ширины колонок и высота панели считаются по содержимому: переводы длиннее
+            // русского оригинала, и жёсткие размеры обрезали бы надписи.
             var settings = new TableLayoutPanel
             {
-                Dock = DockStyle.Top, ColumnCount = 3, RowCount = 3,
-                Padding = new Padding(10, 10, 10, 4), Height = 116, AutoSize = false,
+                Dock = DockStyle.Top, ColumnCount = 3, RowCount = 4,
+                Padding = new Padding(10, 10, 10, 4),
+                AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
             };
-            settings.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150));
+            settings.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             settings.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            settings.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
+            settings.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
-            _txtP12 = new TextBox
-            {
-                Dock = DockStyle.Fill,
-                PlaceholderText = "встроенная копия — указывать ничего не нужно",
-            };
-            _txtDest = new TextBox { Dock = DockStyle.Fill };
-            _txtPin = new TextBox { Dock = DockStyle.Fill, UseSystemPasswordChar = true };
+            _txtP12 = new TextBox { Dock = DockStyle.Fill, Margin = new Padding(3, 4, 3, 4) };
+            _txtDest = new TextBox { Dock = DockStyle.Fill, Margin = new Padding(3, 4, 3, 4) };
+            _txtPin = new TextBox { Dock = DockStyle.Fill, UseSystemPasswordChar = true, Margin = new Padding(3, 4, 3, 4) };
 
-            var lblP12 = new Label { Text = "p12utility.exe:", TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill };
-            settings.Controls.Add(lblP12, 0, 0);
+            _lblP12 = MakeFieldLabel();
+            settings.Controls.Add(_lblP12, 0, 0);
             settings.Controls.Add(_txtP12, 1, 0);
-            var btnP12 = new Button { Text = "Обзор…", Dock = DockStyle.Fill };
-            btnP12.Click += (_, __) => PickFile(_txtP12, "p12utility|p12utility*.exe|Все файлы|*.*");
-            settings.Controls.Add(btnP12, 2, 0);
+            _btnP12 = new Button { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Fill };
+            _btnP12.Click += (_, __) => PickFile(_txtP12,
+                "p12utility|p12utility*.exe|" + Strings.Get("files.all") + "|*.*");
+            settings.Controls.Add(_btnP12, 2, 0);
 
-            var lblDest = new Label { Text = "Папка назначения:", TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill };
-            settings.Controls.Add(lblDest, 0, 1);
+            _lblDest = MakeFieldLabel();
+            settings.Controls.Add(_lblDest, 0, 1);
             settings.Controls.Add(_txtDest, 1, 1);
-            var btnDest = new Button { Text = "Обзор…", Dock = DockStyle.Fill };
-            btnDest.Click += (_, __) => PickFolder(_txtDest);
-            settings.Controls.Add(btnDest, 2, 1);
+            _btnDest = new Button { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Fill };
+            _btnDest.Click += (_, __) => PickFolder(_txtDest);
+            settings.Controls.Add(_btnDest, 2, 1);
 
-            var lblPin = new Label { Text = "PIN (необязат.):", TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill };
-            settings.Controls.Add(lblPin, 0, 2);
+            _lblPin = MakeFieldLabel();
+            settings.Controls.Add(_lblPin, 0, 2);
             settings.Controls.Add(_txtPin, 1, 2);
-            var lblPinHint = new Label { Text = "пусто → окно ввода", ForeColor = Color.Gray, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill };
-            settings.Controls.Add(lblPinHint, 2, 2);
+            _lblPinHint = MakeFieldLabel();
+            _lblPinHint.ForeColor = Color.Gray;
+            settings.Controls.Add(_lblPinHint, 2, 2);
 
-            const string tipP12 =
-                "Путь к утилите КриптоПро p12utility — ею снимается запрет на экспорт ключа.\n" +
-                "Оставьте поле пустым: копия утилиты уже встроена в программу и распакуется сама.\n" +
-                "Заполняйте, только если нужна другая версия p12utility.";
-            Tip(lblP12, tipP12); Tip(_txtP12, tipP12);
-            Tip(btnP12, "Выбрать другой файл p12utility.exe вместо встроенного.");
-
-            const string tipDest =
-                "Куда складывать результат: папки со снятыми контейнерами (*.key) и файлы сертификатов (.cer).\n" +
-                "Внимание: это копия вашего закрытого ключа — храните её как секрет.";
-            Tip(lblDest, tipDest); Tip(_txtDest, tipDest);
-            Tip(btnDest, "Выбрать папку назначения в проводнике.");
-
-            const string tipPin =
-                "PIN пользователя Рутокена.\n" +
-                "Пусто → PIN спросит системное окно (а если на токене заводской PIN, подставится 12345678).\n" +
-                "Символы скрыты; значение нигде не сохраняется.";
-            Tip(lblPin, tipPin); Tip(_txtPin, tipPin); Tip(lblPinHint, tipPin);
+            _lblLang = MakeFieldLabel();
+            settings.Controls.Add(_lblLang, 0, 3);
+            _cmbLang = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Width = 260, Anchor = AnchorStyles.Left, Margin = new Padding(3, 4, 3, 4),
+            };
+            foreach (string code in Strings.Available) _cmbLang.Items.Add(new LanguageChoice(code));
+            SelectCurrentLanguage();
+            _cmbLang.SelectedIndexChanged += (_, __) => OnLanguagePicked();
+            settings.Controls.Add(_cmbLang, 1, 3);
 
             // --- Панель кнопок ---
             var buttons = new FlowLayoutPanel
@@ -131,17 +141,17 @@ namespace CryptoProExport.App
                 Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 WrapContents = true, Padding = new Padding(10, 4, 10, 4),
             };
-            _btnRefresh = MakeButton("Обновить список", 130, (_, __) => Run("Обновление списка контейнеров…", RefreshList));
-            _btnExport = MakeButton("Экспорт с токена", 150, (_, __) => Run("Снятие контейнеров с токена…", DoExport));
-            _btnExtract = MakeButton("Извлечь сертификат", 160, (_, __) => Run("Извлечение сертификата…", DoExtract));
-            _btnFull = MakeButton("Сделать экспортируемым", 200, (_, __) => Run("Снятие запрета на экспорт…", DoFull));
+            _btnRefresh = MakeButton((_, __) => Run("status.refresh", RefreshList));
+            _btnExport = MakeButton((_, __) => Run("status.export", DoExport));
+            _btnExtract = MakeButton((_, __) => Run("status.extract", DoExtract));
+            _btnFull = MakeButton((_, __) => Run("status.full", DoFull));
             _btnFull.Font = new Font(Font, FontStyle.Bold);
-            _btnCheck = MakeButton("Проверить ключ", 130, (_, __) => Run("Проверка прав ключа…", DoCheckExportable));
-            _btnInstall = MakeButton("Установить в КриптоПро", 190, (_, __) => Run("Установка контейнера…", DoInstall));
-            _btnPfx = MakeButton("Экспорт в PFX", 130, (_, __) => Run("Экспорт в PFX…", DoExportPfx));
-            _btnLogs = MakeButton("Журнал", 90, (_, __) => OpenLogFolder());
-            _btnHelp = MakeButton("Справка", 90, (_, __) => Guide.Show(this));
-            _btnCancel = MakeButton("Отмена", 90, (_, __) => CancelCurrent());
+            _btnCheck = MakeButton((_, __) => Run("status.check", DoCheckExportable));
+            _btnInstall = MakeButton((_, __) => Run("status.install", DoInstall));
+            _btnPfx = MakeButton((_, __) => Run("status.pfx", DoExportPfx));
+            _btnLogs = MakeButton((_, __) => OpenLogFolder());
+            _btnHelp = MakeButton((_, __) => Guide.Show(this));
+            _btnCancel = MakeButton((_, __) => CancelCurrent());
             _btnCancel.Enabled = false;
             _actionButtons = new[]
             {
@@ -151,73 +161,20 @@ namespace CryptoProExport.App
             buttons.Controls.AddRange(_actionButtons);
             buttons.Controls.Add(_btnCancel);
 
-            Tip(_btnRefresh,
-                "Шаг 1. Показать список ключевых контейнеров:\n" +
-                "  • видимые КриптоПро CSP (в т.ч. на вставленном токене);\n" +
-                "  • найденные на подключённых Рутокенах напрямую.\n" +
-                "Ничего не изменяет — только читает. С этой кнопки удобно начинать.");
-            Tip(_btnExport,
-                "Шаг 2. Снять контейнеры со всех подключённых Рутокенов в папку назначения\n" +
-                "(по 6 файлов *.key на контейнер). Читает память токена напрямую, минуя CSP,\n" +
-                "поэтому работает и при запрете на экспорт. Токен и данные на нём не изменяются.\n" +
-                "Ключ в снятой копии остаётся неэкспортируемым — это делает кнопка «Сделать экспортируемым».");
-            Tip(_btnExtract,
-                "Шаг 3. Сохранить сертификат выбранного в списке контейнера в файл .cer\n" +
-                "(открытые данные, извлекаются штатно через CryptoAPI).\n" +
-                "Нужен выделенный контейнер в списке, вставленный токен и видимость контейнера в CSP.\n" +
-                "Сертификат требуется утилите p12utility для снятия запрета на экспорт.");
-            Tip(_btnFull,
-                "Всё за один клик: снять контейнеры с токена → извлечь сертификаты →\n" +
-                "снять запрет на экспорт закрытого ключа (p12utility --cprepair --keyexport).\n" +
-                "Результат: в папке назначения — копия контейнера с экспортируемым ключом\n" +
-                "(годится для резервной копии, переноса и конвертации в PFX).\n" +
-                "Исходный токен при этом не изменяется; исходный header.key копии сохраняется как header.key.backup.");
-            Tip(_btnCheck,
-                "Проверить выбранный в списке контейнер: снят ли запрет на экспорт закрытого ключа.\n" +
-                "Пробует выгрузить ключ (CryptExportKey) и сразу отпускает — сам ключ никуда не сохраняется.\n" +
-                "Так проверяется, что «Сделать экспортируемым» действительно сработало.");
-            Tip(_btnInstall,
-                "Установить снятую с токена папку контейнера (6 файлов *.key) в КриптоПро —\n" +
-                "скопировать её в хранилище CSP. После этого контейнер виден в списке и работает\n" +
-                "без токена: из него можно извлечь сертификат и сделать экспорт в PFX.\n" +
-                "Имя менять не обязательно: КриптоПро сверяет имя с содержимым контейнера и\n" +
-                "переименованную копию принимает не всегда. Программа проверит результат и скажет,\n" +
-                "увидел ли CSP контейнер на самом деле.");
-            Tip(_btnCancel,
-                "Прервать текущую операцию.\n" +
-                "Работа остановится на ближайшем шаге: обращение к токену или запущенную\n" +
-                "утилиту КриптоПро приходится сначала довести до конца — запущенная утилита\n" +
-                "при этом снимается. Уже сохранённые файлы остаются на месте.");
-            Tip(_btnHelp,
-                "Встроенное руководство: с чего начать, что делает каждая кнопка,\n" +
-                "команды консольного режима и разбор типичных ошибок.\n" +
-                "Лежит внутри программы — интернет и сторонние файлы не нужны.");
-            Tip(_btnLogs,
-                "Открыть папку с журналами работы программы.\n" +
-                "Каждый запуск пишет отдельный файл — его удобно приложить к вопросу,\n" +
-                "если что-то не получилось. Пароли в журнал не попадают.");
-            Tip(_btnPfx,
-                "Выгрузить выбранный в списке контейнер в файл PKCS#12 (.pfx) — сертификат вместе\n" +
-                "с закрытым ключом, для переноса в другую систему.\n" +
-                "Требуется: запрет на экспорт уже снят («Проверить ключ» показывает «экспортируемый»)\n" +
-                "и установлен КриптоПро CSP (используется его certmgr).\n" +
-                "Пароль на .pfx программа спросит отдельно.");
-
             // --- Список + лог ---
-            var split = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Horizontal, SplitterDistance = 260 };
+            // SplitterDistance выставляется в OnLoad: до раскладки высота панели ещё не известна,
+            // и значение, заданное здесь, WinForms молча обрезает по фактическому размеру.
+            var split = _split = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Horizontal };
 
             _lv = new ListView
             {
                 Dock = DockStyle.Fill, View = View.Details, FullRowSelect = true,
                 GridLines = true, MultiSelect = false, HideSelection = false,
             };
-            _lv.Columns.Add("Расположение", 150);
-            _lv.Columns.Add("Контейнер", 360);
-            _lv.Columns.Add("Детали", 320);
-            Tip(_lv,
-                "Найденные ключевые контейнеры.\n" +
-                "«Расположение» = CSP (виден КриптоПро) или имя Рутокена (прочитан напрямую с токена).\n" +
-                "Выделите строку — выбранный контейнер использует кнопка «Извлечь сертификат».");
+            _colWhere = new ColumnHeader { Width = 150 };
+            _colName = new ColumnHeader { Width = 360 };
+            _colDetails = new ColumnHeader { Width = 320 };
+            _lv.Columns.AddRange(new[] { _colWhere, _colName, _colDetails });
             split.Panel1.Controls.Add(_lv);
             split.Panel1.Padding = new Padding(10, 0, 10, 0);
 
@@ -228,14 +185,11 @@ namespace CryptoProExport.App
                 BackColor = Color.FromArgb(30, 30, 30), ForeColor = Color.Gainsboro,
                 Font = new Font("Consolas", 9f),
             };
-            Tip(_txtLog,
-                "Журнал выполнения: команды p12utility, шаги работы с токеном и ошибки.\n" +
-                "Текст можно выделить и скопировать (Ctrl+C) — пригодится при разборе проблем.");
             split.Panel2.Controls.Add(_txtLog);
             split.Panel2.Padding = new Padding(10, 0, 10, 10);
 
             // --- Строка состояния: что идёт прямо сейчас ---
-            _status = new ToolStripStatusLabel("Готово") { Spring = true, TextAlign = ContentAlignment.MiddleLeft };
+            _status = new ToolStripStatusLabel { Spring = true, TextAlign = ContentAlignment.MiddleLeft };
             _progress = new ToolStripProgressBar { Style = ProgressBarStyle.Marquee, Visible = false, Width = 140 };
             var statusStrip = new StatusStrip { SizingGrip = false };
             statusStrip.Items.AddRange(new ToolStripItem[] { _status, _progress });
@@ -244,6 +198,98 @@ namespace CryptoProExport.App
             Controls.Add(buttons);
             Controls.Add(settings);
             Controls.Add(statusStrip);
+        }
+
+        /// <summary>
+        /// Расставить все надписи и подсказки по действующему языку. Вызывается из конструктора
+        /// и при смене языка — второй раз по тем же ссылкам на элементы.
+        /// </summary>
+        private void ApplyTexts()
+        {
+            Text = Strings.Get("app.title");
+
+            // Арабский, урду и фарси пишутся справа налево: без зеркальной раскладки
+            // подписи и поля разъезжаются в разные стороны.
+            bool rtl = Strings.CurrentIsRightToLeft;
+            RightToLeft = rtl ? RightToLeft.Yes : RightToLeft.No;
+            RightToLeftLayout = rtl;
+
+            _lblP12.Text = Strings.Get("field.p12");
+            _lblDest.Text = Strings.Get("field.dest");
+            _lblPin.Text = Strings.Get("field.pin");
+            _lblPinHint.Text = Strings.Get("field.pin.hint");
+            _lblLang.Text = Strings.Get("field.lang");
+            _btnP12.Text = Strings.Get("common.browse");
+            _btnDest.Text = Strings.Get("common.browse");
+            _txtP12.PlaceholderText = Strings.Get("field.p12.placeholder");
+
+            Tip(_lblP12, "tip.p12"); Tip(_txtP12, "tip.p12"); Tip(_btnP12, "tip.p12.browse");
+            Tip(_lblDest, "tip.dest"); Tip(_txtDest, "tip.dest"); Tip(_btnDest, "tip.dest.browse");
+            Tip(_lblPin, "tip.pin"); Tip(_txtPin, "tip.pin"); Tip(_lblPinHint, "tip.pin");
+            Tip(_lblLang, "tip.lang"); Tip(_cmbLang, "tip.lang");
+
+            SetButton(_btnRefresh, "btn.refresh", "tip.refresh");
+            SetButton(_btnExport, "btn.export", "tip.export");
+            SetButton(_btnExtract, "btn.extract", "tip.extract");
+            SetButton(_btnFull, "btn.full", "tip.full");
+            SetButton(_btnCheck, "btn.check", "tip.check");
+            SetButton(_btnInstall, "btn.install", "tip.install");
+            SetButton(_btnPfx, "btn.pfx", "tip.pfx");
+            SetButton(_btnLogs, "btn.logs", "tip.logs");
+            SetButton(_btnHelp, "btn.help", "tip.help");
+            SetButton(_btnCancel, "btn.cancel", "tip.cancel");
+
+            _colWhere.Text = Strings.Get("col.location");
+            _colName.Text = Strings.Get("col.container");
+            _colDetails.Text = Strings.Get("col.details");
+            Tip(_lv, "tip.list");
+            Tip(_txtLog, "tip.log");
+
+            if (!_busy) _status.Text = Strings.Get("status.ready");
+        }
+
+        private void OnLanguagePicked()
+        {
+            if (_cmbLang.SelectedItem is not LanguageChoice choice) return;
+            if (string.Equals(choice.Code, Strings.Current, StringComparison.OrdinalIgnoreCase)) return;
+            Strings.Use(choice.Code);
+            Strings.Remember(choice.Code);
+            ApplyTexts();
+            Log(Strings.Format("log.lang.changed", Strings.NativeName(choice.Code)));
+        }
+
+        /// <summary>
+        /// Переключить язык уже построенного окна — ровно то, что делает выбор в списке,
+        /// но без запоминания выбора. Нужно самопроверке: она гоняет одно окно по всем языкам,
+        /// проверяя, что повторная раскладка надписей (и смена RightToLeftLayout) не ломает форму.
+        /// </summary>
+        internal void SwitchLanguage(string code)
+        {
+            if (!Strings.Use(code)) return;
+            SelectCurrentLanguage();
+            ApplyTexts();
+        }
+
+        private void SelectCurrentLanguage()
+        {
+            for (int i = 0; i < _cmbLang.Items.Count; i++)
+            {
+                if (_cmbLang.Items[i] is LanguageChoice c &&
+                    string.Equals(c.Code, Strings.Current, StringComparison.OrdinalIgnoreCase))
+                {
+                    _cmbLang.SelectedIndex = i;
+                    return;
+                }
+            }
+            if (_cmbLang.Items.Count > 0) _cmbLang.SelectedIndex = 0;
+        }
+
+        /// <summary>Строка списка языков: код скрыт в объекте, пользователю видно родное название.</summary>
+        private sealed class LanguageChoice
+        {
+            public LanguageChoice(string code) => Code = code;
+            public string Code { get; }
+            public override string ToString() => Strings.NativeName(Code) + " (" + Code + ")";
         }
 
         /// <summary>Иконка окна и панели задач — та же, что у exe, из вшитого ресурса (все размеры).</summary>
@@ -257,42 +303,87 @@ namespace CryptoProExport.App
             catch (ArgumentException) { }
         }
 
-        private Button MakeButton(string text, int width, EventHandler onClick)
+        private static Label MakeFieldLabel() => new Label
         {
-            var b = new Button { Text = text, Width = width, Height = 34, Margin = new Padding(0, 0, 8, 0) };
+            AutoSize = true, TextAlign = ContentAlignment.MiddleLeft,
+            Anchor = AnchorStyles.Left, Margin = new Padding(3, 8, 8, 8),
+        };
+
+        /// <summary>Кнопки растягиваются под текст: длина надписи зависит от языка.</summary>
+        private Button MakeButton(EventHandler onClick)
+        {
+            var b = new Button
+            {
+                AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                MinimumSize = new Size(90, 34), Padding = new Padding(10, 0, 10, 0),
+                Margin = new Padding(0, 0, 8, 4),
+            };
             b.Click += onClick;
             return b;
         }
 
+        private void SetButton(Button b, string textKey, string tipKey)
+        {
+            b.Text = Strings.Get(textKey);
+            Tip(b, tipKey);
+        }
+
         /// <summary>Всплывающая подсказка: что делает элемент, что для этого нужно и что получится.</summary>
-        private void Tip(Control c, string text) => _tips.SetToolTip(c, text);
+        private void Tip(Control c, string key) => _tips.SetToolTip(c, Strings.Get(key));
 
         /// <summary>
-        /// Самопроверка для --selftest: у каждой кнопки, поля ввода и списка должна быть подсказка.
-        /// Возвращает количество элементов с подсказкой и описания тех, у кого её нет.
+        /// Самопроверка для --selftest: у каждой кнопки, поля ввода, списка и выпадающего
+        /// списка должна быть подсказка. Возвращает количество элементов с подсказкой
+        /// и описания тех, у кого её нет.
         /// </summary>
         internal (int withTip, List<string> missing) CheckTooltips()
         {
             var missing = new List<string>();
             int withTip = 0;
 
-            void Walk(Control root)
+            Walk(this, c =>
             {
-                foreach (Control c in root.Controls)
-                {
-                    if (c is Button || c is TextBox || c is ListView)
-                    {
-                        if (string.IsNullOrWhiteSpace(_tips.GetToolTip(c)))
-                            missing.Add($"{c.GetType().Name} \"{c.Text}\"");
-                        else
-                            withTip++;
-                    }
-                    Walk(c);
-                }
+                if (c is not (Button or TextBox or ListView or ComboBox)) return;
+                if (string.IsNullOrWhiteSpace(_tips.GetToolTip(c))) missing.Add($"{c.GetType().Name} \"{c.Text}\"");
+                else withTip++;
+            });
+
+            return (withTip, missing);
+        }
+
+        /// <summary>
+        /// Самопроверка для --selftest: ни одна надпись и ни одна подсказка не должны содержать
+        /// маркер отсутствующего перевода. Так потерянный ключ виден сразу, а не пустотой в окне.
+        /// </summary>
+        internal List<string> MissingTranslations()
+        {
+            var bad = new List<string>();
+
+            void Check(string where, string text)
+            {
+                if (!string.IsNullOrEmpty(text) && text.Contains(Strings.MissingMarkerStart, StringComparison.Ordinal))
+                    bad.Add(where + ": " + text);
             }
 
-            Walk(this);
-            return (withTip, missing);
+            Check("Form.Text", Text);
+            Check("StatusBar", _status.Text);
+            foreach (ColumnHeader col in _lv.Columns) Check("Column", col.Text);
+            Walk(this, c =>
+            {
+                Check(c.GetType().Name, c.Text);
+                Check(c.GetType().Name + ".Tip", _tips.GetToolTip(c));
+            });
+            Check("Placeholder", _txtP12.PlaceholderText);
+            return bad;
+        }
+
+        private static void Walk(Control root, Action<Control> visit)
+        {
+            foreach (Control c in root.Controls)
+            {
+                visit(c);
+                Walk(c, visit);
+            }
         }
 
         // ---------- действия ----------
@@ -300,123 +391,118 @@ namespace CryptoProExport.App
         private void RefreshList(CancellationToken cancel = default)
         {
             Invoke(() => _lv.Items.Clear());
-            Log("Обновление списка контейнеров…");
+            Log(Strings.Get("status.refresh"));
             foreach (var c in CertFromContainer.EnumContainers())
-                AddRow("CSP", c.Name, $"провайдер {c.ProvType}");
+                AddRow(Strings.Get("log.container.csp"), c.Name, Strings.Format("log.container.provider", c.ProvType));
 
             cancel.ThrowIfCancellationRequested();
             try
             {
                 var exp = new RutokenExporter { Log = Log, Cancel = cancel };
                 foreach (var c in exp.ReadAllContainers())
-                    AddRow("Рутокен: " + c.TokenName, c.ContainerName ?? "(без имени)",
-                           $"{c.TokenDir}, файлов: {c.Files.Count}");
+                    AddRow(Strings.Format("log.container.token", c.TokenName),
+                           c.ContainerName ?? Strings.Get("log.container.unnamed"),
+                           Strings.Format("log.container.files", c.TokenDir, c.Files.Count));
             }
-            catch (Exception e) { Log("Рутокены недоступны: " + e.Message); }
-            Log("Готово.");
+            catch (Exception e) { Log(Strings.Format("log.tokens.unavailable", e.Message)); }
+            Log(Strings.Get("log.done"));
         }
 
         private void DoExport(CancellationToken cancel)
         {
             string dest = _txtDest.Text.Trim();
-            if (string.IsNullOrEmpty(dest)) { Log("Укажите папку назначения."); return; }
+            if (string.IsNullOrEmpty(dest)) { Log(Strings.Get("log.need.dest")); return; }
             var pipe = new ExportPipeline(NullIfEmpty(_txtP12.Text)) { Log = Log, Cancel = cancel };
             var saved = pipe.ExportFromTokens(dest, NullIfEmpty(_txtPin.Text));
-            Log($"Снято контейнеров: {saved.Count}");
+            Log(Strings.Format("log.exported", saved.Count));
             RefreshList(cancel);   // из рабочего потока: внутри всё, что трогает UI, идёт через Invoke
         }
 
         private void DoExtract()
         {
             string container = SelectedContainerName();
-            if (container == null) { Log("Выберите контейнер в списке."); return; }
+            if (container == null) { Log(Strings.Get("log.need.container")); return; }
             string destRoot = _txtDest.Text.Trim();
-            if (string.IsNullOrEmpty(destRoot)) { Log("Укажите папку назначения."); return; }
+            if (string.IsNullOrEmpty(destRoot)) { Log(Strings.Get("log.need.dest")); return; }
             string dest = Path.Combine(destRoot, "certs_" + Sanitize(container));
             var (ex, sg) = CertFromContainer.SaveCerts(container, dest);
-            Log(ex != null ? "Сертификат обмена:  " + ex : "Сертификат обмена: нет");
-            Log(sg != null ? "Сертификат подписи: " + sg : "Сертификат подписи: нет");
+            Log(Strings.Format("log.cert.exchange", ex ?? Strings.Get("common.none")));
+            Log(Strings.Format("log.cert.sign", sg ?? Strings.Get("common.none")));
             if (ex == null && sg == null)
-                Log("Не удалось извлечь. Убедитесь, что токен вставлен и контейнер виден CSP.");
+                Log(Strings.Get("log.cert.fail"));
         }
 
         private void DoFull(CancellationToken cancel)
         {
             string dest = _txtDest.Text.Trim();
-            if (string.IsNullOrEmpty(dest)) { Log("Укажите папку назначения."); return; }
-            var confirm = AskConfirm(
-                "Будут сняты контейнеры со всех подключённых Рутокенов, извлечены сертификаты и снят запрет на экспорт ключей.\n\nПродолжить?",
-                "Подтверждение");
-            if (confirm != DialogResult.OK) { Log("Отменено пользователем."); return; }
+            if (string.IsNullOrEmpty(dest)) { Log(Strings.Get("log.need.dest")); return; }
+            var confirm = AskConfirm(Strings.Get("dlg.confirm.full"), Strings.Get("dlg.confirm.title"));
+            if (confirm != DialogResult.OK) { Log(Strings.Get("log.cancelled.user")); return; }
 
             var pipe = new ExportPipeline(NullIfEmpty(_txtP12.Text)) { Log = Log, Cancel = cancel };
             pipe.ExportAndMakeExportable(dest, userPin: NullIfEmpty(_txtPin.Text));
-            Log("Полный цикл завершён.");
+            Log(Strings.Get("log.full.done"));
             RefreshList(cancel);   // из рабочего потока: внутри всё, что трогает UI, идёт через Invoke
         }
 
         private void DoCheckExportable()
         {
             string container = SelectedContainerName();
-            if (container == null) { Log("Выберите контейнер в списке."); return; }
+            if (container == null) { Log(Strings.Get("log.need.container")); return; }
             var ex = CertFromContainer.CheckExportable(container, CertFromContainer.AT_KEYEXCHANGE);
             var sg = CertFromContainer.CheckExportable(container, CertFromContainer.AT_SIGNATURE);
-            Log($"Контейнер \"{container}\":");
-            Log($"  ключ обмена:  {ex}");
-            Log($"  ключ подписи: {sg}");
+            Log(Strings.Format("log.check.container", container));
+            Log("  " + Strings.Format("log.check.exchange", ex));
+            Log("  " + Strings.Format("log.check.sign", sg));
         }
 
         private void DoInstall()
         {
-            string folder = AskFolder("Папка со снятым контейнером (6 файлов *.key)", _txtDest.Text.Trim());
-            if (folder == null) { Log("Отменено."); return; }
+            string folder = AskFolder(Strings.Get("dlg.folder.container"), _txtDest.Text.Trim());
+            if (folder == null) { Log(Strings.Get("log.cancelled")); return; }
             if (!ContainerStore.LooksLikeContainer(folder))
             {
-                Log("В выбранной папке нет контейнера (нужны header.key, primary.key, masks.key).");
+                Log(Strings.Get("log.install.notcontainer"));
                 return;
             }
 
             string current = ContainerStore.ReadName(folder)
                              ?? Path.GetFileName(folder.TrimEnd(Path.DirectorySeparatorChar));
 
-            string name = AskText("Установка контейнера в КриптоПро",
-                "Имя, под которым контейнер появится в списке КриптоПро.\n" +
-                "Менять не обязательно: переименование копии CSP принимает не всегда.",
-                current, password: false);
-            if (name == null) { Log("Отменено."); return; }
+            string name = AskText(Strings.Get("dlg.install.title"), Strings.Get("dlg.install.prompt"),
+                                  current, password: false);
+            if (name == null) { Log(Strings.Get("log.cancelled")); return; }
             name = name.Trim();
 
             var installed = ContainerStore.Install(folder, name == current ? null : name);
-            Log("Контейнер установлен: " + installed);
+            Log(Strings.Format("log.install.done", installed));
             if (name != current && !installed.Renamed)
-                Log($"Имя оставлено прежним (\"{installed.Name}\"): КриптоПро не принял копию с новым именем. " +
-                    "Так бывает, пока с контейнера не снят запрет на экспорт.");
+                Log(Strings.Format("log.install.norename", installed.Name));
             if (installed.Verified && !installed.VisibleToCsp)
-                Log("КриптоПро пока не видит контейнер — нажмите «Обновить список» ещё раз " +
-                    "или перезайдите в систему: CSP кэширует перечень контейнеров.");
+                Log(Strings.Get("log.install.invisible"));
             RefreshList();
         }
 
         private void DoExportPfx(CancellationToken cancel)
         {
             string container = SelectedContainerName();
-            if (container == null) { Log("Выберите контейнер в списке."); return; }
+            if (container == null) { Log(Strings.Get("log.need.container")); return; }
 
             string exe = CertMgr.Locate();
-            if (exe == null) { Log("certmgr не найден — нужен установленный КриптоПро CSP."); return; }
+            if (exe == null) { Log(Strings.Get("log.pfx.nocertmgr")); return; }
 
-            string dest = AskSaveFile("Куда сохранить PFX", "PKCS#12 (*.pfx)|*.pfx|Все файлы|*.*",
+            string dest = AskSaveFile(Strings.Get("dlg.pfx.save"),
+                                      "PKCS#12 (*.pfx)|*.pfx|" + Strings.Get("files.all") + "|*.*",
                                       _txtDest.Text.Trim(), Sanitize(container) + ".pfx");
-            if (dest == null) { Log("Отменено."); return; }
+            if (dest == null) { Log(Strings.Get("log.cancelled")); return; }
 
-            string pass = AskText("Пароль PFX",
-                "Пароль на файл .pfx (можно оставить пустым — тогда файл будет без пароля):",
-                "", password: true);
-            if (pass == null) { Log("Отменено."); return; }
+            string pass = AskText(Strings.Get("dlg.pfx.pass.title"), Strings.Get("dlg.pfx.pass.prompt"),
+                                  "", password: true);
+            if (pass == null) { Log(Strings.Get("log.cancelled")); return; }
 
             var cm = new CertMgr(exe) { Log = Log, Cancel = cancel };
             var r = cm.ExportContainerToPfx(container, dest, pass);
-            Log(r.Success ? "PFX готов: " + dest : "Не удалось выгрузить PFX: " + r.Output);
+            Log(r.Success ? Strings.Format("log.pfx.done", dest) : Strings.Format("log.pfx.fail", r.Output));
         }
 
         private void OpenLogFolder()
@@ -426,7 +512,7 @@ namespace CryptoProExport.App
                 Directory.CreateDirectory(SessionLog.Dir);
                 Process.Start(new ProcessStartInfo(SessionLog.Dir) { UseShellExecute = true });
             }
-            catch (Exception ex) { Log("Не удалось открыть папку журналов: " + ex.Message); }
+            catch (Exception ex) { Log(Strings.Format("log.logs.fail", ex.Message)); }
         }
 
         // ---------- helpers ----------
@@ -438,7 +524,11 @@ namespace CryptoProExport.App
         private DialogResult AskConfirm(string text, string caption)
         {
             if (InvokeRequired) return (DialogResult)Invoke(new Func<DialogResult>(() => AskConfirm(text, caption)));
-            return MessageBox.Show(this, text, caption, MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
+            var options = Strings.CurrentIsRightToLeft
+                ? MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign
+                : default;
+            return MessageBox.Show(this, text, caption, MessageBoxButtons.OKCancel, MessageBoxIcon.Question,
+                                   MessageBoxDefaultButton.Button1, options);
         }
 
         private string AskFolder(string description, string initial)
@@ -470,16 +560,16 @@ namespace CryptoProExport.App
         }
 
         /// <summary>Запустить длинную операцию в фоне: с подписью в строке состояния и возможностью отмены.</summary>
-        private void Run(string title, Action<CancellationToken> work)
+        private void Run(string titleKey, Action<CancellationToken> work)
         {
             var cancellation = new CancellationTokenSource();
             _cancellation = cancellation;
-            SetBusy(true, title);
+            SetBusy(true, Strings.Get(titleKey));
             Task.Run(() =>
             {
                 try { work(cancellation.Token); }
-                catch (OperationCanceledException) { Log("Операция отменена."); }
-                catch (Exception ex) { Log("ОШИБКА: " + ex.Message); }
+                catch (OperationCanceledException) { Log(Strings.Get("log.cancel.done")); }
+                catch (Exception ex) { Log(Strings.Format("log.error", ex.Message)); }
                 finally
                 {
                     _cancellation = null;
@@ -490,24 +580,26 @@ namespace CryptoProExport.App
         }
 
         /// <summary>Действия, которым отмена не нужна (всё быстрое), запускаются так же — просто игнорируют токен.</summary>
-        private void Run(string title, Action work) => Run(title, _ => work());
+        private void Run(string titleKey, Action work) => Run(titleKey, _ => work());
 
         private void CancelCurrent()
         {
             var cancellation = _cancellation;
             if (cancellation == null || cancellation.IsCancellationRequested) return;
-            Log("Отмена запрошена — операция прервётся на ближайшем шаге.");
-            SetStatus("Отмена…");
+            Log(Strings.Get("log.cancel.requested"));
+            SetStatus(Strings.Get("status.cancelling"));
             try { cancellation.Cancel(); } catch (ObjectDisposedException) { }
         }
 
         private void SetBusy(bool busy, string title)
         {
             if (InvokeRequired) { BeginInvoke(new Action(() => SetBusy(busy, title))); return; }
+            _busy = busy;
             foreach (var b in _actionButtons) b.Enabled = !busy;
             _btnCancel.Enabled = busy;
+            _cmbLang.Enabled = !busy;
             _progress.Visible = busy;
-            _status.Text = busy ? title : "Готово";
+            _status.Text = busy ? title : Strings.Get("status.ready");
             Cursor = busy ? Cursors.WaitCursor : Cursors.Default;
         }
 

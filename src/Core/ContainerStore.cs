@@ -73,10 +73,10 @@ namespace CryptoProExport
             /// <summary>Контейнер действительно виден КриптоПро после установки.</summary>
             public bool VisibleToCsp;
 
-            public override string ToString() =>
-                !Verified ? $"\"{Name}\" -> {Folder}"
-                : VisibleToCsp ? $"\"{Name}\" -> {Folder} (виден КриптоПро)"
-                : $"\"{Name}\" -> {Folder} (КриптоПро его пока НЕ видит)";
+            public override string ToString() => Strings.Format(
+                !Verified ? "install.result"
+                : VisibleToCsp ? "install.result.visible"
+                : "install.result.invisible", Name, Folder);
         }
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace CryptoProExport
             storeDir ??= HdImageDir;
             if (!LooksLikeContainer(containerFolder))
                 throw new DirectoryNotFoundException(
-                    $"В папке нет контейнера (нужны header.key, primary.key, masks.key): {containerFolder}");
+                    Strings.Format("err.folder.notcontainer", containerFolder));
 
             string sourceName = ReadName(containerFolder)
                                 ?? Path.GetFileName(Path.GetFullPath(containerFolder));
@@ -168,14 +168,14 @@ namespace CryptoProExport
             string full = Path.GetFullPath(folder);
             string store = Path.GetFullPath(storeDir ?? HdImageDir);
             if (!full.StartsWith(store + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-                throw new ArgumentException("Папка вне хранилища КриптоПро: " + folder, nameof(folder));
+                throw new ArgumentException(Strings.Format("err.folder.outside", folder), nameof(folder));
             if (!LooksLikeContainer(full))
-                throw new ArgumentException("Папка не похожа на контейнер: " + folder, nameof(folder));
+                throw new ArgumentException(Strings.Format("err.folder.notlike", folder), nameof(folder));
 
             foreach (string f in Directory.GetFiles(full))
             {
                 if (!f.EndsWith(".key", StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidOperationException("В папке контейнера есть посторонние файлы, удаление отменено: " + f);
+                    throw new InvalidOperationException(Strings.Format("err.folder.extra", f));
             }
             Directory.Delete(full, recursive: true);
             return true;
@@ -190,7 +190,7 @@ namespace CryptoProExport
                 string candidate = Path.Combine(storeDir, $"{baseName}.{i:000}");
                 if (!Directory.Exists(candidate)) return candidate;
             }
-            throw new IOException("Не удалось подобрать свободную папку в " + storeDir);
+            throw new IOException(Strings.Format("err.store.full", storeDir));
         }
 
         internal static string Sanitize(string name)

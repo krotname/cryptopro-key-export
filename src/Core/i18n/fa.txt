@@ -1,0 +1,244 @@
+# فارسی — نوشتار از راست به چپ
+
+lang.name = فارسی
+lang.rtl = yes
+
+# --- عمومی ---
+app.title = برون‌بری کلیدهای CryptoPro از Rutoken
+common.ok = تأیید
+common.cancel = لغو
+common.close = بستن
+common.browse = مرور…
+common.none = هیچ‌کدام
+files.all = همهٔ پرونده‌ها
+
+# --- تابلوی تنظیمات ---
+field.p12 = p12utility.exe:
+field.p12.placeholder = نسخهٔ توکار — نیازی به مشخص کردن چیزی نیست
+field.dest = پوشهٔ مقصد:
+field.pin = PIN (اختیاری):
+field.pin.hint = خالی ← پنجرهٔ پرسش
+field.lang = زبان رابط:
+
+tip.p12 = مسیر ابزار p12utility از CryptoPro — همین ابزار ممنوعیت برون‌بری کلید را برمی‌دارد.\nاین جعبه را خالی بگذارید: نسخه‌ای از ابزار درون برنامه جای دارد و خودش باز می‌شود.\nتنها زمانی پر کنید که به نسخهٔ دیگری از p12utility نیاز دارید.
+tip.p12.browse = به جای نسخهٔ توکار، پروندهٔ p12utility.exe دیگری برگزینید.
+tip.dest = نتیجه کجا نگهداری شود: پوشه‌های ظرف‌های بیرون‌کشیده (*.key) و پرونده‌های گواهی (.cer).\nتوجه: این رونوشتی از کلید خصوصی شماست — آن را همچون یک راز نگه دارید.
+tip.dest.browse = پوشهٔ مقصد را برگزینید.
+tip.pin = PIN کاربر Rutoken.\nخالی ← PIN را پنجرهٔ سامانه می‌پرسد (و اگر روی توکن PIN کارخانه باشد، 12345678 به کار می‌رود).\nنویسه‌ها پنهان‌اند؛ مقدار در هیچ جایی ذخیره نمی‌شود.
+tip.lang = زبان رابط، راهنماهای شناور و پیام‌ها.\nانتخاب به یاد سپرده می‌شود و در اجراهای بعدی به کار می‌رود.\nهمین کار از خط فرمان: --lang fa
+
+# --- دکمه‌ها ---
+btn.refresh = تازه‌سازی فهرست
+btn.export = برون‌بری از توکن
+btn.extract = بیرون کشیدن گواهی
+btn.full = برون‌بری‌پذیر کردن
+btn.check = بررسی کلید
+btn.install = نصب در CryptoPro
+btn.pfx = برون‌بری به PFX
+btn.logs = گزارش
+btn.help = راهنما
+btn.cancel = لغو
+
+tip.refresh = گام ۱. فهرست ظرف‌های کلید را نشان بده:\n  • آنچه CryptoPro CSP می‌بیند (از جمله روی توکن جاگذاری‌شده);\n  • آنچه مستقیماً روی Rutoken‌های متصل یافت شد.\nچیزی را تغییر نمی‌دهد — تنها می‌خواند. شروع از این دکمه آسان است.
+tip.export = گام ۲. ظرف‌ها را از همهٔ Rutoken‌های متصل به پوشهٔ مقصد بیرون بکش\n(برای هر ظرف ۶ پروندهٔ *.key). حافظهٔ توکن را مستقیم و بدون گذر از CSP می‌خواند،\nپس حتی با وجود ممنوعیت برون‌بری هم کار می‌کند. توکن و داده‌های آن تغییر نمی‌کند.\nکلید موجود در رونوشت هنوز برون‌بری‌پذیر نیست — این کار بر عهدهٔ «برون‌بری‌پذیر کردن» است.
+tip.extract = گام ۳. گواهی ظرف برگزیده در فهرست را در پروندهٔ .cer ذخیره کن\n(داده‌های عمومی که به‌طور معمول از راه CryptoAPI بیرون می‌آیند).\nظرف برگزیده در فهرست، توکن جاگذاری‌شده و دیده‌شدن ظرف توسط CSP لازم است.\nبرای برداشتن ممنوعیت برون‌بری، p12utility دقیقاً همین گواهی را می‌خواهد.
+tip.full = همه‌چیز با یک کلیک: بیرون کشیدن ظرف‌ها از توکن ← بیرون کشیدن گواهی‌ها ←\nبرداشتن ممنوعیت برون‌بری کلید خصوصی (p12utility --cprepair --keyexport).\nنتیجه: در پوشهٔ مقصد رونوشتی از ظرف با کلید برون‌بری‌پذیر\n(برای پشتیبان‌گیری، جابه‌جایی و تبدیل به PFX مناسب است).\nتوکن اصلی تغییر نمی‌کند؛ پروندهٔ header.key اصلیِ رونوشت با نام header.key.backup می‌ماند.
+tip.check = ظرف برگزیده در فهرست را بررسی کن: آیا ممنوعیت برون‌بری کلید خصوصی برداشته شده است.\nبرنامه اختیارات کلید (KP_PERMISSIONS) را می‌خواند — خود کلید هرگز برون‌بری نمی‌شود.\nبه همین شیوه روشن می‌شود که «برون‌بری‌پذیر کردن» واقعاً کارگر افتاده است.
+tip.install = پوشهٔ ظرفی را که از توکن بیرون کشیده‌اید (۶ پروندهٔ *.key) در CryptoPro نصب کن —\nیعنی آن را در انبار CSP رونوشت کن. پس از آن ظرف در فهرست دیده می‌شود و\nبدون توکن کار می‌کند: می‌توان گواهی‌اش را بیرون کشید و به PFX برون‌بری کرد.\nتغییر نام الزامی نیست: CryptoPro نام را با محتوای ظرف می‌سنجد و\nرونوشت تغییرنام‌یافته را همیشه نمی‌پذیرد. برنامه نتیجه را بررسی می‌کند و می‌گوید\nآیا CSP ظرف را واقعاً دیده است یا نه.
+tip.pfx = ظرف برگزیده در فهرست را به پروندهٔ PKCS#12 (.pfx) برون‌بری کن — گواهی همراه\nبا کلید خصوصی، آمادهٔ انتقال به سامانه‌ای دیگر.\nلازم است: ممنوعیت برون‌بری پیش‌تر برداشته شده باشد («بررسی کلید» «برون‌بری‌پذیر» نشان دهد)\nو CryptoPro CSP نصب باشد (از certmgr آن استفاده می‌شود).\nگذرواژهٔ .pfx را برنامه جداگانه می‌پرسد.
+tip.logs = پوشهٔ گزارش‌های کار برنامه را باز کن.\nهر اجرا پروندهٔ جداگانه‌ای می‌نویسد — اگر چیزی درست پیش نرفت،\nپیوست کردن آن به پرسش آسان است. گذرواژه‌ها به گزارش راه نمی‌یابند.
+tip.help = راهنمای توکار: از کجا آغاز کنیم، هر دکمه چه می‌کند،\nفرمان‌های حالت خط فرمان و بررسی خطاهای رایج.\nدرون خود برنامه است — نه به اینترنت نیاز است و نه به پروندهٔ بیرونی.
+tip.cancel = عملیات جاری را قطع کن.\nکار در نزدیک‌ترین گام می‌ایستد: فراخوانی توکن یا ابزار CryptoPro در حال اجرا\nنخست باید به پایان برسد — آنگاه ابزارِ در حال اجرا بسته می‌شود.\nپرونده‌های ذخیره‌شده سر جای خود می‌مانند.
+
+# --- فهرست ظرف‌ها و گزارش ---
+col.location = جایگاه
+col.container = ظرف
+col.details = جزئیات
+tip.list = ظرف‌های کلید یافت‌شده.\n«جایگاه» = CSP (برای CryptoPro دیدنی است) یا نام Rutoken (مستقیم از توکن خوانده شده).\nسطری را برگزینید — دکمهٔ «بیرون کشیدن گواهی» روی ظرف برگزیده کار می‌کند.
+tip.log = گزارش اجرا: فرمان‌های p12utility، گام‌های کار با توکن و خطاها.\nمتن را می‌توان برگزید و رونوشت گرفت (Ctrl+C) — در بررسی مشکل به کار می‌آید.
+
+# --- نوار وضعیت ---
+status.ready = آماده
+status.deps = وابستگی‌ها بررسی می‌شوند…
+status.refresh = فهرست ظرف‌ها تازه می‌شود…
+status.export = ظرف‌ها از توکن بیرون کشیده می‌شوند…
+status.extract = گواهی بیرون کشیده می‌شود…
+status.full = ممنوعیت برون‌بری برداشته می‌شود…
+status.check = اختیارات کلید بررسی می‌شود…
+status.install = ظرف نصب می‌شود…
+status.pfx = برون‌بری به PFX…
+status.cancelling = در حال لغو…
+
+# --- پیام‌های گزارش پنجره ---
+log.deps.header = وابستگی‌ها (جز CryptoPro CSP چیزی برای دریافت یا نصب نیست):
+log.session = گزارش این نشست: {0}
+log.done = انجام شد.
+log.tokens.unavailable = Rutoken در دسترس نیست: {0}
+log.need.dest = پوشهٔ مقصد را مشخص کنید.
+log.need.container = در فهرست ظرفی را برگزینید.
+log.exported = ظرف‌های بیرون‌کشیده: {0}
+log.cert.exchange = گواهی تبادل:  {0}
+log.cert.sign = گواهی امضا: {0}
+log.cert.fail = بیرون کشیدن ناکام ماند. مطمئن شوید توکن جاگذاری شده و CSP ظرف را می‌بیند.
+log.full.done = چرخهٔ کامل به پایان رسید.
+log.cancelled.user = کاربر لغو کرد.
+log.cancelled = لغو شد.
+log.cancel.requested = لغو درخواست شد — عملیات در نزدیک‌ترین گام می‌ایستد.
+log.cancel.done = عملیات لغو شد.
+log.error = خطا: {0}
+log.lang.changed = زبان رابط: {0}
+log.container.unnamed = (بی‌نام)
+log.container.csp = CSP
+log.container.token = Rutoken: {0}
+log.container.provider = فراهم‌کننده {0}
+log.container.files = {0}، پرونده‌ها: {1}
+log.check.container = ظرف «{0}»:
+log.check.exchange = کلید تبادل:  {0}
+log.check.sign = کلید امضا: {0}
+log.install.notcontainer = در پوشهٔ برگزیده ظرفی نیست (header.key، primary.key، masks.key لازم است).
+log.install.done = ظرف نصب شد: {0}
+log.install.norename = نام همان «{0}» ماند: CryptoPro رونوشت با نام تازه را نپذیرفت. تا زمانی که ممنوعیت برون‌بری برداشته نشود چنین است.
+log.install.invisible = CryptoPro هنوز ظرف را نمی‌بیند — دوباره «تازه‌سازی فهرست» را بزنید یا دوباره وارد سامانه شوید: CSP فهرست ظرف‌ها را در حافظهٔ نهان نگه می‌دارد.
+log.pfx.nocertmgr = certmgr یافت نشد — CryptoPro CSP نصب‌شده لازم است.
+log.pfx.done = PFX آماده است: {0}
+log.pfx.fail = برون‌بری PFX ناکام ماند: {0}
+log.logs.fail = پوشهٔ گزارش‌ها باز نشد: {0}
+
+# --- گفت‌وگوها ---
+dlg.confirm.title = تأیید
+dlg.confirm.full = ظرف‌ها از همهٔ Rutoken‌های متصل بیرون کشیده می‌شوند، گواهی‌ها بیرون کشیده می‌شوند و ممنوعیت برون‌بری کلیدها برداشته می‌شود.\n\nادامه می‌دهید؟
+dlg.folder.container = پوشهٔ حاوی ظرف بیرون‌کشیده (۶ پروندهٔ *.key)
+dlg.install.title = نصب ظرف در CryptoPro
+dlg.install.prompt = نامی که ظرف با آن در فهرست CryptoPro دیده می‌شود.\nتغییرش الزامی نیست: CSP رونوشت تغییرنام‌یافته را همیشه نمی‌پذیرد.
+dlg.pfx.save = PFX کجا ذخیره شود
+dlg.pfx.pass.title = گذرواژهٔ PFX
+dlg.pfx.pass.prompt = گذرواژهٔ پروندهٔ .pfx (می‌تواند خالی بماند — آنگاه پرونده بدون گذرواژه خواهد بود):
+guide.title = راهنما — {0}
+guide.caption = راهنما
+guide.missing = راهنما در این نسخه گنجانده نشده است.
+
+# --- گزارش وابستگی‌ها (پنجره و فرمان deps) ---
+diag.process = فرایند: {0}، نسخهٔ {1}
+diag.p12.missing = p12utility: یافت نشد (نه در نسخه گنجانده شده و نه در سامانه هست)
+diag.p12.found = p12utility: {0}: {1}
+diag.copy.bundled = نسخهٔ توکار
+diag.copy.external = نسخهٔ بیرونی
+diag.rtcom = rtCOMLite: {0}
+diag.rtcom.bundled = نسخهٔ توکار، بدون ثبت در سامانه
+diag.rtcom.system = مؤلفهٔ ثبت‌شده در سامانه
+diag.rtcom.missing = در دسترس نیست
+diag.rtcom.warn = توجه: نسخهٔ توکار ۳۲-بیتی است و در این فرایند بارگذاری نمی‌شود — برای کار با Rutoken بدون نصب مؤلفه، نسخهٔ همراهِ x86 را بردارید
+diag.csp.ok = CryptoPro CSP: نصب است، فراهم‌کننده‌ها {0}
+diag.csp.missing = CryptoPro CSP: یافت نشد — CryptoPro CSP را نصب کنید (تنها وابستگی بیرونی)
+diag.prov = {0}: {1} — {2}
+diag.prov.yes = در دسترس
+diag.prov.no = خیر
+diag.notfound = یافت نشد
+diag.notbundled = در نسخه گنجانده نشده
+diag.p12.external = نسخهٔ بیرونی: {0}
+diag.p12.bundled = نسخهٔ توکار: {0}
+diag.p12.used = به کار خواهد رفت: {0}
+diag.rtcom.detail.none = نسخهٔ توکار: هیچ ({0})
+diag.rtcom.detail.ok = نسخهٔ توکار: {0} ({1}) — بدون ثبت بارگذاری می‌شود
+diag.rtcom.detail.bad = نسخهٔ توکار: {0} — مناسب نیست ({1})
+diag.rtcom.registered = در سامانه: ثبت‌شده (راه جایگزین)
+diag.rtcom.unregistered = در سامانه: ثبت‌نشده
+diag.arch = کتابخانه {0}، فرایند {1}
+diag.arch.unknown = معماری کتابخانه تعیین نشد
+
+# --- مسیر برون‌بری ---
+pipe.saved = ظرف «{0}» ذخیره شد -> {1}
+pipe.cert.found = گواهی از ظرف «{0}» با CryptoAPI بیرون کشیده شد
+pipe.cert.autofail = گواهی به‌طور خودکار بیرون کشیده نشد: {0}
+pipe.keyexport.skip = keyexport برای «{0}» رد شد: گواهی (.cer) یافت نشد. آن را دستی مشخص کنید.
+pipe.keyexport.ok = OK: کلید در «{0}» برون‌بری‌پذیر نشانه‌گذاری شد
+pipe.keyexport.fail = خطای keyexport در «{0}»: {1} {2}
+
+# --- کار با توکن ---
+token.connect = در حال اتصال به سرویس کارت هوشمند…
+token.found = دستگاه‌های یافت‌شده: {0}
+token.open = در حال گشودن توکن: {0}
+token.rtcom.loadfail = نسخهٔ توکار rtCOMLite بارگذاری نشد ({0})؛ نسخهٔ ثبت‌شده در سامانه را می‌آزماییم
+token.rtcom.mismatch = نسخهٔ توکار rtCOMLite مناسب نیست ({0})؛ نسخهٔ ثبت‌شده در سامانه را می‌آزماییم
+token.rtcom.extractfail = نسخهٔ توکار rtCOMLite باز نشد ({0})؛ نسخهٔ ثبت‌شده در سامانه را می‌آزماییم
+token.rtcom.unavailable = مؤلفهٔ rtCOMLite در دسترس نیست: نسخهٔ توکار بارگذاری نشد و در سامانه هم ثبت نشده است. معماری برنامه را بررسی کنید (x86 لازم است) یا مؤلفه را از https://help.kontur.ru/rtComLite.exe نصب کنید.
+token.pin.default = PIN کارخانه — با 12345678 احراز هویت می‌کنیم
+token.pin.given = با PIN داده‌شده احراز هویت می‌کنیم
+token.pin.system = از راه پنجرهٔ PIN سامانه احراز هویت می‌کنیم
+token.container = ظرف: {0} «{1}» ({2} پرونده)
+
+# --- اجرای ابزارهای CryptoPro ---
+tool.certmgr.install = گواهی در انبار «شخصی» نصب و به ظرف پیوند داده می‌شود…
+tool.certmgr.installwarn = certmgr -install مقدار {0} را بازگرداند — با این حال برون‌بری را می‌آزماییم: گواهی ممکن است پیش‌تر نصب شده باشد
+tool.certmgr.export = ظرف به PKCS#12 برون‌بری می‌شود…
+tool.startfail = {0} اجرا نشد
+tool.timeout = مهلت {0} میلی‌ثانیه به پایان رسید: {1}
+tool.cancelled = {0} به سبب لغو متوقف شد
+
+# --- خطاهایی که کاربر می‌بیند ---
+err.certmgr.notfound = certmgr یافت نشد
+err.container.name = نام ظرف داده نشده است
+err.container.nokey = ظرف «{0}» یافت نشد یا کلیدی از نوع لازم ندارد
+err.key.locked = کلید خصوصی برون‌بری‌پذیر نیست — نخست ممنوعیت را بردارید («{0}»). {1}
+err.cert.extract = گواهی از ظرف بیرون کشیده نشد
+err.pfx.missing = certmgr موفقیت را گزارش کرد، اما پرونده ساخته نشد: {0}
+err.folder.notcontainer = در پوشه ظرفی نیست (header.key، primary.key، masks.key لازم است): {0}
+err.folder.outside = پوشه بیرون از انبار CryptoPro است: {0}
+err.folder.notlike = پوشه شبیه ظرف نیست: {0}
+err.folder.extra = در پوشهٔ ظرف پرونده‌های بیگانه هست، حذف لغو شد: {0}
+err.store.full = در {0} پوشهٔ خالی یافت نشد
+err.name.empty = نام ظرف خالی است
+err.name.toolong = نام ظرف بیش از {0} نویسه است
+err.p12.notfound = p12utility یافت نشد
+err.p12.unavailable = p12utility یافت نشد: نسخهٔ توکار در دسترس نیست. p12utility.win32.exe را کنار برنامه بگذارید یا مسیر آن را مشخص کنید.
+err.header.missing = در پوشه header.key نیست
+err.cert.required = دست‌کم یک گواهی لازم است (--cert/--certsg). پروندهٔ .cer را از انبار «شخصی» یا از ظرف برون‌بری کنید.
+err.com.notfound = کتابخانهٔ COM یافت نشد
+err.com.call = {0} مقدار {1} را بازگرداند
+
+# --- اختیارات کلید ---
+key.notfound = کلید یافت نشد
+key.readfail = اختیارات خوانده نشد ({0})
+key.exportable = برون‌بری‌پذیر (KP_PERMISSIONS=0x{0})
+key.locked = برون‌بری‌ناپذیر (KP_PERMISSIONS=0x{0}، بدون پرچم CRYPT_EXPORT)
+
+# --- نصب ظرف ---
+install.result = «{0}» -> {1}
+install.result.visible = «{0}» -> {1} (CryptoPro آن را می‌بیند)
+install.result.invisible = «{0}» -> {1} (CryptoPro هنوز آن را نمی‌بیند)
+
+# --- حالت خط فرمان ---
+cli.usage.title = CryptoProExport — بیرون کشیدن ظرف از Rutoken و برداشتن ممنوعیت برون‌بری کلید
+cli.usage.deps = بررسی وابستگی‌ها (توکارها + CryptoPro CSP)
+cli.usage.list = فهرست کردن ظرف‌ها (CSP + توکن‌ها)
+cli.usage.extractcert = بیرون کشیدن .cer از ظرف (CryptoAPI)
+cli.usage.checkexport = بررسی برون‌بری‌پذیر بودن کلید خصوصی
+cli.usage.export = بیرون کشیدن ظرف‌ها از توکن‌ها روی دیسک
+cli.usage.keyexport = برون‌بری‌پذیر کردن کلید درون پوشه
+cli.usage.install = نصب پوشهٔ ظرف در CryptoPro
+cli.usage.installed = نمایش ظرف‌های پرونده‌ای نصب‌شده
+cli.usage.uninstall = حذف ظرف نصب‌شده
+cli.usage.topfx = برون‌بری ظرف به PKCS#12 (certmgr)
+cli.usage.full = بیرون کشیدن از توکن + .cer خودکار + keyexport
+cli.usage.help = تمام راهنمای توکار
+cli.usage.lang = زبان رابط و پیام‌ها
+cli.usage.gui = (بدون آرگومان — رابط گرافیکی)
+cli.list.csp = ظرف‌هایی که CSP می‌بیند:
+cli.list.tokens = ظرف‌های روی Rutoken‌های متصل:
+cli.list.provider = (فراهم‌کننده {0})
+cli.list.files = ({0} پرونده)
+cli.cert.exchange = تبادل:  {0}
+cli.cert.sign = امضا: {0}
+cli.check.exchange = کلید تبادل:  {0}
+cli.check.sign = کلید امضا: {0}
+cli.keyexport.ok = انجام شد: کلید برون‌بری‌پذیر است
+cli.installed.header = ظرف‌های پرونده‌ای در انبار CryptoPro ({0}):
+cli.uninstall.done = حذف شد: {0}
+cli.topfx.nocertmgr = certmgr یافت نشد — CryptoPro CSP نصب‌شده لازم است
+cli.done = انجام شد: {0}
+cli.error = خطا: {0}
+cli.failure = خطا: {0}
+cli.install.norename = تغییر نام اعمال نشد: CryptoPro رونوشت با نام «{0}» را نپذیرفت. تا زمانی که ممنوعیت برون‌بری برداشته نشود چنین است (--cprepair).
+cli.install.invisible = CryptoPro هنوز ظرف را نمی‌بیند. معمولاً اجرای دوبارهٔ برنامه یا ورود دوباره به سامانه کارساز است — CSP فهرست ظرف‌ها را در حافظهٔ نهان نگه می‌دارد.
+cli.lang.unknown = زبان ناشناخته «{0}». زبان‌های در دسترس: {1}
+cli.lang.missing = --lang به کد زبان نیاز دارد. زبان‌های در دسترس: {0}

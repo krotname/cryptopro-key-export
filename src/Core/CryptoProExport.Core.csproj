@@ -26,9 +26,22 @@
                       Condition="Exists('..\..\tools\rtCOMLite.dll')">
       <LogicalName>CryptoProExport.Tools.rtCOMLite.dll</LogicalName>
     </EmbeddedResource>
-    <!-- руководство пользователя: тоже внутрь сборки, снаружи файлов быть не должно -->
-    <EmbeddedResource Include="guide.txt">
-      <LogicalName>CryptoProExport.guide.txt</LogicalName>
+    <!--
+      Руководство пользователя: тоже внутрь сборки, снаружи файлов быть не должно.
+      Переведено на ru и en; остальные языки интерфейса откатываются на en (см. AGENTS.md).
+    -->
+    <EmbeddedResource Include="guide\*.txt">
+      <LogicalName>CryptoProExport.guide.%(Filename).txt</LogicalName>
+      <WithCulture>false</WithCulture>
+    </EmbeddedResource>
+    <!--
+      Строки интерфейса: один файл на язык, вшивается ресурсом. Добавить язык = положить файл.
+      WithCulture=false обязателен: без него MSBuild принял бы имена вида ru.txt / zh-Hans.txt
+      за ресурсы сателлитных сборок и вынес бы их из основной сборки.
+    -->
+    <EmbeddedResource Include="i18n\*.txt">
+      <LogicalName>CryptoProExport.i18n.%(Filename).txt</LogicalName>
+      <WithCulture>false</WithCulture>
     </EmbeddedResource>
   </ItemGroup>
 </Project>
