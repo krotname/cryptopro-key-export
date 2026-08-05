@@ -33,6 +33,10 @@ namespace CryptoProExport
         public static ToolResult Run(string exe, string arguments, string workingDirectory, int timeoutMs,
                                      CancellationToken cancel = default)
         {
+            // Проверяем до запуска: иначе утилиту вроде `p12utility --cprepair --keyexport`
+            // мы бы стартовали и тут же убили — уже посреди перезаписи контейнера.
+            cancel.ThrowIfCancellationRequested();
+
             var psi = new ProcessStartInfo
             {
                 FileName = exe,

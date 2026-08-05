@@ -61,6 +61,23 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void ProcessRunner_DoesNotStartToolWhenAlreadyCancelled()
+        {
+            // Отменили между шагами — утилита не должна стартовать вовсе: иначе
+            // p12utility успел бы начать перезапись контейнера и был бы убит на середине.
+            string cmd = Path.Combine(Environment.SystemDirectory, "cmd.exe");
+            string marker = Path.Combine(Path.GetTempPath(), "cpx-marker-" + Guid.NewGuid().ToString("N") + ".txt");
+
+            using var cancellation = new CancellationTokenSource();
+            cancellation.Cancel();
+
+            Assert.ThrowsAny<OperationCanceledException>(
+                () => ProcessRunner.Run(cmd, $"/c echo x > \"{marker}\"", Environment.SystemDirectory, 15000, cancellation.Token));
+
+            Assert.False(File.Exists(marker), "утилита всё-таки запустилась при отменённом токене");
+        }
+
+        [Fact]
         public void ProcessRunner_WorksNormallyWithoutCancellation()
         {
             string cmd = Path.Combine(Environment.SystemDirectory, "cmd.exe");
