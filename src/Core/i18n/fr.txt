@@ -1,0 +1,194 @@
+# Français
+
+lang.name = Français
+lang.rtl = no
+
+# --- général ---
+app.title = Export des clés CryptoPro depuis un Rutoken
+common.ok = OK
+common.cancel = Annuler
+common.close = Fermer
+common.browse = Parcourir…
+common.none = aucun
+files.all = Tous les fichiers
+
+# --- panneau des réglages ---
+field.p12 = p12utility.exe :
+field.p12.placeholder = copie intégrée — rien à indiquer ici
+field.dest = Dossier de destination :
+field.pin = PIN (facultatif) :
+field.pin.hint = vide → fenêtre de saisie
+field.lang = Langue de l’interface :
+
+tip.p12 = Chemin vers l’outil p12utility de CryptoPro — c’est lui qui lève l’interdiction d’exporter la clé.\nLaissez le champ vide : une copie de l’outil est déjà intégrée au programme et se décompresse seule.\nNe le remplissez que s’il vous faut une autre version de p12utility.
+tip.p12.browse = Choisir un autre fichier p12utility.exe à la place de la copie intégrée.
+tip.dest = Où déposer le résultat : les dossiers des conteneurs extraits (*.key) et les fichiers de certificat (.cer).\nAttention : c’est une copie de votre clé privée — gardez-la secrète.
+tip.dest.browse = Choisir le dossier de destination.
+tip.pin = PIN utilisateur du Rutoken.\nVide → le PIN sera demandé par la fenêtre du système (et si le jeton a encore le PIN d’usine, 12345678 est utilisé).\nLes caractères sont masqués ; la valeur n’est enregistrée nulle part.
+tip.lang = Langue de l’interface, des info-bulles et des messages.\nLe choix est mémorisé et appliqué aux lancements suivants.\nLa même chose en ligne de commande : --lang fr
+
+# --- boutons ---
+btn.refresh = Actualiser la liste
+btn.export = Exporter du jeton
+btn.extract = Extraire le certificat
+btn.full = Rendre exportable
+btn.check = Vérifier la clé
+btn.install = Installer dans CryptoPro
+btn.pfx = Exporter en PFX
+btn.logs = Journal
+btn.help = Aide
+btn.cancel = Annuler
+
+tip.refresh = Étape 1. Afficher la liste des conteneurs de clés :\n  • ceux que voit CryptoPro CSP (y compris sur le jeton inséré) ;\n  • ceux trouvés directement sur les Rutoken connectés.\nNe modifie rien — se contente de lire. C’est un bon point de départ.
+tip.export = Étape 2. Extraire les conteneurs de tous les Rutoken connectés vers le dossier de destination\n(6 fichiers *.key par conteneur). Lit la mémoire du jeton directement, sans passer par le CSP,\ndonc fonctionne même avec l’interdiction d’export. Le jeton et ses données ne sont pas modifiés.\nLa clé de la copie reste non exportable — c’est le rôle du bouton « Rendre exportable ».
+tip.extract = Étape 3. Enregistrer le certificat du conteneur sélectionné dans un fichier .cer\n(données publiques, extraites normalement via CryptoAPI).\nIl faut un conteneur sélectionné, un jeton inséré et un conteneur visible par le CSP.\np12utility a besoin de ce certificat pour lever l’interdiction d’export.
+tip.full = Tout en un clic : extraire les conteneurs du jeton → extraire les certificats →\nlever l’interdiction d’exporter la clé privée (p12utility --cprepair --keyexport).\nRésultat : le dossier de destination contient une copie du conteneur avec une clé exportable\n(bonne pour une sauvegarde, un transfert et une conversion en PFX).\nLe jeton d’origine n’est pas modifié ; le header.key initial de la copie est conservé sous header.key.backup.
+tip.check = Vérifier le conteneur sélectionné : l’interdiction d’exporter la clé privée est-elle levée.\nLe programme lit les droits de la clé (KP_PERMISSIONS) — la clé elle-même n’est jamais exportée.\nC’est ainsi qu’on confirme que « Rendre exportable » a bien fonctionné.
+tip.install = Installer dans CryptoPro un dossier de conteneur extrait d’un jeton (6 fichiers *.key) —\nautrement dit, le copier dans le magasin du CSP. Ensuite le conteneur apparaît dans la liste et\nfonctionne sans le jeton : on peut en extraire le certificat et l’exporter en PFX.\nRenommer n’est pas obligatoire : CryptoPro compare le nom au contenu du conteneur et\nn’accepte pas toujours une copie renommée. Le programme vérifie le résultat et vous dira\nsi le CSP voit réellement le conteneur.
+tip.pfx = Exporter le conteneur sélectionné dans un fichier PKCS#12 (.pfx) — le certificat avec\nla clé privée, prêt à être transféré vers un autre système.\nIl faut : l’interdiction déjà levée (« Vérifier la clé » affiche « exportable »)\net CryptoPro CSP installé (son certmgr est utilisé).\nLe mot de passe du .pfx sera demandé séparément.
+tip.logs = Ouvrir le dossier des journaux du programme.\nChaque lancement écrit son propre fichier — pratique à joindre à une question\nsi quelque chose n’a pas marché. Les mots de passe n’arrivent jamais dans le journal.
+tip.help = Manuel intégré : par où commencer, ce que fait chaque bouton,\nles commandes du mode console et l’analyse des erreurs courantes.\nIl est à l’intérieur du programme — ni internet ni fichiers externes nécessaires.
+tip.cancel = Interrompre l’opération en cours.\nLe travail s’arrêtera à l’étape la plus proche : un appel au jeton ou un utilitaire\nCryptoPro lancé doit d’abord aller à son terme — l’utilitaire lancé est alors arrêté.\nLes fichiers déjà enregistrés restent en place.
+
+# --- liste des conteneurs et journal ---
+col.location = Emplacement
+col.container = Conteneur
+col.details = Détails
+tip.list = Conteneurs de clés trouvés.\n« Emplacement » = CSP (vu par CryptoPro) ou le nom du Rutoken (lu directement sur le jeton).\nSélectionnez une ligne — le bouton « Extraire le certificat » agit sur le conteneur sélectionné.
+tip.log = Journal d’exécution : commandes p12utility, étapes de travail avec le jeton et erreurs.\nLe texte peut être sélectionné et copié (Ctrl+C) — utile pour analyser un problème.
+
+# --- barre d’état ---
+status.ready = Prêt
+status.deps = Vérification des dépendances…
+status.refresh = Actualisation de la liste des conteneurs…
+status.export = Extraction des conteneurs du jeton…
+status.extract = Extraction du certificat…
+status.full = Levée de l’interdiction d’export…
+status.check = Vérification des droits de la clé…
+status.install = Installation du conteneur…
+status.pfx = Export en PFX…
+status.cancelling = Annulation…
+
+# --- messages du journal de la fenêtre ---
+log.deps.header = Dépendances (rien à télécharger ni à installer, sauf CryptoPro CSP) :
+log.session = Journal de cette session : {0}
+log.done = Terminé.
+log.tokens.unavailable = Rutoken indisponibles : {0}
+log.need.dest = Indiquez le dossier de destination.
+log.need.container = Sélectionnez un conteneur dans la liste.
+log.exported = Conteneurs extraits : {0}
+log.cert.exchange = Certificat d’échange :  {0}
+log.cert.sign = Certificat de signature : {0}
+log.cert.fail = Extraction impossible. Vérifiez que le jeton est inséré et que le CSP voit le conteneur.
+log.full.done = Cycle complet terminé.
+log.cancelled.user = Annulé par l’utilisateur.
+log.cancelled = Annulé.
+log.cancel.requested = Annulation demandée — l’opération s’arrêtera à l’étape la plus proche.
+log.cancel.done = Opération annulée.
+log.error = ERREUR : {0}
+log.lang.changed = Langue de l’interface : {0}
+log.container.unnamed = (sans nom)
+log.container.csp = CSP
+log.container.token = Rutoken : {0}
+log.container.provider = fournisseur {0}
+log.container.files = {0}, fichiers : {1}
+log.check.container = Conteneur « {0} » :
+log.check.exchange = clé d’échange :  {0}
+log.check.sign = clé de signature : {0}
+log.install.notcontainer = Le dossier choisi ne contient pas de conteneur (header.key, primary.key, masks.key sont requis).
+log.install.done = Conteneur installé : {0}
+log.install.norename = Le nom est resté « {0} » : CryptoPro n’a pas accepté la copie sous le nouveau nom. Cela arrive tant que l’interdiction d’export n’est pas levée.
+log.install.invisible = CryptoPro ne voit pas encore le conteneur — appuyez de nouveau sur « Actualiser la liste » ou reconnectez-vous : le CSP met la liste des conteneurs en cache.
+log.pfx.nocertmgr = certmgr introuvable — CryptoPro CSP doit être installé.
+log.pfx.done = PFX prêt : {0}
+log.pfx.fail = Export du PFX impossible : {0}
+log.logs.fail = Impossible d’ouvrir le dossier des journaux : {0}
+
+# --- boîtes de dialogue ---
+dlg.confirm.title = Confirmation
+dlg.confirm.full = Les conteneurs seront extraits de tous les Rutoken connectés, les certificats seront extraits et l’interdiction d’exporter les clés sera levée.\n\nContinuer ?
+dlg.folder.container = Dossier contenant le conteneur extrait (6 fichiers *.key)
+dlg.install.title = Installation d’un conteneur dans CryptoPro
+dlg.install.prompt = Nom sous lequel le conteneur apparaîtra dans la liste de CryptoPro.\nLe changer n’est pas obligatoire : le CSP n’accepte pas toujours une copie renommée.
+dlg.pfx.save = Où enregistrer le PFX
+dlg.pfx.pass.title = Mot de passe du PFX
+dlg.pfx.pass.prompt = Mot de passe du fichier .pfx (peut rester vide — le fichier sera alors sans mot de passe) :
+guide.title = Aide — {0}
+guide.caption = Aide
+guide.missing = Le manuel n’est pas intégré à cette version.
+
+# --- rapport de dépendances (fenêtre et commande deps) ---
+diag.process = Processus : {0}, version {1}
+diag.p12.missing = p12utility : INTROUVABLE (ni intégré à la version, ni trouvé dans le système)
+diag.p12.found = p12utility : {0} : {1}
+diag.copy.bundled = copie intégrée
+diag.copy.external = copie externe
+diag.rtcom = rtCOMLite : {0}
+diag.rtcom.bundled = copie intégrée, sans enregistrement dans le système
+diag.rtcom.system = composant enregistré dans le système
+diag.rtcom.missing = INDISPONIBLE
+diag.rtcom.warn = attention : la copie intégrée est en 32 bits et ne se charge pas dans ce processus — pour travailler avec un Rutoken sans installer le composant, prenez la version portable x86
+diag.csp.ok = CryptoPro CSP : installé, fournisseurs {0}
+diag.csp.missing = CryptoPro CSP : INTROUVABLE — installez CryptoPro CSP (la seule dépendance externe)
+diag.prov = {0} : {1} — {2}
+diag.prov.yes = disponible
+diag.prov.no = non
+diag.notfound = INTROUVABLE
+diag.notbundled = non intégrée à la version
+diag.p12.external = copie externe : {0}
+diag.p12.bundled = copie intégrée : {0}
+diag.p12.used = sera utilisé : {0}
+diag.rtcom.detail.none = copie intégrée : aucune ({0})
+diag.rtcom.detail.ok = copie intégrée : {0} ({1}) — se charge sans enregistrement
+diag.rtcom.detail.bad = copie intégrée : {0} — ne convient pas ({1})
+diag.rtcom.registered = dans le système : enregistré (solution de repli)
+diag.rtcom.unregistered = dans le système : non enregistré
+diag.arch = bibliothèque {0}, processus {1}
+diag.arch.unknown = impossible de déterminer l’architecture de la bibliothèque
+
+# --- droits de la clé ---
+key.notfound = clé introuvable
+key.readfail = impossible de lire les droits ({0})
+key.exportable = exportable (KP_PERMISSIONS=0x{0})
+key.locked = NON exportable (KP_PERMISSIONS=0x{0}, pas d’indicateur CRYPT_EXPORT)
+
+# --- installation du conteneur ---
+install.result = « {0} » -> {1}
+install.result.visible = « {0} » -> {1} (vu par CryptoPro)
+install.result.invisible = « {0} » -> {1} (CryptoPro ne le voit pas encore)
+
+# --- mode console ---
+cli.usage.title = CryptoProExport — extraire un conteneur d’un Rutoken et lever l’interdiction d’exporter la clé
+cli.usage.deps = vérifier les dépendances (intégrées + CryptoPro CSP)
+cli.usage.list = lister les conteneurs (CSP + jetons)
+cli.usage.extractcert = extraire le .cer d’un conteneur (CryptoAPI)
+cli.usage.checkexport = vérifier si la clé privée est exportable
+cli.usage.export = extraire les conteneurs des jetons sur le disque
+cli.usage.keyexport = rendre exportable la clé du dossier
+cli.usage.install = installer un dossier de conteneur dans CryptoPro
+cli.usage.installed = afficher les conteneurs fichier installés
+cli.usage.uninstall = supprimer un conteneur installé
+cli.usage.topfx = exporter un conteneur en PKCS#12 (certmgr)
+cli.usage.full = extraire du jeton + .cer automatique + keyexport
+cli.usage.help = le manuel intégré en entier
+cli.usage.lang = langue de l’interface et des messages
+cli.usage.gui = (sans arguments — interface graphique)
+cli.list.csp = Conteneurs vus par le CSP :
+cli.list.tokens = Conteneurs sur les Rutoken connectés :
+cli.list.provider = (fournisseur {0})
+cli.list.files = ({0} fichiers)
+cli.cert.exchange = Échange :  {0}
+cli.cert.sign = Signature : {0}
+cli.check.exchange = Clé d’échange :  {0}
+cli.check.sign = Clé de signature : {0}
+cli.keyexport.ok = Terminé : la clé est exportable
+cli.installed.header = Conteneurs fichier dans le magasin CryptoPro ({0}) :
+cli.uninstall.done = Supprimé : {0}
+cli.topfx.nocertmgr = certmgr introuvable — CryptoPro CSP doit être installé
+cli.done = Terminé : {0}
+cli.error = Erreur : {0}
+cli.failure = ERREUR : {0}
+cli.install.norename = Le renommage n’a pas été appliqué : CryptoPro n’a pas accepté la copie sous le nom « {0} ». Cela arrive tant que l’interdiction d’export n’est pas levée (--cprepair).
+cli.install.invisible = CryptoPro ne voit pas encore le conteneur. Relancer le programme ou se reconnecter suffit d’habitude — le CSP met la liste des conteneurs en cache.
+cli.lang.unknown = Langue inconnue « {0} ». Langues disponibles : {1}
+cli.lang.missing = --lang attend un code de langue. Langues disponibles : {0}

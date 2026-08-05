@@ -1,0 +1,194 @@
+# 日本語
+
+lang.name = 日本語
+lang.rtl = no
+
+# --- 共通 ---
+app.title = Rutoken からの CryptoPro 鍵エクスポート
+common.ok = OK
+common.cancel = キャンセル
+common.close = 閉じる
+common.browse = 参照…
+common.none = なし
+files.all = すべてのファイル
+
+# --- 設定パネル ---
+field.p12 = p12utility.exe:
+field.p12.placeholder = 内蔵コピー — 何も指定する必要はありません
+field.dest = 出力先フォルダー:
+field.pin = PIN（省略可）:
+field.pin.hint = 空欄 → 入力ウィンドウ
+field.lang = 表示言語:
+
+tip.p12 = CryptoPro の p12utility へのパス — 鍵のエクスポート禁止を解除するのはこのツールです。\n空のままにしてください。ツールのコピーはプログラムに内蔵され、自動で展開されます。\n別のバージョンの p12utility が必要な場合だけ入力してください。
+tip.p12.browse = 内蔵のものではなく別の p12utility.exe を選びます。
+tip.dest = 結果の保存先: 取り出したコンテナーのフォルダー（*.key）と証明書ファイル（.cer）。\n注意: これは秘密鍵のコピーです — 機密として保管してください。
+tip.dest.browse = 出力先フォルダーを選びます。
+tip.pin = Rutoken の利用者 PIN。\n空欄 → PIN はシステムのウィンドウが尋ねます（トークンが工場出荷時の PIN なら 12345678 が使われます）。\n文字は伏せられ、値はどこにも保存されません。
+tip.lang = 画面・ヒント・メッセージの言語。\n選択は記憶され、次回以降の起動に適用されます。\nコマンドラインでは同じことを --lang ja で指定します。
+
+# --- ボタン ---
+btn.refresh = 一覧を更新
+btn.export = トークンから取り出す
+btn.extract = 証明書を取り出す
+btn.full = エクスポート可能にする
+btn.check = 鍵を確認
+btn.install = CryptoPro に導入
+btn.pfx = PFX にエクスポート
+btn.logs = ログ
+btn.help = ヘルプ
+btn.cancel = キャンセル
+
+tip.refresh = 手順 1。鍵コンテナーの一覧を表示します:\n  • CryptoPro CSP から見えるもの（挿入済みトークン上のものを含む）;\n  • 接続中の Rutoken 上で直接見つかったもの。\n何も変更せず、読み取るだけです。ここから始めるのが便利です。
+tip.export = 手順 2。接続中のすべての Rutoken からコンテナーを出力先フォルダーへ取り出します\n（コンテナーごとに *.key ファイル 6 個）。CSP を介さずトークンのメモリーを直接読むため、\nエクスポート禁止があっても動作します。トークンとその中のデータは変更されません。\n取り出したコピーの鍵はまだエクスポート不可です — それは「エクスポート可能にする」の役目です。
+tip.extract = 手順 3。一覧で選んだコンテナーの証明書を .cer ファイルに保存します\n（公開データで、CryptoAPI を通じて通常どおり取り出せます）。\n一覧でのコンテナー選択、トークンの挿入、CSP からコンテナーが見えることが必要です。\nエクスポート禁止の解除には、この証明書が p12utility に必要です。
+tip.full = ワンクリックですべて: トークンからコンテナーを取り出す → 証明書を取り出す →\n秘密鍵のエクスポート禁止を解除する（p12utility --cprepair --keyexport）。\n結果: 出力先フォルダーにエクスポート可能な鍵を持つコンテナーのコピーができます\n（バックアップ、移行、PFX への変換に使えます）。\n元のトークンは変更されません。コピーの元の header.key は header.key.backup として残ります。
+tip.check = 一覧で選んだコンテナーを確認します: 秘密鍵のエクスポート禁止が解除されたかどうか。\nプログラムは鍵の権限（KP_PERMISSIONS）を読むだけで、鍵自体は決してエクスポートしません。\nこうして「エクスポート可能にする」が実際に効いたことを確かめます。
+tip.install = トークンから取り出したコンテナーのフォルダー（*.key ファイル 6 個）を CryptoPro に導入します —\nつまり CSP の保管領域へコピーします。その後コンテナーは一覧に現れ、トークンなしでも\n動作します: 証明書を取り出したり、PFX にエクスポートしたりできます。\n名前の変更は必須ではありません。CryptoPro は名前をコンテナーの中身と突き合わせるため、\n改名したコピーを常に受け入れるとは限りません。プログラムは結果を検証し、\nCSP が本当にコンテナーを認識したかどうかを知らせます。
+tip.pfx = 一覧で選んだコンテナーを PKCS#12（.pfx）ファイルにエクスポートします — 証明書と\n秘密鍵をまとめて、別のシステムへ移すためのものです。\n必要条件: エクスポート禁止が解除済みであること（「鍵を確認」が「エクスポート可能」と表示）\nと CryptoPro CSP が導入済みであること（その certmgr を使います）。\n.pfx のパスワードは別途尋ねます。
+tip.logs = プログラムの動作ログが入ったフォルダーを開きます。\n起動ごとに別ファイルが書かれます — うまくいかなかったときに\n質問へ添付すると便利です。パスワードはログに残りません。
+tip.help = 内蔵マニュアル: どこから始めるか、各ボタンの働き、\nコンソールモードのコマンド、よくある不具合の解説。\nプログラムの中にあります — インターネットも外部ファイルも不要です。
+tip.cancel = 実行中の処理を中断します。\n作業は直近の区切りで止まります。トークンへの呼び出しや起動済みの CryptoPro\nユーティリティはいったん終わらせる必要があり、そのとき起動中のユーティリティは強制終了されます。\n保存済みのファイルはそのまま残ります。
+
+# --- コンテナー一覧とログ ---
+col.location = 場所
+col.container = コンテナー
+col.details = 詳細
+tip.list = 見つかった鍵コンテナー。\n「場所」= CSP（CryptoPro から見える）または Rutoken の名前（トークンから直接読み取り）。\n行を選んでください —「証明書を取り出す」ボタンは選択したコンテナーに対して動作します。
+tip.log = 実行ログ: p12utility のコマンド、トークン操作の各段階、エラー。\nテキストは選択してコピーできます（Ctrl+C）— 問題の切り分けに役立ちます。
+
+# --- ステータスバー ---
+status.ready = 準備完了
+status.deps = 依存関係を確認しています…
+status.refresh = コンテナー一覧を更新しています…
+status.export = トークンからコンテナーを取り出しています…
+status.extract = 証明書を取り出しています…
+status.full = エクスポート禁止を解除しています…
+status.check = 鍵の権限を確認しています…
+status.install = コンテナーを導入しています…
+status.pfx = PFX にエクスポートしています…
+status.cancelling = キャンセルしています…
+
+# --- ウィンドウのログに出るメッセージ ---
+log.deps.header = 依存関係（CryptoPro CSP 以外にダウンロードや導入は不要です）:
+log.session = このセッションのログ: {0}
+log.done = 完了しました。
+log.tokens.unavailable = Rutoken を利用できません: {0}
+log.need.dest = 出力先フォルダーを指定してください。
+log.need.container = 一覧からコンテナーを選んでください。
+log.exported = 取り出したコンテナー: {0}
+log.cert.exchange = 交換用証明書:  {0}
+log.cert.sign = 署名用証明書: {0}
+log.cert.fail = 取り出せませんでした。トークンが挿入され、コンテナーが CSP から見えることを確認してください。
+log.full.done = 一連の処理が完了しました。
+log.cancelled.user = 利用者により中止されました。
+log.cancelled = 中止しました。
+log.cancel.requested = 中止が要求されました — 処理は直近の区切りで止まります。
+log.cancel.done = 処理を中止しました。
+log.error = エラー: {0}
+log.lang.changed = 表示言語: {0}
+log.container.unnamed = （名前なし）
+log.container.csp = CSP
+log.container.token = Rutoken: {0}
+log.container.provider = プロバイダー {0}
+log.container.files = {0}、ファイル数: {1}
+log.check.container = コンテナー「{0}」:
+log.check.exchange = 交換用鍵:  {0}
+log.check.sign = 署名用鍵: {0}
+log.install.notcontainer = 選んだフォルダーにコンテナーがありません（header.key、primary.key、masks.key が必要です）。
+log.install.done = コンテナーを導入しました: {0}
+log.install.norename = 名前は「{0}」のままです: CryptoPro が新しい名前のコピーを受け入れませんでした。エクスポート禁止が解除されるまではこうなります。
+log.install.invisible = CryptoPro はまだコンテナーを認識していません —「一覧を更新」をもう一度押すか、ログインし直してください。CSP はコンテナー一覧をキャッシュします。
+log.pfx.nocertmgr = certmgr が見つかりません — 導入済みの CryptoPro CSP が必要です。
+log.pfx.done = PFX ができました: {0}
+log.pfx.fail = PFX を書き出せませんでした: {0}
+log.logs.fail = ログフォルダーを開けませんでした: {0}
+
+# --- ダイアログ ---
+dlg.confirm.title = 確認
+dlg.confirm.full = 接続中のすべての Rutoken からコンテナーを取り出し、証明書を取り出し、鍵のエクスポート禁止を解除します。\n\n続行しますか？
+dlg.folder.container = 取り出したコンテナーのフォルダー（*.key ファイル 6 個）
+dlg.install.title = CryptoPro へのコンテナー導入
+dlg.install.prompt = CryptoPro の一覧に表示されるコンテナー名。\n変更は必須ではありません: 改名したコピーを CSP が常に受け入れるとは限りません。
+dlg.pfx.save = PFX の保存先
+dlg.pfx.pass.title = PFX のパスワード
+dlg.pfx.pass.prompt = .pfx ファイルのパスワード（空のままでも可 — その場合はパスワードなしになります）:
+guide.title = ヘルプ — {0}
+guide.caption = ヘルプ
+guide.missing = このビルドにはマニュアルが内蔵されていません。
+
+# --- 依存関係レポート（ウィンドウと deps コマンド）---
+diag.process = プロセス: {0}、バージョン {1}
+diag.p12.missing = p12utility: 見つかりません（ビルドに内蔵されておらず、システムにもありません）
+diag.p12.found = p12utility: {0}: {1}
+diag.copy.bundled = 内蔵コピー
+diag.copy.external = 外部コピー
+diag.rtcom = rtCOMLite: {0}
+diag.rtcom.bundled = 内蔵コピー、システムへの登録なし
+diag.rtcom.system = システムに登録されたコンポーネント
+diag.rtcom.missing = 利用できません
+diag.rtcom.warn = 注意: 内蔵コピーは 32 ビットで、このプロセスには読み込まれません — コンポーネントを導入せずに Rutoken を扱うには x86 のポータブルビルドを使ってください
+diag.csp.ok = CryptoPro CSP: 導入済み、プロバイダー {0}
+diag.csp.missing = CryptoPro CSP: 見つかりません — CryptoPro CSP を導入してください（唯一の外部依存です）
+diag.prov = {0}: {1} — {2}
+diag.prov.yes = 利用可能
+diag.prov.no = なし
+diag.notfound = 見つかりません
+diag.notbundled = ビルドに内蔵されていません
+diag.p12.external = 外部コピー: {0}
+diag.p12.bundled = 内蔵コピー: {0}
+diag.p12.used = 使用されます: {0}
+diag.rtcom.detail.none = 内蔵コピー: なし（{0}）
+diag.rtcom.detail.ok = 内蔵コピー: {0}（{1}）— 登録なしで読み込まれます
+diag.rtcom.detail.bad = 内蔵コピー: {0} — 適合しません（{1}）
+diag.rtcom.registered = システム内: 登録済み（代替手段）
+diag.rtcom.unregistered = システム内: 未登録
+diag.arch = ライブラリ {0}、プロセス {1}
+diag.arch.unknown = ライブラリのビット数を判別できませんでした
+
+# --- 鍵の権限 ---
+key.notfound = 鍵が見つかりません
+key.readfail = 権限を読み取れませんでした（{0}）
+key.exportable = エクスポート可能（KP_PERMISSIONS=0x{0}）
+key.locked = エクスポート不可（KP_PERMISSIONS=0x{0}、CRYPT_EXPORT フラグなし）
+
+# --- コンテナーの導入 ---
+install.result = 「{0}」-> {1}
+install.result.visible = 「{0}」-> {1}（CryptoPro から見えます）
+install.result.invisible = 「{0}」-> {1}（CryptoPro はまだ認識していません）
+
+# --- コンソールモード ---
+cli.usage.title = CryptoProExport — Rutoken からコンテナーを取り出し、鍵のエクスポート禁止を解除します
+cli.usage.deps = 依存関係を確認する（内蔵分 + CryptoPro CSP）
+cli.usage.list = コンテナーを一覧表示する（CSP + トークン）
+cli.usage.extractcert = コンテナーから .cer を取り出す（CryptoAPI）
+cli.usage.checkexport = 秘密鍵がエクスポート可能か確認する
+cli.usage.export = トークンからコンテナーをディスクへ取り出す
+cli.usage.keyexport = フォルダー内の鍵をエクスポート可能にする
+cli.usage.install = コンテナーのフォルダーを CryptoPro に導入する
+cli.usage.installed = 導入済みのファイルコンテナーを表示する
+cli.usage.uninstall = 導入済みのコンテナーを削除する
+cli.usage.topfx = コンテナーを PKCS#12 にエクスポートする（certmgr）
+cli.usage.full = トークンから取り出し + 自動 .cer + keyexport
+cli.usage.help = 内蔵マニュアル全文
+cli.usage.lang = 画面とメッセージの言語
+cli.usage.gui = （引数なし — グラフィカル画面）
+cli.list.csp = CSP から見えるコンテナー:
+cli.list.tokens = 接続中の Rutoken 上のコンテナー:
+cli.list.provider = （プロバイダー {0}）
+cli.list.files = （ファイル {0} 個）
+cli.cert.exchange = 交換:  {0}
+cli.cert.sign = 署名: {0}
+cli.check.exchange = 交換用鍵:  {0}
+cli.check.sign = 署名用鍵: {0}
+cli.keyexport.ok = 完了: 鍵はエクスポート可能です
+cli.installed.header = CryptoPro の保管領域にあるファイルコンテナー（{0}）:
+cli.uninstall.done = 削除しました: {0}
+cli.topfx.nocertmgr = certmgr が見つかりません — 導入済みの CryptoPro CSP が必要です
+cli.done = 完了: {0}
+cli.error = エラー: {0}
+cli.failure = エラー: {0}
+cli.install.norename = 改名は適用されませんでした: CryptoPro は名前「{0}」のコピーを受け入れませんでした。エクスポート禁止が解除されるまではこうなります（--cprepair）。
+cli.install.invisible = CryptoPro はまだコンテナーを認識していません。通常はプログラムを起動し直すか、ログインし直せば解決します — CSP はコンテナー一覧をキャッシュします。
+cli.lang.unknown = 不明な言語「{0}」です。利用できる言語: {1}
+cli.lang.missing = --lang には言語コードが必要です。利用できる言語: {0}

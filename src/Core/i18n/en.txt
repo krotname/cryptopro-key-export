@@ -1,0 +1,194 @@
+# English — fallback language: every other language falls back to this file key by key.
+
+lang.name = English
+lang.rtl = no
+
+# --- common ---
+app.title = CryptoPro key export from Rutoken
+common.ok = OK
+common.cancel = Cancel
+common.close = Close
+common.browse = Browse…
+common.none = none
+files.all = All files
+
+# --- settings panel ---
+field.p12 = p12utility.exe:
+field.p12.placeholder = built-in copy — nothing to specify here
+field.dest = Destination folder:
+field.pin = PIN (optional):
+field.pin.hint = empty → prompt window
+field.lang = Interface language:
+
+tip.p12 = Path to the CryptoPro p12utility tool — it is what lifts the key export ban.\nLeave the field empty: a copy of the tool is built in and unpacks itself.\nFill it in only if you need a different version of p12utility.
+tip.p12.browse = Pick another p12utility.exe instead of the built-in one.
+tip.dest = Where the results go: folders with extracted containers (*.key) and certificate files (.cer).\nCaution: this is a copy of your private key — keep it secret.
+tip.dest.browse = Pick the destination folder.
+tip.pin = Rutoken user PIN.\nEmpty → the system window will ask for the PIN (and if the token still has the factory PIN, 12345678 is used).\nCharacters are hidden; the value is never stored.
+tip.lang = Language of the interface, tooltips and messages.\nThe choice is remembered and applied on the next runs.\nSame from the command line: --lang en
+
+# --- buttons ---
+btn.refresh = Refresh list
+btn.export = Export from token
+btn.extract = Extract certificate
+btn.full = Make exportable
+btn.check = Check key
+btn.install = Install into CryptoPro
+btn.pfx = Export to PFX
+btn.logs = Log
+btn.help = Help
+btn.cancel = Cancel
+
+tip.refresh = Step 1. Show the list of key containers:\n  • those visible to CryptoPro CSP (including the inserted token);\n  • those found directly on connected Rutoken devices.\nChanges nothing — it only reads. A good place to start.
+tip.export = Step 2. Copy the containers from all connected Rutoken devices into the destination folder\n(6 *.key files per container). Reads the token memory directly, bypassing the CSP,\nso it works even when export is banned. The token and its data are not modified.\nThe key in the copy stays non-exportable — that is what «Make exportable» is for.
+tip.extract = Step 3. Save the certificate of the container selected in the list into a .cer file\n(public data, extracted normally through CryptoAPI).\nRequires a selected container, an inserted token and the container being visible to the CSP.\np12utility needs that certificate in order to lift the export ban.
+tip.full = Everything in one click: copy the containers off the token → extract the certificates →\nlift the ban on exporting the private key (p12utility --cprepair --keyexport).\nResult: the destination folder holds a copy of the container with an exportable key\n(good for a backup, for moving to another machine and for conversion to PFX).\nThe original token is not modified; the original header.key of the copy is kept as header.key.backup.
+tip.check = Check the container selected in the list: has the private key export ban been lifted.\nThe program reads the key permissions (KP_PERMISSIONS) — the key itself is never exported.\nThis is how you confirm that «Make exportable» really worked.
+tip.install = Install a container folder taken off a token (6 *.key files) into CryptoPro —\nthat is, copy it into the CSP store. After that the container shows up in the list and works\nwithout the token: you can extract its certificate and export it to PFX.\nRenaming is optional: CryptoPro matches the name against the container contents and\ndoes not always accept a renamed copy. The program verifies the result and tells you\nwhether the CSP actually sees the container.
+tip.pfx = Export the container selected in the list into a PKCS#12 (.pfx) file — the certificate\ntogether with the private key, ready to be moved to another system.\nRequires: the export ban already lifted («Check key» reports «exportable»)\nand an installed CryptoPro CSP (its certmgr is used).\nThe program will ask for the .pfx password separately.
+tip.logs = Open the folder with the program logs.\nEvery run writes its own file — handy to attach to a question\nif something did not work out. Passwords never reach the log.
+tip.help = Built-in manual: where to start, what each button does,\nthe console commands and a walk-through of the usual errors.\nIt lives inside the program — no internet and no extra files needed.
+tip.cancel = Interrupt the current operation.\nWork stops at the nearest step: a call into the token or a running CryptoPro\nutility has to be finished first — a running utility is killed at that point.\nFiles already saved stay where they are.
+
+# --- container list and log ---
+col.location = Location
+col.container = Container
+col.details = Details
+tip.list = Key containers that were found.\n«Location» = CSP (visible to CryptoPro) or the Rutoken name (read directly off the token).\nSelect a row — the «Extract certificate» button works on the selected container.
+tip.log = Execution log: p12utility commands, token steps and errors.\nThe text can be selected and copied (Ctrl+C) — useful when investigating problems.
+
+# --- status bar ---
+status.ready = Ready
+status.deps = Checking dependencies…
+status.refresh = Refreshing the container list…
+status.export = Copying containers off the token…
+status.extract = Extracting the certificate…
+status.full = Lifting the export ban…
+status.check = Checking key permissions…
+status.install = Installing the container…
+status.pfx = Exporting to PFX…
+status.cancelling = Cancelling…
+
+# --- messages in the window log ---
+log.deps.header = Dependencies (nothing to download or install except CryptoPro CSP):
+log.session = Log of this session: {0}
+log.done = Done.
+log.tokens.unavailable = Rutoken devices unavailable: {0}
+log.need.dest = Specify the destination folder.
+log.need.container = Select a container in the list.
+log.exported = Containers copied: {0}
+log.cert.exchange = Exchange certificate:  {0}
+log.cert.sign = Signature certificate: {0}
+log.cert.fail = Extraction failed. Make sure the token is inserted and the container is visible to the CSP.
+log.full.done = Full cycle finished.
+log.cancelled.user = Cancelled by the user.
+log.cancelled = Cancelled.
+log.cancel.requested = Cancellation requested — the operation will stop at the nearest step.
+log.cancel.done = Operation cancelled.
+log.error = ERROR: {0}
+log.lang.changed = Interface language: {0}
+log.container.unnamed = (unnamed)
+log.container.csp = CSP
+log.container.token = Rutoken: {0}
+log.container.provider = provider {0}
+log.container.files = {0}, files: {1}
+log.check.container = Container «{0}»:
+log.check.exchange = exchange key:  {0}
+log.check.sign = signature key: {0}
+log.install.notcontainer = The selected folder holds no container (header.key, primary.key, masks.key are required).
+log.install.done = Container installed: {0}
+log.install.norename = The name was kept as «{0}»: CryptoPro did not accept the copy under the new name. That happens while the export ban is still in place.
+log.install.invisible = CryptoPro does not see the container yet — press «Refresh list» again or sign out and back in: the CSP caches the container list.
+log.pfx.nocertmgr = certmgr not found — an installed CryptoPro CSP is required.
+log.pfx.done = PFX ready: {0}
+log.pfx.fail = PFX export failed: {0}
+log.logs.fail = Could not open the log folder: {0}
+
+# --- dialogs ---
+dlg.confirm.title = Confirmation
+dlg.confirm.full = Containers will be copied off every connected Rutoken, certificates will be extracted and the key export ban will be lifted.\n\nContinue?
+dlg.folder.container = Folder with the extracted container (6 *.key files)
+dlg.install.title = Installing a container into CryptoPro
+dlg.install.prompt = The name the container will appear under in CryptoPro.\nChanging it is optional: a renamed copy is not always accepted by the CSP.
+dlg.pfx.save = Where to save the PFX
+dlg.pfx.pass.title = PFX password
+dlg.pfx.pass.prompt = Password for the .pfx file (may be left empty — then the file has no password):
+guide.title = Help — {0}
+guide.caption = Help
+guide.missing = The manual is not embedded in this build.
+
+# --- dependency report (window log and the deps command) ---
+diag.process = Process: {0}, version {1}
+diag.p12.missing = p12utility: NOT FOUND (not embedded in the build and not found in the system)
+diag.p12.found = p12utility: {0}: {1}
+diag.copy.bundled = built-in copy
+diag.copy.external = external copy
+diag.rtcom = rtCOMLite: {0}
+diag.rtcom.bundled = built-in copy, no registration in the system
+diag.rtcom.system = component registered in the system
+diag.rtcom.missing = UNAVAILABLE
+diag.rtcom.warn = warning: the built-in copy is 32-bit and does not load into this process — to work with a Rutoken without installing the component, take the portable x86 build
+diag.csp.ok = CryptoPro CSP: installed, providers {0}
+diag.csp.missing = CryptoPro CSP: NOT FOUND — install CryptoPro CSP (the only external dependency)
+diag.prov = {0}: {1} — {2}
+diag.prov.yes = available
+diag.prov.no = no
+diag.notfound = NOT FOUND
+diag.notbundled = not embedded in the build
+diag.p12.external = external copy: {0}
+diag.p12.bundled = built-in copy: {0}
+diag.p12.used = will be used: {0}
+diag.rtcom.detail.none = built-in copy: none ({0})
+diag.rtcom.detail.ok = built-in copy: {0} ({1}) — loads without registration
+diag.rtcom.detail.bad = built-in copy: {0} — does not fit ({1})
+diag.rtcom.registered = in the system: registered (fallback)
+diag.rtcom.unregistered = in the system: not registered
+diag.arch = library {0}, process {1}
+diag.arch.unknown = could not determine the library architecture
+
+# --- key permissions ---
+key.notfound = key not found
+key.readfail = could not read the permissions ({0})
+key.exportable = exportable (KP_PERMISSIONS=0x{0})
+key.locked = NON-exportable (KP_PERMISSIONS=0x{0}, no CRYPT_EXPORT flag)
+
+# --- container installation ---
+install.result = «{0}» -> {1}
+install.result.visible = «{0}» -> {1} (visible to CryptoPro)
+install.result.invisible = «{0}» -> {1} (CryptoPro does NOT see it yet)
+
+# --- console mode ---
+cli.usage.title = CryptoProExport — copy a container off a Rutoken + lift the key export ban
+cli.usage.deps = check the dependencies (built-in ones + CryptoPro CSP)
+cli.usage.list = list the containers (CSP + tokens)
+cli.usage.extractcert = extract the .cer from a container (CryptoAPI)
+cli.usage.checkexport = check whether the private key is exportable
+cli.usage.export = copy containers off the tokens to disk
+cli.usage.keyexport = make the key in the folder exportable
+cli.usage.install = install a container folder into CryptoPro
+cli.usage.installed = show the installed file containers
+cli.usage.uninstall = remove an installed container
+cli.usage.topfx = export a container to PKCS#12 (certmgr)
+cli.usage.full = copy off the token + auto .cer + keyexport
+cli.usage.help = the whole built-in manual
+cli.usage.lang = language of the interface and messages
+cli.usage.gui = (no arguments — graphical interface)
+cli.list.csp = Containers visible to the CSP:
+cli.list.tokens = Containers on the connected Rutoken devices:
+cli.list.provider = (provider {0})
+cli.list.files = ({0} files)
+cli.cert.exchange = Exchange:  {0}
+cli.cert.sign = Signature: {0}
+cli.check.exchange = Exchange key:  {0}
+cli.check.sign = Signature key: {0}
+cli.keyexport.ok = Done: the key is exportable
+cli.installed.header = File containers in the CryptoPro store ({0}):
+cli.uninstall.done = Removed: {0}
+cli.topfx.nocertmgr = certmgr not found — an installed CryptoPro CSP is required
+cli.done = Done: {0}
+cli.error = Error: {0}
+cli.failure = ERROR: {0}
+cli.install.norename = The rename was not applied: CryptoPro did not accept the copy under the name «{0}». That happens while the export ban is still in place (--cprepair).
+cli.install.invisible = CryptoPro does not see the container yet. Running the program again or signing out and back in usually helps — the CSP caches the container list.
+cli.lang.unknown = Unknown language «{0}». Available languages: {1}
+cli.lang.missing = --lang needs a language code. Available languages: {0}

@@ -1,0 +1,150 @@
+CryptoPro Key Export — manual
+==================================================================
+
+The program copies a CryptoPro key container off a Rutoken, lifts the
+ban on exporting the private key and writes the result out as PKCS#12
+(.pfx). It is meant for the owner of the keys: backup, migration to
+another machine, conversion.
+
+Everything needed lives inside the exe. The only separate requirement
+is CryptoPro CSP — a licensed product that cannot be embedded.
+
+The interface is available in 20 languages: pick one in the window or
+pass --lang <code>, for example CryptoProExport.exe help --lang en
+This manual itself is translated into Russian and English; the other
+interface languages fall back to the English text.
+
+
+1. WHAT YOU NEED ON THE MACHINE
+------------------------------------------------------------------
+  * Windows with CryptoPro CSP installed (tested on 5.0 R2).
+  * To read from a token — a Rutoken S / Lite. A Rutoken ECP 2.0 with
+    a hardware non-extractable key cannot be exported this way: the
+    key never physically leaves the chip.
+  * Nothing to download: p12utility and rtCOMLite are embedded in the
+    program and unpack themselves on first use.
+
+  Check readiness: the «Refresh list» button or the command
+  CryptoProExport.exe deps
+
+
+2. HOW TO WORK: THE KEY IS STILL ON THE TOKEN
+------------------------------------------------------------------
+  1) Insert the Rutoken.
+  2) «Refresh list» — the program shows the containers visible to
+     CryptoPro and the ones found on the tokens.
+  3) Fill in the «Destination folder» — the files land there.
+  4) «Make exportable» — one click does everything:
+       copies the containers off the token (6 *.key per container),
+       extracts the certificates through CryptoAPI,
+       lifts the ban on exporting the private key.
+     The original token is not modified.
+  5) «Check key» — confirm that the ban is really gone.
+  6) «Export to PFX» — get a .pfx with the private key.
+
+  PIN: leave the field empty and the system window will ask for it.
+  If the token still has the factory PIN, 12345678 is used.
+
+
+3. HOW TO WORK: THE CONTAINER IS ALREADY IN A FOLDER
+------------------------------------------------------------------
+  No token is needed once the folder with six *.key files exists.
+
+  1) «Install into CryptoPro» — pick the container folder. It is
+     copied into the CSP store and the program verifies that
+     CryptoPro really sees the container.
+  2) «Refresh list» — the container shows up in the list.
+  3) «Extract certificate», then «Make exportable».
+  4) «Check key» and «Export to PFX».
+
+  About the container name: CryptoPro matches the name against the
+  contents, so renaming a copy does not always work. If it fails,
+  the program restores the original name and says so — the container
+  stays usable.
+
+
+4. BUTTONS
+------------------------------------------------------------------
+  Refresh list          show the containers (CSP + tokens)
+  Export from token     copy containers to disk, ban left in place
+  Extract certificate   save the .cer of the selected container
+  Make exportable       the whole cycle in one click
+  Check key             is the export ban lifted
+  Install into CryptoPro  put an extracted folder into the CSP store
+  Export to PFX         write the container out as .pfx
+  Log                   open the folder with the program logs
+  Help                  this window
+
+  Every button has a tooltip — hold the cursor over it.
+
+
+5. COMMAND LINE
+------------------------------------------------------------------
+  deps                                check the dependencies
+  list                                list the containers
+  extractcert <container> <folder>    extract the .cer
+  checkexport <container>             check the export ban
+  export <folder> [pin]               copy containers off tokens
+  keyexport <folder> <cert.cer> [pw]  lift the export ban
+  install <folder> [name]             install a container into CSP
+  installed                           show installed containers
+  uninstall <folder>                  remove an installed container
+  topfx <container> <file.pfx> [pw]   export to PKCS#12
+  full <folder> [cert.cer] [pin]      off the token + all the rest
+  help                                this manual
+  --lang <code>                       interface language
+
+  Exit codes: 0 — success, 1 — bad arguments, 2 — not done in
+  substance (no CSP, container not found or not visible), 3 —
+  execution error.
+
+  checkexport is more precise: 0 — the key is exportable, 2 — the key
+  was not found (no container or no key of that type), 3 — the key is
+  there, but the export ban is still in place.
+
+  A GUI application only shows its output when it is redirected to a
+  file: CryptoProExport.exe deps > deps.txt
+
+
+6. IF SOMETHING GOES WRONG
+------------------------------------------------------------------
+  «CryptoPro CSP: NOT FOUND»
+      The CSP is not installed. Without it nothing works except
+      reading files off the token.
+
+  «rtCOMLite: UNAVAILABLE» or «does not fit»
+      That happens with x64/arm64 builds: the embedded library is
+      32-bit and only loads into a 32-bit process. Take the regular
+      portable build (x86) — it runs on x64 and on ARM64 too.
+
+  «Devices found: 0»
+      The token is not inserted, its drivers are missing, or another
+      program is holding it.
+
+  Wrong PIN, PIN locked
+      The program spells such codes out in words. After several wrong
+      attempts the PIN gets locked — the token administrator unlock
+      code is then required.
+
+  «key not found» when checking or exporting
+      The container is not visible to CryptoPro: insert the token or
+      install the container folder with «Install into CryptoPro».
+
+  «NON-exportable»
+      The ban is still in place — press «Make exportable». For a
+      container taken off a token this is done on the copy in the
+      destination folder, not on the token itself.
+
+  Logs of every run: %LOCALAPPDATA%\CryptoProExport\logs
+  Passwords are never written there. That file is handy to attach to
+  a question.
+
+
+7. SECURITY
+------------------------------------------------------------------
+  An extracted container and a .pfx are your private key in the open.
+  Keep them secret: on encrypted storage, with a password on the
+  .pfx, and delete the working copies once they are no longer needed.
+
+  The program is meant for an owner working with their own keys.
+  No operation modifies the original token.

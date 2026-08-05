@@ -172,10 +172,10 @@ namespace CryptoProExport
             string dll = BundledTools.TryExtract(
                 BundledTools.RtComLiteResource, BundledTools.RtComLiteFileName, out _);
             if (dll != null && RegFreeCom.MatchesProcess(dll, out _))
-                return "встроенная копия, без регистрации в системе";
+                return Strings.Get("diag.rtcom.bundled");
             if (Type.GetTypeFromProgID(ProgId, throwOnError: false) != null)
-                return "компонент, зарегистрированный в системе";
-            return "НЕДОСТУПЕН";
+                return Strings.Get("diag.rtcom.system");
+            return Strings.Get("diag.rtcom.missing");
         }
 
         /// <summary>Диагностика без обращения к токену: откуда будет взят COM-компонент rtCOMLite.</summary>
@@ -186,15 +186,16 @@ namespace CryptoProExport
                 BundledTools.RtComLiteResource, BundledTools.RtComLiteFileName, out string extractError);
 
             if (dll == null)
-                lines.Add("  встроенная копия: нет" + (extractError != null ? " (" + extractError + ")" : " (не вшита в сборку)"));
+                lines.Add("  " + Strings.Format("diag.rtcom.detail.none",
+                    extractError ?? Strings.Get("diag.notbundled")));
             else if (RegFreeCom.MatchesProcess(dll, out string detail))
-                lines.Add($"  встроенная копия: {dll} ({detail}) — грузится без регистрации");
+                lines.Add("  " + Strings.Format("diag.rtcom.detail.ok", dll, detail));
             else
-                lines.Add($"  встроенная копия: {dll} — не подходит ({detail})");
+                lines.Add("  " + Strings.Format("diag.rtcom.detail.bad", dll, detail));
 
-            lines.Add(Type.GetTypeFromProgID(ProgId, throwOnError: false) != null
-                ? "  в системе: зарегистрирован (запасной вариант)"
-                : "  в системе: не зарегистрирован");
+            lines.Add("  " + Strings.Get(Type.GetTypeFromProgID(ProgId, throwOnError: false) != null
+                ? "diag.rtcom.registered"
+                : "diag.rtcom.unregistered"));
             return lines;
         }
 

@@ -19,14 +19,14 @@ namespace CryptoProExport.App
             string text = GuideText.Value;
             if (string.IsNullOrWhiteSpace(text))
             {
-                MessageBox.Show(owner, "Руководство не вшито в эту сборку.", "Справка",
+                MessageBox.Show(owner, Strings.Get("guide.missing"), Strings.Get("guide.caption"),
                                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             using var form = new Form
             {
-                Text = "Справка — Экспорт ключей КриптоПро с Рутокена",
+                Text = Strings.Format("guide.title", Strings.Get("app.title")),
                 StartPosition = FormStartPosition.CenterParent,
                 ClientSize = new Size(720, 620),
                 MinimumSize = new Size(520, 400),
@@ -52,7 +52,12 @@ namespace CryptoProExport.App
                 Dock = DockStyle.Bottom, FlowDirection = FlowDirection.RightToLeft,
                 Height = 46, Padding = new Padding(10, 8, 10, 8),
             };
-            var close = new Button { Text = "Закрыть", Width = 100, Height = 30, DialogResult = DialogResult.OK };
+            var close = new Button
+            {
+                Text = Strings.Get("common.close"), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                MinimumSize = new Size(100, 30), Padding = new Padding(10, 0, 10, 0),
+                DialogResult = DialogResult.OK,
+            };
             bottom.Controls.Add(close);
 
             form.Controls.Add(box);

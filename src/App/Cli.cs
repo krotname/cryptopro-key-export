@@ -1,5 +1,5 @@
 using System;
-using System.IO;
+using System.Linq;
 using System.Runtime.Versioning;
 
 namespace CryptoProExport.App
@@ -11,6 +11,27 @@ namespace CryptoProExport.App
         /// <summary>Вывод дублируется в журнал сеанса — чтобы было что показать после сбоя.</summary>
         private static readonly Action<string> Out = SessionLog.Tee(Console.WriteLine);
         private static readonly Action<string> Err = SessionLog.Tee(Console.Error.WriteLine);
+
+        /// <summary>
+        /// Синтаксис команд не переводится: это литералы, которые набирают в консоли.
+        /// Переводится только пояснение — ключ <c>cli.usage.&lt;команда&gt;</c>.
+        /// </summary>
+        private static readonly (string Syntax, string Key)[] Commands =
+        {
+            ("deps",                                 "cli.usage.deps"),
+            ("list",                                 "cli.usage.list"),
+            ("extractcert <container> <outDir>",     "cli.usage.extractcert"),
+            ("checkexport <container>",              "cli.usage.checkexport"),
+            ("export <destDir> [pin]",               "cli.usage.export"),
+            ("keyexport <folder> <cert.cer> [pass]", "cli.usage.keyexport"),
+            ("install <folder> [name]",              "cli.usage.install"),
+            ("installed",                            "cli.usage.installed"),
+            ("uninstall <folder>",                   "cli.usage.uninstall"),
+            ("topfx <container> <out.pfx> [pass]",   "cli.usage.topfx"),
+            ("full <destDir> [cert.cer] [pin]",      "cli.usage.full"),
+            ("help",                                 "cli.usage.help"),
+            ("--lang <xx>",                          "cli.usage.lang"),
+        };
 
         public static int Run(string[] args)
         {
@@ -37,21 +58,22 @@ namespace CryptoProExport.App
                     }
                     case "list":
                     {
-                        Out("Контейнеры, видимые CSP:");
+                        Out(Strings.Get("cli.list.csp"));
                         foreach (var c in CertFromContainer.EnumContainers())
-                            Out($"  {c.Name}  (провайдер {c.ProvType})");
-                        Out("Контейнеры на подключённых Рутокенах:");
+                            Out($"  {c.Name}  " + Strings.Format("cli.list.provider", c.ProvType));
+                        Out(Strings.Get("cli.list.tokens"));
                         var exp = new RutokenExporter { Log = Out };
                         foreach (var c in exp.ReadAllContainers())
-                            Out($"  {c.TokenName} {c.TokenDir} \"{c.ContainerName}\" ({c.Files.Count} файлов)");
+                            Out($"  {c.TokenName} {c.TokenDir} \"{c.ContainerName}\" " +
+                                Strings.Format("cli.list.files", c.Files.Count));
                         return 0;
                     }
                     case "extractcert":
                     {
                         if (args.Length < 3) { Usage(); return 1; }
                         var (ex, sg) = CertFromContainer.SaveCerts(args[1], args[2]);
-                        Out($"Обмен:  {ex ?? "нет"}");
-                        Out($"Подпись: {sg ?? "нет"}");
+                        Out(Strings.Format("cli.cert.exchange", ex ?? Strings.Get("common.none")));
+                        Out(Strings.Format("cli.cert.sign", sg ?? Strings.Get("common.none")));
                         return (ex != null || sg != null) ? 0 : 2;
                     }
                     case "checkexport":
@@ -59,8 +81,8 @@ namespace CryptoProExport.App
                         if (args.Length < 2) { Usage(); return 1; }
                         var ex = CertFromContainer.CheckExportable(args[1], CertFromContainer.AT_KEYEXCHANGE);
                         var sg = CertFromContainer.CheckExportable(args[1], CertFromContainer.AT_SIGNATURE);
-                        Out($"Ключ обмена:  {ex}");
-                        Out($"Ключ подписи: {sg}");
+                        Out(Strings.Format("cli.check.exchange", ex));
+                        Out(Strings.Format("cli.check.sign", sg));
                         // 2 — проверять нечего (нет контейнера/ключа), 3 — ключ есть, но запрет не снят
                         if (!ex.KeyFound && !sg.KeyFound) return 2;
                         return (ex.Exportable || sg.Exportable) ? 0 : 3;
@@ -77,28 +99,26 @@ namespace CryptoProExport.App
                         if (args.Length < 3) { Usage(); return 1; }
                         var p12 = new P12Utility(P12Utility.Resolve()) { Log = Out };
                         var r = p12.MakeExportable(args[1], args[2], null, args.Length > 3 ? args[3] : null);
-                        Out(r.Success ? "Готово: ключ экспортируемый" : "Ошибка: " + r.Explain());
+                        Out(r.Success ? Strings.Get("cli.keyexport.ok") : Strings.Format("cli.error", r.Explain()));
                         return r.Success ? 0 : 2;
                     }
                     case "install":
                     {
                         if (args.Length < 2) { Usage(); return 1; }
                         var installed = ContainerStore.Install(args[1], args.Length > 2 ? args[2] : null);
-                        Out("Контейнер установлен: " + installed);
+                        Out(Strings.Format("log.install.done", installed));
                         if (args.Length > 2 && !installed.Renamed)
-                            Out($"Переименование не применилось: КриптоПро не принял копию с именем \"{args[2]}\". " +
-                                "Так бывает, пока с контейнера не снят запрет на экспорт (--cprepair).");
+                            Out(Strings.Format("cli.install.norename", args[2]));
                         if (installed.Verified && !installed.VisibleToCsp)
                         {
-                            Out("КриптоПро пока не видит контейнер. Обычно помогает повторный запуск " +
-                                "или перезаход в систему — CSP кэширует список контейнеров.");
+                            Out(Strings.Get("cli.install.invisible"));
                             return 2;
                         }
                         return 0;
                     }
                     case "installed":
                     {
-                        Out("Файловые контейнеры в хранилище КриптоПро (" + ContainerStore.HdImageDir + "):");
+                        Out(Strings.Format("cli.installed.header", ContainerStore.HdImageDir));
                         foreach (var c in ContainerStore.Installed())
                             Out($"  {c.Name}  ->  {c.Folder}");
                         return 0;
@@ -107,7 +127,7 @@ namespace CryptoProExport.App
                     {
                         if (args.Length < 2) { Usage(); return 1; }
                         ContainerStore.Uninstall(args[1]);
-                        Out("Удалено: " + args[1]);
+                        Out(Strings.Format("cli.uninstall.done", args[1]));
                         return 0;
                     }
                     case "topfx":
@@ -116,12 +136,12 @@ namespace CryptoProExport.App
                         string exe = CertMgr.Locate();
                         if (exe == null)
                         {
-                            Err("certmgr не найден — нужен установленный КриптоПро CSP");
+                            Err(Strings.Get("cli.topfx.nocertmgr"));
                             return 2;
                         }
                         var cm = new CertMgr(exe) { Log = Out };
                         var r = cm.ExportContainerToPfx(args[1], args[2], args.Length > 3 ? args[3] : null);
-                        Out(r.Success ? "Готово: " + args[2] : "Ошибка: " + r.Output);
+                        Out(r.Success ? Strings.Format("cli.done", args[2]) : Strings.Format("cli.error", r.Output));
                         return r.Success ? 0 : 2;
                     }
                     case "full":
@@ -141,27 +161,22 @@ namespace CryptoProExport.App
             }
             catch (Exception ex)
             {
-                Err("ОШИБКА: " + ex.Message);
+                Err(Strings.Format("cli.failure", ex.Message));
                 return 3;
             }
         }
 
+        /// <summary>
+        /// Подсказка по командам. Ширина колонки считается по факту: переводы длиннее
+        /// русского оригинала, а жёсткий отступ разъехался бы.
+        /// </summary>
         private static void Usage()
         {
-            Out("CryptoProExport — экспорт контейнера с Рутокена + снятие запрета на экспорт ключа");
-            Out("  deps                                   проверить зависимости (встроенные + КриптоПро CSP)");
-            Out("  list                                   перечислить контейнеры (CSP + токены)");
-            Out("  extractcert <container> <outDir>       извлечь .cer из контейнера (CryptoAPI)");
-            Out("  checkexport <container>                проверить, экспортируемый ли закрытый ключ");
-            Out("  export <destDir> [pin]                 снять контейнеры с токенов на диск");
-            Out("  keyexport <folder> <cert.cer> [pass]   сделать ключ в папке экспортируемым");
-            Out("  install <folder> [name]                установить папку-контейнер в КриптоПро");
-            Out("  installed                              показать установленные файловые контейнеры");
-            Out("  uninstall <folder>                     удалить установленный контейнер");
-            Out("  topfx <container> <out.pfx> [pass]     выгрузить контейнер в PKCS#12 (certmgr)");
-            Out("  full <destDir> [cert.cer] [pin]        снять с токена + авто-.cer + keyexport");
-            Out("  help                                   встроенное руководство целиком");
-            Out("  (без аргументов — графический интерфейс)");
+            Out(Strings.Get("cli.usage.title"));
+            int width = Commands.Max(c => c.Syntax.Length) + 2;
+            foreach (var (syntax, key) in Commands)
+                Out("  " + syntax.PadRight(width, ' ') + Strings.Get(key));
+            Out("  " + Strings.Get("cli.usage.gui"));
         }
     }
 }

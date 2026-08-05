@@ -1,0 +1,194 @@
+# Türkçe
+
+lang.name = Türkçe
+lang.rtl = no
+
+# --- genel ---
+app.title = Rutoken’dan CryptoPro anahtarlarının dışa aktarımı
+common.ok = Tamam
+common.cancel = İptal
+common.close = Kapat
+common.browse = Gözat…
+common.none = yok
+files.all = Tüm dosyalar
+
+# --- ayarlar paneli ---
+field.p12 = p12utility.exe:
+field.p12.placeholder = gömülü kopya — burada bir şey belirtmeye gerek yok
+field.dest = Hedef klasör:
+field.pin = PIN (isteğe bağlı):
+field.pin.hint = boş → soru penceresi
+field.lang = Arayüz dili:
+
+tip.p12 = CryptoPro’nun p12utility aracının yolu — anahtarın dışa aktarım yasağını kaldıran odur.\nAlanı boş bırakın: aracın bir kopyası programa gömülüdür ve kendiliğinden açılır.\nYalnızca p12utility’nin başka bir sürümü gerekiyorsa doldurun.
+tip.p12.browse = Gömülü kopya yerine başka bir p12utility.exe seçin.
+tip.dest = Sonucun konacağı yer: çıkarılan kapsayıcı klasörleri (*.key) ve sertifika dosyaları (.cer).\nDikkat: bu, özel anahtarınızın bir kopyasıdır — sır gibi saklayın.
+tip.dest.browse = Hedef klasörü seçin.
+tip.pin = Rutoken kullanıcı PIN’i.\nBoş → PIN’i sistem penceresi soracaktır (belirteçte fabrika PIN’i duruyorsa 12345678 kullanılır).\nKarakterler gizlidir; değer hiçbir yere kaydedilmez.
+tip.lang = Arayüzün, ipuçlarının ve iletilerin dili.\nSeçim hatırlanır ve sonraki açılışlarda uygulanır.\nKomut satırında aynısı: --lang tr
+
+# --- düğmeler ---
+btn.refresh = Listeyi yenile
+btn.export = Belirteçten dışa aktar
+btn.extract = Sertifikayı çıkar
+btn.full = Dışa aktarılabilir yap
+btn.check = Anahtarı denetle
+btn.install = CryptoPro’ya kur
+btn.pfx = PFX olarak dışa aktar
+btn.logs = Günlük
+btn.help = Yardım
+btn.cancel = İptal
+
+tip.refresh = 1. adım. Anahtar kapsayıcılarının listesini göster:\n  • CryptoPro CSP’nin gördükleri (takılı belirteçtekiler dâhil);\n  • bağlı Rutoken’larda doğrudan bulunanlar.\nHiçbir şeyi değiştirmez — yalnızca okur. Başlamak için uygun düğme.
+tip.export = 2. adım. Bağlı tüm Rutoken’lardan kapsayıcıları hedef klasöre çıkar\n(kapsayıcı başına 6 *.key dosyası). Belirtecin belleğini CSP’yi atlayarak doğrudan okur,\nbu yüzden dışa aktarım yasağı varken de çalışır. Belirteç ve verileri değişmez.\nÇıkarılan kopyadaki anahtar hâlâ dışa aktarılamaz — onu «Dışa aktarılabilir yap» düğmesi halleder.
+tip.extract = 3. adım. Listede seçili kapsayıcının sertifikasını bir .cer dosyasına kaydet\n(açık veri, CryptoAPI üzerinden olağan biçimde çıkarılır).\nListede seçili bir kapsayıcı, takılı belirteç ve kapsayıcının CSP’ye görünür olması gerekir.\nDışa aktarım yasağını kaldırmak için p12utility’ye bu sertifika gerekir.
+tip.full = Tek tıkla her şey: kapsayıcıları belirteçten çıkar → sertifikaları çıkar →\nözel anahtarın dışa aktarım yasağını kaldır (p12utility --cprepair --keyexport).\nSonuç: hedef klasörde dışa aktarılabilir anahtara sahip bir kapsayıcı kopyası\n(yedek, taşıma ve PFX’e dönüştürme için uygundur).\nÖzgün belirteç değişmez; kopyanın asıl header.key dosyası header.key.backup olarak kalır.
+tip.check = Listede seçili kapsayıcıyı denetle: özel anahtarın dışa aktarım yasağı kalktı mı?\nProgram anahtarın izinlerini (KP_PERMISSIONS) okur — anahtarın kendisi hiç dışa aktarılmaz.\n«Dışa aktarılabilir yap» gerçekten işe yaradı mı, böyle doğrulanır.
+tip.install = Belirteçten çıkarılmış bir kapsayıcı klasörünü (6 *.key dosyası) CryptoPro’ya kur —\nyani onu CSP deposuna kopyala. Ardından kapsayıcı listede görünür ve belirteç olmadan\nçalışır: sertifikası çıkarılabilir, PFX olarak dışa aktarılabilir.\nAdı değiştirmek zorunlu değil: CryptoPro adı kapsayıcının içeriğiyle karşılaştırır ve\nadı değiştirilmiş kopyayı her zaman kabul etmez. Program sonucu denetler ve\nCSP’nin kapsayıcıyı gerçekten görüp görmediğini bildirir.
+tip.pfx = Listede seçili kapsayıcıyı bir PKCS#12 (.pfx) dosyasına aktar — sertifika ile\nözel anahtar birlikte, başka bir sisteme taşımak için.\nGerekenler: dışa aktarım yasağının kalkmış olması («Anahtarı denetle» «dışa aktarılabilir» göstermeli)\nve CryptoPro CSP’nin kurulu olması (onun certmgr’ı kullanılır).\n.pfx parolasını program ayrıca soracaktır.
+tip.logs = Programın çalışma günlüklerinin bulunduğu klasörü aç.\nHer açılış kendi dosyasını yazar — bir şey yolunda gitmediyse\nsoruya eklemek pratiktir. Parolalar günlüğe hiç düşmez.
+tip.help = Gömülü kılavuz: nereden başlanır, her düğme ne yapar,\nkonsol kipinin komutları ve tipik hataların çözümlemesi.\nProgramın içindedir — internet ve dış dosya gerekmez.
+tip.cancel = Süren işlemi kes.\nÇalışma en yakın adımda durur: belirtece yapılan çağrı ya da başlatılmış bir CryptoPro\naracı önce bitirilmek zorundadır — çalışan araç o sırada sonlandırılır.\nHâlihazırda kaydedilmiş dosyalar yerinde kalır.
+
+# --- kapsayıcı listesi ve günlük ---
+col.location = Konum
+col.container = Kapsayıcı
+col.details = Ayrıntılar
+tip.list = Bulunan anahtar kapsayıcıları.\n«Konum» = CSP (CryptoPro görüyor) ya da Rutoken adı (doğrudan belirteçten okundu).\nBir satır seçin — «Sertifikayı çıkar» düğmesi seçili kapsayıcı üzerinde çalışır.
+tip.log = Yürütme günlüğü: p12utility komutları, belirteçle çalışma adımları ve hatalar.\nMetin seçilip kopyalanabilir (Ctrl+C) — sorunları çözümlerken işe yarar.
+
+# --- durum çubuğu ---
+status.ready = Hazır
+status.deps = Bağımlılıklar denetleniyor…
+status.refresh = Kapsayıcı listesi yenileniyor…
+status.export = Kapsayıcılar belirteçten çıkarılıyor…
+status.extract = Sertifika çıkarılıyor…
+status.full = Dışa aktarım yasağı kaldırılıyor…
+status.check = Anahtar izinleri denetleniyor…
+status.install = Kapsayıcı kuruluyor…
+status.pfx = PFX olarak dışa aktarılıyor…
+status.cancelling = İptal ediliyor…
+
+# --- pencere günlüğündeki iletiler ---
+log.deps.header = Bağımlılıklar (CryptoPro CSP dışında indirilecek ya da kurulacak bir şey yok):
+log.session = Bu oturumun günlüğü: {0}
+log.done = Bitti.
+log.tokens.unavailable = Rutoken kullanılamıyor: {0}
+log.need.dest = Hedef klasörü belirtin.
+log.need.container = Listeden bir kapsayıcı seçin.
+log.exported = Çıkarılan kapsayıcı sayısı: {0}
+log.cert.exchange = Değişim sertifikası:  {0}
+log.cert.sign = İmza sertifikası: {0}
+log.cert.fail = Çıkarılamadı. Belirtecin takılı olduğundan ve kapsayıcının CSP’ye göründüğünden emin olun.
+log.full.done = Tam döngü tamamlandı.
+log.cancelled.user = Kullanıcı iptal etti.
+log.cancelled = İptal edildi.
+log.cancel.requested = İptal istendi — işlem en yakın adımda duracak.
+log.cancel.done = İşlem iptal edildi.
+log.error = HATA: {0}
+log.lang.changed = Arayüz dili: {0}
+log.container.unnamed = (adsız)
+log.container.csp = CSP
+log.container.token = Rutoken: {0}
+log.container.provider = sağlayıcı {0}
+log.container.files = {0}, dosya: {1}
+log.check.container = Kapsayıcı «{0}»:
+log.check.exchange = değişim anahtarı:  {0}
+log.check.sign = imza anahtarı: {0}
+log.install.notcontainer = Seçilen klasörde kapsayıcı yok (header.key, primary.key, masks.key gerekir).
+log.install.done = Kapsayıcı kuruldu: {0}
+log.install.norename = Ad «{0}» olarak kaldı: CryptoPro kopyayı yeni adla kabul etmedi. Dışa aktarım yasağı kalkana kadar böyle olur.
+log.install.invisible = CryptoPro kapsayıcıyı henüz görmüyor — «Listeyi yenile»ye yeniden basın ya da sisteme yeniden giriş yapın: CSP kapsayıcı listesini önbelleğe alır.
+log.pfx.nocertmgr = certmgr bulunamadı — kurulu bir CryptoPro CSP gerekir.
+log.pfx.done = PFX hazır: {0}
+log.pfx.fail = PFX dışa aktarılamadı: {0}
+log.logs.fail = Günlük klasörü açılamadı: {0}
+
+# --- iletişim kutuları ---
+dlg.confirm.title = Onay
+dlg.confirm.full = Bağlı tüm Rutoken’lardan kapsayıcılar çıkarılacak, sertifikalar alınacak ve anahtarların dışa aktarım yasağı kaldırılacak.\n\nDevam edilsin mi?
+dlg.folder.container = Çıkarılmış kapsayıcının bulunduğu klasör (6 *.key dosyası)
+dlg.install.title = Kapsayıcının CryptoPro’ya kurulumu
+dlg.install.prompt = Kapsayıcının CryptoPro listesinde görüneceği ad.\nDeğiştirmek zorunlu değil: CSP adı değiştirilmiş kopyayı her zaman kabul etmez.
+dlg.pfx.save = PFX nereye kaydedilsin
+dlg.pfx.pass.title = PFX parolası
+dlg.pfx.pass.prompt = .pfx dosyasının parolası (boş bırakılabilir — o zaman dosya parolasız olur):
+guide.title = Yardım — {0}
+guide.caption = Yardım
+guide.missing = Kılavuz bu derlemeye gömülü değil.
+
+# --- bağımlılık raporu (pencere ve deps komutu) ---
+diag.process = Süreç: {0}, sürüm {1}
+diag.p12.missing = p12utility: BULUNAMADI (derlemeye gömülü değil ve sistemde de yok)
+diag.p12.found = p12utility: {0}: {1}
+diag.copy.bundled = gömülü kopya
+diag.copy.external = dış kopya
+diag.rtcom = rtCOMLite: {0}
+diag.rtcom.bundled = gömülü kopya, sisteme kayıt olmadan
+diag.rtcom.system = sisteme kayıtlı bileşen
+diag.rtcom.missing = KULLANILAMIYOR
+diag.rtcom.warn = dikkat: gömülü kopya 32 bittir ve bu sürece yüklenmez — bileşeni kurmadan Rutoken ile çalışmak için x86 taşınabilir derlemeyi kullanın
+diag.csp.ok = CryptoPro CSP: kurulu, sağlayıcılar {0}
+diag.csp.missing = CryptoPro CSP: BULUNAMADI — CryptoPro CSP’yi kurun (tek dış bağımlılık)
+diag.prov = {0}: {1} — {2}
+diag.prov.yes = kullanılabilir
+diag.prov.no = yok
+diag.notfound = BULUNAMADI
+diag.notbundled = derlemeye gömülü değil
+diag.p12.external = dış kopya: {0}
+diag.p12.bundled = gömülü kopya: {0}
+diag.p12.used = kullanılacak: {0}
+diag.rtcom.detail.none = gömülü kopya: yok ({0})
+diag.rtcom.detail.ok = gömülü kopya: {0} ({1}) — kayıt olmadan yüklenir
+diag.rtcom.detail.bad = gömülü kopya: {0} — uymuyor ({1})
+diag.rtcom.registered = sistemde: kayıtlı (yedek yol)
+diag.rtcom.unregistered = sistemde: kayıtlı değil
+diag.arch = kitaplık {0}, süreç {1}
+diag.arch.unknown = kitaplığın mimarisi belirlenemedi
+
+# --- anahtar izinleri ---
+key.notfound = anahtar bulunamadı
+key.readfail = izinler okunamadı ({0})
+key.exportable = dışa aktarılabilir (KP_PERMISSIONS=0x{0})
+key.locked = dışa aktarılAMAZ (KP_PERMISSIONS=0x{0}, CRYPT_EXPORT bayrağı yok)
+
+# --- kapsayıcı kurulumu ---
+install.result = «{0}» -> {1}
+install.result.visible = «{0}» -> {1} (CryptoPro görüyor)
+install.result.invisible = «{0}» -> {1} (CryptoPro henüz GÖRMÜYOR)
+
+# --- konsol kipi ---
+cli.usage.title = CryptoProExport — Rutoken’dan kapsayıcı çıkarma ve anahtarın dışa aktarım yasağını kaldırma
+cli.usage.deps = bağımlılıkları denetle (gömülü olanlar + CryptoPro CSP)
+cli.usage.list = kapsayıcıları listele (CSP + belirteçler)
+cli.usage.extractcert = kapsayıcıdan .cer çıkar (CryptoAPI)
+cli.usage.checkexport = özel anahtarın dışa aktarılabilir olup olmadığını denetle
+cli.usage.export = kapsayıcıları belirteçlerden diske çıkar
+cli.usage.keyexport = klasördeki anahtarı dışa aktarılabilir yap
+cli.usage.install = kapsayıcı klasörünü CryptoPro’ya kur
+cli.usage.installed = kurulu dosya kapsayıcılarını göster
+cli.usage.uninstall = kurulu bir kapsayıcıyı sil
+cli.usage.topfx = kapsayıcıyı PKCS#12 olarak dışa aktar (certmgr)
+cli.usage.full = belirteçten çıkarma + otomatik .cer + keyexport
+cli.usage.help = gömülü kılavuzun tamamı
+cli.usage.lang = arayüzün ve iletilerin dili
+cli.usage.gui = (bağımsız değişken yoksa — grafik arayüz)
+cli.list.csp = CSP’nin gördüğü kapsayıcılar:
+cli.list.tokens = Bağlı Rutoken’lardaki kapsayıcılar:
+cli.list.provider = (sağlayıcı {0})
+cli.list.files = ({0} dosya)
+cli.cert.exchange = Değişim:  {0}
+cli.cert.sign = İmza: {0}
+cli.check.exchange = Değişim anahtarı:  {0}
+cli.check.sign = İmza anahtarı: {0}
+cli.keyexport.ok = Bitti: anahtar dışa aktarılabilir
+cli.installed.header = CryptoPro deposundaki dosya kapsayıcıları ({0}):
+cli.uninstall.done = Silindi: {0}
+cli.topfx.nocertmgr = certmgr bulunamadı — kurulu bir CryptoPro CSP gerekir
+cli.done = Bitti: {0}
+cli.error = Hata: {0}
+cli.failure = HATA: {0}
+cli.install.norename = Ad değişikliği uygulanmadı: CryptoPro «{0}» adlı kopyayı kabul etmedi. Dışa aktarım yasağı kalkana kadar böyle olur (--cprepair).
+cli.install.invisible = CryptoPro kapsayıcıyı henüz görmüyor. Genellikle programı yeniden çalıştırmak ya da sisteme yeniden girmek yeter — CSP kapsayıcı listesini önbelleğe alır.
+cli.lang.unknown = Bilinmeyen dil «{0}». Kullanılabilir diller: {1}
+cli.lang.missing = --lang bir dil kodu ister. Kullanılabilir diller: {0}

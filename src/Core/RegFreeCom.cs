@@ -110,10 +110,10 @@ namespace CryptoProExport
             var process = RuntimeInformation.ProcessArchitecture;
             if (machine == null)
             {
-                detail = "не удалось определить разрядность библиотеки";
+                detail = Strings.Get("diag.arch.unknown");
                 return false;
             }
-            detail = $"библиотека {Name(machine.Value)}, процесс {Name(process)}";
+            detail = Strings.Format("diag.arch", Name(machine.Value), Name(process));
             return machine.Value == process;
         }
 

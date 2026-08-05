@@ -73,10 +73,10 @@ namespace CryptoProExport
             /// <summary>Контейнер действительно виден КриптоПро после установки.</summary>
             public bool VisibleToCsp;
 
-            public override string ToString() =>
-                !Verified ? $"\"{Name}\" -> {Folder}"
-                : VisibleToCsp ? $"\"{Name}\" -> {Folder} (виден КриптоПро)"
-                : $"\"{Name}\" -> {Folder} (КриптоПро его пока НЕ видит)";
+            public override string ToString() => Strings.Format(
+                !Verified ? "install.result"
+                : VisibleToCsp ? "install.result.visible"
+                : "install.result.invisible", Name, Folder);
         }
 
         /// <summary>

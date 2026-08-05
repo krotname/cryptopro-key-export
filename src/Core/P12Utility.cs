@@ -56,17 +56,14 @@ namespace CryptoProExport
         public static List<string> DescribeSource()
         {
             var lines = new List<string>();
-            string external = Locate();
-            lines.Add(external != null ? "  внешняя копия: " + external : "  внешняя копия: нет");
+            lines.Add("  " + Strings.Format("diag.p12.external", Locate() ?? Strings.Get("common.none")));
 
             string bundled = BundledTools.TryExtract(
                 BundledTools.P12UtilityResource, BundledTools.P12UtilityFileName, out string error);
-            lines.Add(bundled != null
-                ? "  встроенная копия: " + bundled
-                : "  встроенная копия: нет" + (error != null ? " (" + error + ")" : " (не вшита в сборку)"));
+            lines.Add("  " + Strings.Format("diag.p12.bundled", bundled
+                ?? Strings.Get("common.none") + " (" + (error ?? Strings.Get("diag.notbundled")) + ")"));
 
-            string used = Resolve();
-            lines.Add(used != null ? "  будет использован: " + used : "  будет использован: НЕ НАЙДЕН");
+            lines.Add("  " + Strings.Format("diag.p12.used", Resolve() ?? Strings.Get("diag.notfound")));
             return lines;
         }
 

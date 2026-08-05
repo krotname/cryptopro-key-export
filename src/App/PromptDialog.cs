@@ -13,6 +13,7 @@ namespace CryptoProExport.App
         public static string Ask(IWin32Window owner, string title, string prompt,
                                  string initialValue = "", bool password = false)
         {
+            bool rtl = Strings.CurrentIsRightToLeft;
             using var form = new Form
             {
                 Text = title,
@@ -21,6 +22,8 @@ namespace CryptoProExport.App
                 MinimizeBox = false, MaximizeBox = false, ShowInTaskbar = false,
                 ClientSize = new Size(460, 130),
                 Font = new Font("Segoe UI", 9f),
+                RightToLeft = rtl ? RightToLeft.Yes : RightToLeft.No,
+                RightToLeftLayout = rtl,
             };
 
             var label = new Label
@@ -36,12 +39,12 @@ namespace CryptoProExport.App
             };
             var ok = new Button
             {
-                Text = "OK", DialogResult = DialogResult.OK,
+                Text = Strings.Get("common.ok"), DialogResult = DialogResult.OK,
                 Bounds = new Rectangle(272, 88, 84, 30),
             };
             var cancel = new Button
             {
-                Text = "Отмена", DialogResult = DialogResult.Cancel,
+                Text = Strings.Get("common.cancel"), DialogResult = DialogResult.Cancel,
                 Bounds = new Rectangle(364, 88, 84, 30),
             };
 

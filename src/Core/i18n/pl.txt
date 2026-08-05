@@ -1,0 +1,194 @@
+# Polski
+
+lang.name = Polski
+lang.rtl = no
+
+# --- ogólne ---
+app.title = Eksport kluczy CryptoPro z Rutokena
+common.ok = OK
+common.cancel = Anuluj
+common.close = Zamknij
+common.browse = Przeglądaj…
+common.none = brak
+files.all = Wszystkie pliki
+
+# --- panel ustawień ---
+field.p12 = p12utility.exe:
+field.p12.placeholder = kopia wbudowana — nic nie trzeba podawać
+field.dest = Folder docelowy:
+field.pin = PIN (opcjonalnie):
+field.pin.hint = puste → okno pytania
+field.lang = Język interfejsu:
+
+tip.p12 = Ścieżka do narzędzia p12utility firmy CryptoPro — to ono zdejmuje zakaz eksportu klucza.\nZostaw pole puste: kopia narzędzia jest już wbudowana w program i rozpakuje się sama.\nWypełnij tylko wtedy, gdy potrzebna jest inna wersja p12utility.
+tip.p12.browse = Wybierz inny plik p12utility.exe zamiast wbudowanego.
+tip.dest = Gdzie trafi wynik: foldery ze zdjętymi kontenerami (*.key) i pliki certyfikatów (.cer).\nUwaga: to kopia Twojego klucza prywatnego — trzymaj ją jak tajemnicę.
+tip.dest.browse = Wybierz folder docelowy.
+tip.pin = PIN użytkownika Rutokena.\nPuste → o PIN zapyta okno systemowe (a jeśli na tokenie jest PIN fabryczny, zostanie użyty 12345678).\nZnaki są ukryte; wartość nigdzie nie jest zapisywana.
+tip.lang = Język interfejsu, podpowiedzi i komunikatów.\nWybór jest zapamiętywany i stosowany przy kolejnych uruchomieniach.\nTo samo z wiersza poleceń: --lang pl
+
+# --- przyciski ---
+btn.refresh = Odśwież listę
+btn.export = Eksport z tokena
+btn.extract = Wyodrębnij certyfikat
+btn.full = Uczyń eksportowalnym
+btn.check = Sprawdź klucz
+btn.install = Zainstaluj w CryptoPro
+btn.pfx = Eksport do PFX
+btn.logs = Dziennik
+btn.help = Pomoc
+btn.cancel = Anuluj
+
+tip.refresh = Krok 1. Pokaż listę kontenerów kluczy:\n  • widoczne dla CryptoPro CSP (także na włożonym tokenie);\n  • znalezione bezpośrednio na podłączonych Rutokenach.\nNiczego nie zmienia — tylko czyta. Od tego przycisku wygodnie zacząć.
+tip.export = Krok 2. Zdejmij kontenery ze wszystkich podłączonych Rutokenów do folderu docelowego\n(po 6 plików *.key na kontener). Czyta pamięć tokena bezpośrednio, z pominięciem CSP,\ndlatego działa nawet przy zakazie eksportu. Token i jego dane nie są zmieniane.\nKlucz w zdjętej kopii nadal nie jest eksportowalny — tym zajmuje się «Uczyń eksportowalnym».
+tip.extract = Krok 3. Zapisz certyfikat wybranego na liście kontenera do pliku .cer\n(dane jawne, wyodrębniane normalnie przez CryptoAPI).\nPotrzebny jest wybrany kontener, włożony token i widoczność kontenera dla CSP.\nDo zdjęcia zakazu eksportu p12utility potrzebuje właśnie tego certyfikatu.
+tip.full = Wszystko jednym kliknięciem: zdjęcie kontenerów z tokena → wyodrębnienie certyfikatów →\nzdjęcie zakazu eksportu klucza prywatnego (p12utility --cprepair --keyexport).\nWynik: w folderze docelowym kopia kontenera z eksportowalnym kluczem\n(nadaje się na kopię zapasową, przeniesienie i konwersję do PFX).\nOryginalny token nie jest zmieniany; pierwotny header.key kopii zostaje jako header.key.backup.
+tip.check = Sprawdź wybrany na liście kontener: czy zakaz eksportu klucza prywatnego został zdjęty.\nProgram czyta uprawnienia klucza (KP_PERMISSIONS) — sam klucz nigdy nie jest eksportowany.\nW ten sposób potwierdza się, że «Uczyń eksportowalnym» rzeczywiście zadziałało.
+tip.install = Zainstaluj w CryptoPro folder kontenera zdjętego z tokena (6 plików *.key) —\nczyli skopiuj go do magazynu CSP. Potem kontener pojawia się na liście i działa\nbez tokena: można z niego wyodrębnić certyfikat i wyeksportować go do PFX.\nZmiana nazwy nie jest konieczna: CryptoPro porównuje nazwę z zawartością kontenera i\nnie zawsze przyjmuje przemianowaną kopię. Program sprawdzi wynik i powie,\nczy CSP naprawdę zobaczył kontener.
+tip.pfx = Wyeksportuj wybrany na liście kontener do pliku PKCS#12 (.pfx) — certyfikat razem\nz kluczem prywatnym, gotowy do przeniesienia na inny system.\nWymagane: zakaz eksportu już zdjęty («Sprawdź klucz» pokazuje «eksportowalny»)\noraz zainstalowany CryptoPro CSP (używany jest jego certmgr).\nO hasło do .pfx program zapyta osobno.
+tip.logs = Otwórz folder z dziennikami pracy programu.\nKażde uruchomienie zapisuje osobny plik — wygodnie dołączyć go do pytania,\ngdy coś nie wyszło. Hasła nigdy nie trafiają do dziennika.
+tip.help = Wbudowany podręcznik: od czego zacząć, co robi każdy przycisk,\npolecenia trybu konsolowego i omówienie typowych błędów.\nLeży w środku programu — internet ani zewnętrzne pliki nie są potrzebne.
+tip.cancel = Przerwij bieżącą operację.\nPraca zatrzyma się na najbliższym kroku: wywołanie do tokena albo uruchomione\nnarzędzie CryptoPro trzeba najpierw doprowadzić do końca — działające narzędzie jest wtedy zamykane.\nJuż zapisane pliki zostają na miejscu.
+
+# --- lista kontenerów i dziennik ---
+col.location = Położenie
+col.container = Kontener
+col.details = Szczegóły
+tip.list = Znalezione kontenery kluczy.\n«Położenie» = CSP (widoczny dla CryptoPro) albo nazwa Rutokena (odczytany wprost z tokena).\nZaznacz wiersz — przycisk «Wyodrębnij certyfikat» działa na zaznaczonym kontenerze.
+tip.log = Dziennik wykonania: polecenia p12utility, kroki pracy z tokenem i błędy.\nTekst można zaznaczyć i skopiować (Ctrl+C) — przydaje się przy analizie problemów.
+
+# --- pasek stanu ---
+status.ready = Gotowe
+status.deps = Sprawdzanie zależności…
+status.refresh = Odświeżanie listy kontenerów…
+status.export = Zdejmowanie kontenerów z tokena…
+status.extract = Wyodrębnianie certyfikatu…
+status.full = Zdejmowanie zakazu eksportu…
+status.check = Sprawdzanie uprawnień klucza…
+status.install = Instalowanie kontenera…
+status.pfx = Eksport do PFX…
+status.cancelling = Anulowanie…
+
+# --- komunikaty w dzienniku okna ---
+log.deps.header = Zależności (poza CryptoPro CSP nie trzeba niczego pobierać ani instalować):
+log.session = Dziennik tej sesji: {0}
+log.done = Gotowe.
+log.tokens.unavailable = Rutokeny niedostępne: {0}
+log.need.dest = Podaj folder docelowy.
+log.need.container = Wybierz kontener na liście.
+log.exported = Zdjęte kontenery: {0}
+log.cert.exchange = Certyfikat wymiany:  {0}
+log.cert.sign = Certyfikat podpisu: {0}
+log.cert.fail = Nie udało się wyodrębnić. Upewnij się, że token jest włożony, a kontener widoczny dla CSP.
+log.full.done = Pełny cykl zakończony.
+log.cancelled.user = Anulowane przez użytkownika.
+log.cancelled = Anulowane.
+log.cancel.requested = Zażądano anulowania — operacja zatrzyma się na najbliższym kroku.
+log.cancel.done = Operacja anulowana.
+log.error = BŁĄD: {0}
+log.lang.changed = Język interfejsu: {0}
+log.container.unnamed = (bez nazwy)
+log.container.csp = CSP
+log.container.token = Rutoken: {0}
+log.container.provider = dostawca {0}
+log.container.files = {0}, plików: {1}
+log.check.container = Kontener «{0}»:
+log.check.exchange = klucz wymiany:  {0}
+log.check.sign = klucz podpisu: {0}
+log.install.notcontainer = W wybranym folderze nie ma kontenera (potrzebne są header.key, primary.key, masks.key).
+log.install.done = Kontener zainstalowany: {0}
+log.install.norename = Nazwa została jako «{0}»: CryptoPro nie przyjął kopii pod nową nazwą. Tak bywa, dopóki zakaz eksportu nie zostanie zdjęty.
+log.install.invisible = CryptoPro jeszcze nie widzi kontenera — naciśnij «Odśwież listę» ponownie albo zaloguj się jeszcze raz: CSP buforuje listę kontenerów.
+log.pfx.nocertmgr = Nie znaleziono certmgr — potrzebny jest zainstalowany CryptoPro CSP.
+log.pfx.done = PFX gotowy: {0}
+log.pfx.fail = Nie udało się wyeksportować PFX: {0}
+log.logs.fail = Nie udało się otworzyć folderu dzienników: {0}
+
+# --- okna dialogowe ---
+dlg.confirm.title = Potwierdzenie
+dlg.confirm.full = Ze wszystkich podłączonych Rutokenów zostaną zdjęte kontenery, wyodrębnione certyfikaty i zdjęty zakaz eksportu kluczy.\n\nKontynuować?
+dlg.folder.container = Folder ze zdjętym kontenerem (6 plików *.key)
+dlg.install.title = Instalacja kontenera w CryptoPro
+dlg.install.prompt = Nazwa, pod którą kontener pojawi się na liście CryptoPro.\nZmiana nie jest konieczna: CSP nie zawsze przyjmuje przemianowaną kopię.
+dlg.pfx.save = Gdzie zapisać PFX
+dlg.pfx.pass.title = Hasło PFX
+dlg.pfx.pass.prompt = Hasło do pliku .pfx (można zostawić puste — wtedy plik będzie bez hasła):
+guide.title = Pomoc — {0}
+guide.caption = Pomoc
+guide.missing = Podręcznik nie jest wbudowany w tę kompilację.
+
+# --- raport o zależnościach (okno i polecenie deps) ---
+diag.process = Proces: {0}, wersja {1}
+diag.p12.missing = p12utility: NIE ZNALEZIONO (nie jest wbudowany w kompilację ani obecny w systemie)
+diag.p12.found = p12utility: {0}: {1}
+diag.copy.bundled = kopia wbudowana
+diag.copy.external = kopia zewnętrzna
+diag.rtcom = rtCOMLite: {0}
+diag.rtcom.bundled = kopia wbudowana, bez rejestracji w systemie
+diag.rtcom.system = składnik zarejestrowany w systemie
+diag.rtcom.missing = NIEDOSTĘPNY
+diag.rtcom.warn = uwaga: kopia wbudowana jest 32-bitowa i nie ładuje się do tego procesu — do pracy z Rutokenem bez instalowania składnika weź przenośną kompilację x86
+diag.csp.ok = CryptoPro CSP: zainstalowany, dostawcy {0}
+diag.csp.missing = CryptoPro CSP: NIE ZNALEZIONO — zainstaluj CryptoPro CSP (jedyna zależność zewnętrzna)
+diag.prov = {0}: {1} — {2}
+diag.prov.yes = dostępny
+diag.prov.no = nie
+diag.notfound = NIE ZNALEZIONO
+diag.notbundled = niewbudowana w kompilację
+diag.p12.external = kopia zewnętrzna: {0}
+diag.p12.bundled = kopia wbudowana: {0}
+diag.p12.used = zostanie użyty: {0}
+diag.rtcom.detail.none = kopia wbudowana: brak ({0})
+diag.rtcom.detail.ok = kopia wbudowana: {0} ({1}) — ładuje się bez rejestracji
+diag.rtcom.detail.bad = kopia wbudowana: {0} — nie pasuje ({1})
+diag.rtcom.registered = w systemie: zarejestrowany (rozwiązanie zapasowe)
+diag.rtcom.unregistered = w systemie: niezarejestrowany
+diag.arch = biblioteka {0}, proces {1}
+diag.arch.unknown = nie udało się ustalić architektury biblioteki
+
+# --- uprawnienia klucza ---
+key.notfound = nie znaleziono klucza
+key.readfail = nie udało się odczytać uprawnień ({0})
+key.exportable = eksportowalny (KP_PERMISSIONS=0x{0})
+key.locked = NIEeksportowalny (KP_PERMISSIONS=0x{0}, brak flagi CRYPT_EXPORT)
+
+# --- instalacja kontenera ---
+install.result = «{0}» -> {1}
+install.result.visible = «{0}» -> {1} (widoczny dla CryptoPro)
+install.result.invisible = «{0}» -> {1} (CryptoPro jeszcze go NIE widzi)
+
+# --- tryb konsolowy ---
+cli.usage.title = CryptoProExport — zdjęcie kontenera z Rutokena i zdjęcie zakazu eksportu klucza
+cli.usage.deps = sprawdź zależności (wbudowane + CryptoPro CSP)
+cli.usage.list = wypisz kontenery (CSP + tokeny)
+cli.usage.extractcert = wyodrębnij .cer z kontenera (CryptoAPI)
+cli.usage.checkexport = sprawdź, czy klucz prywatny jest eksportowalny
+cli.usage.export = zdejmij kontenery z tokenów na dysk
+cli.usage.keyexport = uczyń klucz w folderze eksportowalnym
+cli.usage.install = zainstaluj folder-kontener w CryptoPro
+cli.usage.installed = pokaż zainstalowane kontenery plikowe
+cli.usage.uninstall = usuń zainstalowany kontener
+cli.usage.topfx = wyeksportuj kontener do PKCS#12 (certmgr)
+cli.usage.full = zdjęcie z tokena + automatyczny .cer + keyexport
+cli.usage.help = cały wbudowany podręcznik
+cli.usage.lang = język interfejsu i komunikatów
+cli.usage.gui = (bez argumentów — interfejs graficzny)
+cli.list.csp = Kontenery widoczne dla CSP:
+cli.list.tokens = Kontenery na podłączonych Rutokenach:
+cli.list.provider = (dostawca {0})
+cli.list.files = ({0} plików)
+cli.cert.exchange = Wymiana:  {0}
+cli.cert.sign = Podpis: {0}
+cli.check.exchange = Klucz wymiany:  {0}
+cli.check.sign = Klucz podpisu: {0}
+cli.keyexport.ok = Gotowe: klucz jest eksportowalny
+cli.installed.header = Kontenery plikowe w magazynie CryptoPro ({0}):
+cli.uninstall.done = Usunięto: {0}
+cli.topfx.nocertmgr = Nie znaleziono certmgr — potrzebny jest zainstalowany CryptoPro CSP
+cli.done = Gotowe: {0}
+cli.error = Błąd: {0}
+cli.failure = BŁĄD: {0}
+cli.install.norename = Zmiana nazwy nie została zastosowana: CryptoPro nie przyjął kopii o nazwie «{0}». Tak bywa, dopóki zakaz eksportu nie zostanie zdjęty (--cprepair).
+cli.install.invisible = CryptoPro jeszcze nie widzi kontenera. Zwykle pomaga ponowne uruchomienie programu albo ponowne zalogowanie — CSP buforuje listę kontenerów.
+cli.lang.unknown = Nieznany język «{0}». Dostępne języki: {1}
+cli.lang.missing = --lang wymaga kodu języka. Dostępne języki: {0}

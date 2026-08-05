@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Versioning;
 using System.Text;
 using System.Windows.Forms;
@@ -15,6 +17,15 @@ namespace CryptoProExport.App
             SessionLog.Prune();
             UseUtf8Output();
 
+            // --lang вырезается из args до разбора команды: Cli.Run по-прежнему видит
+            // только позиционные аргументы, и контракт консольного режима не меняется.
+            if (!TakeLanguage(ref args, out string language, out string langError))
+            {
+                Console.Error.WriteLine(langError);
+                return 1;
+            }
+            Strings.Init(language);
+
             // Консольный режим и self-test
             if (args.Length > 0)
             {
@@ -26,6 +37,47 @@ namespace CryptoProExport.App
             ApplicationConfiguration.Initialize();
             Application.Run(new MainForm());
             return 0;
+        }
+
+        /// <summary>
+        /// Вынуть <c>--lang xx</c> (или <c>--lang=xx</c>) из аргументов. Возвращает false
+        /// с готовым сообщением, если код языка не указан или не опознан.
+        /// </summary>
+        private static bool TakeLanguage(ref string[] args, out string language, out string error)
+        {
+            language = null;
+            error = null;
+            var rest = new List<string>(args.Length);
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                string a = args[i];
+                if (a.StartsWith("--lang=", StringComparison.OrdinalIgnoreCase))
+                {
+                    language = a.Substring("--lang=".Length);
+                }
+                else if (string.Equals(a, "--lang", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i + 1 >= args.Length)
+                    {
+                        error = Strings.Format("cli.lang.missing", string.Join(", ", Strings.Available));
+                        return false;
+                    }
+                    language = args[++i];
+                }
+                else
+                {
+                    rest.Add(a);
+                }
+            }
+
+            args = rest.ToArray();
+            if (language != null && Strings.Resolve(language) == null)
+            {
+                error = Strings.Format("cli.lang.unknown", language, string.Join(", ", Strings.Available));
+                return false;
+            }
+            return true;
         }
 
         /// <summary>
@@ -47,27 +99,52 @@ namespace CryptoProExport.App
             catch (UnauthorizedAccessException) { }
         }
 
-        /// <summary>Построить форму и закрыть — проверка, что UI-граф собирается (для headless-сборки/CI).</summary>
+        /// <summary>
+        /// Построить форму и закрыть — проверка, что UI-граф собирается (для headless-сборки/CI).
+        /// Форма строится на каждом вшитом языке: так ловятся и потерянные подсказки, и
+        /// незаполненные ключи перевода (Strings.Get возвращает заметный маркер, а не пустоту).
+        /// </summary>
         private static int SelfTest()
         {
             try
             {
                 ApplicationConfiguration.Initialize();
-                using var f = new MainForm();
 
-                var (withTip, missing) = f.CheckTooltips();
-                if (missing.Count > 0)
+                int checkedTips = 0;
+                foreach (string language in Strings.Available)
                 {
-                    Console.Error.WriteLine("SELFTEST FAIL: без всплывающих подсказок остались элементы: "
-                                            + string.Join(", ", missing));
-                    return 1;
+                    using var scope = Strings.Scope(language);
+                    using var probe = new MainForm();
+
+                    var (withTip, missing) = probe.CheckTooltips();
+                    if (missing.Count > 0)
+                    {
+                        Console.Error.WriteLine($"SELFTEST FAIL [{language}]: без всплывающих подсказок остались элементы: "
+                                                + string.Join(", ", missing));
+                        return 1;
+                    }
+
+                    var untranslated = probe.MissingTranslations();
+                    if (untranslated.Count > 0)
+                    {
+                        Console.Error.WriteLine($"SELFTEST FAIL [{language}]: нет переводов: "
+                                                + string.Join(", ", untranslated.Take(10)));
+                        return 1;
+                    }
+                    checkedTips = withTip;
                 }
 
+                using var f = new MainForm();
+                var (tips, _) = f.CheckTooltips();
                 f.Load += (_, __) => f.BeginInvoke(new Action(f.Close));
                 f.ShowInTaskbar = false;
                 f.WindowState = FormWindowState.Minimized;
                 Application.Run(f);
-                Console.WriteLine($"SELFTEST OK: форма построена и закрыта без ошибок, подсказок на элементах: {withTip}");
+
+                Console.WriteLine($"SELFTEST OK: форма построена и закрыта без ошибок, подсказок на элементах: {tips}");
+                Console.WriteLine($"  языков интерфейса: {Strings.Available.Count} ({string.Join(", ", Strings.Available)}), "
+                                  + $"подсказок проверено на каждом: {checkedTips}");
+                Console.WriteLine($"  руководство переведено на: {string.Join(", ", GuideText.Available)}");
                 foreach (var line in CryptoProExport.Diagnostics.Report())
                     Console.WriteLine("  " + line);
                 return 0;

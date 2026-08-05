@@ -1,0 +1,194 @@
+# العربية — كتابة من اليمين إلى اليسار
+
+lang.name = العربية
+lang.rtl = yes
+
+# --- عام ---
+app.title = تصدير مفاتيح CryptoPro من Rutoken
+common.ok = موافق
+common.cancel = إلغاء
+common.close = إغلاق
+common.browse = استعراض…
+common.none = لا شيء
+files.all = كل الملفات
+
+# --- لوحة الإعدادات ---
+field.p12 = p12utility.exe:
+field.p12.placeholder = نسخة مضمّنة — لا حاجة إلى تحديد أي شيء
+field.dest = مجلد الوجهة:
+field.pin = رمز PIN (اختياري):
+field.pin.hint = فارغ ← نافذة طلب
+field.lang = لغة الواجهة:
+
+tip.p12 = مسار أداة p12utility من CryptoPro — بها يُرفع الحظر عن تصدير المفتاح.\nاترك الحقل فارغًا: نسخة من الأداة مضمّنة في البرنامج وتُفك من تلقاء نفسها.\nاملأه فقط إذا كنت بحاجة إلى إصدار آخر من p12utility.
+tip.p12.browse = اختيار ملف p12utility.exe آخر بدل المضمَّن.
+tip.dest = مكان حفظ النتيجة: مجلدات الحاويات المستخرجة (‎*.key‎) وملفات الشهادات (‎.cer‎).\nانتبه: هذه نسخة من مفتاحك الخاص — احفظها كسرّ.
+tip.dest.browse = اختيار مجلد الوجهة.
+tip.pin = رمز PIN لمستخدم Rutoken.\nفارغ ← ستطلب نافذة النظام الرمز (وإذا كان على المفتاح رمز المصنع، يُستخدم 12345678).\nالأحرف مخفية، والقيمة لا تُحفظ في أي مكان.
+tip.lang = لغة الواجهة والتلميحات والرسائل.\nيُحفظ الاختيار ويُطبَّق في التشغيلات التالية.\nالأمر نفسه من سطر الأوامر: ‎--lang ar
+
+# --- الأزرار ---
+btn.refresh = تحديث القائمة
+btn.export = التصدير من المفتاح
+btn.extract = استخراج الشهادة
+btn.full = جعله قابلًا للتصدير
+btn.check = فحص المفتاح
+btn.install = التثبيت في CryptoPro
+btn.pfx = التصدير إلى PFX
+btn.logs = السجل
+btn.help = مساعدة
+btn.cancel = إلغاء
+
+tip.refresh = الخطوة 1. عرض قائمة حاويات المفاتيح:\n  • ما يراه CryptoPro CSP (بما في ذلك المفتاح الموصول);\n  • ما وُجد مباشرة على أجهزة Rutoken الموصولة.\nلا يغيّر شيئًا — يقرأ فقط. من هذا الزر يحسن البدء.
+tip.export = الخطوة 2. استخراج الحاويات من كل أجهزة Rutoken الموصولة إلى مجلد الوجهة\n(‏6 ملفات ‎*.key‎ لكل حاوية). يقرأ ذاكرة المفتاح مباشرة متجاوزًا CSP،\nلذلك يعمل حتى مع وجود حظر على التصدير. لا يتغيّر المفتاح ولا بياناته.\nيبقى المفتاح في النسخة غير قابل للتصدير — وهذا عمل زر «جعله قابلًا للتصدير».
+tip.extract = الخطوة 3. حفظ شهادة الحاوية المحددة في القائمة في ملف ‎.cer‎\n(بيانات علنية تُستخرج بالطريقة المعتادة عبر CryptoAPI).\nيلزم تحديد حاوية في القائمة، وإدخال المفتاح، ورؤية CSP للحاوية.\nتحتاج أداة p12utility إلى هذه الشهادة لرفع الحظر عن التصدير.
+tip.full = كل شيء بنقرة واحدة: استخراج الحاويات من المفتاح ← استخراج الشهادات ←\nرفع الحظر عن تصدير المفتاح الخاص (‏p12utility --cprepair --keyexport‏).\nالنتيجة: في مجلد الوجهة نسخة من الحاوية بمفتاح قابل للتصدير\n(تصلح للنسخ الاحتياطي والنقل والتحويل إلى PFX).\nلا يتغيّر المفتاح الأصلي؛ ويُحفظ ملف header.key الأصلي للنسخة باسم header.key.backup.
+tip.check = فحص الحاوية المحددة في القائمة: هل رُفع الحظر عن تصدير المفتاح الخاص.\nيقرأ البرنامج صلاحيات المفتاح (‏KP_PERMISSIONS‏) — والمفتاح نفسه لا يُصدَّر أبدًا.\nهكذا يُتحقق من أن «جعله قابلًا للتصدير» قد نجح فعلًا.
+tip.install = تثبيت مجلد حاوية مستخرَجة من مفتاح (‏6 ملفات ‎*.key‎) في CryptoPro —\nأي نسخه إلى مخزن CSP. بعد ذلك تظهر الحاوية في القائمة وتعمل\nمن دون المفتاح: يمكن استخراج شهادتها وتصديرها إلى PFX.\nتغيير الاسم غير إلزامي: يقارن CryptoPro الاسم بمحتوى الحاوية\nولا يقبل النسخة المعاد تسميتها دائمًا. سيتحقق البرنامج من النتيجة ويخبرك\nهل رأى CSP الحاوية فعلًا.
+tip.pfx = تصدير الحاوية المحددة في القائمة إلى ملف PKCS#12 (‎.pfx‎) — الشهادة مع\nالمفتاح الخاص، جاهزة للنقل إلى نظام آخر.\nيلزم: أن يكون الحظر مرفوعًا مسبقًا («فحص المفتاح» يعرض «قابل للتصدير»)\nوأن يكون CryptoPro CSP مثبتًا (تُستخدم أداة certmgr الخاصة به).\nسيطلب البرنامج كلمة مرور الملف ‎.pfx‎ على حدة.
+tip.logs = فتح المجلد الذي يحوي سجلات عمل البرنامج.\nكل تشغيل يكتب ملفًا منفصلًا — من المريح إرفاقه بالسؤال\nإذا لم ينجح شيء ما. كلمات المرور لا تصل إلى السجل.
+tip.help = الدليل المضمَّن: من أين تبدأ، وماذا يفعل كل زر،\nوأوامر وضع الطرفية وتحليل الأخطاء الشائعة.\nهو داخل البرنامج — لا حاجة إلى الإنترنت ولا إلى ملفات خارجية.
+tip.cancel = مقاطعة العملية الجارية.\nسيتوقف العمل عند أقرب خطوة: النداء الموجَّه إلى المفتاح أو أداة CryptoPro\nالمشغَّلة يجب إتمامها أولًا — وعندها تُنهى الأداة المشغَّلة قسرًا.\nتبقى الملفات المحفوظة مسبقًا في مكانها.
+
+# --- قائمة الحاويات والسجل ---
+col.location = الموقع
+col.container = الحاوية
+col.details = التفاصيل
+tip.list = حاويات المفاتيح التي عُثر عليها.\n«الموقع» = CSP (يراه CryptoPro) أو اسم Rutoken (قُرئ مباشرة من المفتاح).\nحدّد سطرًا — يعمل زر «استخراج الشهادة» على الحاوية المحددة.
+tip.log = سجل التنفيذ: أوامر p12utility وخطوات العمل مع المفتاح والأخطاء.\nيمكن تحديد النص ونسخه (‏Ctrl+C‏) — وهو مفيد عند تحليل المشكلات.
+
+# --- شريط الحالة ---
+status.ready = جاهز
+status.deps = يجري فحص الاعتماديات…
+status.refresh = يجري تحديث قائمة الحاويات…
+status.export = يجري استخراج الحاويات من المفتاح…
+status.extract = يجري استخراج الشهادة…
+status.full = يجري رفع الحظر عن التصدير…
+status.check = يجري فحص صلاحيات المفتاح…
+status.install = يجري تثبيت الحاوية…
+status.pfx = يجري التصدير إلى PFX…
+status.cancelling = يجري الإلغاء…
+
+# --- رسائل سجل النافذة ---
+log.deps.header = الاعتماديات (لا شيء يحتاج إلى تنزيل أو تثبيت سوى CryptoPro CSP):
+log.session = سجل هذه الجلسة: {0}
+log.done = تم.
+log.tokens.unavailable = أجهزة Rutoken غير متاحة: {0}
+log.need.dest = حدّد مجلد الوجهة.
+log.need.container = اختر حاوية من القائمة.
+log.exported = الحاويات المستخرَجة: {0}
+log.cert.exchange = شهادة التبادل:  {0}
+log.cert.sign = شهادة التوقيع: {0}
+log.cert.fail = تعذّر الاستخراج. تأكد من إدخال المفتاح ومن رؤية CSP للحاوية.
+log.full.done = انتهت الدورة الكاملة.
+log.cancelled.user = أُلغي من المستخدم.
+log.cancelled = أُلغي.
+log.cancel.requested = طُلب الإلغاء — ستتوقف العملية عند أقرب خطوة.
+log.cancel.done = أُلغيت العملية.
+log.error = خطأ: {0}
+log.lang.changed = لغة الواجهة: {0}
+log.container.unnamed = (بلا اسم)
+log.container.csp = CSP
+log.container.token = Rutoken: {0}
+log.container.provider = المزوّد {0}
+log.container.files = {0}، الملفات: {1}
+log.check.container = الحاوية «{0}»:
+log.check.exchange = مفتاح التبادل:  {0}
+log.check.sign = مفتاح التوقيع: {0}
+log.install.notcontainer = لا توجد حاوية في المجلد المختار (يلزم header.key و primary.key و masks.key).
+log.install.done = ثُبّتت الحاوية: {0}
+log.install.norename = بقي الاسم «{0}» كما هو: لم يقبل CryptoPro النسخة بالاسم الجديد. يحدث ذلك ما دام الحظر عن التصدير قائمًا.
+log.install.invisible = لا يرى CryptoPro الحاوية بعد — اضغط «تحديث القائمة» مرة أخرى أو أعد تسجيل الدخول إلى النظام: يخزّن CSP قائمة الحاويات مؤقتًا.
+log.pfx.nocertmgr = لم يُعثر على certmgr — يلزم CryptoPro CSP مثبتًا.
+log.pfx.done = ملف PFX جاهز: {0}
+log.pfx.fail = تعذّر تصدير PFX: {0}
+log.logs.fail = تعذّر فتح مجلد السجلات: {0}
+
+# --- مربعات الحوار ---
+dlg.confirm.title = تأكيد
+dlg.confirm.full = ستُستخرج الحاويات من كل أجهزة Rutoken الموصولة، وتُستخرج الشهادات، ويُرفع الحظر عن تصدير المفاتيح.\n\nهل تريد المتابعة؟
+dlg.folder.container = المجلد الذي يحوي الحاوية المستخرَجة (‏6 ملفات ‎*.key‎)
+dlg.install.title = تثبيت حاوية في CryptoPro
+dlg.install.prompt = الاسم الذي ستظهر به الحاوية في قائمة CryptoPro.\nتغييره غير إلزامي: لا يقبل CSP النسخة المعاد تسميتها دائمًا.
+dlg.pfx.save = أين يُحفظ ملف PFX
+dlg.pfx.pass.title = كلمة مرور PFX
+dlg.pfx.pass.prompt = كلمة مرور الملف ‎.pfx‎ (يمكن تركها فارغة — عندئذ يكون الملف بلا كلمة مرور):
+guide.title = مساعدة — {0}
+guide.caption = مساعدة
+guide.missing = الدليل غير مضمَّن في هذه النسخة.
+
+# --- تقرير الاعتماديات (النافذة والأمر deps) ---
+diag.process = العملية: {0}، الإصدار {1}
+diag.p12.missing = p12utility: غير موجود (غير مضمَّن في النسخة ولم يُعثر عليه في النظام)
+diag.p12.found = p12utility: {0}: {1}
+diag.copy.bundled = نسخة مضمّنة
+diag.copy.external = نسخة خارجية
+diag.rtcom = rtCOMLite: {0}
+diag.rtcom.bundled = نسخة مضمّنة، بلا تسجيل في النظام
+diag.rtcom.system = مكوّن مسجَّل في النظام
+diag.rtcom.missing = غير متاح
+diag.rtcom.warn = تنبيه: النسخة المضمّنة 32-بت ولا تُحمَّل في هذه العملية — للعمل مع Rutoken دون تثبيت المكوّن استخدم النسخة المحمولة x86
+diag.csp.ok = CryptoPro CSP: مثبَّت، المزوّدون {0}
+diag.csp.missing = CryptoPro CSP: غير موجود — ثبّت CryptoPro CSP (الاعتمادية الخارجية الوحيدة)
+diag.prov = {0}: {1} — {2}
+diag.prov.yes = متاح
+diag.prov.no = لا
+diag.notfound = غير موجود
+diag.notbundled = غير مضمّنة في النسخة
+diag.p12.external = نسخة خارجية: {0}
+diag.p12.bundled = نسخة مضمّنة: {0}
+diag.p12.used = ستُستخدم: {0}
+diag.rtcom.detail.none = نسخة مضمّنة: لا شيء ({0})
+diag.rtcom.detail.ok = نسخة مضمّنة: {0} ({1}) — تُحمَّل بلا تسجيل
+diag.rtcom.detail.bad = نسخة مضمّنة: {0} — لا تصلح ({1})
+diag.rtcom.registered = في النظام: مسجَّل (خيار احتياطي)
+diag.rtcom.unregistered = في النظام: غير مسجَّل
+diag.arch = المكتبة {0}، العملية {1}
+diag.arch.unknown = تعذّر تحديد معمارية المكتبة
+
+# --- صلاحيات المفتاح ---
+key.notfound = لم يُعثر على المفتاح
+key.readfail = تعذّرت قراءة الصلاحيات ({0})
+key.exportable = قابل للتصدير (‏KP_PERMISSIONS=0x{0}‏)
+key.locked = غير قابل للتصدير (‏KP_PERMISSIONS=0x{0}‏، بلا راية CRYPT_EXPORT)
+
+# --- تثبيت الحاوية ---
+install.result = «{0}» -> {1}
+install.result.visible = «{0}» -> {1} (يراه CryptoPro)
+install.result.invisible = «{0}» -> {1} (لا يراه CryptoPro بعد)
+
+# --- وضع الطرفية ---
+cli.usage.title = CryptoProExport — استخراج حاوية من Rutoken ورفع الحظر عن تصدير المفتاح
+cli.usage.deps = فحص الاعتماديات (المضمَّنة + CryptoPro CSP)
+cli.usage.list = سرد الحاويات (‏CSP + المفاتيح‏)
+cli.usage.extractcert = استخراج ملف ‎.cer‎ من حاوية (‏CryptoAPI‏)
+cli.usage.checkexport = فحص ما إذا كان المفتاح الخاص قابلًا للتصدير
+cli.usage.export = استخراج الحاويات من المفاتيح إلى القرص
+cli.usage.keyexport = جعل المفتاح الموجود في المجلد قابلًا للتصدير
+cli.usage.install = تثبيت مجلد حاوية في CryptoPro
+cli.usage.installed = عرض حاويات الملفات المثبَّتة
+cli.usage.uninstall = حذف حاوية مثبَّتة
+cli.usage.topfx = تصدير حاوية إلى PKCS#12 (‏certmgr‏)
+cli.usage.full = الاستخراج من المفتاح + ‎.cer‎ تلقائي + keyexport
+cli.usage.help = الدليل المضمَّن كاملًا
+cli.usage.lang = لغة الواجهة والرسائل
+cli.usage.gui = (بلا وسائط — الواجهة الرسومية)
+cli.list.csp = الحاويات التي يراها CSP:
+cli.list.tokens = الحاويات على أجهزة Rutoken الموصولة:
+cli.list.provider = (المزوّد {0})
+cli.list.files = ({0} ملفات)
+cli.cert.exchange = التبادل:  {0}
+cli.cert.sign = التوقيع: {0}
+cli.check.exchange = مفتاح التبادل:  {0}
+cli.check.sign = مفتاح التوقيع: {0}
+cli.keyexport.ok = تم: المفتاح قابل للتصدير
+cli.installed.header = حاويات الملفات في مخزن CryptoPro ({0}):
+cli.uninstall.done = حُذف: {0}
+cli.topfx.nocertmgr = لم يُعثر على certmgr — يلزم CryptoPro CSP مثبتًا
+cli.done = تم: {0}
+cli.error = خطأ: {0}
+cli.failure = خطأ: {0}
+cli.install.norename = لم تُطبَّق إعادة التسمية: لم يقبل CryptoPro النسخة بالاسم «{0}». يحدث ذلك ما دام الحظر عن التصدير قائمًا (‏--cprepair‏).
+cli.install.invisible = لا يرى CryptoPro الحاوية بعد. عادةً يفيد تشغيل البرنامج من جديد أو إعادة تسجيل الدخول — يخزّن CSP قائمة الحاويات مؤقتًا.
+cli.lang.unknown = لغة غير معروفة «{0}». اللغات المتاحة: {1}
+cli.lang.missing = يحتاج ‎--lang‎ إلى رمز لغة. اللغات المتاحة: {0}
