@@ -71,14 +71,34 @@ $csptest = "C:\Program Files\Crypto Pro\CSP\csptest.exe"
 сертификат из хранилища «Личное».
 
 ## CI
-GitHub Actions **работает** (`.github/workflows/ci.yml`, `windows-latest`). Прежнее утверждение,
+GitHub Actions **работает** (`.github/workflows/ci.yml`). Прежнее утверждение,
 что Actions заблокированы биллингом, не подтвердилось — прогоны идут. Три job:
-- `build` — сборка с `-warnaserror`, тесты, портативная сборка с `--selftest`, проверка поведения
-  без КриптоПро CSP (ждём код 2), проверка встроенного руководства, контроль «в publish ровно
+- `build` — сборка с `-warnaserror`, тесты, портативная сборка с `--selftest`, проверка отчёта
+  о зависимостях, проверка встроенного руководства, контроль «в publish ровно
   один файл», SHA-256, артефакт с exe и суммой;
 - `architectures` — матрица `win-x64`/`win-arm64`: только публикация, чтобы ловить регрессии
   компиляции под другие RID;
 - `release` — по тегу `v*` создаёт GitHub Release с портативным exe и контрольной суммой.
+
+**Раннеры.** Windows-job'ы (`build`, `architectures`) идут на собственном раннере
+`adler-white-1w-cryptopro` — служба на домашнем сервере ADLER-WHITE-1W, каталог
+`C:\actions-runner-cryptopro`, метки `self-hosted,Windows,X64,adler-white-1w,cryptopro`.
+Ушли с `windows-latest`, потому что минуты Windows списываются из квоты Pro с
+коэффициентом ×2. `release` остаётся на Linux-раннере брокера (`adler`). Пути отхода:
+переменные репозитория `CI_RUNS_ON_WINDOWS` (`["windows-latest"]`) и `CI_RUNS_ON`
+(`["ubuntu-latest"]`) — они разные, значения несовместимы.
+
+**На собственном раннере КриптоПро CSP установлен**, на GitHub-hosted его нет. Поэтому
+проверка `deps` двусторонняя: шаг сам смотрит регистрацию CryptoAPI-провайдеров в реестре
+(обе ветки, exe 32-битный) и ждёт код 0 при найденном CSP и код 2 при отсутствующем.
+Просто «ждём код 2» больше не годится. Сверять отчёт по именам провайдеров нельзя —
+подробный вывод перечисляет все три известных в любом случае, с пометкой «есть»/«нет»;
+маркер берётся из строки про сам CSP, а язык задаётся `--lang ru` явно.
+
+**.NET SDK на раннере не установлен системно.** Служба идёт под `NT AUTHORITY\NETWORK SERVICE`
+и в `Program Files` писать не может, поэтому в `C:\actions-runner-cryptopro\.env` задан
+`DOTNET_INSTALL_DIR=C:\actions-runner-cryptopro\_dotnet` — `actions/setup-dotnet` ставит SDK
+туда, и каталог переживает перезапуски.
 
 ## Подводные камни окружения (реальные, уже наступали)
 1. **Манифест WinForms.** Корневой тег строго `<assembly xmlns="urn:schemas-microsoft-com:asm.v1" …>`.

@@ -17,7 +17,12 @@ env:
 jobs:
   build:
     name: Сборка, тесты, портативный exe
-    runs-on: windows-latest
+    # Windows-job'ы идут на собственном раннере правообладателя
+    # (adler-white-1w-cryptopro). Переменная репозитория CI_RUNS_ON_WINDOWS
+    # временно переводит их на другой раннер, когда собственный недоступен:
+    # например ["windows-latest"]. Она отдельная от CI_RUNS_ON, потому что
+    # та переключает Linux-job релиза и значения у них несовместимы.
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON_WINDOWS || '["self-hosted","windows","adler-white-1w","cryptopro"]') }}
     timeout-minutes: 30
     outputs:
       sha256: ${{ steps.portable.outputs.sha256 }}
@@ -59,14 +64,39 @@ jobs:
           "sha256=$hash"     >> $env:GITHUB_OUTPUT
           "version=$version" >> $env:GITHUB_OUTPUT
 
-      - name: Проверить работу без КриптоПро CSP
+      - name: Проверить отчёт о зависимостях
         shell: pwsh
         run: |
+          # Раннеры бывают обоих видов: на GitHub-hosted КриптоПро нет, на
+          # собственном adler-white-1w он стоит. Контракт deps разный (0 — CSP
+          # найден, 2 — нет), поэтому факт выясняем независимо от самой
+          # программы — по регистрации CryptoAPI-провайдеров. Смотрим оба вида
+          # реестра: exe 32-битный и читает ветку WOW6432Node.
+          $keys = @(
+            'HKLM:\SOFTWARE\Microsoft\Cryptography\Defaults\Provider',
+            'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Cryptography\Defaults\Provider'
+          )
+          $providers = @(
+            $keys | ForEach-Object { Get-ChildItem $_ -ErrorAction SilentlyContinue } |
+              Where-Object { $_.PSChildName -match 'Crypto-Pro' }
+          ).Count
+          $want = if ($providers -gt 0) { 0 } else { 2 }
+          "Провайдеров Crypto-Pro в реестре: $providers, ждём код $want"
+
+          # Язык задаём явно: маркеры ниже русские, а культура раннера разная.
           $log = "$env:RUNNER_TEMP/deps.txt"
-          $p = Start-Process publish/CryptoProExport.exe 'deps' -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput $log
-          [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($log))
-          # На раннере КриптоПро нет — ждём код 2 и отчёт про недостающий CSP
-          if ($p.ExitCode -ne 2) { throw "Ожидался код 2 (нет КриптоПро CSP), получен $($p.ExitCode)" }
+          $p = Start-Process publish/CryptoProExport.exe 'deps --lang ru' -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput $log
+          $text = [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($log))
+          $text
+          if ($p.ExitCode -ne $want) { throw "Ожидался код $want, получен $($p.ExitCode)" }
+
+          # Отчёт обязан сходиться с кодом, иначе «CSP НЕ НАЙДЕН» и нулевой код
+          # прошли бы вместе. Сверяем по строке про сам CSP, а не по именам
+          # провайдеров: подробный отчёт перечисляет все три известных провайдера
+          # в любом случае, помечая каждый «есть»/«нет». Имён контейнеров с ФИО
+          # в deps нет вообще — в лог CI попадать нечему.
+          $marker = if ($providers -gt 0) { 'КриптоПро CSP: установлен' } else { 'НЕ НАЙДЕН' }
+          if ($text -notmatch [regex]::Escape($marker)) { throw "В отчёте нет строки «$marker»" }
 
       - name: Проверить встроенное руководство
         shell: pwsh
@@ -142,7 +172,7 @@ jobs:
   # Портативной сборкой остаётся x86 — только в ней работает вшитый rtCOMLite.
   architectures:
     name: Сборка под ${{ matrix.rid }}
-    runs-on: windows-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON_WINDOWS || '["self-hosted","windows","adler-white-1w","cryptopro"]') }}
     timeout-minutes: 20
     strategy:
       fail-fast: false
