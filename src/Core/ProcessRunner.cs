@@ -38,6 +38,14 @@ namespace CryptoProExport
             };
 
             using var p = Process.Start(psi);
+            if (p == null)
+                return new ToolResult
+                {
+                    Success = false,
+                    ExitCode = -2,
+                    Output = "Не удалось запустить " + Path.GetFileName(exe),
+                };
+
             var outTask = Task.Run(() => ReadAll(p.StandardOutput.BaseStream));
             var errTask = Task.Run(() => ReadAll(p.StandardError.BaseStream));
 

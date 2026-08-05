@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
@@ -10,14 +10,17 @@
     <LangVersion>latest</LangVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>app.ico</ApplicationIcon>
-    <Version>1.2.0</Version>
+    <Version>1.3.0</Version>
     <Product>CryptoPro Key Export</Product>
     <AssemblyTitle>Экспорт ключей КриптоПро с Рутокена</AssemblyTitle>
     <!--
-      x86 обязателен: вшитый rtCOMLite.dll 32-битный и грузится в процесс без регистрации в системе
-      (RegFreeCom). В x64-процессе он работал бы только через установленный COM-суррогат.
+      x86 по умолчанию: вшитый rtCOMLite.dll 32-битный и грузится в процесс без регистрации
+      в системе (RegFreeCom). В x64/arm64-процессе он работал бы только через установленный
+      COM-суррогат, поэтому портативная сборка — именно x86 (она же универсальна: x86-код
+      идёт и на x64 через WOW64, и на ARM64 через эмуляцию).
+      Условие оставляет возможность собрать под другой RID явно — для диагностики.
     -->
-    <PlatformTarget>x86</PlatformTarget>
+    <PlatformTarget Condition="'$(RuntimeIdentifier)' == ''">x86</PlatformTarget>
   </PropertyGroup>
   <!--
     Портативная сборка: publish одним файлом, все зависимости внутри (см. build/publish.ps1).

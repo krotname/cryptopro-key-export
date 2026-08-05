@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <AssemblyName>CryptoProExport.Core</AssemblyName>
     <RootNamespace>CryptoProExport</RootNamespace>
     <LangVersion>latest</LangVersion>
-    <Version>1.2.0</Version>
+    <Version>1.3.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="CryptoProExport.Tests" />
@@ -23,6 +23,10 @@
     <EmbeddedResource Include="..\..\tools\rtCOMLite.dll"
                       Condition="Exists('..\..\tools\rtCOMLite.dll')">
       <LogicalName>CryptoProExport.Tools.rtCOMLite.dll</LogicalName>
+    </EmbeddedResource>
+    <!-- руководство пользователя: тоже внутрь сборки, снаружи файлов быть не должно -->
+    <EmbeddedResource Include="guide.txt">
+      <LogicalName>CryptoProExport.guide.txt</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
 </Project>

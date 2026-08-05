@@ -21,7 +21,7 @@ namespace CryptoProExport.App
     {
         private TextBox _txtP12, _txtDest, _txtPin, _txtLog;
         private ListView _lv;
-        private Button _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnInstall, _btnCheck, _btnPfx, _btnLogs;
+        private Button _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnInstall, _btnCheck, _btnPfx, _btnLogs, _btnHelp;
         private Button[] _actionButtons;
         private ToolTip _tips;
 
@@ -135,7 +135,12 @@ namespace CryptoProExport.App
             _btnInstall = MakeButton("Установить в КриптоПро", 190, (_, __) => Run(DoInstall));
             _btnPfx = MakeButton("Экспорт в PFX", 130, (_, __) => Run(DoExportPfx));
             _btnLogs = MakeButton("Журнал", 90, (_, __) => OpenLogFolder());
-            _actionButtons = new[] { _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnCheck, _btnInstall, _btnPfx, _btnLogs };
+            _btnHelp = MakeButton("Справка", 90, (_, __) => Guide.Show(this));
+            _actionButtons = new[]
+            {
+                _btnRefresh, _btnExport, _btnExtract, _btnFull,
+                _btnCheck, _btnInstall, _btnPfx, _btnLogs, _btnHelp,
+            };
             buttons.Controls.AddRange(_actionButtons);
 
             Tip(_btnRefresh,
@@ -170,6 +175,10 @@ namespace CryptoProExport.App
                 "Имя менять не обязательно: КриптоПро сверяет имя с содержимым контейнера и\n" +
                 "переименованную копию принимает не всегда. Программа проверит результат и скажет,\n" +
                 "увидел ли CSP контейнер на самом деле.");
+            Tip(_btnHelp,
+                "Встроенное руководство: с чего начать, что делает каждая кнопка,\n" +
+                "команды консольного режима и разбор типичных ошибок.\n" +
+                "Лежит внутри программы — интернет и сторонние файлы не нужны.");
             Tip(_btnLogs,
                 "Открыть папку с журналами работы программы.\n" +
                 "Каждый запуск пишет отдельный файл — его удобно приложить к вопросу,\n" +
@@ -300,7 +309,9 @@ namespace CryptoProExport.App
         {
             string container = SelectedContainerName();
             if (container == null) { Log("Выберите контейнер в списке."); return; }
-            string dest = Path.Combine(_txtDest.Text.Trim(), "certs_" + Sanitize(container));
+            string destRoot = _txtDest.Text.Trim();
+            if (string.IsNullOrEmpty(destRoot)) { Log("Укажите папку назначения."); return; }
+            string dest = Path.Combine(destRoot, "certs_" + Sanitize(container));
             var (ex, sg) = CertFromContainer.SaveCerts(container, dest);
             Log(ex != null ? "Сертификат обмена:  " + ex : "Сертификат обмена: нет");
             Log(sg != null ? "Сертификат подписи: " + sg : "Сертификат подписи: нет");
@@ -312,9 +323,9 @@ namespace CryptoProExport.App
         {
             string dest = _txtDest.Text.Trim();
             if (string.IsNullOrEmpty(dest)) { Log("Укажите папку назначения."); return; }
-            var confirm = MessageBox.Show(this,
+            var confirm = AskConfirm(
                 "Будут сняты контейнеры со всех подключённых Рутокенов, извлечены сертификаты и снят запрет на экспорт ключей.\n\nПродолжить?",
-                "Подтверждение", MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
+                "Подтверждение");
             if (confirm != DialogResult.OK) { Log("Отменено пользователем."); return; }
 
             var pipe = new ExportPipeline(NullIfEmpty(_txtP12.Text)) { Log = Log };
@@ -398,6 +409,16 @@ namespace CryptoProExport.App
         }
 
         // ---------- helpers ----------
+
+        /// <summary>
+        /// Модальный вопрос из рабочего потока. Диалоги WinForms обязаны жить на потоке окна:
+        /// MessageBox с чужим владельцем ведёт себя непредсказуемо.
+        /// </summary>
+        private DialogResult AskConfirm(string text, string caption)
+        {
+            if (InvokeRequired) return (DialogResult)Invoke(new Func<DialogResult>(() => AskConfirm(text, caption)));
+            return MessageBox.Show(this, text, caption, MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
+        }
 
         private string AskFolder(string description, string initial)
         {
