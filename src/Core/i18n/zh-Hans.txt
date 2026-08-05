@@ -187,6 +187,14 @@ err.folder.outside = 该文件夹不在 CryptoPro 存储区内：{0}
 err.folder.notlike = 该文件夹不像是容器：{0}
 err.folder.extra = 容器文件夹中有无关文件，已取消删除：{0}
 err.store.full = 在 {0} 中找不到空闲文件夹
+err.name.empty = 容器名称为空
+err.name.toolong = 容器名称超过 {0} 个字符
+err.p12.notfound = 未找到 p12utility
+err.p12.unavailable = 未找到 p12utility：内置副本不可用。请把 p12utility.win32.exe 放在程序旁边，或指定其路径。
+err.header.missing = 文件夹中没有 header.key
+err.cert.required = 至少需要一份证书（--cert/--certsg）。请从「个人」存储或容器中导出 .cer。
+err.com.notfound = 未找到 COM 库
+err.com.call = {0} 返回了 {1}
 
 # --- 密钥权限 ---
 key.notfound = 未找到密钥

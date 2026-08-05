@@ -187,6 +187,14 @@ err.folder.outside = Folder berada di luar penyimpanan CryptoPro: {0}
 err.folder.notlike = Folder tidak tampak seperti kontainer: {0}
 err.folder.extra = Folder kontainer berisi berkas asing, penghapusan dibatalkan: {0}
 err.store.full = Tidak ditemukan folder kosong di {0}
+err.name.empty = Nama kontainer kosong
+err.name.toolong = Nama kontainer lebih panjang dari {0} karakter
+err.p12.notfound = p12utility tidak ditemukan
+err.p12.unavailable = p12utility tidak ditemukan: salinan bawaan tidak tersedia. Letakkan p12utility.win32.exe di sebelah aplikasi atau berikan jalurnya.
+err.header.missing = Folder tidak memuat header.key
+err.cert.required = Diperlukan setidaknya satu sertifikat (--cert/--certsg). Ekspor .cer dari penyimpanan «Pribadi» atau dari kontainer.
+err.com.notfound = Pustaka COM tidak ditemukan
+err.com.call = {0} mengembalikan {1}
 
 # --- izin kunci ---
 key.notfound = kunci tidak ditemukan

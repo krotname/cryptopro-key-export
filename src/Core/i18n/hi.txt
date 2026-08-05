@@ -187,6 +187,14 @@ err.folder.outside = फ़ोल्डर CryptoPro के भंडार स�
 err.folder.notlike = फ़ोल्डर कंटेनर जैसा नहीं लगता: {0}
 err.folder.extra = कंटेनर के फ़ोल्डर में बाहरी फ़ाइलें हैं, हटाना रद्द: {0}
 err.store.full = {0} में खाली फ़ोल्डर नहीं मिल सका
+err.name.empty = कंटेनर का नाम खाली है
+err.name.toolong = कंटेनर का नाम {0} अक्षरों से लंबा है
+err.p12.notfound = p12utility नहीं मिला
+err.p12.unavailable = p12utility नहीं मिला: अंतर्निहित प्रति उपलब्ध नहीं। p12utility.win32.exe को कार्यक्रम के पास रखें या उसका पथ बताएँ।
+err.header.missing = फ़ोल्डर में header.key नहीं है
+err.cert.required = कम से कम एक प्रमाणपत्र चाहिए (--cert/--certsg)। .cer को «व्यक्तिगत» भंडार से या कंटेनर से निकालें।
+err.com.notfound = COM लाइब्रेरी नहीं मिली
+err.com.call = {0} ने {1} लौटाया
 
 # --- कुंजी के अधिकार ---
 key.notfound = कुंजी नहीं मिली

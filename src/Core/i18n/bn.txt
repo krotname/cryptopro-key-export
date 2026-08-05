@@ -187,6 +187,14 @@ err.folder.outside = ফোল্ডারটি CryptoPro-র ভাণ্ড�
 err.folder.notlike = ফোল্ডারটি কনটেইনারের মতো নয়: {0}
 err.folder.extra = কনটেইনারের ফোল্ডারে বাইরের ফাইল আছে, মোছা বাতিল: {0}
 err.store.full = {0}-এ ফাঁকা ফোল্ডার পাওয়া যায়নি
+err.name.empty = কনটেইনারের নাম ফাঁকা
+err.name.toolong = কনটেইনারের নাম {0} অক্ষরের চেয়ে লম্বা
+err.p12.notfound = p12utility পাওয়া যায়নি
+err.p12.unavailable = p12utility পাওয়া যায়নি: অন্তর্ভুক্ত অনুলিপি অনুপলব্ধ। p12utility.win32.exe প্রোগ্রামের পাশে রাখুন বা তার পথ বলুন।
+err.header.missing = ফোল্ডারে header.key নেই
+err.cert.required = অন্তত একটি সার্টিফিকেট দরকার (--cert/--certsg)। «ব্যক্তিগত» ভাণ্ডার থেকে বা কনটেইনার থেকে .cer বের করুন।
+err.com.notfound = COM লাইব্রেরি পাওয়া যায়নি
+err.com.call = {0} ফিরিয়েছে {1}
 
 # --- কী-এর অধিকার ---
 key.notfound = কী পাওয়া যায়নি

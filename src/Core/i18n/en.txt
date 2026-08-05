@@ -187,6 +187,14 @@ err.folder.outside = The folder is outside the CryptoPro store: {0}
 err.folder.notlike = The folder does not look like a container: {0}
 err.folder.extra = The container folder holds foreign files, deletion cancelled: {0}
 err.store.full = Could not find a free folder in {0}
+err.name.empty = Empty container name
+err.name.toolong = The container name is longer than {0} characters
+err.p12.notfound = p12utility not found
+err.p12.unavailable = p12utility not found: the built-in copy is unavailable. Put p12utility.win32.exe next to the application or give its path.
+err.header.missing = The folder has no header.key
+err.cert.required = At least one certificate is required (--cert/--certsg). Export the .cer from the «Personal» store or from the container.
+err.com.notfound = COM library not found
+err.com.call = {0} returned {1}
 
 # --- key permissions ---
 key.notfound = key not found

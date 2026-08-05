@@ -187,6 +187,14 @@ err.folder.outside = فولڈر CryptoPro کے ذخیرے سے باہر ہے: {0
 err.folder.notlike = فولڈر کنٹینر جیسا نہیں لگتا: {0}
 err.folder.extra = کنٹینر کے فولڈر میں اجنبی فائلیں ہیں، حذف منسوخ: {0}
 err.store.full = {0} میں خالی فولڈر نہ مل سکا
+err.name.empty = کنٹینر کا نام خالی ہے
+err.name.toolong = کنٹینر کا نام {0} حروف سے لمبا ہے
+err.p12.notfound = p12utility نہیں ملا
+err.p12.unavailable = p12utility نہیں ملا: شامل شدہ نقل دستیاب نہیں۔ p12utility.win32.exe کو پروگرام کے پاس رکھیں یا اس کا راستہ بتائیں۔
+err.header.missing = فولڈر میں header.key نہیں ہے
+err.cert.required = کم از کم ایک سرٹیفکیٹ درکار ہے (--cert/--certsg)۔ .cer کو «ذاتی» ذخیرے سے یا کنٹینر سے برآمد کریں۔
+err.com.notfound = COM لائبریری نہیں ملی
+err.com.call = {0} نے {1} لوٹایا
 
 # --- کلید کے حقوق ---
 key.notfound = کلید نہیں ملی

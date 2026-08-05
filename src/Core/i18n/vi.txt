@@ -187,6 +187,14 @@ err.folder.outside = Thư mục nằm ngoài kho của CryptoPro: {0}
 err.folder.notlike = Thư mục trông không giống một container: {0}
 err.folder.extra = Thư mục container có tệp lạ, đã huỷ việc xoá: {0}
 err.store.full = Không tìm được thư mục trống trong {0}
+err.name.empty = Tên container rỗng
+err.name.toolong = Tên container dài hơn {0} ký tự
+err.p12.notfound = Không tìm thấy p12utility
+err.p12.unavailable = Không tìm thấy p12utility: bản sao tích hợp không dùng được. Hãy đặt p12utility.win32.exe cạnh ứng dụng hoặc chỉ ra đường dẫn.
+err.header.missing = Thư mục không có header.key
+err.cert.required = Cần ít nhất một chứng thư (--cert/--certsg). Hãy xuất tệp .cer từ kho «Cá nhân» hoặc từ container.
+err.com.notfound = Không tìm thấy thư viện COM
+err.com.call = {0} trả về {1}
 
 # --- quyền của khoá ---
 key.notfound = không tìm thấy khoá

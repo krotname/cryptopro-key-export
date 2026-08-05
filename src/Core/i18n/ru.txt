@@ -189,6 +189,14 @@ err.folder.outside = Папка вне хранилища КриптоПро: {0
 err.folder.notlike = Папка не похожа на контейнер: {0}
 err.folder.extra = В папке контейнера есть посторонние файлы, удаление отменено: {0}
 err.store.full = Не удалось подобрать свободную папку в {0}
+err.name.empty = Пустое имя контейнера
+err.name.toolong = Имя контейнера длиннее {0} символов
+err.p12.notfound = p12utility не найден
+err.p12.unavailable = p12utility не найден: встроенная копия недоступна. Положите p12utility.win32.exe рядом с приложением или укажите путь.
+err.header.missing = В папке нет header.key
+err.cert.required = Нужен минимум один сертификат (--cert/--certsg). Экспортируйте .cer из хранилища «Личное» или из контейнера.
+err.com.notfound = COM-библиотека не найдена
+err.com.call = {0} вернул {1}
 
 # --- права ключа ---
 key.notfound = ключ не найден

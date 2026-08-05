@@ -28,7 +28,7 @@ namespace CryptoProExport
         {
             ExePath = exePath ?? throw new ArgumentNullException(nameof(exePath));
             if (!File.Exists(ExePath))
-                throw new FileNotFoundException("p12utility не найден", ExePath);
+                throw new FileNotFoundException(Strings.Get("err.p12.notfound"), ExePath);
         }
 
         /// <summary>Найти внешний p12utility в типовых местах (рядом с приложением / в КриптоПро CSP).</summary>
@@ -103,13 +103,12 @@ namespace CryptoProExport
                 throw new DirectoryNotFoundException(containerFolder);
             string header = Path.Combine(containerFolder, "header.key");
             if (!File.Exists(header))
-                throw new FileNotFoundException("В папке нет header.key", header);
+                throw new FileNotFoundException(Strings.Get("err.header.missing"), header);
 
             bool hasExchange = !string.IsNullOrEmpty(certExchangePath);
             bool hasSignature = !string.IsNullOrEmpty(certSignaturePath);
             if (!hasExchange && !hasSignature)
-                throw new ArgumentException(
-                    "Нужен минимум один сертификат (--cert/--certsg). Экспортируйте .cer из хранилища «Личное» или из контейнера.");
+                throw new ArgumentException(Strings.Get("err.cert.required"));
 
             // Бэкап header.key (как CertFix: header.key.backup)
             File.Copy(header, header + ".backup", overwrite: true);

@@ -187,6 +187,14 @@ err.folder.outside = Le dossier est hors du magasin CryptoPro : {0}
 err.folder.notlike = Le dossier ne ressemble pas à un conteneur : {0}
 err.folder.extra = Le dossier du conteneur contient des fichiers étrangers, suppression annulée : {0}
 err.store.full = Impossible de trouver un dossier libre dans {0}
+err.name.empty = Nom de conteneur vide
+err.name.toolong = Le nom du conteneur dépasse {0} caractères
+err.p12.notfound = p12utility introuvable
+err.p12.unavailable = p12utility introuvable : la copie intégrée est indisponible. Placez p12utility.win32.exe à côté de l’application ou indiquez son chemin.
+err.header.missing = Le dossier ne contient pas header.key
+err.cert.required = Au moins un certificat est nécessaire (--cert/--certsg). Exportez le .cer depuis le magasin « Personnel » ou depuis le conteneur.
+err.com.notfound = Bibliothèque COM introuvable
+err.com.call = {0} a renvoyé {1}
 
 # --- droits de la clé ---
 key.notfound = clé introuvable

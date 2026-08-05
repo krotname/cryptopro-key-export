@@ -187,6 +187,14 @@ err.folder.outside = المجلد خارج مخزن CryptoPro: {0}
 err.folder.notlike = المجلد لا يشبه حاوية: {0}
 err.folder.extra = في مجلد الحاوية ملفات غريبة، أُلغي الحذف: {0}
 err.store.full = تعذّر إيجاد مجلد فارغ في {0}
+err.name.empty = اسم الحاوية فارغ
+err.name.toolong = اسم الحاوية أطول من {0} حرفًا
+err.p12.notfound = لم يُعثر على p12utility
+err.p12.unavailable = لم يُعثر على p12utility: النسخة المضمّنة غير متاحة. ضع p12utility.win32.exe بجوار التطبيق أو حدّد مساره.
+err.header.missing = لا يوجد header.key في المجلد
+err.cert.required = يلزم شهادة واحدة على الأقل (--cert/--certsg). صدّر ملف .cer من مخزن «شخصي» أو من الحاوية.
+err.com.notfound = لم يُعثر على مكتبة COM
+err.com.call = أعاد {0} القيمة {1}
 
 # --- صلاحيات المفتاح ---
 key.notfound = لم يُعثر على المفتاح

@@ -187,6 +187,14 @@ err.folder.outside = A pasta está fora do arquivo do CryptoPro: {0}
 err.folder.notlike = A pasta não parece um contentor: {0}
 err.folder.extra = A pasta do contentor tem ficheiros alheios, eliminação cancelada: {0}
 err.store.full = Não foi possível encontrar uma pasta livre em {0}
+err.name.empty = Nome do contentor vazio
+err.name.toolong = O nome do contentor tem mais de {0} caracteres
+err.p12.notfound = p12utility não encontrado
+err.p12.unavailable = p12utility não encontrado: a cópia integrada está indisponível. Coloque p12utility.win32.exe ao lado da aplicação ou indique o caminho.
+err.header.missing = A pasta não tem header.key
+err.cert.required = É preciso pelo menos um certificado (--cert/--certsg). Exporte o .cer do arquivo «Pessoal» ou do contentor.
+err.com.notfound = Biblioteca COM não encontrada
+err.com.call = {0} devolveu {1}
 
 # --- permissões da chave ---
 key.notfound = chave não encontrada

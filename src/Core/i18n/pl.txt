@@ -187,6 +187,14 @@ err.folder.outside = Folder jest poza magazynem CryptoPro: {0}
 err.folder.notlike = Folder nie wygląda na kontener: {0}
 err.folder.extra = W folderze kontenera są obce pliki, usuwanie anulowane: {0}
 err.store.full = Nie udało się znaleźć wolnego folderu w {0}
+err.name.empty = Pusta nazwa kontenera
+err.name.toolong = Nazwa kontenera jest dłuższa niż {0} znaków
+err.p12.notfound = Nie znaleziono p12utility
+err.p12.unavailable = Nie znaleziono p12utility: wbudowana kopia jest niedostępna. Połóż p12utility.win32.exe obok aplikacji albo podaj ścieżkę.
+err.header.missing = W folderze nie ma header.key
+err.cert.required = Potrzebny jest co najmniej jeden certyfikat (--cert/--certsg). Wyeksportuj .cer z magazynu «Osobisty» albo z kontenera.
+err.com.notfound = Nie znaleziono biblioteki COM
+err.com.call = {0} zwrócił {1}
 
 # --- uprawnienia klucza ---
 key.notfound = nie znaleziono klucza

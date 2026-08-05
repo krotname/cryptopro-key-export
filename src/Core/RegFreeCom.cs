@@ -45,7 +45,7 @@ namespace CryptoProExport
         /// <summary>Создать экземпляр COM-класса clsid из указанной DLL.</summary>
         public static object CreateInstance(string dllPath, Guid clsid)
         {
-            if (!File.Exists(dllPath)) throw new FileNotFoundException("COM-библиотека не найдена", dllPath);
+            if (!File.Exists(dllPath)) throw new FileNotFoundException(Strings.Get("err.com.notfound"), dllPath);
 
             IntPtr module;
             lock (Loaded)
@@ -63,7 +63,7 @@ namespace CryptoProExport
             Guid clsidCopy = clsid, iidFactory = IID_IClassFactory;
             int hr = getClassObject(ref clsidCopy, ref iidFactory, out IntPtr pFactory);
             if (hr < 0 || pFactory == IntPtr.Zero)
-                throw new COMException($"DllGetClassObject({clsid:B}) вернул 0x{hr:X8}", hr);
+                throw new COMException(Strings.Format("err.com.call", $"DllGetClassObject({clsid:B})", $"0x{hr:X8}"), hr);
 
             IClassFactory factory;
             try { factory = (IClassFactory)Marshal.GetObjectForIUnknown(pFactory); }
@@ -74,7 +74,7 @@ namespace CryptoProExport
                 Guid iid = IID_IUnknown;
                 hr = factory.CreateInstance(null, ref iid, out object instance);
                 if (hr < 0 || instance == null)
-                    throw new COMException($"IClassFactory::CreateInstance вернул 0x{hr:X8}", hr);
+                    throw new COMException(Strings.Format("err.com.call", "IClassFactory::CreateInstance", $"0x{hr:X8}"), hr);
                 return instance;
             }
             finally { Marshal.ReleaseComObject(factory); }

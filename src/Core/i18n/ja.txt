@@ -187,6 +187,14 @@ err.folder.outside = フォルダーが CryptoPro の保管領域の外にあり
 err.folder.notlike = フォルダーがコンテナーには見えません: {0}
 err.folder.extra = コンテナーのフォルダーに無関係なファイルがあるため、削除を中止しました: {0}
 err.store.full = {0} に空きフォルダーが見つかりませんでした
+err.name.empty = コンテナー名が空です
+err.name.toolong = コンテナー名が {0} 文字を超えています
+err.p12.notfound = p12utility が見つかりません
+err.p12.unavailable = p12utility が見つかりません: 内蔵コピーを利用できません。p12utility.win32.exe をアプリの隣に置くか、パスを指定してください。
+err.header.missing = フォルダーに header.key がありません
+err.cert.required = 証明書が最低 1 つ必要です（--cert/--certsg）。「個人」ストアかコンテナーから .cer を書き出してください。
+err.com.notfound = COM ライブラリが見つかりません
+err.com.call = {0} は {1} を返しました
 
 # --- 鍵の権限 ---
 key.notfound = 鍵が見つかりません

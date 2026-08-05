@@ -187,6 +187,14 @@ err.folder.outside = La cartella è fuori dall’archivio di CryptoPro: {0}
 err.folder.notlike = La cartella non sembra un contenitore: {0}
 err.folder.extra = Nella cartella del contenitore ci sono file estranei, eliminazione annullata: {0}
 err.store.full = Non è stato possibile trovare una cartella libera in {0}
+err.name.empty = Nome del contenitore vuoto
+err.name.toolong = Il nome del contenitore supera {0} caratteri
+err.p12.notfound = p12utility non trovato
+err.p12.unavailable = p12utility non trovato: la copia incorporata non è disponibile. Mettete p12utility.win32.exe accanto all’applicazione oppure indicatene il percorso.
+err.header.missing = Nella cartella non c’è header.key
+err.cert.required = Serve almeno un certificato (--cert/--certsg). Esportate il .cer dall’archivio «Personale» o dal contenitore.
+err.com.notfound = Libreria COM non trovata
+err.com.call = {0} ha restituito {1}
 
 # --- permessi della chiave ---
 key.notfound = chiave non trovata

@@ -187,6 +187,14 @@ err.folder.outside = Der Ordner liegt außerhalb des CryptoPro-Speichers: {0}
 err.folder.notlike = Der Ordner sieht nicht wie ein Container aus: {0}
 err.folder.extra = Im Containerordner liegen fremde Dateien, das Löschen wurde abgebrochen: {0}
 err.store.full = In {0} ließ sich kein freier Ordner finden
+err.name.empty = Leerer Containername
+err.name.toolong = Der Containername ist länger als {0} Zeichen
+err.p12.notfound = p12utility nicht gefunden
+err.p12.unavailable = p12utility nicht gefunden: die eingebettete Kopie ist nicht verfügbar. Legen Sie p12utility.win32.exe neben die Anwendung oder geben Sie den Pfad an.
+err.header.missing = Im Ordner liegt keine header.key
+err.cert.required = Mindestens ein Zertifikat wird gebraucht (--cert/--certsg). Exportieren Sie die .cer aus dem Speicher «Eigene Zertifikate» oder aus dem Container.
+err.com.notfound = COM-Bibliothek nicht gefunden
+err.com.call = {0} lieferte {1}
 
 # --- Schlüsselrechte ---
 key.notfound = Schlüssel nicht gefunden
