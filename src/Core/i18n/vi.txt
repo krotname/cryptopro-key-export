@@ -146,6 +146,48 @@ diag.rtcom.unregistered = trong hệ thống: chưa đăng ký
 diag.arch = thư viện {0}, tiến trình {1}
 diag.arch.unknown = không xác định được kiến trúc của thư viện
 
+# --- luồng xuất ---
+pipe.saved = Đã lưu container «{0}» -> {1}
+pipe.cert.found = Đã lấy chứng thư từ container «{0}» qua CryptoAPI
+pipe.cert.autofail = Không lấy được chứng thư tự động: {0}
+pipe.keyexport.skip = BỎ QUA keyexport cho «{0}»: không tìm thấy chứng thư (.cer). Hãy chỉ định thủ công.
+pipe.keyexport.ok = OK: khoá trong «{0}» đã được đánh dấu xuất được
+pipe.keyexport.fail = LỖI keyexport trong «{0}»: {1} {2}
+
+# --- làm việc với token ---
+token.connect = Đang kết nối tới dịch vụ thẻ thông minh…
+token.found = Số thiết bị tìm thấy: {0}
+token.open = Đang mở token: {0}
+token.rtcom.loadfail = Bản rtCOMLite tích hợp không nạp được ({0}); thử bản đã đăng ký trong hệ thống
+token.rtcom.mismatch = Bản rtCOMLite tích hợp không phù hợp ({0}); thử bản đã đăng ký trong hệ thống
+token.rtcom.extractfail = Không giải nén được bản rtCOMLite tích hợp ({0}); thử bản đã đăng ký trong hệ thống
+token.rtcom.unavailable = Không dùng được thành phần rtCOMLite: bản tích hợp không nạp được và trong hệ thống nó cũng chưa đăng ký. Hãy kiểm tra kiến trúc chương trình (cần x86) hoặc cài thành phần từ https://help.kontur.ru/rtComLite.exe.
+token.pin.default = PIN xuất xưởng — xác thực bằng 12345678
+token.pin.given = Xác thực bằng PIN đã nhập
+token.pin.system = Xác thực qua cửa sổ PIN của hệ thống
+token.container = Container: {0} «{1}» ({2} tệp)
+
+# --- chạy các tiện ích CryptoPro ---
+tool.certmgr.install = Đang cài chứng thư vào kho «Cá nhân» và liên kết với container…
+tool.certmgr.installwarn = certmgr -install trả về {0} — vẫn thử xuất: chứng thư có thể đã được cài trước đó
+tool.certmgr.export = Đang xuất container ra PKCS#12…
+tool.startfail = Không khởi chạy được {0}
+tool.timeout = Hết thời gian chờ {0} ms: {1}
+tool.cancelled = {0} đã dừng do bị huỷ
+
+# --- lỗi người dùng nhìn thấy ---
+err.certmgr.notfound = Không tìm thấy certmgr
+err.container.name = Chưa cho biết tên container
+err.container.nokey = Không tìm thấy container «{0}» hoặc trong đó không có khoá thuộc loại cần thiết
+err.key.locked = Khoá riêng không xuất được — hãy gỡ lệnh cấm trước («{0}»). {1}
+err.cert.extract = Không lấy được chứng thư từ container
+err.pfx.missing = certmgr báo thành công, nhưng tệp lại không được tạo: {0}
+err.folder.notcontainer = Thư mục không chứa container (cần header.key, primary.key, masks.key): {0}
+err.folder.outside = Thư mục nằm ngoài kho của CryptoPro: {0}
+err.folder.notlike = Thư mục trông không giống một container: {0}
+err.folder.extra = Thư mục container có tệp lạ, đã huỷ việc xoá: {0}
+err.store.full = Không tìm được thư mục trống trong {0}
+
 # --- quyền của khoá ---
 key.notfound = không tìm thấy khoá
 key.readfail = không đọc được quyền ({0})

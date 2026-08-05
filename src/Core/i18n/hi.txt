@@ -146,6 +146,48 @@ diag.rtcom.unregistered = सिस्टम में: पंजीकृत �
 diag.arch = लाइब्रेरी {0}, प्रक्रिया {1}
 diag.arch.unknown = लाइब्रेरी की बिट-संख्या तय नहीं हो सकी
 
+# --- निर्यात की प्रक्रिया ---
+pipe.saved = कंटेनर «{0}» सहेजा गया -> {1}
+pipe.cert.found = कंटेनर «{0}» से CryptoAPI के ज़रिए प्रमाणपत्र निकाला गया
+pipe.cert.autofail = प्रमाणपत्र स्वतः नहीं निकल सका: {0}
+pipe.keyexport.skip = «{0}» के लिए keyexport छोड़ा गया: प्रमाणपत्र (.cer) नहीं मिला। उसे हाथ से बताएँ।
+pipe.keyexport.ok = OK: «{0}» की कुंजी निर्यात योग्य चिह्नित हो गई
+pipe.keyexport.fail = «{0}» में keyexport की त्रुटि: {1} {2}
+
+# --- टोकन के साथ काम ---
+token.connect = स्मार्ट-कार्ड सेवा से जुड़ रहे हैं…
+token.found = मिले उपकरण: {0}
+token.open = टोकन खोल रहे हैं: {0}
+token.rtcom.loadfail = अंतर्निहित rtCOMLite लोड नहीं हुआ ({0}); सिस्टम में पंजीकृत वाला आज़मा रहे हैं
+token.rtcom.mismatch = अंतर्निहित rtCOMLite उपयुक्त नहीं ({0}); सिस्टम में पंजीकृत वाला आज़मा रहे हैं
+token.rtcom.extractfail = अंतर्निहित rtCOMLite खोला नहीं जा सका ({0}); सिस्टम में पंजीकृत वाला आज़मा रहे हैं
+token.rtcom.unavailable = rtCOMLite घटक उपलब्ध नहीं: अंतर्निहित प्रति लोड नहीं हुई और सिस्टम में वह पंजीकृत नहीं है। कार्यक्रम की बिट-संख्या जाँचें (x86 चाहिए) या घटक https://help.kontur.ru/rtComLite.exe से स्थापित करें।
+token.pin.default = फ़ैक्टरी PIN — 12345678 से प्रमाणीकरण
+token.pin.given = दिए गए PIN से प्रमाणीकरण
+token.pin.system = सिस्टम की PIN खिड़की से प्रमाणीकरण
+token.container = कंटेनर: {0} «{1}» ({2} फ़ाइलें)
+
+# --- CryptoPro के उपकरण चलाना ---
+tool.certmgr.install = प्रमाणपत्र «व्यक्तिगत» भंडार में स्थापित कर कंटेनर से जोड़ रहे हैं…
+tool.certmgr.installwarn = certmgr -install ने {0} लौटाया — फिर भी निर्यात आज़मा रहे हैं: प्रमाणपत्र पहले से स्थापित हो सकता है
+tool.certmgr.export = कंटेनर को PKCS#12 में निकाल रहे हैं…
+tool.startfail = {0} शुरू नहीं हो सका
+tool.timeout = समय समाप्त {0} मि.से.: {1}
+tool.cancelled = {0} रद्द होने के कारण रोका गया
+
+# --- उपयोगकर्ता को दिखने वाली त्रुटियाँ ---
+err.certmgr.notfound = certmgr नहीं मिला
+err.container.name = कंटेनर का नाम नहीं बताया गया
+err.container.nokey = कंटेनर «{0}» नहीं मिला या उसमें ज़रूरी प्रकार की कुंजी नहीं है
+err.key.locked = निजी कुंजी निर्यात योग्य नहीं — पहले रोक हटाएँ («{0}»)। {1}
+err.cert.extract = कंटेनर से प्रमाणपत्र नहीं निकाला जा सका
+err.pfx.missing = certmgr ने सफलता बताई, पर फ़ाइल बनी नहीं: {0}
+err.folder.notcontainer = फ़ोल्डर में कंटेनर नहीं है (header.key, primary.key, masks.key चाहिए): {0}
+err.folder.outside = फ़ोल्डर CryptoPro के भंडार से बाहर है: {0}
+err.folder.notlike = फ़ोल्डर कंटेनर जैसा नहीं लगता: {0}
+err.folder.extra = कंटेनर के फ़ोल्डर में बाहरी फ़ाइलें हैं, हटाना रद्द: {0}
+err.store.full = {0} में खाली फ़ोल्डर नहीं मिल सका
+
 # --- कुंजी के अधिकार ---
 key.notfound = कुंजी नहीं मिली
 key.readfail = अधिकार पढ़े नहीं जा सके ({0})

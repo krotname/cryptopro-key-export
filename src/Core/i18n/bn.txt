@@ -146,6 +146,48 @@ diag.rtcom.unregistered = সিস্টেমে: নিবন্ধিত ন
 diag.arch = লাইব্রেরি {0}, প্রক্রিয়া {1}
 diag.arch.unknown = লাইব্রেরির বিট-সংখ্যা নির্ণয় করা যায়নি
 
+# --- রপ্তানির ধারা ---
+pipe.saved = কনটেইনার «{0}» সংরক্ষিত -> {1}
+pipe.cert.found = CryptoAPI দিয়ে কনটেইনার «{0}» থেকে সার্টিফিকেট বের করা হয়েছে
+pipe.cert.autofail = সার্টিফিকেট স্বয়ংক্রিয়ভাবে বের করা যায়নি: {0}
+pipe.keyexport.skip = «{0}»-এর জন্য keyexport বাদ দেওয়া হল: সার্টিফিকেট (.cer) পাওয়া যায়নি। সেটি নিজে দেখিয়ে দিন।
+pipe.keyexport.ok = OK: «{0}»-এর কী রপ্তানিযোগ্য হিসেবে চিহ্নিত হয়েছে
+pipe.keyexport.fail = «{0}»-এ keyexport ত্রুটি: {1} {2}
+
+# --- টোকেন নিয়ে কাজ ---
+token.connect = স্মার্ট-কার্ড সেবার সঙ্গে যুক্ত হচ্ছি…
+token.found = পাওয়া যন্ত্র: {0}
+token.open = টোকেন খুলছি: {0}
+token.rtcom.loadfail = অন্তর্ভুক্ত rtCOMLite লোড হয়নি ({0}); সিস্টেমে নিবন্ধিতটি চেষ্টা করছি
+token.rtcom.mismatch = অন্তর্ভুক্ত rtCOMLite উপযুক্ত নয় ({0}); সিস্টেমে নিবন্ধিতটি চেষ্টা করছি
+token.rtcom.extractfail = অন্তর্ভুক্ত rtCOMLite খোলা যায়নি ({0}); সিস্টেমে নিবন্ধিতটি চেষ্টা করছি
+token.rtcom.unavailable = rtCOMLite উপাদান পাওয়া যাচ্ছে না: অন্তর্ভুক্ত অনুলিপি লোড হয়নি এবং সিস্টেমেও তা নিবন্ধিত নয়। প্রোগ্রামের বিট-সংখ্যা দেখুন (x86 দরকার) অথবা https://help.kontur.ru/rtComLite.exe থেকে উপাদানটি স্থাপন করুন।
+token.pin.default = কারখানার PIN — 12345678 দিয়ে প্রমাণীকরণ
+token.pin.given = দেওয়া PIN দিয়ে প্রমাণীকরণ
+token.pin.system = সিস্টেমের PIN জানালা দিয়ে প্রমাণীকরণ
+token.container = কনটেইনার: {0} «{1}» ({2}টি ফাইল)
+
+# --- CryptoPro-র সরঞ্জাম চালানো ---
+tool.certmgr.install = সার্টিফিকেট «ব্যক্তিগত» ভাণ্ডারে স্থাপন করে কনটেইনারের সঙ্গে যুক্ত করছি…
+tool.certmgr.installwarn = certmgr -install ফিরিয়েছে {0} — তবু রপ্তানি চেষ্টা করছি: সার্টিফিকেট আগেই স্থাপিত থাকতে পারে
+tool.certmgr.export = কনটেইনার PKCS#12-এ বের করছি…
+tool.startfail = {0} চালু করা যায়নি
+tool.timeout = সময় শেষ {0} মি.সে.: {1}
+tool.cancelled = বাতিলের কারণে {0} থামানো হয়েছে
+
+# --- ব্যবহারকারী যে ত্রুটি দেখেন ---
+err.certmgr.notfound = certmgr পাওয়া যায়নি
+err.container.name = কনটেইনারের নাম দেওয়া হয়নি
+err.container.nokey = কনটেইনার «{0}» পাওয়া যায়নি বা তাতে প্রয়োজনীয় ধরনের কী নেই
+err.key.locked = ব্যক্তিগত কী রপ্তানিযোগ্য নয় — আগে নিষেধাজ্ঞা তুলুন («{0}»)। {1}
+err.cert.extract = কনটেইনার থেকে সার্টিফিকেট বের করা যায়নি
+err.pfx.missing = certmgr সফলতার কথা বলেছে, কিন্তু ফাইল তৈরি হয়নি: {0}
+err.folder.notcontainer = ফোল্ডারে কনটেইনার নেই (header.key, primary.key, masks.key দরকার): {0}
+err.folder.outside = ফোল্ডারটি CryptoPro-র ভাণ্ডারের বাইরে: {0}
+err.folder.notlike = ফোল্ডারটি কনটেইনারের মতো নয়: {0}
+err.folder.extra = কনটেইনারের ফোল্ডারে বাইরের ফাইল আছে, মোছা বাতিল: {0}
+err.store.full = {0}-এ ফাঁকা ফোল্ডার পাওয়া যায়নি
+
 # --- কী-এর অধিকার ---
 key.notfound = কী পাওয়া যায়নি
 key.readfail = অধিকার পড়া যায়নি ({0})

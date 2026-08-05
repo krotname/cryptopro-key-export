@@ -55,7 +55,7 @@ namespace CryptoProExport
             {
                 Cancel.ThrowIfCancellationRequested();
                 string folder = c.SaveTo(destParent);
-                Log($"Сохранён контейнер \"{c.ContainerName}\" -> {folder}");
+                Log(Strings.Format("pipe.saved", c.ContainerName, folder));
                 saved.Add((c, folder));
             }
             return saved;
@@ -83,21 +83,21 @@ namespace CryptoProExport
                         var found = CertFromContainer.SaveCerts(container.ContainerName, folder);
                         ex = found.exchange; sg = found.signature;
                         if (ex != null || sg != null)
-                            Log($"Сертификат извлечён из контейнера \"{container.ContainerName}\" через CryptoAPI");
+                            Log(Strings.Format("pipe.cert.found", container.ContainerName));
                     }
-                    catch (Exception e) { Log("Не удалось авто-извлечь сертификат: " + e.Message); }
+                    catch (Exception e) { Log(Strings.Format("pipe.cert.autofail", e.Message)); }
                 }
 
                 if (ex == null && sg == null)
                 {
-                    Log($"ПРОПУСК keyexport для \"{folder}\": не найден сертификат (.cer). Укажите его вручную.");
+                    Log(Strings.Format("pipe.keyexport.skip", folder));
                     continue;
                 }
 
                 var r = P12.MakeExportable(folder, ex, sg, containerPassword);
                 Log(r.Success
-                    ? $"OK: ключ в \"{folder}\" помечен экспортируемым"
-                    : $"ОШИБКА keyexport в \"{folder}\": {r.Explain()} {r.Output}");
+                    ? Strings.Format("pipe.keyexport.ok", folder)
+                    : Strings.Format("pipe.keyexport.fail", folder, r.Explain(), r.Output));
             }
         }
     }

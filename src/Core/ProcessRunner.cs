@@ -54,7 +54,7 @@ namespace CryptoProExport
                 {
                     Success = false,
                     ExitCode = -2,
-                    Output = "Не удалось запустить " + Path.GetFileName(exe),
+                    Output = Strings.Format("tool.startfail", Path.GetFileName(exe)),
                 };
 
             var outTask = Task.Run(() => ReadAll(p.StandardOutput.BaseStream));
@@ -84,13 +84,13 @@ namespace CryptoProExport
                 {
                     Success = false,
                     ExitCode = -1,
-                    Output = $"Таймаут {timeoutMs} мс: {Path.GetFileName(exe)}",
+                    Output = Strings.Format("tool.timeout", timeoutMs, Path.GetFileName(exe)),
                 };
             }
 
             Task.WaitAll(new Task[] { outTask, errTask }, 3000);
             if (Volatile.Read(ref killedByCancel.Value))
-                throw new OperationCanceledException($"{Path.GetFileName(exe)} остановлен по отмене", cancel);
+                throw new OperationCanceledException(Strings.Format("tool.cancelled", Path.GetFileName(exe)), cancel);
             string text = (Text(outTask) + Text(errTask)).Trim();
             return new ToolResult { Success = p.ExitCode == 0, ExitCode = p.ExitCode, Output = text };
         }

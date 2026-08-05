@@ -146,6 +146,48 @@ diag.rtcom.unregistered = システム内: 未登録
 diag.arch = ライブラリ {0}、プロセス {1}
 diag.arch.unknown = ライブラリのビット数を判別できませんでした
 
+# --- エクスポートの流れ ---
+pipe.saved = コンテナー「{0}」を保存しました -> {1}
+pipe.cert.found = CryptoAPI でコンテナー「{0}」から証明書を取り出しました
+pipe.cert.autofail = 証明書を自動で取り出せませんでした: {0}
+pipe.keyexport.skip = 「{0}」の keyexport をスキップ: 証明書（.cer）が見つかりません。手動で指定してください。
+pipe.keyexport.ok = OK:「{0}」の鍵はエクスポート可能と印が付きました
+pipe.keyexport.fail = 「{0}」の keyexport でエラー: {1} {2}
+
+# --- トークンとのやり取り ---
+token.connect = スマートカードサービスに接続しています…
+token.found = 見つかったデバイス数: {0}
+token.open = トークンを開いています: {0}
+token.rtcom.loadfail = 内蔵の rtCOMLite が読み込めませんでした（{0}）。システムに登録されたものを試します
+token.rtcom.mismatch = 内蔵の rtCOMLite が適合しません（{0}）。システムに登録されたものを試します
+token.rtcom.extractfail = 内蔵の rtCOMLite を展開できませんでした（{0}）。システムに登録されたものを試します
+token.rtcom.unavailable = rtCOMLite コンポーネントを利用できません: 内蔵コピーが読み込めず、システムにも登録されていません。アプリのビット数を確認するか（x86 が必要です）、https://help.kontur.ru/rtComLite.exe からコンポーネントを導入してください。
+token.pin.default = 工場出荷時の PIN — 12345678 で認証します
+token.pin.given = 入力された PIN で認証します
+token.pin.system = システムの PIN 入力ウィンドウで認証します
+token.container = コンテナー: {0}「{1}」（ファイル {2} 個）
+
+# --- CryptoPro のユーティリティ実行 ---
+tool.certmgr.install = 証明書を「個人」ストアに導入し、コンテナーと結び付けています…
+tool.certmgr.installwarn = certmgr -install が {0} を返しました — それでもエクスポートを試みます: 証明書は以前に導入済みの可能性があります
+tool.certmgr.export = コンテナーを PKCS#12 に書き出しています…
+tool.startfail = {0} を起動できませんでした
+tool.timeout = タイムアウト {0} ミリ秒: {1}
+tool.cancelled = 中止により {0} を停止しました
+
+# --- 利用者に見えるエラー ---
+err.certmgr.notfound = certmgr が見つかりません
+err.container.name = コンテナー名が指定されていません
+err.container.nokey = コンテナー「{0}」が見つからないか、必要な種類の鍵がありません
+err.key.locked = 秘密鍵がエクスポート不可です — 先に禁止を解除してください（「{0}」）。{1}
+err.cert.extract = コンテナーから証明書を取り出せませんでした
+err.pfx.missing = certmgr は成功と報告しましたが、ファイルが作られていません: {0}
+err.folder.notcontainer = フォルダーにコンテナーがありません（header.key、primary.key、masks.key が必要です）: {0}
+err.folder.outside = フォルダーが CryptoPro の保管領域の外にあります: {0}
+err.folder.notlike = フォルダーがコンテナーには見えません: {0}
+err.folder.extra = コンテナーのフォルダーに無関係なファイルがあるため、削除を中止しました: {0}
+err.store.full = {0} に空きフォルダーが見つかりませんでした
+
 # --- 鍵の権限 ---
 key.notfound = 鍵が見つかりません
 key.readfail = 権限を読み取れませんでした（{0}）

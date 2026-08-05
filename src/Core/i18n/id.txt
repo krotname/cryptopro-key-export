@@ -146,6 +146,48 @@ diag.rtcom.unregistered = di sistem: tidak terdaftar
 diag.arch = pustaka {0}, proses {1}
 diag.arch.unknown = arsitektur pustaka tidak dapat ditentukan
 
+# --- alur ekspor ---
+pipe.saved = Kontainer «{0}» disimpan -> {1}
+pipe.cert.found = Sertifikat diambil dari kontainer «{0}» melalui CryptoAPI
+pipe.cert.autofail = Sertifikat tidak dapat diambil secara otomatis: {0}
+pipe.keyexport.skip = keyexport DILEWATI untuk «{0}»: sertifikat (.cer) tidak ditemukan. Tentukan secara manual.
+pipe.keyexport.ok = OK: kunci di «{0}» ditandai dapat diekspor
+pipe.keyexport.fail = GALAT keyexport di «{0}»: {1} {2}
+
+# --- bekerja dengan token ---
+token.connect = Menghubungi layanan kartu pintar…
+token.found = Perangkat yang ditemukan: {0}
+token.open = Membuka token: {0}
+token.rtcom.loadfail = Salinan bawaan rtCOMLite tidak termuat ({0}); mencoba yang terdaftar di sistem
+token.rtcom.mismatch = Salinan bawaan rtCOMLite tidak cocok ({0}); mencoba yang terdaftar di sistem
+token.rtcom.extractfail = Salinan bawaan rtCOMLite tidak dapat dibongkar ({0}); mencoba yang terdaftar di sistem
+token.rtcom.unavailable = Komponen rtCOMLite tidak tersedia: salinan bawaan tidak termuat dan di sistem juga tidak terdaftar. Periksa arsitektur aplikasi (perlu x86) atau pasang komponen dari https://help.kontur.ru/rtComLite.exe.
+token.pin.default = PIN pabrik — autentikasi dengan 12345678
+token.pin.given = Autentikasi dengan PIN yang diberikan
+token.pin.system = Autentikasi melalui jendela PIN sistem
+token.container = Kontainer: {0} «{1}» ({2} berkas)
+
+# --- menjalankan utilitas CryptoPro ---
+tool.certmgr.install = Memasang sertifikat ke penyimpanan «Pribadi» dan menautkannya ke kontainer…
+tool.certmgr.installwarn = certmgr -install mengembalikan {0} — ekspor tetap dicoba: sertifikat mungkin sudah dipasang sebelumnya
+tool.certmgr.export = Mengekspor kontainer ke PKCS#12…
+tool.startfail = Tidak dapat menjalankan {0}
+tool.timeout = Waktu habis {0} ms: {1}
+tool.cancelled = {0} dihentikan karena pembatalan
+
+# --- galat yang dilihat pengguna ---
+err.certmgr.notfound = certmgr tidak ditemukan
+err.container.name = Nama kontainer tidak diberikan
+err.container.nokey = Kontainer «{0}» tidak ditemukan atau tidak memuat kunci dengan tipe yang diperlukan
+err.key.locked = Kunci privat tidak dapat diekspor — cabut dulu larangannya («{0}»). {1}
+err.cert.extract = Sertifikat tidak dapat diambil dari kontainer
+err.pfx.missing = certmgr melaporkan berhasil, tetapi berkas tidak dibuat: {0}
+err.folder.notcontainer = Folder tidak berisi kontainer (perlu header.key, primary.key, masks.key): {0}
+err.folder.outside = Folder berada di luar penyimpanan CryptoPro: {0}
+err.folder.notlike = Folder tidak tampak seperti kontainer: {0}
+err.folder.extra = Folder kontainer berisi berkas asing, penghapusan dibatalkan: {0}
+err.store.full = Tidak ditemukan folder kosong di {0}
+
 # --- izin kunci ---
 key.notfound = kunci tidak ditemukan
 key.readfail = izin tidak terbaca ({0})

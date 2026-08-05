@@ -146,6 +146,48 @@ diag.rtcom.unregistered = sistemde: kayıtlı değil
 diag.arch = kitaplık {0}, süreç {1}
 diag.arch.unknown = kitaplığın mimarisi belirlenemedi
 
+# --- dışa aktarım akışı ---
+pipe.saved = «{0}» kapsayıcısı kaydedildi -> {1}
+pipe.cert.found = Sertifika «{0}» kapsayıcısından CryptoAPI ile çıkarıldı
+pipe.cert.autofail = Sertifika kendiliğinden çıkarılamadı: {0}
+pipe.keyexport.skip = «{0}» için keyexport ATLANDI: sertifika (.cer) bulunamadı. Elle belirtin.
+pipe.keyexport.ok = OK: «{0}» içindeki anahtar dışa aktarılabilir olarak işaretlendi
+pipe.keyexport.fail = «{0}» içinde keyexport HATASI: {1} {2}
+
+# --- belirteçle çalışma ---
+token.connect = Akıllı kart hizmetine bağlanılıyor…
+token.found = Bulunan aygıtlar: {0}
+token.open = Belirteç açılıyor: {0}
+token.rtcom.loadfail = Gömülü rtCOMLite yüklenmedi ({0}); sisteme kayıtlı olanı deniyoruz
+token.rtcom.mismatch = Gömülü rtCOMLite uymuyor ({0}); sisteme kayıtlı olanı deniyoruz
+token.rtcom.extractfail = Gömülü rtCOMLite açılamadı ({0}); sisteme kayıtlı olanı deniyoruz
+token.rtcom.unavailable = rtCOMLite bileşeni kullanılamıyor: gömülü kopya yüklenmedi ve sistemde de kayıtlı değil. Uygulamanın mimarisini denetleyin (x86 gerekir) ya da bileşeni https://help.kontur.ru/rtComLite.exe adresinden kurun.
+token.pin.default = Fabrika PIN’i — 12345678 ile kimlik doğrulanıyor
+token.pin.given = Verilen PIN ile kimlik doğrulanıyor
+token.pin.system = Sistemin PIN penceresi ile kimlik doğrulanıyor
+token.container = Kapsayıcı: {0} «{1}» ({2} dosya)
+
+# --- CryptoPro araçlarının çalıştırılması ---
+tool.certmgr.install = Sertifika «Kişisel» deposuna kuruluyor ve kapsayıcıyla ilişkilendiriliyor…
+tool.certmgr.installwarn = certmgr -install {0} döndürdü — yine de dışa aktarımı deniyoruz: sertifika daha önce kurulmuş olabilir
+tool.certmgr.export = Kapsayıcı PKCS#12 olarak dışa aktarılıyor…
+tool.startfail = {0} başlatılamadı
+tool.timeout = Zaman aşımı {0} ms: {1}
+tool.cancelled = {0} iptal nedeniyle durduruldu
+
+# --- kullanıcının gördüğü hatalar ---
+err.certmgr.notfound = certmgr bulunamadı
+err.container.name = Kapsayıcı adı verilmedi
+err.container.nokey = «{0}» kapsayıcısı bulunamadı ya da gerekli türde anahtar içermiyor
+err.key.locked = Özel anahtar dışa aktarılamaz — önce yasağı kaldırın («{0}»). {1}
+err.cert.extract = Sertifika kapsayıcıdan çıkarılamadı
+err.pfx.missing = certmgr başarı bildirdi, ama dosya oluşmadı: {0}
+err.folder.notcontainer = Klasörde kapsayıcı yok (header.key, primary.key, masks.key gerekir): {0}
+err.folder.outside = Klasör CryptoPro deposunun dışında: {0}
+err.folder.notlike = Klasör kapsayıcıya benzemiyor: {0}
+err.folder.extra = Kapsayıcı klasöründe yabancı dosyalar var, silme iptal edildi: {0}
+err.store.full = {0} içinde boş klasör bulunamadı
+
 # --- anahtar izinleri ---
 key.notfound = anahtar bulunamadı
 key.readfail = izinler okunamadı ({0})

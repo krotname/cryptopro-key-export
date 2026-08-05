@@ -146,6 +146,48 @@ diag.rtcom.unregistered = no sistema: não registado
 diag.arch = biblioteca {0}, processo {1}
 diag.arch.unknown = não foi possível determinar a arquitetura da biblioteca
 
+# --- fluxo de exportação ---
+pipe.saved = Contentor «{0}» guardado -> {1}
+pipe.cert.found = Certificado extraído do contentor «{0}» através da CryptoAPI
+pipe.cert.autofail = Não foi possível extrair o certificado automaticamente: {0}
+pipe.keyexport.skip = keyexport IGNORADO para «{0}»: não se encontrou o certificado (.cer). Indique-o à mão.
+pipe.keyexport.ok = OK: a chave em «{0}» está marcada como exportável
+pipe.keyexport.fail = ERRO de keyexport em «{0}»: {1} {2}
+
+# --- trabalho com o token ---
+token.connect = A ligar ao serviço de cartões inteligentes…
+token.found = Dispositivos encontrados: {0}
+token.open = A abrir o token: {0}
+token.rtcom.loadfail = A cópia integrada do rtCOMLite não carregou ({0}); tentamos a registada no sistema
+token.rtcom.mismatch = A cópia integrada do rtCOMLite não serve ({0}); tentamos a registada no sistema
+token.rtcom.extractfail = Não foi possível descompactar a cópia integrada do rtCOMLite ({0}); tentamos a registada no sistema
+token.rtcom.unavailable = O componente rtCOMLite está indisponível: a cópia integrada não carregou e no sistema não está registado. Verifique a arquitetura da aplicação (é preciso x86) ou instale o componente a partir de https://help.kontur.ru/rtComLite.exe.
+token.pin.default = PIN de fábrica — autenticação com 12345678
+token.pin.given = Autenticação com o PIN indicado
+token.pin.system = Autenticação através da janela do sistema
+token.container = Contentor: {0} «{1}» ({2} ficheiros)
+
+# --- execução das utilidades CryptoPro ---
+tool.certmgr.install = A instalar o certificado no arquivo «Pessoal» e a ligá-lo ao contentor…
+tool.certmgr.installwarn = certmgr -install devolveu {0} — tentamos a exportação na mesma: o certificado pode ter sido instalado antes
+tool.certmgr.export = A exportar o contentor para PKCS#12…
+tool.startfail = Não foi possível iniciar {0}
+tool.timeout = Tempo esgotado {0} ms: {1}
+tool.cancelled = {0} parado por cancelamento
+
+# --- erros que o utilizador vê ---
+err.certmgr.notfound = certmgr não encontrado
+err.container.name = Nome do contentor não indicado
+err.container.nokey = O contentor «{0}» não foi encontrado ou não tem chave do tipo necessário
+err.key.locked = A chave privada não é exportável — levante primeiro a proibição («{0}»). {1}
+err.cert.extract = Não foi possível extrair o certificado do contentor
+err.pfx.missing = O certmgr comunicou êxito, mas o ficheiro não foi criado: {0}
+err.folder.notcontainer = A pasta não tem contentor (são precisos header.key, primary.key, masks.key): {0}
+err.folder.outside = A pasta está fora do arquivo do CryptoPro: {0}
+err.folder.notlike = A pasta não parece um contentor: {0}
+err.folder.extra = A pasta do contentor tem ficheiros alheios, eliminação cancelada: {0}
+err.store.full = Não foi possível encontrar uma pasta livre em {0}
+
 # --- permissões da chave ---
 key.notfound = chave não encontrada
 key.readfail = não foi possível ler as permissões ({0})

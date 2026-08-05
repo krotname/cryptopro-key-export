@@ -146,6 +146,48 @@ diag.rtcom.unregistered = در سامانه: ثبت‌نشده
 diag.arch = کتابخانه {0}، فرایند {1}
 diag.arch.unknown = معماری کتابخانه تعیین نشد
 
+# --- مسیر برون‌بری ---
+pipe.saved = ظرف «{0}» ذخیره شد -> {1}
+pipe.cert.found = گواهی از ظرف «{0}» با CryptoAPI بیرون کشیده شد
+pipe.cert.autofail = گواهی به‌طور خودکار بیرون کشیده نشد: {0}
+pipe.keyexport.skip = keyexport برای «{0}» رد شد: گواهی (.cer) یافت نشد. آن را دستی مشخص کنید.
+pipe.keyexport.ok = OK: کلید در «{0}» برون‌بری‌پذیر نشانه‌گذاری شد
+pipe.keyexport.fail = خطای keyexport در «{0}»: {1} {2}
+
+# --- کار با توکن ---
+token.connect = در حال اتصال به سرویس کارت هوشمند…
+token.found = دستگاه‌های یافت‌شده: {0}
+token.open = در حال گشودن توکن: {0}
+token.rtcom.loadfail = نسخهٔ توکار rtCOMLite بارگذاری نشد ({0})؛ نسخهٔ ثبت‌شده در سامانه را می‌آزماییم
+token.rtcom.mismatch = نسخهٔ توکار rtCOMLite مناسب نیست ({0})؛ نسخهٔ ثبت‌شده در سامانه را می‌آزماییم
+token.rtcom.extractfail = نسخهٔ توکار rtCOMLite باز نشد ({0})؛ نسخهٔ ثبت‌شده در سامانه را می‌آزماییم
+token.rtcom.unavailable = مؤلفهٔ rtCOMLite در دسترس نیست: نسخهٔ توکار بارگذاری نشد و در سامانه هم ثبت نشده است. معماری برنامه را بررسی کنید (x86 لازم است) یا مؤلفه را از https://help.kontur.ru/rtComLite.exe نصب کنید.
+token.pin.default = PIN کارخانه — با 12345678 احراز هویت می‌کنیم
+token.pin.given = با PIN داده‌شده احراز هویت می‌کنیم
+token.pin.system = از راه پنجرهٔ PIN سامانه احراز هویت می‌کنیم
+token.container = ظرف: {0} «{1}» ({2} پرونده)
+
+# --- اجرای ابزارهای CryptoPro ---
+tool.certmgr.install = گواهی در انبار «شخصی» نصب و به ظرف پیوند داده می‌شود…
+tool.certmgr.installwarn = certmgr -install مقدار {0} را بازگرداند — با این حال برون‌بری را می‌آزماییم: گواهی ممکن است پیش‌تر نصب شده باشد
+tool.certmgr.export = ظرف به PKCS#12 برون‌بری می‌شود…
+tool.startfail = {0} اجرا نشد
+tool.timeout = مهلت {0} میلی‌ثانیه به پایان رسید: {1}
+tool.cancelled = {0} به سبب لغو متوقف شد
+
+# --- خطاهایی که کاربر می‌بیند ---
+err.certmgr.notfound = certmgr یافت نشد
+err.container.name = نام ظرف داده نشده است
+err.container.nokey = ظرف «{0}» یافت نشد یا کلیدی از نوع لازم ندارد
+err.key.locked = کلید خصوصی برون‌بری‌پذیر نیست — نخست ممنوعیت را بردارید («{0}»). {1}
+err.cert.extract = گواهی از ظرف بیرون کشیده نشد
+err.pfx.missing = certmgr موفقیت را گزارش کرد، اما پرونده ساخته نشد: {0}
+err.folder.notcontainer = در پوشه ظرفی نیست (header.key، primary.key، masks.key لازم است): {0}
+err.folder.outside = پوشه بیرون از انبار CryptoPro است: {0}
+err.folder.notlike = پوشه شبیه ظرف نیست: {0}
+err.folder.extra = در پوشهٔ ظرف پرونده‌های بیگانه هست، حذف لغو شد: {0}
+err.store.full = در {0} پوشهٔ خالی یافت نشد
+
 # --- اختیارات کلید ---
 key.notfound = کلید یافت نشد
 key.readfail = اختیارات خوانده نشد ({0})

@@ -146,6 +146,48 @@ diag.rtcom.unregistered = im System: nicht registriert
 diag.arch = Bibliothek {0}, Prozess {1}
 diag.arch.unknown = Architektur der Bibliothek ließ sich nicht bestimmen
 
+# --- Exportstrecke ---
+pipe.saved = Container «{0}» gespeichert -> {1}
+pipe.cert.found = Zertifikat aus Container «{0}» über CryptoAPI entnommen
+pipe.cert.autofail = Zertifikat ließ sich nicht automatisch entnehmen: {0}
+pipe.keyexport.skip = keyexport für «{0}» ÜBERSPRUNGEN: kein Zertifikat (.cer) gefunden. Geben Sie es von Hand an.
+pipe.keyexport.ok = OK: der Schlüssel in «{0}» ist als exportierbar markiert
+pipe.keyexport.fail = keyexport-FEHLER in «{0}»: {1} {2}
+
+# --- Arbeit mit dem Token ---
+token.connect = Verbindung zum Smartcard-Dienst…
+token.found = Gefundene Geräte: {0}
+token.open = Token wird geöffnet: {0}
+token.rtcom.loadfail = Die eingebettete rtCOMLite lud nicht ({0}); wir versuchen die im System registrierte
+token.rtcom.mismatch = Die eingebettete rtCOMLite passt nicht ({0}); wir versuchen die im System registrierte
+token.rtcom.extractfail = Die eingebettete rtCOMLite ließ sich nicht entpacken ({0}); wir versuchen die im System registrierte
+token.rtcom.unavailable = Die Komponente rtCOMLite ist nicht verfügbar: die eingebettete Kopie lud nicht und im System ist sie nicht registriert. Prüfen Sie die Architektur der Anwendung (x86 wird gebraucht) oder installieren Sie die Komponente von https://help.kontur.ru/rtComLite.exe.
+token.pin.default = Werks-PIN — Anmeldung mit 12345678
+token.pin.given = Anmeldung mit der angegebenen PIN
+token.pin.system = Anmeldung über das Systemfenster zur PIN-Eingabe
+token.container = Container: {0} «{1}» ({2} Dateien)
+
+# --- Start der CryptoPro-Werkzeuge ---
+tool.certmgr.install = Zertifikat wird in den Speicher «Eigene Zertifikate» gelegt und mit dem Container verknüpft…
+tool.certmgr.installwarn = certmgr -install lieferte {0} — wir versuchen den Export dennoch: das Zertifikat kann früher installiert worden sein
+tool.certmgr.export = Container wird nach PKCS#12 exportiert…
+tool.startfail = {0} ließ sich nicht starten
+tool.timeout = Zeitüberschreitung {0} ms: {1}
+tool.cancelled = {0} durch Abbruch gestoppt
+
+# --- Fehler, die der Benutzer sieht ---
+err.certmgr.notfound = certmgr nicht gefunden
+err.container.name = Kein Containername angegeben
+err.container.nokey = Container «{0}» wurde nicht gefunden oder enthält keinen Schlüssel des benötigten Typs
+err.key.locked = Der private Schlüssel ist nicht exportierbar — heben Sie zuerst das Verbot auf («{0}»). {1}
+err.cert.extract = Das Zertifikat ließ sich nicht aus dem Container entnehmen
+err.pfx.missing = certmgr meldete Erfolg, die Datei wurde aber nicht angelegt: {0}
+err.folder.notcontainer = Im Ordner liegt kein Container (header.key, primary.key, masks.key werden gebraucht): {0}
+err.folder.outside = Der Ordner liegt außerhalb des CryptoPro-Speichers: {0}
+err.folder.notlike = Der Ordner sieht nicht wie ein Container aus: {0}
+err.folder.extra = Im Containerordner liegen fremde Dateien, das Löschen wurde abgebrochen: {0}
+err.store.full = In {0} ließ sich kein freier Ordner finden
+
 # --- Schlüsselrechte ---
 key.notfound = Schlüssel nicht gefunden
 key.readfail = Rechte konnten nicht gelesen werden ({0})

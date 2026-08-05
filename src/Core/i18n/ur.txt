@@ -146,6 +146,48 @@ diag.rtcom.unregistered = نظام میں: درج نہیں
 diag.arch = لائبریری {0}، عمل {1}
 diag.arch.unknown = لائبریری کی بٹ تعداد معلوم نہ ہو سکی
 
+# --- برآمد کا سلسلہ ---
+pipe.saved = کنٹینر «{0}» محفوظ ہوا -> {1}
+pipe.cert.found = CryptoAPI کے ذریعے کنٹینر «{0}» سے سرٹیفکیٹ نکالا گیا
+pipe.cert.autofail = سرٹیفکیٹ خودکار طور پر نہ نکل سکا: {0}
+pipe.keyexport.skip = «{0}» کے لیے keyexport چھوڑ دیا گیا: سرٹیفکیٹ (.cer) نہیں ملا۔ اسے خود بتائیں۔
+pipe.keyexport.ok = OK: «{0}» کی کلید برآمد کے قابل نشان زد ہو گئی
+pipe.keyexport.fail = «{0}» میں keyexport کی غلطی: {1} {2}
+
+# --- ٹوکن کے ساتھ کام ---
+token.connect = سمارٹ کارڈ سروس سے جڑ رہے ہیں…
+token.found = ملے آلات: {0}
+token.open = ٹوکن کھول رہے ہیں: {0}
+token.rtcom.loadfail = شامل شدہ rtCOMLite نہ چڑھ سکی ({0})؛ نظام میں درج شدہ آزما رہے ہیں
+token.rtcom.mismatch = شامل شدہ rtCOMLite موزوں نہیں ({0})؛ نظام میں درج شدہ آزما رہے ہیں
+token.rtcom.extractfail = شامل شدہ rtCOMLite کھولی نہ جا سکی ({0})؛ نظام میں درج شدہ آزما رہے ہیں
+token.rtcom.unavailable = rtCOMLite جزو دستیاب نہیں: شامل شدہ نقل نہ چڑھ سکی اور نظام میں وہ درج بھی نہیں۔ پروگرام کی بٹ تعداد جانچیں (x86 درکار ہے) یا جزو https://help.kontur.ru/rtComLite.exe سے نصب کریں۔
+token.pin.default = کارخانے کا PIN — 12345678 سے توثیق
+token.pin.given = دیے گئے PIN سے توثیق
+token.pin.system = نظام کی PIN کھڑکی سے توثیق
+token.container = کنٹینر: {0} «{1}» ({2} فائلیں)
+
+# --- CryptoPro کے اوزار چلانا ---
+tool.certmgr.install = سرٹیفکیٹ «ذاتی» ذخیرے میں نصب کر کے کنٹینر سے جوڑ رہے ہیں…
+tool.certmgr.installwarn = certmgr -install نے {0} لوٹایا — پھر بھی برآمد آزما رہے ہیں: سرٹیفکیٹ پہلے سے نصب ہو سکتا ہے
+tool.certmgr.export = کنٹینر کو PKCS#12 میں نکال رہے ہیں…
+tool.startfail = {0} چل نہ سکا
+tool.timeout = وقت ختم {0} ملی سیکنڈ: {1}
+tool.cancelled = منسوخی کی وجہ سے {0} روک دیا گیا
+
+# --- وہ غلطیاں جو صارف دیکھتا ہے ---
+err.certmgr.notfound = certmgr نہیں ملا
+err.container.name = کنٹینر کا نام نہیں دیا گیا
+err.container.nokey = کنٹینر «{0}» نہیں ملا یا اس میں مطلوبہ قسم کی کلید نہیں
+err.key.locked = نجی کلید برآمد کے قابل نہیں — پہلے پابندی ہٹائیں («{0}»)۔ {1}
+err.cert.extract = کنٹینر سے سرٹیفکیٹ نہ نکالا جا سکا
+err.pfx.missing = certmgr نے کامیابی بتائی، مگر فائل نہیں بنی: {0}
+err.folder.notcontainer = فولڈر میں کنٹینر نہیں ہے (header.key، primary.key، masks.key درکار ہیں): {0}
+err.folder.outside = فولڈر CryptoPro کے ذخیرے سے باہر ہے: {0}
+err.folder.notlike = فولڈر کنٹینر جیسا نہیں لگتا: {0}
+err.folder.extra = کنٹینر کے فولڈر میں اجنبی فائلیں ہیں، حذف منسوخ: {0}
+err.store.full = {0} میں خالی فولڈر نہ مل سکا
+
 # --- کلید کے حقوق ---
 key.notfound = کلید نہیں ملی
 key.readfail = حقوق پڑھے نہ جا سکے ({0})

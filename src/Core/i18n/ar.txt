@@ -146,6 +146,48 @@ diag.rtcom.unregistered = في النظام: غير مسجَّل
 diag.arch = المكتبة {0}، العملية {1}
 diag.arch.unknown = تعذّر تحديد معمارية المكتبة
 
+# --- مسار التصدير ---
+pipe.saved = حُفظت الحاوية «{0}» -> {1}
+pipe.cert.found = استُخرجت الشهادة من الحاوية «{0}» عبر CryptoAPI
+pipe.cert.autofail = تعذّر استخراج الشهادة تلقائيًا: {0}
+pipe.keyexport.skip = تخطّي keyexport للمجلد «{0}»: لم يُعثر على شهادة (‎.cer‎). حدّدها يدويًا.
+pipe.keyexport.ok = تم: المفتاح في «{0}» صار قابلًا للتصدير
+pipe.keyexport.fail = خطأ في keyexport داخل «{0}»: {1} {2}
+
+# --- العمل مع المفتاح الأمني ---
+token.connect = يجري الاتصال بخدمة البطاقات الذكية…
+token.found = الأجهزة الموجودة: {0}
+token.open = يجري فتح المفتاح: {0}
+token.rtcom.loadfail = لم تُحمَّل النسخة المضمّنة من rtCOMLite (‏{0}‏)؛ نجرّب المسجَّلة في النظام
+token.rtcom.mismatch = النسخة المضمّنة من rtCOMLite لا تصلح (‏{0}‏)؛ نجرّب المسجَّلة في النظام
+token.rtcom.extractfail = تعذّر فك النسخة المضمّنة من rtCOMLite (‏{0}‏)؛ نجرّب المسجَّلة في النظام
+token.rtcom.unavailable = مكوّن rtCOMLite غير متاح: النسخة المضمّنة لم تُحمَّل وهو غير مسجَّل في النظام. تحقّق من معمارية التطبيق (يلزم x86) أو ثبّت المكوّن من https://help.kontur.ru/rtComLite.exe.
+token.pin.default = رمز PIN المصنعي — نستوثق بـ 12345678
+token.pin.given = نستوثق برمز PIN المُدخل
+token.pin.system = نستوثق عبر نافذة النظام لإدخال PIN
+token.container = الحاوية: {0} «{1}» (‏{2} ملفات‏)
+
+# --- تشغيل أدوات CryptoPro ---
+tool.certmgr.install = يجري تثبيت الشهادة في مخزن «شخصي» وربطها بالحاوية…
+tool.certmgr.installwarn = أعاد certmgr -install الرمز {0} — نجرّب التصدير على أي حال: قد تكون الشهادة مثبَّتة سابقًا
+tool.certmgr.export = يجري تصدير الحاوية إلى PKCS#12…
+tool.startfail = تعذّر تشغيل {0}
+tool.timeout = انتهت المهلة {0} مللي ثانية: {1}
+tool.cancelled = أُوقف {0} بسبب الإلغاء
+
+# --- الأخطاء التي يراها المستخدم ---
+err.certmgr.notfound = لم يُعثر على certmgr
+err.container.name = لم يُحدَّد اسم الحاوية
+err.container.nokey = لم يُعثر على الحاوية «{0}» أو لا تحوي مفتاحًا من النوع المطلوب
+err.key.locked = المفتاح الخاص غير قابل للتصدير — ارفع الحظر أولًا («{0}»). {1}
+err.cert.extract = تعذّر استخراج الشهادة من الحاوية
+err.pfx.missing = أبلغ certmgr عن النجاح، لكن الملف لم يُنشأ: {0}
+err.folder.notcontainer = لا توجد حاوية في المجلد (يلزم header.key و primary.key و masks.key): {0}
+err.folder.outside = المجلد خارج مخزن CryptoPro: {0}
+err.folder.notlike = المجلد لا يشبه حاوية: {0}
+err.folder.extra = في مجلد الحاوية ملفات غريبة، أُلغي الحذف: {0}
+err.store.full = تعذّر إيجاد مجلد فارغ في {0}
+
 # --- صلاحيات المفتاح ---
 key.notfound = لم يُعثر على المفتاح
 key.readfail = تعذّرت قراءة الصلاحيات ({0})

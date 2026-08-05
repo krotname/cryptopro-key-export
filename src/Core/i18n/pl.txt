@@ -146,6 +146,48 @@ diag.rtcom.unregistered = w systemie: niezarejestrowany
 diag.arch = biblioteka {0}, proces {1}
 diag.arch.unknown = nie udało się ustalić architektury biblioteki
 
+# --- przebieg eksportu ---
+pipe.saved = Zapisano kontener «{0}» -> {1}
+pipe.cert.found = Certyfikat wyodrębniony z kontenera «{0}» przez CryptoAPI
+pipe.cert.autofail = Nie udało się wyodrębnić certyfikatu automatycznie: {0}
+pipe.keyexport.skip = POMINIĘTO keyexport dla «{0}»: nie znaleziono certyfikatu (.cer). Wskaż go ręcznie.
+pipe.keyexport.ok = OK: klucz w «{0}» oznaczony jako eksportowalny
+pipe.keyexport.fail = BŁĄD keyexport w «{0}»: {1} {2}
+
+# --- praca z tokenem ---
+token.connect = Łączenie z usługą kart inteligentnych…
+token.found = Znalezione urządzenia: {0}
+token.open = Otwieranie tokena: {0}
+token.rtcom.loadfail = Wbudowana kopia rtCOMLite nie wczytała się ({0}); próbujemy zarejestrowanej w systemie
+token.rtcom.mismatch = Wbudowana kopia rtCOMLite nie pasuje ({0}); próbujemy zarejestrowanej w systemie
+token.rtcom.extractfail = Nie udało się rozpakować wbudowanej kopii rtCOMLite ({0}); próbujemy zarejestrowanej w systemie
+token.rtcom.unavailable = Składnik rtCOMLite jest niedostępny: wbudowana kopia się nie wczytała, a w systemie nie jest zarejestrowany. Sprawdź architekturę aplikacji (potrzebna x86) albo zainstaluj składnik z https://help.kontur.ru/rtComLite.exe.
+token.pin.default = PIN fabryczny — uwierzytelniamy się kodem 12345678
+token.pin.given = Uwierzytelniamy się podanym PIN-em
+token.pin.system = Uwierzytelniamy się przez systemowe okno PIN
+token.container = Kontener: {0} «{1}» ({2} plików)
+
+# --- uruchamianie narzędzi CryptoPro ---
+tool.certmgr.install = Instalowanie certyfikatu w magazynie «Osobisty» i wiązanie go z kontenerem…
+tool.certmgr.installwarn = certmgr -install zwrócił {0} — mimo to próbujemy eksportu: certyfikat mógł zostać zainstalowany wcześniej
+tool.certmgr.export = Eksportowanie kontenera do PKCS#12…
+tool.startfail = Nie udało się uruchomić {0}
+tool.timeout = Przekroczono czas {0} ms: {1}
+tool.cancelled = {0} zatrzymany przez anulowanie
+
+# --- błędy, które widzi użytkownik ---
+err.certmgr.notfound = Nie znaleziono certmgr
+err.container.name = Nie podano nazwy kontenera
+err.container.nokey = Kontener «{0}» nie został znaleziony albo nie ma w nim klucza wymaganego typu
+err.key.locked = Klucz prywatny nie jest eksportowalny — najpierw zdejmij zakaz («{0}»). {1}
+err.cert.extract = Nie udało się wyodrębnić certyfikatu z kontenera
+err.pfx.missing = certmgr zgłosił sukces, ale plik nie powstał: {0}
+err.folder.notcontainer = W folderze nie ma kontenera (potrzebne są header.key, primary.key, masks.key): {0}
+err.folder.outside = Folder jest poza magazynem CryptoPro: {0}
+err.folder.notlike = Folder nie wygląda na kontener: {0}
+err.folder.extra = W folderze kontenera są obce pliki, usuwanie anulowane: {0}
+err.store.full = Nie udało się znaleźć wolnego folderu w {0}
+
 # --- uprawnienia klucza ---
 key.notfound = nie znaleziono klucza
 key.readfail = nie udało się odczytać uprawnień ({0})

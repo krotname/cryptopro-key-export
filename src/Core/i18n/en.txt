@@ -146,6 +146,48 @@ diag.rtcom.unregistered = in the system: not registered
 diag.arch = library {0}, process {1}
 diag.arch.unknown = could not determine the library architecture
 
+# --- export pipeline ---
+pipe.saved = Container «{0}» saved -> {1}
+pipe.cert.found = Certificate extracted from container «{0}» through CryptoAPI
+pipe.cert.autofail = Could not auto-extract the certificate: {0}
+pipe.keyexport.skip = SKIPPING keyexport for «{0}»: no certificate (.cer) found. Specify it manually.
+pipe.keyexport.ok = OK: the key in «{0}» is marked exportable
+pipe.keyexport.fail = keyexport ERROR in «{0}»: {1} {2}
+
+# --- working with the token ---
+token.connect = Connecting to the smart card service…
+token.found = Devices found: {0}
+token.open = Opening token: {0}
+token.rtcom.loadfail = The built-in rtCOMLite did not load ({0}); trying the one registered in the system
+token.rtcom.mismatch = The built-in rtCOMLite does not fit ({0}); trying the one registered in the system
+token.rtcom.extractfail = Could not unpack the built-in rtCOMLite ({0}); trying the one registered in the system
+token.rtcom.unavailable = The rtCOMLite component is unavailable: the built-in copy did not load and it is not registered in the system. Check the application architecture (x86 is required) or install the component from https://help.kontur.ru/rtComLite.exe.
+token.pin.default = Factory PIN — authenticating with 12345678
+token.pin.given = Authenticating with the PIN provided
+token.pin.system = Authenticating through the system PIN window
+token.container = Container: {0} «{1}» ({2} files)
+
+# --- running the CryptoPro utilities ---
+tool.certmgr.install = Installing the certificate into the «Personal» store and linking it to the container…
+tool.certmgr.installwarn = certmgr -install returned {0} — trying the export anyway: the certificate may have been installed earlier
+tool.certmgr.export = Exporting the container to PKCS#12…
+tool.startfail = Could not start {0}
+tool.timeout = Timeout {0} ms: {1}
+tool.cancelled = {0} stopped by cancellation
+
+# --- errors the user sees ---
+err.certmgr.notfound = certmgr not found
+err.container.name = No container name given
+err.container.nokey = Container «{0}» was not found or holds no key of the required type
+err.key.locked = The private key is not exportable — lift the ban first («{0}»). {1}
+err.cert.extract = Could not extract the certificate from the container
+err.pfx.missing = certmgr reported success, but the file was not created: {0}
+err.folder.notcontainer = The folder holds no container (header.key, primary.key, masks.key are required): {0}
+err.folder.outside = The folder is outside the CryptoPro store: {0}
+err.folder.notlike = The folder does not look like a container: {0}
+err.folder.extra = The container folder holds foreign files, deletion cancelled: {0}
+err.store.full = Could not find a free folder in {0}
+
 # --- key permissions ---
 key.notfound = key not found
 key.readfail = could not read the permissions ({0})

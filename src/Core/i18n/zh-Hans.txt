@@ -146,6 +146,48 @@ diag.rtcom.unregistered = 系统中：未注册
 diag.arch = 库 {0}，进程 {1}
 diag.arch.unknown = 无法判断该库的位数
 
+# --- 导出流程 ---
+pipe.saved = 已保存容器「{0}」-> {1}
+pipe.cert.found = 已通过 CryptoAPI 从容器「{0}」中提取证书
+pipe.cert.autofail = 自动提取证书失败：{0}
+pipe.keyexport.skip = 跳过「{0}」的 keyexport：未找到证书（.cer）。请手动指定。
+pipe.keyexport.ok = OK：「{0}」中的密钥已标记为可导出
+pipe.keyexport.fail = 「{0}」的 keyexport 出错：{1} {2}
+
+# --- 与令牌交互 ---
+token.connect = 正在连接智能卡服务…
+token.found = 找到设备数：{0}
+token.open = 正在打开令牌：{0}
+token.rtcom.loadfail = 内置的 rtCOMLite 未能加载（{0}）；改用系统中已注册的组件
+token.rtcom.mismatch = 内置的 rtCOMLite 不适用（{0}）；改用系统中已注册的组件
+token.rtcom.extractfail = 无法解压内置的 rtCOMLite（{0}）；改用系统中已注册的组件
+token.rtcom.unavailable = rtCOMLite 组件不可用：内置副本未能加载，系统中也未注册。请检查程序位数（需要 x86），或从 https://help.kontur.ru/rtComLite.exe 安装该组件。
+token.pin.default = 出厂 PIN — 使用 12345678 进行认证
+token.pin.given = 使用所填 PIN 进行认证
+token.pin.system = 通过系统 PIN 窗口进行认证
+token.container = 容器：{0}「{1}」（{2} 个文件）
+
+# --- 运行 CryptoPro 工具 ---
+tool.certmgr.install = 正在把证书装入「个人」存储并与容器关联…
+tool.certmgr.installwarn = certmgr -install 返回 {0} — 仍尝试导出：证书可能此前已安装
+tool.certmgr.export = 正在把容器导出为 PKCS#12…
+tool.startfail = 无法启动 {0}
+tool.timeout = 超时 {0} 毫秒：{1}
+tool.cancelled = {0} 因取消而停止
+
+# --- 用户会看到的错误 ---
+err.certmgr.notfound = 未找到 certmgr
+err.container.name = 未指定容器名称
+err.container.nokey = 未找到容器「{0}」，或其中没有所需类型的密钥
+err.key.locked = 私钥不可导出 — 请先解除禁令（「{0}」）。{1}
+err.cert.extract = 无法从容器中提取证书
+err.pfx.missing = certmgr 报告成功，但文件未创建：{0}
+err.folder.notcontainer = 文件夹中没有容器（需要 header.key、primary.key、masks.key）：{0}
+err.folder.outside = 该文件夹不在 CryptoPro 存储区内：{0}
+err.folder.notlike = 该文件夹不像是容器：{0}
+err.folder.extra = 容器文件夹中有无关文件，已取消删除：{0}
+err.store.full = 在 {0} 中找不到空闲文件夹
+
 # --- 密钥权限 ---
 key.notfound = 未找到密钥
 key.readfail = 无法读取权限（{0}）

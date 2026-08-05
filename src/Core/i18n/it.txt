@@ -146,6 +146,48 @@ diag.rtcom.unregistered = nel sistema: non registrato
 diag.arch = libreria {0}, processo {1}
 diag.arch.unknown = impossibile determinare l’architettura della libreria
 
+# --- flusso di esportazione ---
+pipe.saved = Contenitore «{0}» salvato -> {1}
+pipe.cert.found = Certificato estratto dal contenitore «{0}» tramite CryptoAPI
+pipe.cert.autofail = Non è stato possibile estrarre il certificato in automatico: {0}
+pipe.keyexport.skip = keyexport SALTATO per «{0}»: certificato (.cer) non trovato. Indicatelo a mano.
+pipe.keyexport.ok = OK: la chiave in «{0}» è contrassegnata come esportabile
+pipe.keyexport.fail = ERRORE keyexport in «{0}»: {1} {2}
+
+# --- lavoro con il token ---
+token.connect = Connessione al servizio smart card…
+token.found = Dispositivi trovati: {0}
+token.open = Apertura del token: {0}
+token.rtcom.loadfail = La copia incorporata di rtCOMLite non si è caricata ({0}); proviamo quella registrata nel sistema
+token.rtcom.mismatch = La copia incorporata di rtCOMLite non va bene ({0}); proviamo quella registrata nel sistema
+token.rtcom.extractfail = Non è stato possibile estrarre la copia incorporata di rtCOMLite ({0}); proviamo quella registrata nel sistema
+token.rtcom.unavailable = Il componente rtCOMLite non è disponibile: la copia incorporata non si è caricata e nel sistema non è registrato. Verificate l’architettura dell’applicazione (serve x86) oppure installate il componente da https://help.kontur.ru/rtComLite.exe.
+token.pin.default = PIN di fabbrica — autenticazione con 12345678
+token.pin.given = Autenticazione con il PIN indicato
+token.pin.system = Autenticazione tramite la finestra di sistema
+token.container = Contenitore: {0} «{1}» ({2} file)
+
+# --- avvio delle utilità CryptoPro ---
+tool.certmgr.install = Installazione del certificato nell’archivio «Personale» e collegamento al contenitore…
+tool.certmgr.installwarn = certmgr -install ha restituito {0} — proviamo comunque l’esportazione: il certificato potrebbe essere già stato installato
+tool.certmgr.export = Esportazione del contenitore in PKCS#12…
+tool.startfail = Non è stato possibile avviare {0}
+tool.timeout = Timeout {0} ms: {1}
+tool.cancelled = {0} fermato per annullamento
+
+# --- errori che vede l’utente ---
+err.certmgr.notfound = certmgr non trovato
+err.container.name = Nome del contenitore non indicato
+err.container.nokey = Il contenitore «{0}» non è stato trovato o non contiene una chiave del tipo richiesto
+err.key.locked = La chiave privata non è esportabile — togliete prima il divieto («{0}»). {1}
+err.cert.extract = Non è stato possibile estrarre il certificato dal contenitore
+err.pfx.missing = certmgr ha dichiarato successo, ma il file non è stato creato: {0}
+err.folder.notcontainer = Nella cartella non c’è un contenitore (servono header.key, primary.key, masks.key): {0}
+err.folder.outside = La cartella è fuori dall’archivio di CryptoPro: {0}
+err.folder.notlike = La cartella non sembra un contenitore: {0}
+err.folder.extra = Nella cartella del contenitore ci sono file estranei, eliminazione annullata: {0}
+err.store.full = Non è stato possibile trovare una cartella libera in {0}
+
 # --- permessi della chiave ---
 key.notfound = chiave non trovata
 key.readfail = impossibile leggere i permessi ({0})
