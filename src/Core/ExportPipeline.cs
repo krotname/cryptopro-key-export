@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Versioning;
+using System.Threading;
 
 namespace CryptoProExport
 {
@@ -19,6 +20,19 @@ namespace CryptoProExport
         public RutokenExporter Exporter { get; }
         public P12Utility P12 { get; }
         public Action<string> Log { get; set; } = Console.WriteLine;
+
+        /// <summary>
+        /// Отмена всего конвейера: раздаётся исполнителям и проверяется между контейнерами.
+        /// Прервать можно только между шагами — вызов в COM или запущенную утилиту
+        /// приходится сначала довести до конца (утилита при этом снимается).
+        /// </summary>
+        public CancellationToken Cancel
+        {
+            get => _cancel;
+            set { _cancel = value; Exporter.Cancel = value; P12.Cancel = value; }
+        }
+
+        private CancellationToken _cancel = CancellationToken.None;
 
         public ExportPipeline(string p12UtilityPath = null)
         {
@@ -39,6 +53,7 @@ namespace CryptoProExport
             var saved = new List<(RutokenContainer, string)>();
             foreach (var c in Exporter.ReadAllContainers())
             {
+                Cancel.ThrowIfCancellationRequested();
                 string folder = c.SaveTo(destParent);
                 Log($"Сохранён контейнер \"{c.ContainerName}\" -> {folder}");
                 saved.Add((c, folder));
@@ -57,6 +72,7 @@ namespace CryptoProExport
         {
             foreach (var (container, folder) in ExportFromTokens(destParent, userPin))
             {
+                Cancel.ThrowIfCancellationRequested();
                 string ex = certExchange, sg = certSignature;
 
                 // Авто-извлечение сертификата из контейнера (пока токен ещё вставлен)

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Versioning;
+using System.Threading;
 
 namespace CryptoProExport
 {
@@ -71,9 +72,16 @@ namespace CryptoProExport
         /// <summary>Лог диагностики (как строка «action» в tokens.hta).</summary>
         public Action<string> Log { get; set; } = _ => { };
 
+        /// <summary>
+        /// Отмена. Проверяется между шагами обхода токена: вызов в COM прервать нельзя,
+        /// поэтому текущий файл дочитывается, а дальше работа прекращается.
+        /// </summary>
+        public CancellationToken Cancel { get; set; } = CancellationToken.None;
+
         /// <summary>Перечислить и прочитать все контейнеры со всех подключённых Рутокенов.</summary>
         public List<RutokenContainer> ReadAllContainers()
         {
+            Cancel.ThrowIfCancellationRequested();
             var result = new List<RutokenContainer>();
             dynamic ctx = CreateContext();
             Log("Подключаемся к службе смарт-карт...");
@@ -86,6 +94,7 @@ namespace CryptoProExport
 
                 foreach (var rObj in readers)
                 {
+                    Cancel.ThrowIfCancellationRequested();
                     string tokenName = Convert.ToString(rObj);
                     if (string.IsNullOrEmpty(tokenName)) continue;
                     Log($"Открываем токен: {tokenName}");
@@ -221,6 +230,7 @@ namespace CryptoProExport
             {
                 foreach (var f in folders)
                 {
+                    Cancel.ThrowIfCancellationRequested();
                     string folder = Convert.ToString(f);
                     paths.Add(folder);
                     rt.SelectFolder(f);
