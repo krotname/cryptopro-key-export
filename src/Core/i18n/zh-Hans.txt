@@ -166,6 +166,7 @@ token.pin.default = 出厂 PIN — 使用 12345678 进行认证
 token.pin.given = 使用所填 PIN 进行认证
 token.pin.system = 通过系统 PIN 窗口进行认证
 token.container = 容器：{0}「{1}」（{2} 个文件）
+token.walk = 已扫描令牌：{0} 个文件夹、{1} 个文件、{2} 个容器
 
 # --- 运行 CryptoPro 工具 ---
 tool.certmgr.install = 正在把证书装入「个人」存储并与容器关联…

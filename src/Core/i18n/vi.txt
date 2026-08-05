@@ -166,6 +166,7 @@ token.pin.default = PIN xuất xưởng — xác thực bằng 12345678
 token.pin.given = Xác thực bằng PIN đã nhập
 token.pin.system = Xác thực qua cửa sổ PIN của hệ thống
 token.container = Container: {0} «{1}» ({2} tệp)
+token.walk = Đã quét token: {0} thư mục, {1} tệp, {2} container
 
 # --- chạy các tiện ích CryptoPro ---
 tool.certmgr.install = Đang cài chứng thư vào kho «Cá nhân» và liên kết với container…

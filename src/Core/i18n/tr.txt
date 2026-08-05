@@ -166,6 +166,7 @@ token.pin.default = Fabrika PIN’i — 12345678 ile kimlik doğrulanıyor
 token.pin.given = Verilen PIN ile kimlik doğrulanıyor
 token.pin.system = Sistemin PIN penceresi ile kimlik doğrulanıyor
 token.container = Kapsayıcı: {0} «{1}» ({2} dosya)
+token.walk = Belirteç tarandı: {0} klasör, {1} dosya, {2} kapsayıcı
 
 # --- CryptoPro araçlarının çalıştırılması ---
 tool.certmgr.install = Sertifika «Kişisel» deposuna kuruluyor ve kapsayıcıyla ilişkilendiriliyor…
