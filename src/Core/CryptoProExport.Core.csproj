@@ -7,6 +7,8 @@
     <RootNamespace>CryptoProExport</RootNamespace>
     <LangVersion>latest</LangVersion>
     <Version>1.3.0</Version>
+    <!-- позволяет собирать библиотеку для Windows на Linux-сборщике -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="CryptoProExport.Tests" />

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Runtime.Versioning;
+using System.Threading;
 
 namespace CryptoProExport
 {
@@ -19,6 +20,9 @@ namespace CryptoProExport
     {
         public string ExePath { get; }
         public Action<string> Log { get; set; } = _ => { };
+
+        /// <summary>Отмена: прерывает ожидание и снимает запущенный процесс утилиты.</summary>
+        public CancellationToken Cancel { get; set; } = CancellationToken.None;
 
         public P12Utility(string exePath)
         {
@@ -135,7 +139,7 @@ namespace CryptoProExport
         private ToolResult Execute(string args, string workingDirectory, int timeoutMs)
         {
             Log($"\"{ExePath}\" {MaskPassword(args)}");
-            var r = ProcessRunner.Run(ExePath, args, workingDirectory, timeoutMs);
+            var r = ProcessRunner.Run(ExePath, args, workingDirectory, timeoutMs, Cancel);
             if (!string.IsNullOrEmpty(r.Output)) Log(r.Output);
             if (!r.Success) Log("p12utility: " + r.Explain());
             return r;

@@ -1,7 +1,9 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CryptoProExport
@@ -24,8 +26,17 @@ namespace CryptoProExport
     [SupportedOSPlatform("windows")]
     internal static class ProcessRunner
     {
-        public static ToolResult Run(string exe, string arguments, string workingDirectory, int timeoutMs)
+        /// <summary>
+        /// Запустить утилиту и дождаться результата. Отмена прерывает ожидание и убивает процесс:
+        /// сама утилита КриптоПро сигналов не понимает, аккуратнее её остановить нечем.
+        /// </summary>
+        public static ToolResult Run(string exe, string arguments, string workingDirectory, int timeoutMs,
+                                     CancellationToken cancel = default)
         {
+            // Проверяем до запуска: иначе утилиту вроде `p12utility --cprepair --keyexport`
+            // мы бы стартовали и тут же убили — уже посреди перезаписи контейнера.
+            cancel.ThrowIfCancellationRequested();
+
             var psi = new ProcessStartInfo
             {
                 FileName = exe,
@@ -49,6 +60,23 @@ namespace CryptoProExport
             var outTask = Task.Run(() => ReadAll(p.StandardOutput.BaseStream));
             var errTask = Task.Run(() => ReadAll(p.StandardError.BaseStream));
 
+            // Снимаем процесс только если он ещё работает: иначе уже готовый результат
+            // выглядел бы как отменённый, хотя работа сделана.
+            // Флаг пишет поток отмены, а читает этот — отсюда Volatile, иначе запись не видна.
+            var killedByCancel = new StrongBox<bool>(false);
+            using var registration = cancel.Register(() =>
+            {
+                try
+                {
+                    if (p.HasExited) return;
+                    // Флаг ставим до Kill: снять дерево процессов не всегда удаётся без ошибки,
+                    // но раз отмена застала утилиту работающей — её результат уже недействителен.
+                    Volatile.Write(ref killedByCancel.Value, true);
+                    p.Kill(entireProcessTree: true);
+                }
+                catch (Exception) { }
+            });
+
             if (!p.WaitForExit(timeoutMs))
             {
                 try { p.Kill(true); } catch { }
@@ -61,6 +89,8 @@ namespace CryptoProExport
             }
 
             Task.WaitAll(new Task[] { outTask, errTask }, 3000);
+            if (Volatile.Read(ref killedByCancel.Value))
+                throw new OperationCanceledException($"{Path.GetFileName(exe)} остановлен по отмене", cancel);
             string text = (Text(outTask) + Text(errTask)).Trim();
             return new ToolResult { Success = p.ExitCode == 0, ExitCode = p.ExitCode, Output = text };
         }

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.Versioning;
 using System.Text;
+using System.Threading;
 
 namespace CryptoProExport
 {
@@ -17,6 +18,9 @@ namespace CryptoProExport
     {
         public string ExePath { get; }
         public Action<string> Log { get; set; } = _ => { };
+
+        /// <summary>Отмена: прерывает ожидание и снимает запущенный процесс certmgr.</summary>
+        public CancellationToken Cancel { get; set; } = CancellationToken.None;
 
         public CertMgr(string exePath)
         {
@@ -121,7 +125,7 @@ namespace CryptoProExport
         private ToolResult Execute(string args, int timeoutMs)
         {
             Log($"\"{ExePath}\" {Mask(args)}");
-            var r = ProcessRunner.Run(ExePath, args, Path.GetDirectoryName(ExePath), timeoutMs);
+            var r = ProcessRunner.Run(ExePath, args, Path.GetDirectoryName(ExePath), timeoutMs, Cancel);
             if (!string.IsNullOrEmpty(r.Output)) Log(r.Output);
             if (!r.Success) Log("certmgr: " + r.Explain());
             return r;

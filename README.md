@@ -108,7 +108,7 @@ dotnet test  CryptoProExport.slnx -c Release --no-build
 pwsh build\publish.ps1
 ```
 
-На выходе `publish\CryptoProExport.exe` (~47 МБ) и его SHA-256 — в папке больше ничего нет.
+На выходе `publish\CryptoProExport.exe` (~44 МБ) и его SHA-256 — в папке больше ничего нет.
 Тот же файл собирает CI и прикладывает к релизу по тегу `v*`.
 
 ## Использование

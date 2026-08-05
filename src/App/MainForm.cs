@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Threading;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -22,8 +23,12 @@ namespace CryptoProExport.App
         private TextBox _txtP12, _txtDest, _txtPin, _txtLog;
         private ListView _lv;
         private Button _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnInstall, _btnCheck, _btnPfx, _btnLogs, _btnHelp;
+        private Button _btnCancel;
         private Button[] _actionButtons;
         private ToolTip _tips;
+        private ToolStripStatusLabel _status;
+        private ToolStripProgressBar _progress;
+        private CancellationTokenSource _cancellation;
 
         public MainForm()
         {
@@ -37,7 +42,7 @@ namespace CryptoProExport.App
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
-            Run(() =>
+            Run("Проверка зависимостей…", () =>
             {
                 Log("Зависимости (скачивать и ставить ничего не нужно, кроме КриптоПро CSP):");
                 foreach (var line in CryptoProExport.Diagnostics.Report())
@@ -126,22 +131,25 @@ namespace CryptoProExport.App
                 Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 WrapContents = true, Padding = new Padding(10, 4, 10, 4),
             };
-            _btnRefresh = MakeButton("Обновить список", 130, (_, __) => Run(RefreshList));
-            _btnExport = MakeButton("Экспорт с токена", 150, (_, __) => Run(DoExport));
-            _btnExtract = MakeButton("Извлечь сертификат", 160, (_, __) => Run(DoExtract));
-            _btnFull = MakeButton("Сделать экспортируемым", 200, (_, __) => Run(DoFull));
+            _btnRefresh = MakeButton("Обновить список", 130, (_, __) => Run("Обновление списка контейнеров…", RefreshList));
+            _btnExport = MakeButton("Экспорт с токена", 150, (_, __) => Run("Снятие контейнеров с токена…", DoExport));
+            _btnExtract = MakeButton("Извлечь сертификат", 160, (_, __) => Run("Извлечение сертификата…", DoExtract));
+            _btnFull = MakeButton("Сделать экспортируемым", 200, (_, __) => Run("Снятие запрета на экспорт…", DoFull));
             _btnFull.Font = new Font(Font, FontStyle.Bold);
-            _btnCheck = MakeButton("Проверить ключ", 130, (_, __) => Run(DoCheckExportable));
-            _btnInstall = MakeButton("Установить в КриптоПро", 190, (_, __) => Run(DoInstall));
-            _btnPfx = MakeButton("Экспорт в PFX", 130, (_, __) => Run(DoExportPfx));
+            _btnCheck = MakeButton("Проверить ключ", 130, (_, __) => Run("Проверка прав ключа…", DoCheckExportable));
+            _btnInstall = MakeButton("Установить в КриптоПро", 190, (_, __) => Run("Установка контейнера…", DoInstall));
+            _btnPfx = MakeButton("Экспорт в PFX", 130, (_, __) => Run("Экспорт в PFX…", DoExportPfx));
             _btnLogs = MakeButton("Журнал", 90, (_, __) => OpenLogFolder());
             _btnHelp = MakeButton("Справка", 90, (_, __) => Guide.Show(this));
+            _btnCancel = MakeButton("Отмена", 90, (_, __) => CancelCurrent());
+            _btnCancel.Enabled = false;
             _actionButtons = new[]
             {
                 _btnRefresh, _btnExport, _btnExtract, _btnFull,
                 _btnCheck, _btnInstall, _btnPfx, _btnLogs, _btnHelp,
             };
             buttons.Controls.AddRange(_actionButtons);
+            buttons.Controls.Add(_btnCancel);
 
             Tip(_btnRefresh,
                 "Шаг 1. Показать список ключевых контейнеров:\n" +
@@ -175,6 +183,11 @@ namespace CryptoProExport.App
                 "Имя менять не обязательно: КриптоПро сверяет имя с содержимым контейнера и\n" +
                 "переименованную копию принимает не всегда. Программа проверит результат и скажет,\n" +
                 "увидел ли CSP контейнер на самом деле.");
+            Tip(_btnCancel,
+                "Прервать текущую операцию.\n" +
+                "Работа остановится на ближайшем шаге: обращение к токену или запущенную\n" +
+                "утилиту КриптоПро приходится сначала довести до конца — запущенная утилита\n" +
+                "при этом снимается. Уже сохранённые файлы остаются на месте.");
             Tip(_btnHelp,
                 "Встроенное руководство: с чего начать, что делает каждая кнопка,\n" +
                 "команды консольного режима и разбор типичных ошибок.\n" +
@@ -221,9 +234,16 @@ namespace CryptoProExport.App
             split.Panel2.Controls.Add(_txtLog);
             split.Panel2.Padding = new Padding(10, 0, 10, 10);
 
+            // --- Строка состояния: что идёт прямо сейчас ---
+            _status = new ToolStripStatusLabel("Готово") { Spring = true, TextAlign = ContentAlignment.MiddleLeft };
+            _progress = new ToolStripProgressBar { Style = ProgressBarStyle.Marquee, Visible = false, Width = 140 };
+            var statusStrip = new StatusStrip { SizingGrip = false };
+            statusStrip.Items.AddRange(new ToolStripItem[] { _status, _progress });
+
             Controls.Add(split);
             Controls.Add(buttons);
             Controls.Add(settings);
+            Controls.Add(statusStrip);
         }
 
         /// <summary>Иконка окна и панели задач — та же, что у exe, из вшитого ресурса (все размеры).</summary>
@@ -277,16 +297,17 @@ namespace CryptoProExport.App
 
         // ---------- действия ----------
 
-        private void RefreshList()
+        private void RefreshList(CancellationToken cancel = default)
         {
             Invoke(() => _lv.Items.Clear());
             Log("Обновление списка контейнеров…");
             foreach (var c in CertFromContainer.EnumContainers())
                 AddRow("CSP", c.Name, $"провайдер {c.ProvType}");
 
+            cancel.ThrowIfCancellationRequested();
             try
             {
-                var exp = new RutokenExporter { Log = Log };
+                var exp = new RutokenExporter { Log = Log, Cancel = cancel };
                 foreach (var c in exp.ReadAllContainers())
                     AddRow("Рутокен: " + c.TokenName, c.ContainerName ?? "(без имени)",
                            $"{c.TokenDir}, файлов: {c.Files.Count}");
@@ -295,14 +316,14 @@ namespace CryptoProExport.App
             Log("Готово.");
         }
 
-        private void DoExport()
+        private void DoExport(CancellationToken cancel)
         {
             string dest = _txtDest.Text.Trim();
             if (string.IsNullOrEmpty(dest)) { Log("Укажите папку назначения."); return; }
-            var pipe = new ExportPipeline(NullIfEmpty(_txtP12.Text)) { Log = Log };
+            var pipe = new ExportPipeline(NullIfEmpty(_txtP12.Text)) { Log = Log, Cancel = cancel };
             var saved = pipe.ExportFromTokens(dest, NullIfEmpty(_txtPin.Text));
             Log($"Снято контейнеров: {saved.Count}");
-            RefreshList();   // из рабочего потока: внутри всё, что трогает UI, идёт через Invoke
+            RefreshList(cancel);   // из рабочего потока: внутри всё, что трогает UI, идёт через Invoke
         }
 
         private void DoExtract()
@@ -319,7 +340,7 @@ namespace CryptoProExport.App
                 Log("Не удалось извлечь. Убедитесь, что токен вставлен и контейнер виден CSP.");
         }
 
-        private void DoFull()
+        private void DoFull(CancellationToken cancel)
         {
             string dest = _txtDest.Text.Trim();
             if (string.IsNullOrEmpty(dest)) { Log("Укажите папку назначения."); return; }
@@ -328,10 +349,10 @@ namespace CryptoProExport.App
                 "Подтверждение");
             if (confirm != DialogResult.OK) { Log("Отменено пользователем."); return; }
 
-            var pipe = new ExportPipeline(NullIfEmpty(_txtP12.Text)) { Log = Log };
+            var pipe = new ExportPipeline(NullIfEmpty(_txtP12.Text)) { Log = Log, Cancel = cancel };
             pipe.ExportAndMakeExportable(dest, userPin: NullIfEmpty(_txtPin.Text));
             Log("Полный цикл завершён.");
-            RefreshList();   // из рабочего потока: внутри всё, что трогает UI, идёт через Invoke
+            RefreshList(cancel);   // из рабочего потока: внутри всё, что трогает UI, идёт через Invoke
         }
 
         private void DoCheckExportable()
@@ -376,7 +397,7 @@ namespace CryptoProExport.App
             RefreshList();
         }
 
-        private void DoExportPfx()
+        private void DoExportPfx(CancellationToken cancel)
         {
             string container = SelectedContainerName();
             if (container == null) { Log("Выберите контейнер в списке."); return; }
@@ -393,7 +414,7 @@ namespace CryptoProExport.App
                 "", password: true);
             if (pass == null) { Log("Отменено."); return; }
 
-            var cm = new CertMgr(exe) { Log = Log };
+            var cm = new CertMgr(exe) { Log = Log, Cancel = cancel };
             var r = cm.ExportContainerToPfx(container, dest, pass);
             Log(r.Success ? "PFX готов: " + dest : "Не удалось выгрузить PFX: " + r.Output);
         }
@@ -448,22 +469,52 @@ namespace CryptoProExport.App
             return PromptDialog.Ask(this, title, prompt, initial, password);
         }
 
-        private void Run(Action work)
+        /// <summary>Запустить длинную операцию в фоне: с подписью в строке состояния и возможностью отмены.</summary>
+        private void Run(string title, Action<CancellationToken> work)
         {
-            SetBusy(true);
+            var cancellation = new CancellationTokenSource();
+            _cancellation = cancellation;
+            SetBusy(true, title);
             Task.Run(() =>
             {
-                try { work(); }
+                try { work(cancellation.Token); }
+                catch (OperationCanceledException) { Log("Операция отменена."); }
                 catch (Exception ex) { Log("ОШИБКА: " + ex.Message); }
-                finally { SetBusy(false); }
+                finally
+                {
+                    _cancellation = null;
+                    cancellation.Dispose();
+                    SetBusy(false, null);
+                }
             });
         }
 
-        private void SetBusy(bool busy)
+        /// <summary>Действия, которым отмена не нужна (всё быстрое), запускаются так же — просто игнорируют токен.</summary>
+        private void Run(string title, Action work) => Run(title, _ => work());
+
+        private void CancelCurrent()
         {
-            if (InvokeRequired) { BeginInvoke(new Action(() => SetBusy(busy))); return; }
+            var cancellation = _cancellation;
+            if (cancellation == null || cancellation.IsCancellationRequested) return;
+            Log("Отмена запрошена — операция прервётся на ближайшем шаге.");
+            SetStatus("Отмена…");
+            try { cancellation.Cancel(); } catch (ObjectDisposedException) { }
+        }
+
+        private void SetBusy(bool busy, string title)
+        {
+            if (InvokeRequired) { BeginInvoke(new Action(() => SetBusy(busy, title))); return; }
             foreach (var b in _actionButtons) b.Enabled = !busy;
+            _btnCancel.Enabled = busy;
+            _progress.Visible = busy;
+            _status.Text = busy ? title : "Готово";
             Cursor = busy ? Cursors.WaitCursor : Cursors.Default;
+        }
+
+        private void SetStatus(string text)
+        {
+            if (InvokeRequired) { BeginInvoke(new Action(() => SetStatus(text))); return; }
+            _status.Text = text;
         }
 
         private void AddRow(string where, string name, string details)

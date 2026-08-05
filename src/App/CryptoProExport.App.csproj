@@ -21,6 +21,14 @@
       Условие оставляет возможность собрать под другой RID явно — для диагностики.
     -->
     <PlatformTarget Condition="'$(RuntimeIdentifier)' == ''">x86</PlatformTarget>
+    <!--
+      Интерфейс и сообщения программы русские, поэтому из рантайма берём сателлиты только
+      русской локализации: остальные 12 языков — 8,5 МБ мёртвого веса (2,3 МБ в сжатом exe).
+      На поведение не влияет — меняется лишь язык сообщений самого .NET.
+    -->
+    <SatelliteResourceLanguages>ru</SatelliteResourceLanguages>
+    <!-- позволяет собирать Windows-приложение на Linux-сборщике, см. build/publish-remote.ps1 -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
   <!--
     Портативная сборка: publish одним файлом, все зависимости внутри (см. build/publish.ps1).
