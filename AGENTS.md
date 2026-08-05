@@ -12,7 +12,7 @@
 ## Стек
 - .NET `net10.0-windows`, C#. Нужен .NET SDK 10. Решение — `CryptoProExport.slnx` (новый XML-формат; не удивляйся отсутствию `.sln`).
 - `CryptoProExport.Core` — библиотека (COM/CryptoAPI/процессы). `CryptoProExport.App` — WinForms + CLI. `tests/CryptoProExport.Tests` — xunit.
-- Пакеты только в тестах: `xunit` 2.9.3, `xunit.runner.visualstudio` 3.1.5, `Microsoft.NET.Test.Sdk` 18.8.1. У Core и App внешних пакетов нет вообще.
+- **Внешние NuGet-пакеты в Core и App разрешены** (решение владельца от 06.08.2026; прежний запрет снят — он закрывал ГОСТ-криптографию и PKCS#11). Фактически пока не используется ни одного: сейчас пакеты есть только в тестах — `xunit` 2.9.3, `xunit.runner.visualstudio` 3.1.5, `Microsoft.NET.Test.Sdk` 18.8.1. Добавляя пакет, помни о цене: размер портативного exe и цепочка поставки. Планируемые кандидаты — `Pkcs11Interop` (Рутокен Lite) и BouncyCastle (ГОСТ), см. ROADMAP P0/P1.
 - **Разрядность x86 по умолчанию** (`PlatformTarget` в `CryptoProExport.App.csproj`, условие снимается при явном `-r`). Причина ниже; x86 при этом универсален — идёт и на x64, и на ARM64.
 
 ## Внешние зависимости
