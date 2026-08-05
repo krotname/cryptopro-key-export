@@ -258,6 +258,18 @@ namespace CryptoProExport.App
             Log(Strings.Format("log.lang.changed", Strings.NativeName(choice.Code)));
         }
 
+        /// <summary>
+        /// Переключить язык уже построенного окна — ровно то, что делает выбор в списке,
+        /// но без запоминания выбора. Нужно самопроверке: она гоняет одно окно по всем языкам,
+        /// проверяя, что повторная раскладка надписей (и смена RightToLeftLayout) не ломает форму.
+        /// </summary>
+        internal void SwitchLanguage(string code)
+        {
+            if (!Strings.Use(code)) return;
+            SelectCurrentLanguage();
+            ApplyTexts();
+        }
+
         private void SelectCurrentLanguage()
         {
             for (int i = 0; i < _cmbLang.Items.Count; i++)

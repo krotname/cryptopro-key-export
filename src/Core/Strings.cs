@@ -126,14 +126,12 @@ namespace CryptoProExport
         /// </summary>
         public static bool Init(string explicitCode)
         {
-            bool ok = string.IsNullOrWhiteSpace(explicitCode) || Use(explicitCode);
-            if (!ok || string.IsNullOrWhiteSpace(explicitCode))
-            {
-                string saved = Saved;
-                if (!string.IsNullOrWhiteSpace(saved)) Use(saved);
-                else ApplyToThreadCulture(Current);
-            }
-            return ok;
+            if (!string.IsNullOrWhiteSpace(explicitCode) && Use(explicitCode)) return true;
+
+            // Явного кода нет (или он не опознан) — берём запомненный выбор, иначе системную
+            // культуру. Use(null) просто вернёт false, отдельная проверка не нужна.
+            if (!Use(Saved)) ApplyToThreadCulture(Current);
+            return string.IsNullOrWhiteSpace(explicitCode);
         }
 
         /// <summary>Файл с запомненным выбором языка (рядом с журналами).</summary>
@@ -170,8 +168,7 @@ namespace CryptoProExport
         /// <summary>Временно переключить язык (для тестов и для вывода на заданном языке).</summary>
         public static IDisposable Scope(string code)
         {
-            string previous;
-            lock (Gate) previous = _current;
+            string previous = Current;   // именно Current, а не _current: иначе восстанавливать нечего
             Use(code);
             return new Restore(previous);
         }
@@ -283,7 +280,7 @@ namespace CryptoProExport
             public void Dispose()
             {
                 lock (Gate) _current = _previous;
-                ApplyToThreadCulture(_previous ?? Fallback);
+                ApplyToThreadCulture(_previous);
             }
         }
     }

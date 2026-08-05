@@ -99,6 +99,29 @@ namespace CryptoProExport.App
             catch (UnauthorizedAccessException) { }
         }
 
+        /// <summary>У каждого элемента есть подсказка, и ни в одной надписи нет маркера пропавшего перевода.</summary>
+        private static bool Inspect(MainForm form, string language, string stage, ref int withTip)
+        {
+            var (tips, missing) = form.CheckTooltips();
+            if (missing.Count > 0)
+            {
+                Console.Error.WriteLine($"SELFTEST FAIL [{language}, {stage}]: без всплывающих подсказок "
+                                        + "остались элементы: " + string.Join(", ", missing));
+                return false;
+            }
+
+            var untranslated = form.MissingTranslations();
+            if (untranslated.Count > 0)
+            {
+                Console.Error.WriteLine($"SELFTEST FAIL [{language}, {stage}]: нет переводов: "
+                                        + string.Join(", ", untranslated.Take(10)));
+                return false;
+            }
+
+            withTip = tips;
+            return true;
+        }
+
         /// <summary>
         /// Построить форму и закрыть — проверка, что UI-граф собирается (для headless-сборки/CI).
         /// Форма строится на каждом вшитом языке: так ловятся и потерянные подсказки, и
@@ -111,27 +134,26 @@ namespace CryptoProExport.App
                 ApplicationConfiguration.Initialize();
 
                 int checkedTips = 0;
+
+                // 1. Окно строится заново на каждом языке — так проверяется и стартовая раскладка,
+                //    включая зеркальную (RightToLeftLayout) у ar/ur/fa.
                 foreach (string language in Strings.Available)
                 {
                     using var scope = Strings.Scope(language);
                     using var probe = new MainForm();
+                    if (!Inspect(probe, language, "построение", ref checkedTips)) return 1;
+                }
 
-                    var (withTip, missing) = probe.CheckTooltips();
-                    if (missing.Count > 0)
+                // 2. Одно окно проводится по всем языкам подряд — это путь выбора языка в списке:
+                //    надписи переставляются на уже построенной форме, а RightToLeft меняется на лету.
+                using (var scope = Strings.Scope(Strings.Current))
+                using (var switching = new MainForm())
+                {
+                    foreach (string language in Strings.Available)
                     {
-                        Console.Error.WriteLine($"SELFTEST FAIL [{language}]: без всплывающих подсказок остались элементы: "
-                                                + string.Join(", ", missing));
-                        return 1;
+                        switching.SwitchLanguage(language);
+                        if (!Inspect(switching, language, "переключение", ref checkedTips)) return 1;
                     }
-
-                    var untranslated = probe.MissingTranslations();
-                    if (untranslated.Count > 0)
-                    {
-                        Console.Error.WriteLine($"SELFTEST FAIL [{language}]: нет переводов: "
-                                                + string.Join(", ", untranslated.Take(10)));
-                        return 1;
-                    }
-                    checkedTips = withTip;
                 }
 
                 using var f = new MainForm();
@@ -143,7 +165,7 @@ namespace CryptoProExport.App
 
                 Console.WriteLine($"SELFTEST OK: форма построена и закрыта без ошибок, подсказок на элементах: {tips}");
                 Console.WriteLine($"  языков интерфейса: {Strings.Available.Count} ({string.Join(", ", Strings.Available)}), "
-                                  + $"подсказок проверено на каждом: {checkedTips}");
+                                  + $"проверено построением и переключением, подсказок на каждом: {checkedTips}");
                 Console.WriteLine($"  руководство переведено на: {string.Join(", ", GuideText.Available)}");
                 foreach (var line in CryptoProExport.Diagnostics.Report())
                     Console.WriteLine("  " + line);
