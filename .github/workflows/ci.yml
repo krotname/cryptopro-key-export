@@ -169,7 +169,10 @@ jobs:
     name: Релиз по тегу
     needs: build
     if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
+    # По умолчанию job идёт на собственном раннере правообладателя (adler).
+    # Переменная репозитория CI_RUNS_ON временно переводит его на другой раннер,
+    # когда собственный недоступен: например ["ubuntu-latest"].
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","linux","adler"]') }}
     permissions:
       contents: write
 
