@@ -166,6 +166,7 @@ token.pin.default = PIN pabrik — autentikasi dengan 12345678
 token.pin.given = Autentikasi dengan PIN yang diberikan
 token.pin.system = Autentikasi melalui jendela PIN sistem
 token.container = Kontainer: {0} «{1}» ({2} berkas)
+token.walk = Token ditelusuri: {0} folder, {1} berkas, {2} kontainer
 
 # --- menjalankan utilitas CryptoPro ---
 tool.certmgr.install = Memasang sertifikat ke penyimpanan «Pribadi» dan menautkannya ke kontainer…

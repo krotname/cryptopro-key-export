@@ -166,6 +166,7 @@ token.pin.default = PIN fabryczny — uwierzytelniamy się kodem 12345678
 token.pin.given = Uwierzytelniamy się podanym PIN-em
 token.pin.system = Uwierzytelniamy się przez systemowe okno PIN
 token.container = Kontener: {0} «{1}» ({2} plików)
+token.walk = Token przeszukany: {0} folderów, {1} plików, {2} kontenerów
 
 # --- uruchamianie narzędzi CryptoPro ---
 tool.certmgr.install = Instalowanie certyfikatu w magazynie «Osobisty» i wiązanie go z kontenerem…

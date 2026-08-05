@@ -166,6 +166,7 @@ token.pin.default = 공장 출하 PIN — 12345678로 인증합니다
 token.pin.given = 입력된 PIN으로 인증합니다
 token.pin.system = 시스템 PIN 창으로 인증합니다
 token.container = 컨테이너: {0} 「{1}」(파일 {2}개)
+token.walk = 토큰 검색: 폴더 {0}개, 파일 {1}개, 컨테이너 {2}개
 
 # --- CryptoPro 유틸리티 실행 ---
 tool.certmgr.install = 인증서를 「개인」 저장소에 설치하고 컨테이너와 연결하는 중…

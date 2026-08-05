@@ -166,6 +166,7 @@ token.pin.default = رمز PIN المصنعي — نستوثق بـ 12345678
 token.pin.given = نستوثق برمز PIN المُدخل
 token.pin.system = نستوثق عبر نافذة النظام لإدخال PIN
 token.container = الحاوية: {0} «{1}» (‏{2} ملفات‏)
+token.walk = ‏نتيجة المسح: مجلدات {0}، ملفات {1}، حاويات {2}‏
 
 # --- تشغيل أدوات CryptoPro ---
 tool.certmgr.install = يجري تثبيت الشهادة في مخزن «شخصي» وربطها بالحاوية…

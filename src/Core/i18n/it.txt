@@ -166,6 +166,7 @@ token.pin.default = PIN di fabbrica — autenticazione con 12345678
 token.pin.given = Autenticazione con il PIN indicato
 token.pin.system = Autenticazione tramite la finestra di sistema
 token.container = Contenitore: {0} «{1}» ({2} file)
+token.walk = Token esaminato: {0} cartelle, {1} file, {2} contenitori
 
 # --- avvio delle utilità CryptoPro ---
 tool.certmgr.install = Installazione del certificato nell’archivio «Personale» e collegamento al contenitore…

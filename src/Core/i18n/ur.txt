@@ -166,6 +166,7 @@ token.pin.default = کارخانے کا PIN — 12345678 سے توثیق
 token.pin.given = دیے گئے PIN سے توثیق
 token.pin.system = نظام کی PIN کھڑکی سے توثیق
 token.container = کنٹینر: {0} «{1}» ({2} فائلیں)
+token.walk = ٹوکن اسکین: {0} فولڈر، {1} فائلیں، {2} کنٹینر
 
 # --- CryptoPro کے اوزار چلانا ---
 tool.certmgr.install = سرٹیفکیٹ «ذاتی» ذخیرے میں نصب کر کے کنٹینر سے جوڑ رہے ہیں…

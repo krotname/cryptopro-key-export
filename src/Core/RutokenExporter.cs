@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Runtime.Versioning;
 using System.Threading;
@@ -58,6 +59,9 @@ namespace CryptoProExport
         private const int RT_LEAVE  = 0;   // CloseReader
         private const int OpenTimeoutMs = 5000;
 
+        /// <summary>Предохранитель: сколько объектов максимум берём из одного каталога токена.</summary>
+        private const int MaxEntries = 512;
+
         /// <summary>CLSID coclass rtCOMLite.rtContext (совпадает с записью установленного компонента в реестре).</summary>
         public static readonly Guid ClsidRtContext = new Guid("0ACACF07-54A6-4230-8FA2-6CBBE9B87BB9");
 
@@ -104,7 +108,9 @@ namespace CryptoProExport
                     {
                         Authenticate(rt);
                         rt.SelectMF();
+                        _folderCount = _fileCount = 0;
                         EnumFolders(rt, tokenName, new List<string>(), result);
+                        Log(Strings.Format("token.walk", _folderCount, _fileCount, result.Count));
                     }
                     finally
                     {
@@ -222,37 +228,35 @@ namespace CryptoProExport
         private void EnumFolders(dynamic rt, string tokenName, List<string> paths,
                                  List<RutokenContainer> result)
         {
-            object[] files = ToArray(rt.EnumFiles());
-            object[] folders = ToArray(rt.EnumFolders());
+            var files = FileIds(rt);
+            var folders = FolderIds(rt);
+            _folderCount += folders.Count;
+            _fileCount += files.Count;
 
-            if (folders != null)
+            foreach (ushort f in folders)
             {
-                foreach (var f in folders)
-                {
-                    Cancel.ThrowIfCancellationRequested();
-                    string folder = Convert.ToString(f);
-                    paths.Add(folder);
-                    rt.SelectFolder(f);
-                    EnumFolders(rt, tokenName, paths, result);
-                    rt.SelectUpperFolder();
-                    paths.RemoveAt(paths.Count - 1);
-                }
+                Cancel.ThrowIfCancellationRequested();
+                paths.Add(f.ToString(CultureInfo.InvariantCulture));
+                rt.SelectFolder(f);
+                EnumFolders(rt, tokenName, paths, result);
+                rt.SelectUpperFolder();
+                paths.RemoveAt(paths.Count - 1);
             }
 
             string curDir = "/" + string.Join("/", paths) + "/";
-            if (files == null || files.Length == 0) return;
+            if (files.Count == 0) return;
 
             var cont = new RutokenContainer { TokenName = tokenName, TokenDir = curDir };
             bool any = false;
-            for (int i = 0; i < files.Length; i++)
+            for (int i = 0; i < files.Count; i++)
             {
-                object file = files[i];
+                ushort file = files[i];
                 int size;
                 try { size = Convert.ToInt32(rt.GetFileSize(file)); }
                 catch { continue; }
                 if (size <= 0) continue;
 
-                string logical = (files.Length == 6) ? Bind[i] : Convert.ToString(file);
+                string logical = (files.Count == 6) ? Bind[i] : file.ToString(CultureInfo.InvariantCulture);
                 byte[] bytes = ToBytes(rt.ReadBinary(file, 0, size));
                 cont.Files[logical] = bytes;
                 any = true;
@@ -267,6 +271,50 @@ namespace CryptoProExport
             {
                 Log(Strings.Format("token.container", curDir, cont.ContainerName, cont.Files.Count));
                 result.Add(cont);
+            }
+        }
+
+        // Счётчики обхода — только для итоговой строки в журнале.
+        private int _folderCount;
+        private int _fileCount;
+
+        /// <summary>Идентификаторы вложенных папок текущего каталога токена.</summary>
+        private static List<ushort> FolderIds(dynamic rt) =>
+            Enumerate(() => rt.EnumFirstFolder(), id => rt.EnumNextFolder(id));
+
+        /// <summary>Идентификаторы файлов текущего каталога токена.</summary>
+        private static List<ushort> FileIds(dynamic rt) =>
+            Enumerate(() => rt.EnumFirstFile(), id => rt.EnumNextFile(id));
+
+        /// <summary>
+        /// Поштучный обход каталога: EnumFirst* → EnumNext*(предыдущий), 0 — конец списка.
+        ///
+        /// Именно поштучно, а не через EnumFolders()/EnumFiles(): те возвращают SAFEARRAY,
+        /// и в rtCOMLite 1.0.3.1 непустой SAFEARRAY рушит кучу процесса (0xC0000374/0xC0000005)
+        /// прямо внутри вызова. Порча памяти в нативном коде не ловится catch — приложение
+        /// умирало системным окном без единой строки в журнале. Пустой список эти методы
+        /// отдают корректно, поэтому баг и не проявлялся, пока токен не подключён.
+        /// </summary>
+        private static List<ushort> Enumerate(Func<object> first, Func<ushort, object> next)
+        {
+            var ids = new List<ushort>();
+            var seen = new HashSet<ushort>();
+            ushort id = ToId(first());
+            while (id != 0 && seen.Add(id) && ids.Count < MaxEntries)
+            {
+                ids.Add(id);
+                id = ToId(next(id));
+            }
+            return ids;
+        }
+
+        private static ushort ToId(object value)
+        {
+            if (value == null) return 0;
+            try { return Convert.ToUInt16(value, CultureInfo.InvariantCulture); }
+            catch (Exception e) when (e is InvalidCastException || e is FormatException || e is OverflowException)
+            {
+                return 0;
             }
         }
 

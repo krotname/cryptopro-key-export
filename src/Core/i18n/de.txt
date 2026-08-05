@@ -166,6 +166,7 @@ token.pin.default = Werks-PIN — Anmeldung mit 12345678
 token.pin.given = Anmeldung mit der angegebenen PIN
 token.pin.system = Anmeldung über das Systemfenster zur PIN-Eingabe
 token.container = Container: {0} «{1}» ({2} Dateien)
+token.walk = Token durchsucht: {0} Ordner, {1} Dateien, {2} Container
 
 # --- Start der CryptoPro-Werkzeuge ---
 tool.certmgr.install = Zertifikat wird in den Speicher «Eigene Zertifikate» gelegt und mit dem Container verknüpft…

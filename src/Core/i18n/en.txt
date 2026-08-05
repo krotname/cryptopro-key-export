@@ -166,6 +166,7 @@ token.pin.default = Factory PIN — authenticating with 12345678
 token.pin.given = Authenticating with the PIN provided
 token.pin.system = Authenticating through the system PIN window
 token.container = Container: {0} «{1}» ({2} files)
+token.walk = Token scanned: {0} folders, {1} files, {2} containers
 
 # --- running the CryptoPro utilities ---
 tool.certmgr.install = Installing the certificate into the «Personal» store and linking it to the container…
