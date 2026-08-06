@@ -80,6 +80,14 @@ GitHub Actions **работает** (`.github/workflows/ci.yml`). Прежнее
   компиляции под другие RID;
 - `release` — по тегу `v*` создаёт GitHub Release с портативным exe и контрольной суммой.
 
+**Релиз публикуется через REST API (`curl`), а не через `gh`.** На собственном Linux-раннере
+`adler` GitHub CLI не установлен, и шаг падал на каждом теге (`gh: command not found`, код 127);
+релиз v1.3.1 выкладывали руками. `curl` и coreutils есть везде, поэтому шаг больше не зависит от
+предустановленных инструментов. Две тонкости, на которых он уже ломался при отладке:
+`upload_url` в ответе — URI-шаблон `…/assets{?name,label}`, хвост `{...}` надо отбросить, и
+разбивать ответ по запятым нельзя — шаблон сам содержит запятую; при `set -euo pipefail` пустой
+`grep` убивает шаг молча, поэтому у извлечения стоит `|| true` и явная проверка с сообщением.
+
 **Раннеры.** Windows-job'ы (`build`, `architectures`) идут на собственном раннере
 `adler-white-1w-cryptopro` — служба на домашнем сервере ADLER-WHITE-1W, каталог
 `C:\actions-runner-cryptopro`, метки `self-hosted,Windows,X64,adler-white-1w,cryptopro`.

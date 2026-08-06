@@ -212,9 +212,13 @@ jobs:
           name: CryptoProExport-portable-win-x86
           path: dist
 
+      # Публикуем через REST API, а не через gh CLI: на собственном раннере gh не
+      # установлен, и job падал на каждом теге с «gh: command not found» (релиз v1.3.1
+      # выкладывали руками из артефакта). curl и coreutils есть в любом окружении,
+      # поэтому шаг больше не зависит от того, что предустановлено на раннере.
       - name: Создать релиз
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ needs.build.outputs.version }}
           SHA256: ${{ needs.build.outputs.sha256 }}
         run: |
@@ -234,12 +238,57 @@ jobs:
           fi
           cd ..
 
-          printf '%s\n\n%s\n\n%s\n' \
-            'Портативная сборка: один exe, внутри .NET, p12utility, rtCOMLite и руководство.' \
-            'Работает на x86, x64 и ARM64. Снаружи нужен только КриптоПро CSP.' \
-            "SHA-256: \`$SHA256\`" > notes.md
-          gh release create "$GITHUB_REF_NAME" \
-            --repo "$GITHUB_REPOSITORY" \
-            --title "CryptoPro Key Export $GITHUB_REF_NAME" \
-            --notes-file notes.md \
-            "dist/$name" "dist/$name.sha256"
+          api_version='X-GitHub-Api-Version: 2022-11-28'
+
+          # JSON собираем без jq (его на раннере тоже может не быть). Текст заметок
+          # свой и постоянный: кавычек и обратных слэшей в нём нет, переводы строк
+          # записаны сразу escape-последовательностью \n — printf их не разворачивает,
+          # потому что подставляет тело через %s, а не в строку формата.
+          body='Портативная сборка: один exe, внутри .NET, p12utility, rtCOMLite и руководство.\n\nРаботает на x86, x64 и ARM64. Снаружи нужен только КриптоПро CSP.\n\nSHA-256: `'"$SHA256"'`'
+          printf '{"tag_name":"%s","name":"CryptoPro Key Export %s","body":"%s"}' \
+            "$GITHUB_REF_NAME" "$GITHUB_REF_NAME" "$body" > release.json
+
+          code=$(curl -sS -o response.json -w '%{http_code}' -X POST \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/releases" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            -H "$api_version" \
+            -H 'Content-Type: application/json' \
+            --data-binary @release.json)
+          if [ "$code" != '201' ]; then
+            echo "Создание релиза: HTTP $code" >&2
+            cat response.json >&2
+            exit 1
+          fi
+
+          # upload_url приходит URI-шаблоном «…/assets{?name,label}» — отбрасываем хвост.
+          # Берём именно его, а не собираем ссылку из id: порядок полей в ответе
+          # не гарантирован, а имя upload_url уникально. `|| true` обязателен: при
+          # pipefail и set -e пустой grep убил бы шаг молча, без внятного сообщения.
+          upload=$(grep -o '"upload_url":[[:space:]]*"[^"]*"' response.json | head -1 | cut -d'"' -f4 || true)
+          upload=${upload%%\{*}
+          if [ -z "$upload" ]; then
+            echo 'В ответе нет upload_url' >&2
+            cat response.json >&2
+            exit 1
+          fi
+
+          for file in "$name" "$name.sha256"; do
+            case "$file" in
+              *.exe) type='application/octet-stream' ;;
+              *)     type='text/plain' ;;
+            esac
+            code=$(curl -sS -o asset.json -w '%{http_code}' -X POST \
+              "$upload?name=$file" \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H 'Accept: application/vnd.github+json' \
+              -H "$api_version" \
+              -H "Content-Type: $type" \
+              --data-binary @"dist/$file")
+            if [ "$code" != '201' ]; then
+              echo "Загрузка $file: HTTP $code" >&2
+              cat asset.json >&2
+              exit 1
+            fi
+            echo "Загружен $file"
+          done
