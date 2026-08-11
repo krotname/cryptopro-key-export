@@ -78,6 +78,7 @@ namespace CryptoProExport.Tests
         [Theory]
         [InlineData("deps")]
         [InlineData("list")]
+        [InlineData("token")]
         [InlineData("extractcert")]
         [InlineData("checkexport")]
         [InlineData("keyexport")]
