@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Runtime.Versioning;
 
@@ -20,6 +21,7 @@ namespace CryptoProExport.App
         {
             ("deps",                                 "cli.usage.deps"),
             ("list",                                 "cli.usage.list"),
+            ("token [outDir]",                       "cli.usage.token"),
             ("extractcert <container> <outDir>",     "cli.usage.extractcert"),
             ("checkexport <container>",              "cli.usage.checkexport"),
             ("export <destDir> [pin]",               "cli.usage.export"),
@@ -61,11 +63,46 @@ namespace CryptoProExport.App
                         Out(Strings.Get("cli.list.csp"));
                         foreach (var c in CertFromContainer.EnumContainers())
                             Out($"  {c.Name}  " + Strings.Format("cli.list.provider", c.ProvType));
+
+                        // Токены по PKCS#11 (Рутокен ЭЦП/Lite): контейнеры видны без ввода PIN.
+                        var tokens = Pkcs11Token.Enumerate(readContainers: true);
+                        if (tokens.Count > 0)
+                        {
+                            Out(Strings.Get("cli.list.pkcs11"));
+                            foreach (var t in tokens)
+                            {
+                                Out($"  {t.Reader} [{Pkcs11Token.KindName(t.Kind)}]");
+                                foreach (var c in t.Containers)
+                                    Out("    " + Strings.Format("cli.token.container", c.Name ?? "?",
+                                        Strings.Get(c.Certificate != null ? "common.present" : "common.none")));
+                            }
+                        }
+
                         Out(Strings.Get("cli.list.tokens"));
                         var exp = new RutokenExporter { Log = Out };
                         foreach (var c in exp.ReadAllContainers())
                             Out($"  {c.TokenName} {c.TokenDir} \"{c.ContainerName}\" " +
                                 Strings.Format("cli.list.files", c.Files.Count));
+                        return 0;
+                    }
+                    case "token":
+                    {
+                        var tokens = Pkcs11Token.Enumerate(readContainers: true, log: Out);
+                        if (tokens.Count == 0) { Out(Strings.Get("cli.token.none")); return 2; }
+                        string outDir = args.Length > 1 ? args[1] : null;
+                        foreach (var t in tokens)
+                        {
+                            Out(Strings.Format("cli.token.line", t.Reader ?? "?", t.Label ?? "?",
+                                Pkcs11Token.KindName(t.Kind), t.Serial ?? "?", t.Firmware ?? "?"));
+                            Out("  " + Strings.Format("cli.token.pin", Pkcs11Token.PinState(t)));
+                            foreach (var c in t.Containers)
+                            {
+                                Out("  " + Strings.Format("cli.token.container", c.Name ?? "?",
+                                    Strings.Get(c.Certificate != null ? "common.present" : "common.none")));
+                                if (outDir != null && c.Certificate != null)
+                                    SaveTokenCert(outDir, c);
+                            }
+                        }
                         return 0;
                     }
                     case "extractcert":
@@ -163,6 +200,25 @@ namespace CryptoProExport.App
             {
                 Err(Strings.Format("cli.failure", ex.Message));
                 return 3;
+            }
+        }
+
+        /// <summary>Сохранить извлечённый с токена сертификат (.cer) — без обращения к CSP.</summary>
+        private static void SaveTokenCert(string outDir, Pkcs11Container c)
+        {
+            try
+            {
+                Directory.CreateDirectory(outDir);
+                string safe = c.Name ?? "cert";
+                foreach (char ch in Path.GetInvalidFileNameChars())
+                    safe = safe.Replace(ch, '_');
+                string path = Path.Combine(outDir, safe + ".cer");
+                File.WriteAllBytes(path, c.Certificate);
+                Out("    " + Strings.Format("cli.token.cert.saved", path));
+            }
+            catch (Exception e)
+            {
+                Out("    " + Strings.Format("cli.token.certfail", c.Name ?? "?", e.Message));
             }
         }
 
