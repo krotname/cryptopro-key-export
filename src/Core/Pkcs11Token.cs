@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using System.Threading;
 using Net.Pkcs11Interop.Common;
 using Net.Pkcs11Interop.HighLevelAPI;
 
@@ -82,24 +82,33 @@ namespace CryptoProExport
         /// <summary>Кандидаты расположения rtPKCS11ECP.dll: системный каталог по разрядности + установка Рутокена.</summary>
         internal static IEnumerable<string> LibraryCandidates()
         {
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
             // %WINDIR%\System32 в 64-битном процессе — это x64, в 32-битном (WOW64) — x86:
             // GetFolderPath(System) уже отдаёт правильную ветку под разрядность процесса.
-            string sys = Environment.GetFolderPath(Environment.SpecialFolder.System);
-            yield return Path.Combine(sys, DllName);
+            foreach (var path in Paths())
+                if (!string.IsNullOrEmpty(path) && seen.Add(path))
+                    yield return path;
 
-            // Явные ветки на случай нестандартного окружения.
-            string win = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
-            yield return Path.Combine(win, Environment.Is64BitProcess ? "System32" : "SysWOW64", DllName);
+            static IEnumerable<string> Paths()
+            {
+                yield return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), DllName);
 
-            foreach (var pf in new[]
-            {
-                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
-                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-            })
-            {
-                if (string.IsNullOrEmpty(pf)) continue;
-                yield return Path.Combine(pf, "Aktiv Co", "RutokenControlCenter", DllName.ToLowerInvariant());
-                yield return Path.Combine(pf, "Aktiv Co", "Rutoken", DllName);
+                // Явная ветка на случай нестандартного окружения (переопределённый %WINDIR%\System32).
+                string win = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+                if (!string.IsNullOrEmpty(win))
+                    yield return Path.Combine(win, Environment.Is64BitProcess ? "System32" : "SysWOW64", DllName);
+
+                foreach (var pf in new[]
+                {
+                    Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+                    Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                })
+                {
+                    if (string.IsNullOrEmpty(pf)) continue;
+                    yield return Path.Combine(pf, "Aktiv Co", "RutokenControlCenter", DllName.ToLowerInvariant());
+                    yield return Path.Combine(pf, "Aktiv Co", "Rutoken", DllName);
+                }
             }
         }
 
@@ -112,6 +121,42 @@ namespace CryptoProExport
                 catch { /* недоступный путь — пропускаем */ }
             }
             return null;
+        }
+
+        /// <summary>
+        /// Имя файла для сертификата, снятого с токена: метка контейнера плюс серийный номер
+        /// токена. Серийник в имени обязателен — у контейнеров на разных токенах метки совпадают
+        /// (типовая ситуация при сравнении или переносе), и без него один .cer затирал бы другой.
+        /// Недопустимые в имени файла символы заменяются подчёркиванием.
+        /// </summary>
+        public static string CertFileName(string containerName, string tokenSerial)
+        {
+            string label = Sanitize(string.IsNullOrWhiteSpace(containerName) ? "cert" : containerName);
+            string serial = Sanitize(tokenSerial ?? string.Empty);
+            return serial.Length == 0 ? label + ".cer" : label + "_" + serial + ".cer";
+        }
+
+        /// <summary>
+        /// Путь к .cer, не конфликтующий с уже занятыми в этом запуске: при совпадении имени
+        /// добавляется числовой суффикс. <paramref name="taken"/> пополняется выбранным путём.
+        /// </summary>
+        public static string UniqueCertPath(string outDir, string containerName, string tokenSerial,
+                                            ISet<string> taken)
+        {
+            string name = CertFileName(containerName, tokenSerial);
+            string stem = Path.GetFileNameWithoutExtension(name);
+            string path = Path.Combine(outDir ?? string.Empty, name);
+            for (int n = 2; !taken.Add(path); n++)
+                path = Path.Combine(outDir ?? string.Empty, $"{stem}({n}).cer");
+            return path;
+        }
+
+        /// <summary>Заменить символы, недопустимые в имени файла, на подчёркивание.</summary>
+        private static string Sanitize(string name)
+        {
+            foreach (char ch in Path.GetInvalidFileNameChars())
+                name = name.Replace(ch, '_');
+            return name.Trim();
         }
 
         /// <summary>Установлена ли библиотека PKCS#11 Рутокена в системе.</summary>
@@ -157,10 +202,12 @@ namespace CryptoProExport
         /// публичные объекты (контейнеры, сертификаты) читаются без авторизации.
         /// Никогда не бросает — при любой ошибке возвращает то, что успел собрать, и пишет в <paramref name="log"/>.
         /// </summary>
-        public static List<Pkcs11TokenInfo> Enumerate(bool readContainers = true, Action<string> log = null)
+        public static List<Pkcs11TokenInfo> Enumerate(bool readContainers = true, Action<string> log = null,
+                                                      CancellationToken cancel = default)
         {
             log ??= _ => { };
             var result = new List<Pkcs11TokenInfo>();
+            cancel.ThrowIfCancellationRequested();
 
             string lib = LibraryPath();
             if (lib == null)
@@ -190,6 +237,9 @@ namespace CryptoProExport
 
                 foreach (ISlot slot in slots)
                 {
+                    // Отмена проверяется между слотами и объектами: вызов внутри драйвера
+                    // прервать нельзя, поэтому текущий шаг дочитывается (как в RutokenExporter).
+                    cancel.ThrowIfCancellationRequested();
                     var info = new Pkcs11TokenInfo();
                     try
                     {
@@ -209,8 +259,9 @@ namespace CryptoProExport
                         info.PinLocked = f.UserPinLocked;
 
                         if (readContainers)
-                            ReadContainers(slot, factories, info, log);
+                            ReadContainers(slot, factories, info, log, cancel);
                     }
+                    catch (OperationCanceledException) { throw; }   // отмена — не ошибка токена
                     catch (Exception e)
                     {
                         log(Strings.Format("pkcs11.tokenfail", info.Reader ?? "?", e.Message));
@@ -230,7 +281,7 @@ namespace CryptoProExport
         /// связанные с ними сертификаты (CKO_CERTIFICATE с той же меткой). Без входа по PIN.
         /// </summary>
         private static void ReadContainers(ISlot slot, Pkcs11InteropFactories factories,
-                                           Pkcs11TokenInfo info, Action<string> log)
+                                           Pkcs11TokenInfo info, Action<string> log, CancellationToken cancel)
         {
             ISession session = null;
             try
@@ -241,6 +292,7 @@ namespace CryptoProExport
                 var certs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
                 foreach (var h in FindByClass(session, factories, CKO.CKO_CERTIFICATE))
                 {
+                    cancel.ThrowIfCancellationRequested();
                     string label = GetString(session, h, CKA.CKA_LABEL);
                     byte[] der = GetBytes(session, h, CKA.CKA_VALUE);
                     if (!string.IsNullOrEmpty(label) && der != null && !certs.ContainsKey(label))
@@ -249,6 +301,7 @@ namespace CryptoProExport
 
                 foreach (var h in FindByClass(session, factories, CKO.CKO_DATA))
                 {
+                    cancel.ThrowIfCancellationRequested();
                     string app = GetString(session, h, CKA.CKA_APPLICATION);
                     if (!string.Equals(app, CryptoProApp, StringComparison.OrdinalIgnoreCase))
                         continue; // чужой DATA-объект, не контейнер КриптоПро
@@ -266,6 +319,7 @@ namespace CryptoProExport
                     info.Containers.Add(container);
                 }
             }
+            catch (OperationCanceledException) { throw; }
             catch (Exception e)
             {
                 log(Strings.Format("pkcs11.readfail", e.Message));

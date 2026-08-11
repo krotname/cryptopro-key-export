@@ -92,7 +92,7 @@ namespace CryptoProExport.App
                         if (tokens.Count == 0) { Out(Strings.Get("cli.token.none")); return 2; }
                         string outDir = args.Length > 1 ? args[1] : null;
                         bool anySaveFailed = false;
-                        var usedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                        var usedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);   // защита от коллизии имён
                         foreach (var t in tokens)
                         {
                             Out(Strings.Format("cli.token.line", t.Reader ?? "?", t.Label ?? "?",
@@ -219,12 +219,7 @@ namespace CryptoProExport.App
             try
             {
                 Directory.CreateDirectory(outDir);
-                string label = Sanitize(c.Name ?? "cert");
-                string serial = string.IsNullOrEmpty(t.Serial) ? "" : "_" + Sanitize(t.Serial);
-                string baseName = label + serial;
-                string path = Path.Combine(outDir, baseName + ".cer");
-                for (int n = 2; !used.Add(path.ToLowerInvariant()); n++)
-                    path = Path.Combine(outDir, $"{baseName}({n}).cer");
+                string path = Pkcs11Token.UniqueCertPath(outDir, c.Name, t.Serial, used);
                 File.WriteAllBytes(path, c.Certificate);
                 Out("    " + Strings.Format("cli.token.cert.saved", path));
                 return true;
@@ -234,14 +229,6 @@ namespace CryptoProExport.App
                 Out("    " + Strings.Format("cli.token.certfail", c.Name ?? "?", e.Message));
                 return false;
             }
-        }
-
-        /// <summary>Заменить в имени символы, недопустимые в имени файла, на подчёркивание.</summary>
-        private static string Sanitize(string name)
-        {
-            foreach (char ch in Path.GetInvalidFileNameChars())
-                name = name.Replace(ch, '_');
-            return name;
         }
 
         /// <summary>

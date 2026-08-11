@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Xunit;
 
@@ -82,6 +84,88 @@ namespace CryptoProExport.Tests
             // тихо вернуть пустой список, а не свалить приложение.
             var ex = Record.Exception(() => Pkcs11Token.Enumerate(readContainers: true, log: _ => { }));
             Assert.Null(ex);
+        }
+
+        [Fact]
+        public void Enumerate_RespectsCancellation()
+        {
+            // Отмена должна доходить и до PKCS#11: зависший драйвер смарт-карты иначе
+            // держал бы окно (кнопка «Отмена» есть у всех длинных операций).
+            using var cts = new System.Threading.CancellationTokenSource();
+            cts.Cancel();
+            Assert.Throws<OperationCanceledException>(
+                () => Pkcs11Token.Enumerate(readContainers: true, log: _ => { }, cancel: cts.Token));
+        }
+
+        // ---------- имя файла для снятого с токена сертификата ----------
+
+        [Fact]
+        public void CertFileName_KeepsLabelAndAddsSerial()
+        {
+            Assert.Equal("Ivanov_383a6954.cer", Pkcs11Token.CertFileName("Ivanov", "383a6954"));
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void CertFileName_FallsBackWhenSerialUnknown(string serial)
+        {
+            Assert.Equal("Ivanov.cer", Pkcs11Token.CertFileName("Ivanov", serial));
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public void CertFileName_FallsBackWhenLabelUnknown(string label)
+        {
+            Assert.Equal("cert_1234.cer", Pkcs11Token.CertFileName(label, "1234"));
+        }
+
+        [Fact]
+        public void CertFileName_ReplacesCharactersForbiddenInFileNames()
+        {
+            string name = Pkcs11Token.CertFileName(@"a/b\c:d*e?f""g<h>i|j", "s");
+            Assert.DoesNotContain('/', name);
+            Assert.DoesNotContain('\\', name);
+            Assert.DoesNotContain(':', name);
+            Assert.All(Path.GetInvalidFileNameChars(), ch => Assert.DoesNotContain(ch, name));
+            Assert.EndsWith("_s.cer", name, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void UniqueCertPath_AddsSuffixInsteadOfOverwriting()
+        {
+            // Один и тот же контейнер на двух токенах различается серийником...
+            var taken = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            string a = Pkcs11Token.UniqueCertPath(@"C:\out", "Ivanov", "aaa", taken);
+            string b = Pkcs11Token.UniqueCertPath(@"C:\out", "Ivanov", "bbb", taken);
+            Assert.NotEqual(a, b);
+
+            // ...а при полном совпадении (тот же токен, две записи с одной меткой)
+            // второй файл получает суффикс, а не затирает первый.
+            string c = Pkcs11Token.UniqueCertPath(@"C:\out", "Ivanov", "aaa", taken);
+            string d = Pkcs11Token.UniqueCertPath(@"C:\out", "Ivanov", "aaa", taken);
+            Assert.Equal(Path.Combine(@"C:\out", "Ivanov_aaa(2).cer"), c);
+            Assert.Equal(Path.Combine(@"C:\out", "Ivanov_aaa(3).cer"), d);
+            Assert.Equal(4, taken.Count);
+        }
+
+        [Fact]
+        public void UniqueCertPath_IgnoresCaseWhenComparingPaths()
+        {
+            // Windows-пути регистронезависимы: «IVANOV» и «ivanov» — один и тот же файл.
+            var taken = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            Pkcs11Token.UniqueCertPath(@"C:\out", "IVANOV", "aaa", taken);
+            string second = Pkcs11Token.UniqueCertPath(@"C:\out", "ivanov", "aaa", taken);
+            Assert.EndsWith("(2).cer", second, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void LibraryCandidates_HasNoDuplicates()
+        {
+            var candidates = Pkcs11Token.LibraryCandidates().ToArray();
+            Assert.Equal(candidates.Length, candidates.Distinct(StringComparer.OrdinalIgnoreCase).Count());
         }
     }
 }

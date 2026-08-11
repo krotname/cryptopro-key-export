@@ -39,7 +39,11 @@ namespace CryptoProExport
                 ? Strings.Get("diag.pkcs11.missing")
                 : Strings.Format("diag.pkcs11.found", p11)));
             if (detailed && p11 != null)
-                foreach (var t in Pkcs11Token.Enumerate(readContainers: true))
+            {
+                // Сообщения об ошибках PKCS#11 идут в сам отчёт: deps — диагностическая команда,
+                // и «токенов не видно» без причины здесь бесполезно.
+                var tokens = Pkcs11Token.Enumerate(readContainers: true, log: m => lines.Add("  " + m));
+                foreach (var t in tokens)
                 {
                     lines.Add("  " + Strings.Format("diag.pkcs11.token",
                         t.Reader ?? "?", Pkcs11Token.KindName(t.Kind),
@@ -49,6 +53,7 @@ namespace CryptoProExport
                             c.Name ?? Strings.Get("log.container.unnamed"),
                             Strings.Get(c.Certificate != null ? "common.present" : "common.none")));
                 }
+            }
 
             // 3. КриптоПро CSP — единственная внешняя зависимость, вшить нельзя
             var provs = CertFromContainer.AvailableProviders();

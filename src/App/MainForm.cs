@@ -397,7 +397,7 @@ namespace CryptoProExport.App
 
             // Токены по PKCS#11 (Рутокен ЭЦП/Lite): контейнеры и наличие сертификата видны без PIN.
             cancel.ThrowIfCancellationRequested();
-            foreach (var t in Pkcs11Token.Enumerate(readContainers: true, log: Log))
+            foreach (var t in Pkcs11Token.Enumerate(readContainers: true, log: Log, cancel: cancel))
                 foreach (var c in t.Containers)
                     AddRow(Strings.Format("log.container.token", $"{t.Reader} [{Pkcs11Token.KindName(t.Kind)}]"),
                            c.Name ?? Strings.Get("log.container.unnamed"),
