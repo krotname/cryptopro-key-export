@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Versioning;
@@ -90,6 +91,8 @@ namespace CryptoProExport.App
                         var tokens = Pkcs11Token.Enumerate(readContainers: true, log: Out);
                         if (tokens.Count == 0) { Out(Strings.Get("cli.token.none")); return 2; }
                         string outDir = args.Length > 1 ? args[1] : null;
+                        bool anySaveFailed = false;
+                        var usedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                         foreach (var t in tokens)
                         {
                             Out(Strings.Format("cli.token.line", t.Reader ?? "?", t.Label ?? "?",
@@ -99,11 +102,13 @@ namespace CryptoProExport.App
                             {
                                 Out("  " + Strings.Format("cli.token.container", c.Name ?? "?",
                                     Strings.Get(c.Certificate != null ? "common.present" : "common.none")));
-                                if (outDir != null && c.Certificate != null)
-                                    SaveTokenCert(outDir, c);
+                                if (outDir != null && c.Certificate != null && !SaveTokenCert(outDir, t, c, usedPaths))
+                                    anySaveFailed = true;
                             }
                         }
-                        return 0;
+                        // Запрошенное извлечение, которое не удалось записать, — это провал команды,
+                        // а не тихий успех: иначе скрипт посчитал бы .cer сохранённым (замечание Codex).
+                        return anySaveFailed ? 3 : 0;
                     }
                     case "extractcert":
                     {
@@ -203,23 +208,40 @@ namespace CryptoProExport.App
             }
         }
 
-        /// <summary>Сохранить извлечённый с токена сертификат (.cer) — без обращения к CSP.</summary>
-        private static void SaveTokenCert(string outDir, Pkcs11Container c)
+        /// <summary>
+        /// Сохранить извлечённый с токена сертификат (.cer) — без обращения к CSP.
+        /// Имя файла включает серийный номер токена, а при совпадении получает числовой
+        /// суффикс: у разных токенов/контейнеров метки бывают одинаковые, и без этого
+        /// один .cer молча затирал бы другой (замечание Codex). Возвращает успех записи.
+        /// </summary>
+        private static bool SaveTokenCert(string outDir, Pkcs11TokenInfo t, Pkcs11Container c, HashSet<string> used)
         {
             try
             {
                 Directory.CreateDirectory(outDir);
-                string safe = c.Name ?? "cert";
-                foreach (char ch in Path.GetInvalidFileNameChars())
-                    safe = safe.Replace(ch, '_');
-                string path = Path.Combine(outDir, safe + ".cer");
+                string label = Sanitize(c.Name ?? "cert");
+                string serial = string.IsNullOrEmpty(t.Serial) ? "" : "_" + Sanitize(t.Serial);
+                string baseName = label + serial;
+                string path = Path.Combine(outDir, baseName + ".cer");
+                for (int n = 2; !used.Add(path.ToLowerInvariant()); n++)
+                    path = Path.Combine(outDir, $"{baseName}({n}).cer");
                 File.WriteAllBytes(path, c.Certificate);
                 Out("    " + Strings.Format("cli.token.cert.saved", path));
+                return true;
             }
             catch (Exception e)
             {
                 Out("    " + Strings.Format("cli.token.certfail", c.Name ?? "?", e.Message));
+                return false;
             }
+        }
+
+        /// <summary>Заменить в имени символы, недопустимые в имени файла, на подчёркивание.</summary>
+        private static string Sanitize(string name)
+        {
+            foreach (char ch in Path.GetInvalidFileNameChars())
+                name = name.Replace(ch, '_');
+            return name;
         }
 
         /// <summary>

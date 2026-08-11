@@ -437,7 +437,33 @@ namespace CryptoProExport.App
             Log(Strings.Format("log.cert.exchange", ex ?? Strings.Get("common.none")));
             Log(Strings.Format("log.cert.sign", sg ?? Strings.Get("common.none")));
             if (ex == null && sg == null)
-                Log(Strings.Get("log.cert.fail"));
+            {
+                // CSP сертификат не отдал (нет провайдера или контейнер только на токене) —
+                // пробуем взять его прямо с токена по PKCS#11, без CSP (Рутокен ЭЦП/Lite).
+                string fromToken = SaveCertFromToken(container, dest);
+                if (fromToken != null)
+                    Log(Strings.Format("cli.token.cert.saved", fromToken));
+                else
+                    Log(Strings.Get("log.cert.fail"));
+            }
+        }
+
+        /// <summary>
+        /// Сохранить сертификат выбранного контейнера прямо с токена (PKCS#11, без CSP).
+        /// Возвращает путь к .cer или null, если такого контейнера с сертификатом на токенах нет.
+        /// </summary>
+        private static string SaveCertFromToken(string container, string destDir)
+        {
+            foreach (var t in Pkcs11Token.Enumerate(readContainers: true))
+                foreach (var c in t.Containers)
+                    if (c.Certificate != null && string.Equals(c.Name, container, StringComparison.Ordinal))
+                    {
+                        Directory.CreateDirectory(destDir);
+                        string path = Path.Combine(destDir, Sanitize(container) + ".cer");
+                        File.WriteAllBytes(path, c.Certificate);
+                        return path;
+                    }
+            return null;
         }
 
         private void DoFull(CancellationToken cancel)
