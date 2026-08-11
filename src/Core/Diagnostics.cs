@@ -32,6 +32,24 @@ namespace CryptoProExport
                 lines.Add("  " + Strings.Get("diag.rtcom.warn"));
             if (detailed) lines.AddRange(RutokenExporter.DescribeSource());
 
+            // 2b. PKCS#11 Рутокена — путь для Рутокен ЭЦП/Lite (где rtCOMLite файлы не отдаёт).
+            //     Берётся из системы (драйвер Рутокена), не вшивается. В detailed — перечень токенов.
+            string p11 = Pkcs11Token.LibraryPath();
+            lines.Add(Strings.Format("diag.pkcs11", p11 == null
+                ? Strings.Get("diag.pkcs11.missing")
+                : Strings.Format("diag.pkcs11.found", p11)));
+            if (detailed && p11 != null)
+                foreach (var t in Pkcs11Token.Enumerate(readContainers: true))
+                {
+                    lines.Add("  " + Strings.Format("diag.pkcs11.token",
+                        t.Reader ?? "?", Pkcs11Token.KindName(t.Kind),
+                        t.Serial ?? "?", Pkcs11Token.PinState(t)));
+                    foreach (var c in t.Containers)
+                        lines.Add("    " + Strings.Format("diag.pkcs11.container",
+                            c.Name ?? Strings.Get("log.container.unnamed"),
+                            Strings.Get(c.Certificate != null ? "common.present" : "common.none")));
+                }
+
             // 3. КриптоПро CSP — единственная внешняя зависимость, вшить нельзя
             var provs = CertFromContainer.AvailableProviders();
             lines.Add(provs.Count > 0

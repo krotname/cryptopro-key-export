@@ -82,6 +82,7 @@ interface languages fall back to the English text.
 ------------------------------------------------------------------
   deps                                check the dependencies
   list                                list the containers
+  token [folder]                      diagnose the token (PKCS#11)
   extractcert <container> <folder>    extract the .cer
   checkexport <container>             check the export ban
   export <folder> [pin]               copy containers off tokens
