@@ -283,9 +283,12 @@ GitHub Actions **работает** (`.github/workflows/ci.yml`). Прежнее
     Ключевая проверка — счётчик 32-байтовых `OCTET STRING`, он должен дать ноль:
 
     ```powershell
-    $b = [IO.File]::ReadAllBytes("token-session\session\01-baseline\slot1\public\04_CKO_DATA_*.bin")
-    ($b | Select-Object -SkipLast 1 | Where-Object { $_ -eq 4 }).Count   # сколько тегов 0x04
-    $n = 0; for ($i = 0; $i -lt $b.Length - 1; $i++) { if ($b[$i] -eq 0x04 -and $b[$i+1] -eq 0x20) { $n++ } }; $n
+    # Имя файла содержит метку контейнера, поэтому путь сначала разрешаем: статический
+    # [IO.File]::ReadAllBytes маску не раскрывает и упал бы с FileNotFoundException.
+    $f = Get-ChildItem 'token-session\session\01-baseline\slot1\public\04_CKO_DATA_*.bin'
+    $b = [IO.File]::ReadAllBytes($f.FullName)
+    $n = 0; for ($i = 0; $i -lt $b.Length - 1; $i++) { if ($b[$i] -eq 0x04 -and $b[$i+1] -eq 0x20) { $n++ } }
+    $n   # ноль = 32-байтовых OCTET STRING нет, то есть нет и ключевого материала
     ```
 
     Второй способ, наглядный: вырезать байты 77…2108 и 2141…3505 и открыть как `.cer` —
