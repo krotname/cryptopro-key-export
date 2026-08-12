@@ -196,6 +196,7 @@ err.header.missing = Folder tidak memuat header.key
 err.cert.required = Diperlukan setidaknya satu sertifikat (--cert/--certsg). Ekspor .cer dari penyimpanan «Pribadi» atau dari kontainer.
 err.com.notfound = Pustaka COM tidak ditemukan
 err.com.call = {0} mengembalikan {1}
+err.arg.quote = Argumen baris perintah tidak boleh berisi tanda kutip ganda — hapus dari kata sandi atau jalur
 
 # --- izin kunci ---
 key.notfound = kunci tidak ditemukan

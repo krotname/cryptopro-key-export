@@ -196,6 +196,7 @@ err.header.missing = Im Ordner liegt keine header.key
 err.cert.required = Mindestens ein Zertifikat wird gebraucht (--cert/--certsg). Exportieren Sie die .cer aus dem Speicher «Eigene Zertifikate» oder aus dem Container.
 err.com.notfound = COM-Bibliothek nicht gefunden
 err.com.call = {0} lieferte {1}
+err.arg.quote = Ein Befehlszeilenargument darf kein doppeltes Anführungszeichen enthalten — entfernen Sie es aus dem Kennwort oder dem Pfad
 
 # --- Schlüsselrechte ---
 key.notfound = Schlüssel nicht gefunden

@@ -196,6 +196,7 @@ err.header.missing = Thư mục không có header.key
 err.cert.required = Cần ít nhất một chứng thư (--cert/--certsg). Hãy xuất tệp .cer từ kho «Cá nhân» hoặc từ container.
 err.com.notfound = Không tìm thấy thư viện COM
 err.com.call = {0} trả về {1}
+err.arg.quote = Đối số dòng lệnh không được chứa dấu nháy kép — hãy bỏ nó khỏi mật khẩu hoặc đường dẫn
 
 # --- quyền của khoá ---
 key.notfound = không tìm thấy khoá

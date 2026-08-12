@@ -196,6 +196,7 @@ err.header.missing = Klasörde header.key yok
 err.cert.required = En az bir sertifika gerekir (--cert/--certsg). .cer dosyasını «Kişisel» deposundan ya da kapsayıcıdan dışa aktarın.
 err.com.notfound = COM kitaplığı bulunamadı
 err.com.call = {0} {1} döndürdü
+err.arg.quote = Komut satırı bağımsız değişkeni çift tırnak içeremez — parolanızdan veya yoldan kaldırın
 
 # --- anahtar izinleri ---
 key.notfound = anahtar bulunamadı

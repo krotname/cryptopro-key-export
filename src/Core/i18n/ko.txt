@@ -196,6 +196,7 @@ err.header.missing = 폴더에 header.key가 없습니다
 err.cert.required = 인증서가 최소 하나 필요합니다(--cert/--certsg). 「개인」 저장소나 컨테이너에서 .cer를 내보내세요.
 err.com.notfound = COM 라이브러리를 찾지 못했습니다
 err.com.call = {0}이(가) {1}을(를) 반환했습니다
+err.arg.quote = 명령줄 인수에는 큰따옴표를 사용할 수 없습니다. 비밀번호나 경로에서 제거하세요
 
 # --- 키 권한 ---
 key.notfound = 키를 찾지 못함

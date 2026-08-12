@@ -64,13 +64,17 @@ namespace CryptoProExport
         /// Полный проход: снять контейнеры с токенов и сделать ключи экспортируемыми.
         /// Сертификат берётся автоматически через CryptoAPI (по имени контейнера, пока токен вставлен);
         /// при неудаче — используются переданные certExchange/certSignature (.cer).
+        /// Возвращает число снятых контейнеров: ноль означает, что токена не было, и вызывающему
+        /// это надо отличать от успеха.
         /// </summary>
-        public void ExportAndMakeExportable(
+        public int ExportAndMakeExportable(
             string destParent, string certExchange = null, string certSignature = null,
             string userPin = null, string containerPassword = null)
         {
+            int processed = 0;
             foreach (var (container, folder) in ExportFromTokens(destParent, userPin))
             {
+                processed++;
                 Cancel.ThrowIfCancellationRequested();
                 string ex = certExchange, sg = certSignature;
 
@@ -98,6 +102,7 @@ namespace CryptoProExport
                     ? Strings.Format("pipe.keyexport.ok", folder)
                     : Strings.Format("pipe.keyexport.fail", folder, r.Explain(), r.Output));
             }
+            return processed;
         }
     }
 }

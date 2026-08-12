@@ -211,9 +211,12 @@ namespace CryptoProExport
         /// </summary>
         public static (string exchange, string signature) SaveCerts(string container, string outFolder)
         {
-            Directory.CreateDirectory(outFolder);
             var certs = Extract(container);
             string ex = null, sg = null;
+            // Папку создаём, только когда есть что в неё положить: пустой каталог после
+            // неудачи читается как «что-то сохранилось», хотя не сохранилось ничего.
+            if (!certs.Any) return (null, null);
+            Directory.CreateDirectory(outFolder);
             if (certs.Exchange != null)
             {
                 ex = Path.Combine(outFolder, "cert_exchange.cer");

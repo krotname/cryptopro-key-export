@@ -196,6 +196,7 @@ err.header.missing = 文件夹中没有 header.key
 err.cert.required = 至少需要一份证书（--cert/--certsg）。请从「个人」存储或容器中导出 .cer。
 err.com.notfound = 未找到 COM 库
 err.com.call = {0} 返回了 {1}
+err.arg.quote = 命令行参数不能包含双引号，请从密码或路径中删除
 
 # --- 密钥权限 ---
 key.notfound = 未找到密钥

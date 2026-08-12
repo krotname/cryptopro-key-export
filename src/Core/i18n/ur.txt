@@ -196,6 +196,7 @@ err.header.missing = فولڈر میں header.key نہیں ہے
 err.cert.required = کم از کم ایک سرٹیفکیٹ درکار ہے (--cert/--certsg)۔ .cer کو «ذاتی» ذخیرے سے یا کنٹینر سے برآمد کریں۔
 err.com.notfound = COM لائبریری نہیں ملی
 err.com.call = {0} نے {1} لوٹایا
+err.arg.quote = کمانڈ لائن آرگیومنٹ میں ڈبل کوٹ نہیں ہو سکتا — اسے پاس ورڈ یا راستے سے ہٹا دیں
 
 # --- کلید کے حقوق ---
 key.notfound = کلید نہیں ملی
