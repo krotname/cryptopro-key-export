@@ -196,6 +196,7 @@ err.header.missing = En la carpeta no hay header.key
 err.cert.required = Hace falta al menos un certificado (--cert/--certsg). Exporte el .cer desde el almacén «Personal» o desde el contenedor.
 err.com.notfound = Biblioteca COM no encontrada
 err.com.call = {0} ha devuelto {1}
+err.arg.quote = Un argumento de línea de comandos no puede contener comillas dobles: quítelas de la contraseña o de la ruta
 
 # --- permisos de la clave ---
 key.notfound = clave no encontrada

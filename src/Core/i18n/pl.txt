@@ -196,6 +196,7 @@ err.header.missing = W folderze nie ma header.key
 err.cert.required = Potrzebny jest co najmniej jeden certyfikat (--cert/--certsg). Wyeksportuj .cer z magazynu «Osobisty» albo z kontenera.
 err.com.notfound = Nie znaleziono biblioteki COM
 err.com.call = {0} zwrócił {1}
+err.arg.quote = Argument wiersza poleceń nie może zawierać cudzysłowu — usuń go z hasła lub ze ścieżki
 
 # --- uprawnienia klucza ---
 key.notfound = nie znaleziono klucza

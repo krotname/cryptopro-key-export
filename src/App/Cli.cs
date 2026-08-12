@@ -66,17 +66,18 @@ namespace CryptoProExport.App
                             Out($"  {c.Name}  " + Strings.Format("cli.list.provider", c.ProvType));
 
                         // Токены по PKCS#11 (Рутокен ЭЦП/Lite): контейнеры видны без ввода PIN.
-                        var tokens = Pkcs11Token.Enumerate(readContainers: true);
-                        if (tokens.Count > 0)
+                        // Лог обязателен: без него сбой драйвера выглядел бы как «токенов нет».
+                        var tokens = Pkcs11Token.Enumerate(readContainers: true, log: Out);
+                        Out(Strings.Get("cli.list.pkcs11"));
+                        // Секция печатается всегда, даже пустая: молчание читалось бы как
+                        // «по PKCS#11 не смотрели», а не как «токенов не вставлено».
+                        if (tokens.Count == 0) Out("  " + Strings.Get("cli.token.none"));
+                        foreach (var t in tokens)
                         {
-                            Out(Strings.Get("cli.list.pkcs11"));
-                            foreach (var t in tokens)
-                            {
-                                Out($"  {t.Reader} [{Pkcs11Token.KindName(t.Kind)}]");
-                                foreach (var c in t.Containers)
-                                    Out("    " + Strings.Format("cli.token.container", c.Name ?? "?",
-                                        Strings.Get(c.Certificate != null ? "common.present" : "common.none")));
-                            }
+                            Out($"  {t.Reader} [{Pkcs11Token.KindName(t.Kind)}]");
+                            foreach (var c in t.Containers)
+                                Out("    " + Strings.Format("cli.token.container", c.Name ?? "?",
+                                    Strings.Get(c.Certificate != null ? "common.present" : "common.none")));
                         }
 
                         Out(Strings.Get("cli.list.tokens"));
@@ -133,8 +134,11 @@ namespace CryptoProExport.App
                     {
                         if (args.Length < 2) { Usage(); return 1; }
                         var pipe = new ExportPipeline { Log = Out };
-                        pipe.ExportFromTokens(args[1], args.Length > 2 ? args[2] : null);
-                        return 0;
+                        var saved = pipe.ExportFromTokens(args[1], args.Length > 2 ? args[2] : null);
+                        Out(Strings.Format("log.exported", saved.Count));
+                        // Ноль снятых контейнеров — не успех: скрипт иначе решил бы, что
+                        // файлы на месте (тот же разбор, что у команды token в v1.4.1).
+                        return saved.Count > 0 ? 0 : 2;
                     }
                     case "keyexport":
                     {
@@ -190,11 +194,12 @@ namespace CryptoProExport.App
                     {
                         if (args.Length < 2) { Usage(); return 1; }
                         var pipe = new ExportPipeline { Log = Out };
-                        pipe.ExportAndMakeExportable(
+                        int processed = pipe.ExportAndMakeExportable(
                             destParent: args[1],
                             certExchange: args.Length > 2 ? args[2] : null,
                             userPin: args.Length > 3 ? args[3] : null);
-                        return 0;
+                        Out(Strings.Format("log.exported", processed));
+                        return processed > 0 ? 0 : 2;
                     }
                     default:
                         Usage();

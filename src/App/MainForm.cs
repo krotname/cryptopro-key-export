@@ -418,10 +418,10 @@ namespace CryptoProExport.App
 
         private void DoExport(CancellationToken cancel)
         {
-            string dest = _txtDest.Text.Trim();
+            string dest = TextOf(_txtDest).Trim();
             if (string.IsNullOrEmpty(dest)) { Log(Strings.Get("log.need.dest")); return; }
-            var pipe = new ExportPipeline(NullIfEmpty(_txtP12.Text)) { Log = Log, Cancel = cancel };
-            var saved = pipe.ExportFromTokens(dest, NullIfEmpty(_txtPin.Text));
+            var pipe = new ExportPipeline(NullIfEmpty(TextOf(_txtP12))) { Log = Log, Cancel = cancel };
+            var saved = pipe.ExportFromTokens(dest, NullIfEmpty(TextOf(_txtPin)));
             Log(Strings.Format("log.exported", saved.Count));
             RefreshList(cancel);   // из рабочего потока: внутри всё, что трогает UI, идёт через Invoke
         }
@@ -430,7 +430,7 @@ namespace CryptoProExport.App
         {
             string container = SelectedContainerName();
             if (container == null) { Log(Strings.Get("log.need.container")); return; }
-            string destRoot = _txtDest.Text.Trim();
+            string destRoot = TextOf(_txtDest).Trim();
             if (string.IsNullOrEmpty(destRoot)) { Log(Strings.Get("log.need.dest")); return; }
             string dest = Path.Combine(destRoot, "certs_" + Sanitize(container));
             var (ex, sg) = CertFromContainer.SaveCerts(container, dest);
@@ -468,13 +468,13 @@ namespace CryptoProExport.App
 
         private void DoFull(CancellationToken cancel)
         {
-            string dest = _txtDest.Text.Trim();
+            string dest = TextOf(_txtDest).Trim();
             if (string.IsNullOrEmpty(dest)) { Log(Strings.Get("log.need.dest")); return; }
             var confirm = AskConfirm(Strings.Get("dlg.confirm.full"), Strings.Get("dlg.confirm.title"));
             if (confirm != DialogResult.OK) { Log(Strings.Get("log.cancelled.user")); return; }
 
-            var pipe = new ExportPipeline(NullIfEmpty(_txtP12.Text)) { Log = Log, Cancel = cancel };
-            pipe.ExportAndMakeExportable(dest, userPin: NullIfEmpty(_txtPin.Text));
+            var pipe = new ExportPipeline(NullIfEmpty(TextOf(_txtP12))) { Log = Log, Cancel = cancel };
+            pipe.ExportAndMakeExportable(dest, userPin: NullIfEmpty(TextOf(_txtPin)));
             Log(Strings.Get("log.full.done"));
             RefreshList(cancel);   // из рабочего потока: внутри всё, что трогает UI, идёт через Invoke
         }
@@ -492,7 +492,7 @@ namespace CryptoProExport.App
 
         private void DoInstall()
         {
-            string folder = AskFolder(Strings.Get("dlg.folder.container"), _txtDest.Text.Trim());
+            string folder = AskFolder(Strings.Get("dlg.folder.container"), TextOf(_txtDest).Trim());
             if (folder == null) { Log(Strings.Get("log.cancelled")); return; }
             if (!ContainerStore.LooksLikeContainer(folder))
             {
@@ -527,7 +527,7 @@ namespace CryptoProExport.App
 
             string dest = AskSaveFile(Strings.Get("dlg.pfx.save"),
                                       "PKCS#12 (*.pfx)|*.pfx|" + Strings.Get("files.all") + "|*.*",
-                                      _txtDest.Text.Trim(), Sanitize(container) + ".pfx");
+                                      TextOf(_txtDest).Trim(), Sanitize(container) + ".pfx");
             if (dest == null) { Log(Strings.Get("log.cancelled")); return; }
 
             string pass = AskText(Strings.Get("dlg.pfx.pass.title"), Strings.Get("dlg.pfx.pass.prompt"),
@@ -647,6 +647,18 @@ namespace CryptoProExport.App
         {
             if (InvokeRequired) { BeginInvoke(new Action(() => AddRow(where, name, details))); return; }
             _lv.Items.Add(new ListViewItem(new[] { where, name, details }));
+        }
+
+        /// <summary>
+        /// Прочитать текст поля с потока окна. Действия идут в <see cref="Task.Run"/>, а
+        /// свойства контролов из чужого потока трогать нельзя: при закрытии окна или
+        /// пересоздании хендла обращение бросает ObjectDisposedException, и операция падает
+        /// на ровном месте. Остальные обращения к UI (список, диалоги) уже идут через Invoke.
+        /// </summary>
+        private string TextOf(TextBox box)
+        {
+            if (InvokeRequired) return (string)Invoke(new Func<string>(() => TextOf(box)));
+            return box.Text;
         }
 
         private string SelectedContainerName()

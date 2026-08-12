@@ -81,10 +81,23 @@ namespace CryptoProExport
             if (hasSignature)
                 sb.Append(" --certsg \"cert_signature.cer\" --keyexport_sg");
             if (!string.IsNullOrEmpty(containerPassword))
-                sb.Append(" --passcp \"").Append(containerPassword).Append('"'); // кавычки — пароль может быть с пробелом
+                sb.Append(" --passcp ").Append(Quote(containerPassword)); // кавычки — пароль может быть с пробелом
             if (normalHeader)
                 sb.Append(" --normal_header");
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Значение аргумента в кавычках. Собственная кавычка внутри значения — ошибка, а не
+        /// повод «как-нибудь» экранировать: утилиты КриптоПро принимают строку целиком и
+        /// разбирают её сами, поэтому пароль <c>my"pass</c> дошёл бы до них как <c>my</c>, и
+        /// .pfx молча получил бы не тот пароль, который ввёл пользователь.
+        /// </summary>
+        internal static string Quote(string value)
+        {
+            if (value != null && value.IndexOf('"') >= 0)
+                throw new ArgumentException(Strings.Get("err.arg.quote"));
+            return "\"" + value + "\"";
         }
 
         /// <summary>
@@ -128,7 +141,7 @@ namespace CryptoProExport
         {
             var sb = new StringBuilder("--cppublic --container_folder \".\"");
             if (!string.IsNullOrEmpty(containerPassword))
-                sb.Append(" --passcp ").Append(containerPassword);
+                sb.Append(" --passcp ").Append(Quote(containerPassword)); // без кавычек пароль с пробелом разъехался бы
             return Execute(sb.ToString(), containerFolder, timeoutMs);
         }
 
@@ -147,12 +160,29 @@ namespace CryptoProExport
         /// <summary>Заменить значение в кавычках после флага на «***».</summary>
         internal static string MaskQuotedValue(string args, string flag)
         {
-            int i = args.IndexOf(flag, StringComparison.Ordinal);
+            int i = IndexOfFlag(args, flag);
             if (i < 0) return args;
             int open = args.IndexOf('"', i + flag.Length);
             int close = open < 0 ? -1 : args.IndexOf('"', open + 1);
             if (open < 0 || close < 0) return args.Substring(0, i + flag.Length) + "***";
             return args.Substring(0, open) + "\"***\"" + args.Substring(close + 1);
+        }
+
+        /// <summary>
+        /// Позиция флага в командной строке, считая только текст вне кавычек. Простой IndexOf
+        /// нашёл бы флаг и внутри чужого значения: путь к .pfx выбирает пользователь, и файл
+        /// с именем вроде <c>backup -pin .pfx</c> увёл бы маскирование на путь, а настоящий
+        /// пароль ушёл бы в журнал открытым текстом.
+        /// </summary>
+        private static int IndexOfFlag(string args, string flag)
+        {
+            bool inQuotes = false;
+            for (int i = 0; i + flag.Length <= args.Length; i++)
+            {
+                if (args[i] == '"') { inQuotes = !inQuotes; continue; }
+                if (!inQuotes && string.CompareOrdinal(args, i, flag, 0, flag.Length) == 0) return i;
+            }
+            return -1;
         }
 
         private static void CopyIfDifferent(string source, string target)

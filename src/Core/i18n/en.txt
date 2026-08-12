@@ -196,6 +196,7 @@ err.header.missing = The folder has no header.key
 err.cert.required = At least one certificate is required (--cert/--certsg). Export the .cer from the «Personal» store or from the container.
 err.com.notfound = COM library not found
 err.com.call = {0} returned {1}
+err.arg.quote = A command line argument cannot contain a double quote — remove it from the password or the path
 
 # --- key permissions ---
 key.notfound = key not found

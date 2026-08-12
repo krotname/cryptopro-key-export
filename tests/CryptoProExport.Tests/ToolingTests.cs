@@ -67,6 +67,27 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void MaskQuotedValue_IgnoresFlagInsideAnotherValue()
+        {
+            // Имя .pfx выбирает пользователь. Если оно само содержит «-pin », простой IndexOf
+            // замаскировал бы путь, а настоящий пароль ушёл бы в журнал открытым текстом.
+            string masked = P12Utility.MaskQuotedValue(
+                "-export -pfx -dest \"C:\\backup -pin .pfx\" -pin \"тайна\" -silent", "-pin ");
+            Assert.DoesNotContain("тайна", masked);
+            Assert.Contains("C:\\backup -pin .pfx", masked);
+            Assert.Contains("-pin \"***\"", masked);
+        }
+
+        [Fact]
+        public void Quote_RejectsDoubleQuoteInsteadOfSilentlyTruncating()
+        {
+            // Утилиты КриптоПро разбирают командную строку сами: пароль my"pass дошёл бы до
+            // них как «my», и .pfx молча получил бы не тот пароль, что ввёл пользователь.
+            Assert.Throws<ArgumentException>(() => P12Utility.BuildRepairArguments(true, false, "my\"pass", false));
+            Assert.Equal("\"обычный пароль\"", P12Utility.Quote("обычный пароль"));
+        }
+
+        [Fact]
         public void BundledDependencies_AreEmbedded()
         {
             // Если этот тест упал — зависимости перестали вшиваться и exe снова неполный

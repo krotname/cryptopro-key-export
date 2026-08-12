@@ -21,14 +21,27 @@ namespace CryptoProExport
         /// <summary>Записать контейнер на диск как папку с 6 файлами .key.</summary>
         public string SaveTo(string parentDir, string folderName = null)
         {
-            folderName ??= (ContainerName ?? "container");
-            foreach (char c in Path.GetInvalidFileNameChars())
-                folderName = folderName.Replace(c, '_');
-            string dst = Path.Combine(parentDir, folderName);
+            string dst = Path.Combine(parentDir, SafeFolderName(folderName ?? ContainerName));
             Directory.CreateDirectory(dst);
             foreach (var kv in Files)
                 File.WriteAllBytes(Path.Combine(dst, kv.Key), kv.Value);
             return dst;
+        }
+
+        /// <summary>
+        /// Имя папки для контейнера, безопасное для файловой системы. Имя приходит из
+        /// <c>name.key</c> на токене, то есть из данных, а не от пользователя, и одной замены
+        /// недопустимых символов мало: <see cref="Path.GetInvalidFileNameChars"/> не считает
+        /// недопустимой точку, поэтому имя «..» прошло бы фильтр и <see cref="Path.Combine"/>
+        /// увёл бы запись в родительский каталог, затерев там чужие *.key.
+        /// </summary>
+        internal static string SafeFolderName(string name)
+        {
+            name ??= string.Empty;
+            foreach (char c in Path.GetInvalidFileNameChars())
+                name = name.Replace(c, '_');
+            name = name.Trim().TrimEnd('.');   // хвостовые точки Windows молча отбрасывает
+            return name.Length == 0 ? "container" : name;
         }
     }
 
@@ -90,9 +103,11 @@ namespace CryptoProExport
             var result = new List<RutokenContainer>();
             dynamic ctx = CreateContext();
             Log(Strings.Get("token.connect"));
-            ctx.Acquire();
             try
             {
+                // Acquire внутри try: если он бросит, Free() всё равно должен быть вызван —
+                // иначе контекст rtCOMLite остаётся захваченным до конца процесса.
+                ctx.Acquire();
                 object[] readers = ToArray(ctx.EnumReaders());
                 Log(Strings.Format("token.found", readers?.Length ?? 0));
                 if (readers == null) return result;
@@ -104,9 +119,12 @@ namespace CryptoProExport
                     if (string.IsNullOrEmpty(tokenName)) continue;
                     Log(Strings.Format("token.open", tokenName));
                     dynamic rt = ctx.OpenReader(tokenName, RT_SHARED, OpenTimeoutMs);
-                    rt.BeginTransaction();
                     try
                     {
+                        // BeginTransaction тоже внутри try: он падает, когда токен занят другим
+                        // процессом (SCARD_E_SHARING_VIOLATION), и без CloseReader считыватель
+                        // остался бы захваченным — следующие токены уже не обошлись бы.
+                        rt.BeginTransaction();
                         Authenticate(rt);
                         rt.SelectMF();
                         _folderCount = _fileCount = 0;

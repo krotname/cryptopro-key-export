@@ -196,6 +196,7 @@ err.header.missing = Nella cartella non c’è header.key
 err.cert.required = Serve almeno un certificato (--cert/--certsg). Esportate il .cer dall’archivio «Personale» o dal contenitore.
 err.com.notfound = Libreria COM non trovata
 err.com.call = {0} ha restituito {1}
+err.arg.quote = Un argomento della riga di comando non può contenere virgolette doppie: rimuovile dalla password o dal percorso
 
 # --- permessi della chiave ---
 key.notfound = chiave non trovata

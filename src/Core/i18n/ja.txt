@@ -196,6 +196,7 @@ err.header.missing = フォルダーに header.key がありません
 err.cert.required = 証明書が最低 1 つ必要です（--cert/--certsg）。「個人」ストアかコンテナーから .cer を書き出してください。
 err.com.notfound = COM ライブラリが見つかりません
 err.com.call = {0} は {1} を返しました
+err.arg.quote = コマンドライン引数に二重引用符は使用できません。パスワードまたはパスから削除してください
 
 # --- 鍵の権限 ---
 key.notfound = 鍵が見つかりません

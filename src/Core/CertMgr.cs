@@ -133,6 +133,7 @@ namespace CryptoProExport
         /// <summary>Пароль PFX не должен попадать в лог.</summary>
         private static string Mask(string args) => P12Utility.MaskQuotedValue(args, "-pin ");
 
-        private static string Quote(string s) => "\"" + s + "\"";
+        /// <summary>Значение в кавычках; кавычка внутри значения — ошибка (см. <see cref="P12Utility.Quote"/>).</summary>
+        private static string Quote(string s) => P12Utility.Quote(s);
     }
 }
