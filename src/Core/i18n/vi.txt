@@ -279,3 +279,25 @@ cli.token.container = vùng chứa «{0}», chứng chỉ: {1}
 cli.token.certonly = chứng chỉ «{0}» (không có vùng chứa CryptoPro)
 cli.token.cert.saved = đã lưu chứng chỉ mà không cần CSP: {0}
 cli.token.certfail = không lưu được chứng chỉ «{0}»: {1}
+
+# --- extract private key (CSP-free) ---
+btn.extractkey = Trích khóa (PEM)
+tip.extractkey = Trích khóa riêng trực tiếp từ vùng chứa tệp (6 tệp *.key), không cần CryptoPro CSP.\nKhóa được giải mã bằng các nguyên hàm GOST tích hợp và lưu dưới dạng PKCS#8/PEM (tương thích với OpenSSL gost-engine).\nChỉ hoạt động với vùng chứa tệp (không dùng cho khóa không thể trích xuất trên token). Cảnh báo: tệp .pem là khóa riêng của bạn — hãy giữ bí mật.
+status.extractkey = Đang trích khóa riêng…
+dlg.extractkey.save = Nơi lưu khóa riêng (PEM)
+dlg.extractkey.pass.title = Mật khẩu vùng chứa
+dlg.extractkey.pass.prompt = Mật khẩu vùng chứa (thường để trống — hãy để trống ô này):
+log.extractkey.done = Đã lưu khóa riêng (PKCS#8/PEM): {0}
+log.extractkey.pub = đường cong {0}; khóa công khai khớp với dấu vân tay trong vùng chứa
+log.extractkey.fail = Không thể trích khóa: {0}
+cli.usage.extractkey = trích khóa riêng từ vùng chứa tệp sang PKCS#8/PEM (không cần CSP)
+cli.extractkey.ok = Đã lưu khóa riêng (PKCS#8/PEM): {0}
+cli.extractkey.pub = đường cong {0}, khóa công khai X={1}
+
+# --- container-extraction errors (CSP-free) ---
+err.extract.nofile = Thư mục vùng chứa không có {0}: {1}
+err.extract.curve = Đường cong {0} không được hỗ trợ
+err.extract.nofingerprint = header.key không có dấu vân tay khóa công khai — không nhận dạng được vùng chứa
+err.extract.fingerprint = Dấu vân tay khóa công khai không khớp — sai mật khẩu hoặc vùng chứa bị hỏng
+err.extract.degenerate = Phân tích tạo ra khóa suy biến — sai mật khẩu hoặc vùng chứa bị hỏng
+err.extract.corrupt = Vùng chứa bị hỏng hoặc không nhận dạng được: {0}

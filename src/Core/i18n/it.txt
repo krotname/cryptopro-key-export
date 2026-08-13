@@ -279,3 +279,25 @@ cli.token.container = contenitore «{0}», certificato: {1}
 cli.token.certonly = certificato «{0}» (nessun contenitore CryptoPro)
 cli.token.cert.saved = certificato salvato senza CSP: {0}
 cli.token.certfail = impossibile salvare il certificato «{0}»: {1}
+
+# --- extract private key (CSP-free) ---
+btn.extractkey = Estrai chiave (PEM)
+tip.extractkey = Estrai la chiave privata direttamente da un contenitore di file (6 file *.key), senza CryptoPro CSP.\nLa chiave viene decifrata con primitive GOST integrate e salvata come PKCS#8/PEM (compatibile con OpenSSL gost-engine).\nFunziona solo per i contenitori di file (non per le chiavi non esportabili su token). Attenzione: il file .pem è la tua chiave privata, conservalo come un segreto.
+status.extractkey = Estrazione della chiave privata…
+dlg.extractkey.save = Dove salvare la chiave privata (PEM)
+dlg.extractkey.pass.title = Password del contenitore
+dlg.extractkey.pass.prompt = Password del contenitore (di solito vuota — lascia il campo vuoto):
+log.extractkey.done = Chiave privata salvata (PKCS#8/PEM): {0}
+log.extractkey.pub = curva {0}; la chiave pubblica corrisponde all'impronta nel contenitore
+log.extractkey.fail = Impossibile estrarre la chiave: {0}
+cli.usage.extractkey = estrai la chiave privata da un contenitore di file in PKCS#8/PEM (senza CSP)
+cli.extractkey.ok = Chiave privata salvata (PKCS#8/PEM): {0}
+cli.extractkey.pub = curva {0}, chiave pubblica X={1}
+
+# --- container-extraction errors (CSP-free) ---
+err.extract.nofile = La cartella del contenitore non contiene {0}: {1}
+err.extract.curve = La curva {0} non è supportata
+err.extract.nofingerprint = header.key non contiene l'impronta della chiave pubblica — contenitore non riconosciuto
+err.extract.fingerprint = L'impronta della chiave pubblica non corrisponde — password errata o contenitore danneggiato
+err.extract.degenerate = L'analisi ha prodotto una chiave degenere — password errata o contenitore danneggiato
+err.extract.corrupt = Il contenitore è danneggiato o non riconosciuto: {0}

@@ -279,3 +279,25 @@ cli.token.container = コンテナー「{0}」、証明書: {1}
 cli.token.certonly = 証明書「{0}」（CryptoPro コンテナーなし）
 cli.token.cert.saved = CSP なしで証明書を保存: {0}
 cli.token.certfail = 証明書「{0}」を保存できませんでした: {1}
+
+# --- extract private key (CSP-free) ---
+btn.extractkey = 鍵を取り出す (PEM)
+tip.extractkey = ファイルコンテナ（6 個の *.key ファイル）から秘密鍵を直接取り出します — CryptoPro CSP なしで。\n鍵は内蔵の GOST プリミティブで復号し、PKCS#8/PEM 形式で保存します（OpenSSL gost-engine と互換）。\nファイルコンテナのみ対応（トークン上の取り出せない鍵は不可）。注意: .pem ファイルはあなたの秘密鍵です。厳重に保管してください。
+status.extractkey = 秘密鍵を取り出しています…
+dlg.extractkey.save = 秘密鍵の保存先 (PEM)
+dlg.extractkey.pass.title = コンテナのパスワード
+dlg.extractkey.pass.prompt = コンテナのパスワード（通常は空 — 空欄のままにしてください）:
+log.extractkey.done = 秘密鍵を保存しました (PKCS#8/PEM): {0}
+log.extractkey.pub = 曲線 {0}；公開鍵はコンテナ内のフィンガープリントと一致しました
+log.extractkey.fail = 鍵を取り出せませんでした: {0}
+cli.usage.extractkey = ファイルコンテナから秘密鍵を PKCS#8/PEM に取り出す（CSP 不要）
+cli.extractkey.ok = 秘密鍵を保存しました (PKCS#8/PEM): {0}
+cli.extractkey.pub = 曲線 {0}、公開鍵 X={1}
+
+# --- container-extraction errors (CSP-free) ---
+err.extract.nofile = コンテナフォルダに {0} がありません: {1}
+err.extract.curve = 曲線 {0} はサポートされていません
+err.extract.nofingerprint = header.key に公開鍵のフィンガープリントがありません — コンテナを認識できません
+err.extract.fingerprint = 公開鍵のフィンガープリントが一致しません — パスワードが違うか、コンテナが破損しています
+err.extract.degenerate = 解析結果が退化した鍵になりました — パスワードが違うか、コンテナが破損しています
+err.extract.corrupt = コンテナが破損しているか認識できません: {0}

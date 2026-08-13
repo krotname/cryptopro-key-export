@@ -29,7 +29,7 @@ namespace CryptoProExport.App
         private ColumnHeader _colWhere, _colName, _colDetails;
         private Label _lblP12, _lblDest, _lblPin, _lblPinHint, _lblLang;
         private Button _btnP12, _btnDest;
-        private Button _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnInstall, _btnCheck, _btnPfx, _btnLogs, _btnHelp;
+        private Button _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnInstall, _btnCheck, _btnPfx, _btnExtractKey, _btnLogs, _btnHelp;
         private Button _btnCancel;
         private Button[] _actionButtons;
         private ComboBox _cmbLang;
@@ -149,6 +149,7 @@ namespace CryptoProExport.App
             _btnCheck = MakeButton((_, __) => Run("status.check", DoCheckExportable));
             _btnInstall = MakeButton((_, __) => Run("status.install", DoInstall));
             _btnPfx = MakeButton((_, __) => Run("status.pfx", DoExportPfx));
+            _btnExtractKey = MakeButton((_, __) => Run("status.extractkey", DoExtractKey));
             _btnLogs = MakeButton((_, __) => OpenLogFolder());
             _btnHelp = MakeButton((_, __) => Guide.Show(this));
             _btnCancel = MakeButton((_, __) => CancelCurrent());
@@ -156,7 +157,7 @@ namespace CryptoProExport.App
             _actionButtons = new[]
             {
                 _btnRefresh, _btnExport, _btnExtract, _btnFull,
-                _btnCheck, _btnInstall, _btnPfx, _btnLogs, _btnHelp,
+                _btnCheck, _btnInstall, _btnPfx, _btnExtractKey, _btnLogs, _btnHelp,
             };
             buttons.Controls.AddRange(_actionButtons);
             buttons.Controls.Add(_btnCancel);
@@ -235,6 +236,7 @@ namespace CryptoProExport.App
             SetButton(_btnCheck, "btn.check", "tip.check");
             SetButton(_btnInstall, "btn.install", "tip.install");
             SetButton(_btnPfx, "btn.pfx", "tip.pfx");
+            SetButton(_btnExtractKey, "btn.extractkey", "tip.extractkey");
             SetButton(_btnLogs, "btn.logs", "tip.logs");
             SetButton(_btnHelp, "btn.help", "tip.help");
             SetButton(_btnCancel, "btn.cancel", "tip.cancel");
@@ -546,6 +548,42 @@ namespace CryptoProExport.App
             Log(r.Success ? Strings.Format("log.pfx.done", dest) : Strings.Format("log.pfx.fail", r.Output));
         }
 
+        /// <summary>
+        /// Извлечь закрытый ключ из файлового контейнера без CSP и сохранить в PKCS#8/PEM.
+        /// В журнал пишутся только путь и открытый ключ: тело закрытого ключа — секрет.
+        /// </summary>
+        private void DoExtractKey()
+        {
+            string folder = AskFolder(Strings.Get("dlg.folder.container"), TextOf(_txtDest).Trim());
+            if (folder == null) { Log(Strings.Get("log.cancelled")); return; }
+            if (!ContainerStore.LooksLikeContainer(folder))
+            {
+                Log(Strings.Get("log.install.notcontainer"));
+                return;
+            }
+
+            string pass = AskText(Strings.Get("dlg.extractkey.pass.title"),
+                                  Strings.Get("dlg.extractkey.pass.prompt"), "", password: true);
+            if (pass == null) { Log(Strings.Get("log.cancelled")); return; }
+
+            string dest = AskSaveFile(Strings.Get("dlg.extractkey.save"),
+                                      "PEM (*.pem)|*.pem|" + Strings.Get("files.all") + "|*.*",
+                                      TextOf(_txtDest).Trim(), "privatekey.pem", "pem");
+            if (dest == null) { Log(Strings.Get("log.cancelled")); return; }
+
+            try
+            {
+                var r = ContainerKeyExtractor.Extract(folder, pass);
+                File.WriteAllText(dest, GostKeyExport.ToPkcs8Pem(r));
+                Log(Strings.Format("log.extractkey.done", dest));
+                Log("  " + Strings.Format("log.extractkey.pub", r.CurveOid));
+            }
+            catch (ContainerKeyException e)
+            {
+                Log(Strings.Format("log.extractkey.fail", e.Message));
+            }
+        }
+
         private void OpenLogFolder()
         {
             try
@@ -580,14 +618,14 @@ namespace CryptoProExport.App
             return d.ShowDialog(this) == DialogResult.OK ? d.SelectedPath : null;
         }
 
-        private string AskSaveFile(string title, string filter, string initialDir, string suggestedName)
+        private string AskSaveFile(string title, string filter, string initialDir, string suggestedName, string defaultExt = "pfx")
         {
             if (InvokeRequired)
-                return (string)Invoke(new Func<string>(() => AskSaveFile(title, filter, initialDir, suggestedName)));
+                return (string)Invoke(new Func<string>(() => AskSaveFile(title, filter, initialDir, suggestedName, defaultExt)));
             using var d = new SaveFileDialog
             {
                 Title = title, Filter = filter, FileName = suggestedName,
-                AddExtension = true, DefaultExt = "pfx", OverwritePrompt = true,
+                AddExtension = true, DefaultExt = defaultExt, OverwritePrompt = true,
             };
             if (Directory.Exists(initialDir)) d.InitialDirectory = initialDir;
             return d.ShowDialog(this) == DialogResult.OK ? d.FileName : null;

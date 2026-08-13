@@ -279,3 +279,25 @@ cli.token.container = contenedor «{0}», certificado: {1}
 cli.token.certonly = certificado «{0}» (sin contenedor CryptoPro)
 cli.token.cert.saved = certificado guardado sin CSP: {0}
 cli.token.certfail = no se pudo guardar el certificado «{0}»: {1}
+
+# --- extract private key (CSP-free) ---
+btn.extractkey = Extraer clave (PEM)
+tip.extractkey = Extraer la clave privada directamente de un contenedor de archivos (6 archivos *.key), sin CryptoPro CSP.\nLa clave se descifra con primitivas GOST integradas y se guarda como PKCS#8/PEM (compatible con OpenSSL gost-engine).\nSolo funciona con contenedores de archivos (no con claves no exportables en un token). Atención: el archivo .pem es su clave privada; guárdelo en secreto.
+status.extractkey = Extrayendo la clave privada…
+dlg.extractkey.save = Dónde guardar la clave privada (PEM)
+dlg.extractkey.pass.title = Contraseña del contenedor
+dlg.extractkey.pass.prompt = Contraseña del contenedor (normalmente vacía — deje el campo en blanco):
+log.extractkey.done = Clave privada guardada (PKCS#8/PEM): {0}
+log.extractkey.pub = curva {0}; la clave pública coincide con la huella del contenedor
+log.extractkey.fail = No se pudo extraer la clave: {0}
+cli.usage.extractkey = extraer la clave privada de un contenedor de archivos a PKCS#8/PEM (sin CSP)
+cli.extractkey.ok = Clave privada guardada (PKCS#8/PEM): {0}
+cli.extractkey.pub = curva {0}, clave pública X={1}
+
+# --- container-extraction errors (CSP-free) ---
+err.extract.nofile = La carpeta del contenedor no tiene {0}: {1}
+err.extract.curve = La curva {0} no es compatible
+err.extract.nofingerprint = header.key no tiene huella de la clave pública — contenedor no reconocido
+err.extract.fingerprint = La huella de la clave pública no coincide — contraseña incorrecta o contenedor dañado
+err.extract.degenerate = El análisis produjo una clave degenerada — contraseña incorrecta o contenedor dañado
+err.extract.corrupt = El contenedor está dañado o no se reconoce: {0}

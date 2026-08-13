@@ -279,3 +279,25 @@ cli.token.container = container "{0}", certificate: {1}
 cli.token.certonly = certificate "{0}" (no CryptoPro container)
 cli.token.cert.saved = certificate saved without CSP: {0}
 cli.token.certfail = failed to save certificate "{0}": {1}
+
+# --- extract private key (CSP-free) ---
+btn.extractkey = Extract key (PEM)
+tip.extractkey = Extract the private key directly from a file container (6 *.key files) — without CryptoPro CSP.\nThe key is decrypted with built-in GOST primitives and saved as PKCS#8/PEM (compatible with OpenSSL gost-engine).\nWorks only for file containers (not for non-extractable keys on a token). Warning: the .pem file is your private key — keep it secret.
+status.extractkey = Extracting the private key…
+dlg.extractkey.save = Where to save the private key (PEM)
+dlg.extractkey.pass.title = Container password
+dlg.extractkey.pass.prompt = Container password (usually empty — leave the field blank):
+log.extractkey.done = Private key saved (PKCS#8/PEM): {0}
+log.extractkey.pub = curve {0}; public key matches the fingerprint in the container
+log.extractkey.fail = Failed to extract the key: {0}
+cli.usage.extractkey = extract the private key from a file container to PKCS#8/PEM (no CSP)
+cli.extractkey.ok = Private key saved (PKCS#8/PEM): {0}
+cli.extractkey.pub = curve {0}, public key X={1}
+
+# --- container-extraction errors (CSP-free) ---
+err.extract.nofile = The container folder has no {0}: {1}
+err.extract.curve = Curve {0} is not supported
+err.extract.nofingerprint = header.key has no public-key fingerprint — container not recognized
+err.extract.fingerprint = Public-key fingerprint does not match — wrong password or corrupted container
+err.extract.degenerate = Parsing produced a degenerate key — wrong password or corrupted container
+err.extract.corrupt = Container is corrupted or unrecognized: {0}

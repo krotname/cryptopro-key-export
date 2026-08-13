@@ -279,3 +279,25 @@ cli.token.container = contêiner «{0}», certificado: {1}
 cli.token.certonly = certificado «{0}» (sem contentor CryptoPro)
 cli.token.cert.saved = certificado salvo sem CSP: {0}
 cli.token.certfail = falha ao salvar o certificado «{0}»: {1}
+
+# --- extract private key (CSP-free) ---
+btn.extractkey = Extrair chave (PEM)
+tip.extractkey = Extrair a chave privada diretamente de um contêiner de arquivos (6 arquivos *.key), sem o CryptoPro CSP.\nA chave é descriptografada com primitivas GOST integradas e salva como PKCS#8/PEM (compatível com OpenSSL gost-engine).\nFunciona apenas para contêineres de arquivos (não para chaves não exportáveis em um token). Atenção: o arquivo .pem é a sua chave privada — mantenha-o em segredo.
+status.extractkey = Extraindo a chave privada…
+dlg.extractkey.save = Onde salvar a chave privada (PEM)
+dlg.extractkey.pass.title = Senha do contêiner
+dlg.extractkey.pass.prompt = Senha do contêiner (geralmente vazia — deixe o campo em branco):
+log.extractkey.done = Chave privada salva (PKCS#8/PEM): {0}
+log.extractkey.pub = curva {0}; a chave pública corresponde à impressão digital no contêiner
+log.extractkey.fail = Falha ao extrair a chave: {0}
+cli.usage.extractkey = extrair a chave privada de um contêiner de arquivos para PKCS#8/PEM (sem CSP)
+cli.extractkey.ok = Chave privada salva (PKCS#8/PEM): {0}
+cli.extractkey.pub = curva {0}, chave pública X={1}
+
+# --- container-extraction errors (CSP-free) ---
+err.extract.nofile = A pasta do contêiner não tem {0}: {1}
+err.extract.curve = A curva {0} não é suportada
+err.extract.nofingerprint = header.key não tem impressão digital da chave pública — contêiner não reconhecido
+err.extract.fingerprint = A impressão digital da chave pública não corresponde — senha incorreta ou contêiner corrompido
+err.extract.degenerate = A análise produziu uma chave degenerada — senha incorreta ou contêiner corrompido
+err.extract.corrupt = O contêiner está corrompido ou não reconhecido: {0}
