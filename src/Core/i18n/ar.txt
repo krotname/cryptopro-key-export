@@ -279,3 +279,17 @@ cli.token.container = الحاوية «{0}»، الشهادة: {1}
 cli.token.certonly = الشهادة «{0}» (بدون حاوية CryptoPro)
 cli.token.cert.saved = حُفظت الشهادة دون CSP: {0}
 cli.token.certfail = تعذّر حفظ الشهادة «{0}»: {1}
+
+# --- extract private key (CSP-free) ---
+btn.extractkey = استخراج المفتاح (PEM)
+tip.extractkey = استخرج المفتاح الخاص مباشرة من حاوية ملفات (6 ملفات *.key) — بدون CryptoPro CSP.\nيُفكّ تشفير المفتاح باستخدام أوليّات GOST المدمجة ويُحفظ بصيغة PKCS#8/PEM (متوافق مع OpenSSL gost-engine).\nيعمل فقط مع حاويات الملفات (وليس مع المفاتيح غير القابلة للاستخراج على التوكن). تنبيه: ملف .pem هو مفتاحك الخاص — احفظه سرًا.
+status.extractkey = جارٍ استخراج المفتاح الخاص…
+dlg.extractkey.save = مكان حفظ المفتاح الخاص (PEM)
+dlg.extractkey.pass.title = كلمة مرور الحاوية
+dlg.extractkey.pass.prompt = كلمة مرور الحاوية (غالبًا فارغة — اترك الحقل فارغًا):
+log.extractkey.done = تم حفظ المفتاح الخاص (PKCS#8/PEM): {0}
+log.extractkey.pub = المنحنى {0}؛ المفتاح العام يطابق البصمة الموجودة في الحاوية
+log.extractkey.fail = تعذّر استخراج المفتاح: {0}
+cli.usage.extractkey = استخراج المفتاح الخاص من حاوية ملفات إلى PKCS#8/PEM (بدون CSP)
+cli.extractkey.ok = تم حفظ المفتاح الخاص (PKCS#8/PEM): {0}
+cli.extractkey.pub = المنحنى {0}، المفتاح العام X={1}

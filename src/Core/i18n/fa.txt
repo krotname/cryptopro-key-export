@@ -279,3 +279,17 @@ cli.token.container = مخزن «{0}»، گواهی: {1}
 cli.token.certonly = گواهی «{0}» (بدون مخزن CryptoPro)
 cli.token.cert.saved = گواهی بدون CSP ذخیره شد: {0}
 cli.token.certfail = ذخیرهٔ گواهی «{0}» ناموفق بود: {1}
+
+# --- extract private key (CSP-free) ---
+btn.extractkey = استخراج کلید (PEM)
+tip.extractkey = کلید خصوصی را مستقیماً از یک محفظه‌ی فایلی (۶ فایل *.key) استخراج کنید — بدون CryptoPro CSP.\nکلید با اولیه‌های GOST داخلی رمزگشایی و به‌صورت PKCS#8/PEM ذخیره می‌شود (سازگار با OpenSSL gost-engine).\nفقط برای محفظه‌های فایلی کار می‌کند (نه برای کلیدهای غیرقابل‌استخراج روی توکن). هشدار: فایل .pem کلید خصوصی شماست — آن را محرمانه نگه دارید.
+status.extractkey = در حال استخراج کلید خصوصی…
+dlg.extractkey.save = محل ذخیره‌ی کلید خصوصی (PEM)
+dlg.extractkey.pass.title = گذرواژه‌ی محفظه
+dlg.extractkey.pass.prompt = گذرواژه‌ی محفظه (معمولاً خالی — این فیلد را خالی بگذارید):
+log.extractkey.done = کلید خصوصی ذخیره شد (PKCS#8/PEM): {0}
+log.extractkey.pub = خم {0}؛ کلید عمومی با اثر انگشت داخل محفظه مطابقت دارد
+log.extractkey.fail = استخراج کلید ناموفق بود: {0}
+cli.usage.extractkey = استخراج کلید خصوصی از محفظه‌ی فایلی به PKCS#8/PEM (بدون CSP)
+cli.extractkey.ok = کلید خصوصی ذخیره شد (PKCS#8/PEM): {0}
+cli.extractkey.pub = خم {0}، کلید عمومی X={1}

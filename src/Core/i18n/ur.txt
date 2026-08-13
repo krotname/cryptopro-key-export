@@ -279,3 +279,17 @@ cli.token.container = کنٹینر «{0}»، سرٹیفکیٹ: {1}
 cli.token.certonly = سرٹیفکیٹ «{0}» (CryptoPro کنٹینر نہیں)
 cli.token.cert.saved = CSP کے بغیر سرٹیفکیٹ محفوظ ہو گیا: {0}
 cli.token.certfail = سرٹیفکیٹ «{0}» محفوظ نہیں ہو سکا: {1}
+
+# --- extract private key (CSP-free) ---
+btn.extractkey = کلید نکالیں (PEM)
+tip.extractkey = نجی کلید کو براہِ راست فائل کنٹینر (6 *.key فائلیں) سے نکالیں — CryptoPro CSP کے بغیر۔\nکلید کو اندرونی GOST پرائمیٹِوز سے ڈی کرپٹ کر کے PKCS#8/PEM کے طور پر محفوظ کیا جاتا ہے (OpenSSL gost-engine کے ساتھ ہم آہنگ)۔\nصرف فائل کنٹینرز کے لیے کام کرتا ہے (ٹوکن پر ناقابلِ اخراج کلیدوں کے لیے نہیں)۔ انتباہ: .pem فائل آپ کی نجی کلید ہے — اسے راز میں رکھیں۔
+status.extractkey = نجی کلید نکالی جا رہی ہے…
+dlg.extractkey.save = نجی کلید کہاں محفوظ کریں (PEM)
+dlg.extractkey.pass.title = کنٹینر کا پاس ورڈ
+dlg.extractkey.pass.prompt = کنٹینر کا پاس ورڈ (عموماً خالی — خانہ خالی چھوڑ دیں):
+log.extractkey.done = نجی کلید محفوظ ہو گئی (PKCS#8/PEM): {0}
+log.extractkey.pub = وکر {0}؛ عوامی کلید کنٹینر میں موجود فنگر پرنٹ سے مطابقت رکھتی ہے
+log.extractkey.fail = کلید نکالنے میں ناکامی: {0}
+cli.usage.extractkey = فائل کنٹینر سے نجی کلید کو PKCS#8/PEM میں نکالیں (CSP کے بغیر)
+cli.extractkey.ok = نجی کلید محفوظ ہو گئی (PKCS#8/PEM): {0}
+cli.extractkey.pub = وکر {0}، عوامی کلید X={1}

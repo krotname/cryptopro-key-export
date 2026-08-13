@@ -6,7 +6,7 @@
     <AssemblyName>CryptoProExport.Core</AssemblyName>
     <RootNamespace>CryptoProExport</RootNamespace>
     <LangVersion>latest</LangVersion>
-    <Version>1.4.3</Version>
+    <Version>1.5.0</Version>
     <!-- позволяет собирать библиотеку для Windows на Linux-сборщике -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
@@ -21,6 +21,12 @@
   -->
   <ItemGroup>
     <PackageReference Include="Pkcs11Interop" Version="5.3.0" />
+    <!--
+      BouncyCastle — ГОСТ-криптография для CSP-free разбора файлового контейнера
+      (ContainerKeyExtractor): Стрибог-256, ГОСТ 28147-89 (Магма) ECB и арифметика на кривых
+      ГОСТ Р 34.10-2012. Чисто managed. Разрешено решением владельца от 06.08.2026 (см. AGENTS.md).
+    -->
+    <PackageReference Include="BouncyCastle.Cryptography" Version="2.7.0" />
   </ItemGroup>
   <!--
     Внешние нативные зависимости вшиваются в сборку и распаковываются в кэш при первом запуске

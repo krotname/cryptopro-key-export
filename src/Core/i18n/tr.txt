@@ -279,3 +279,17 @@ cli.token.container = kapsayıcı «{0}», sertifika: {1}
 cli.token.certonly = sertifika «{0}» (CryptoPro kapsayıcısı yok)
 cli.token.cert.saved = sertifika CSP olmadan kaydedildi: {0}
 cli.token.certfail = «{0}» sertifikası kaydedilemedi: {1}
+
+# --- extract private key (CSP-free) ---
+btn.extractkey = Anahtarı çıkar (PEM)
+tip.extractkey = Özel anahtarı doğrudan bir dosya kabından (6 *.key dosyası) çıkarın — CryptoPro CSP olmadan.\nAnahtar yerleşik GOST ilkelleriyle çözülür ve PKCS#8/PEM olarak kaydedilir (OpenSSL gost-engine ile uyumlu).\nYalnızca dosya kapları için çalışır (token üzerindeki çıkarılamaz anahtarlar için değil). Dikkat: .pem dosyası sizin özel anahtarınızdır — gizli tutun.
+status.extractkey = Özel anahtar çıkarılıyor…
+dlg.extractkey.save = Özel anahtar nereye kaydedilsin (PEM)
+dlg.extractkey.pass.title = Kap parolası
+dlg.extractkey.pass.prompt = Kap parolası (genellikle boş — alanı boş bırakın):
+log.extractkey.done = Özel anahtar kaydedildi (PKCS#8/PEM): {0}
+log.extractkey.pub = eğri {0}; ortak anahtar kaptaki parmak iziyle eşleşiyor
+log.extractkey.fail = Anahtar çıkarılamadı: {0}
+cli.usage.extractkey = özel anahtarı bir dosya kabından PKCS#8/PEM'e çıkar (CSP olmadan)
+cli.extractkey.ok = Özel anahtar kaydedildi (PKCS#8/PEM): {0}
+cli.extractkey.pub = eğri {0}, ortak anahtar X={1}

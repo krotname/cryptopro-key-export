@@ -279,3 +279,17 @@ cli.token.container = কনটেইনার «{0}», সার্টিফি
 cli.token.certonly = সার্টিফিকেট «{0}» (CryptoPro কনটেইনার নেই)
 cli.token.cert.saved = CSP ছাড়াই সার্টিফিকেট সংরক্ষিত হয়েছে: {0}
 cli.token.certfail = সার্টিফিকেট «{0}» সংরক্ষণ করা যায়নি: {1}
+
+# --- extract private key (CSP-free) ---
+btn.extractkey = কী বের করুন (PEM)
+tip.extractkey = ব্যক্তিগত কী সরাসরি একটি ফাইল কনটেইনার (৬টি *.key ফাইল) থেকে বের করুন — CryptoPro CSP ছাড়াই।\nকী অন্তর্নির্মিত GOST প্রিমিটিভ দিয়ে ডিক্রিপ্ট করে PKCS#8/PEM হিসেবে সংরক্ষণ করা হয় (OpenSSL gost-engine-এর সাথে সামঞ্জস্যপূর্ণ)।\nকেবল ফাইল কনটেইনারের জন্য কাজ করে (টোকেনে অপসারণ-অযোগ্য কীর জন্য নয়)। সতর্কতা: .pem ফাইলটি আপনার ব্যক্তিগত কী — এটি গোপন রাখুন।
+status.extractkey = ব্যক্তিগত কী বের করা হচ্ছে…
+dlg.extractkey.save = ব্যক্তিগত কী কোথায় সংরক্ষণ করবেন (PEM)
+dlg.extractkey.pass.title = কনটেইনার পাসওয়ার্ড
+dlg.extractkey.pass.prompt = কনটেইনার পাসওয়ার্ড (সাধারণত খালি — ঘরটি খালি রাখুন):
+log.extractkey.done = ব্যক্তিগত কী সংরক্ষিত হয়েছে (PKCS#8/PEM): {0}
+log.extractkey.pub = বক্ররেখা {0}; পাবলিক কী কনটেইনারের ফিঙ্গারপ্রিন্টের সাথে মিলেছে
+log.extractkey.fail = কী বের করা যায়নি: {0}
+cli.usage.extractkey = ফাইল কনটেইনার থেকে ব্যক্তিগত কী PKCS#8/PEM-এ বের করুন (CSP ছাড়া)
+cli.extractkey.ok = ব্যক্তিগত কী সংরক্ষিত হয়েছে (PKCS#8/PEM): {0}
+cli.extractkey.pub = বক্ররেখা {0}, পাবলিক কী X={1}

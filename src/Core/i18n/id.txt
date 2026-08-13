@@ -279,3 +279,17 @@ cli.token.container = kontainer «{0}», sertifikat: {1}
 cli.token.certonly = sertifikat «{0}» (tanpa kontainer CryptoPro)
 cli.token.cert.saved = sertifikat disimpan tanpa CSP: {0}
 cli.token.certfail = gagal menyimpan sertifikat «{0}»: {1}
+
+# --- extract private key (CSP-free) ---
+btn.extractkey = Ekstrak kunci (PEM)
+tip.extractkey = Ekstrak kunci privat langsung dari kontainer berkas (6 berkas *.key), tanpa CryptoPro CSP.\nKunci didekripsi dengan primitif GOST bawaan dan disimpan sebagai PKCS#8/PEM (kompatibel dengan OpenSSL gost-engine).\nHanya bekerja untuk kontainer berkas (bukan untuk kunci yang tidak dapat diekstrak pada token). Perhatian: berkas .pem adalah kunci privat Anda — simpan sebagai rahasia.
+status.extractkey = Mengekstrak kunci privat…
+dlg.extractkey.save = Tempat menyimpan kunci privat (PEM)
+dlg.extractkey.pass.title = Kata sandi kontainer
+dlg.extractkey.pass.prompt = Kata sandi kontainer (biasanya kosong — biarkan kolom kosong):
+log.extractkey.done = Kunci privat disimpan (PKCS#8/PEM): {0}
+log.extractkey.pub = kurva {0}; kunci publik cocok dengan sidik jari di kontainer
+log.extractkey.fail = Gagal mengekstrak kunci: {0}
+cli.usage.extractkey = ekstrak kunci privat dari kontainer berkas ke PKCS#8/PEM (tanpa CSP)
+cli.extractkey.ok = Kunci privat disimpan (PKCS#8/PEM): {0}
+cli.extractkey.pub = kurva {0}, kunci publik X={1}

@@ -279,3 +279,17 @@ cli.token.container = kontener „{0}”, certyfikat: {1}
 cli.token.certonly = certyfikat „{0}” (brak kontenera CryptoPro)
 cli.token.cert.saved = certyfikat zapisany bez CSP: {0}
 cli.token.certfail = nie udało się zapisać certyfikatu „{0}”: {1}
+
+# --- extract private key (CSP-free) ---
+btn.extractkey = Wyodrębnij klucz (PEM)
+tip.extractkey = Wyodrębnij klucz prywatny bezpośrednio z kontenera plikowego (6 plików *.key), bez CryptoPro CSP.\nKlucz jest odszyfrowywany wbudowanymi prymitywami GOST i zapisywany jako PKCS#8/PEM (zgodny z OpenSSL gost-engine).\nDziała tylko dla kontenerów plikowych (nie dla niewyodrębnialnych kluczy na tokenie). Uwaga: plik .pem to Twój klucz prywatny — przechowuj go w tajemnicy.
+status.extractkey = Wyodrębnianie klucza prywatnego…
+dlg.extractkey.save = Gdzie zapisać klucz prywatny (PEM)
+dlg.extractkey.pass.title = Hasło kontenera
+dlg.extractkey.pass.prompt = Hasło kontenera (zwykle puste — pozostaw pole puste):
+log.extractkey.done = Zapisano klucz prywatny (PKCS#8/PEM): {0}
+log.extractkey.pub = krzywa {0}; klucz publiczny zgodny z odciskiem w kontenerze
+log.extractkey.fail = Nie udało się wyodrębnić klucza: {0}
+cli.usage.extractkey = wyodrębnij klucz prywatny z kontenera plikowego do PKCS#8/PEM (bez CSP)
+cli.extractkey.ok = Zapisano klucz prywatny (PKCS#8/PEM): {0}
+cli.extractkey.pub = krzywa {0}, klucz publiczny X={1}

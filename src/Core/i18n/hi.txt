@@ -279,3 +279,17 @@ cli.token.container = कंटेनर «{0}», प्रमाणपत्र
 cli.token.certonly = प्रमाणपत्र «{0}» (CryptoPro कंटेनर नहीं)
 cli.token.cert.saved = CSP के बिना प्रमाणपत्र सहेजा गया: {0}
 cli.token.certfail = प्रमाणपत्र «{0}» सहेजा नहीं जा सका: {1}
+
+# --- extract private key (CSP-free) ---
+btn.extractkey = कुंजी निकालें (PEM)
+tip.extractkey = निजी कुंजी को सीधे फ़ाइल कंटेनर (6 *.key फ़ाइलें) से निकालें — CryptoPro CSP के बिना।\nकुंजी को अंतर्निहित GOST प्रिमिटिव्स से डिक्रिप्ट कर PKCS#8/PEM के रूप में सहेजा जाता है (OpenSSL gost-engine के अनुकूल)।\nकेवल फ़ाइल कंटेनरों के लिए काम करता है (टोकन पर न निकाली जा सकने वाली कुंजियों के लिए नहीं)। चेतावनी: .pem फ़ाइल आपकी निजी कुंजी है — इसे गुप्त रखें।
+status.extractkey = निजी कुंजी निकाली जा रही है…
+dlg.extractkey.save = निजी कुंजी कहाँ सहेजें (PEM)
+dlg.extractkey.pass.title = कंटेनर पासवर्ड
+dlg.extractkey.pass.prompt = कंटेनर पासवर्ड (आमतौर पर खाली — फ़ील्ड खाली छोड़ें):
+log.extractkey.done = निजी कुंजी सहेजी गई (PKCS#8/PEM): {0}
+log.extractkey.pub = वक्र {0}; सार्वजनिक कुंजी कंटेनर के फ़िंगरप्रिंट से मेल खाती है
+log.extractkey.fail = कुंजी निकालने में विफल: {0}
+cli.usage.extractkey = फ़ाइल कंटेनर से निजी कुंजी को PKCS#8/PEM में निकालें (CSP के बिना)
+cli.extractkey.ok = निजी कुंजी सहेजी गई (PKCS#8/PEM): {0}
+cli.extractkey.pub = वक्र {0}, सार्वजनिक कुंजी X={1}

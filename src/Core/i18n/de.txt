@@ -279,3 +279,17 @@ cli.token.container = Container „{0}“, Zertifikat: {1}
 cli.token.certonly = Zertifikat „{0}“ (kein CryptoPro-Container)
 cli.token.cert.saved = Zertifikat ohne CSP gespeichert: {0}
 cli.token.certfail = Zertifikat „{0}“ konnte nicht gespeichert werden: {1}
+
+# --- extract private key (CSP-free) ---
+btn.extractkey = Schlüssel extrahieren (PEM)
+tip.extractkey = Den privaten Schlüssel direkt aus einem Dateicontainer (6 *.key-Dateien) extrahieren — ohne CryptoPro CSP.\nDer Schlüssel wird mit integrierten GOST-Primitiven entschlüsselt und als PKCS#8/PEM gespeichert (kompatibel mit OpenSSL gost-engine).\nFunktioniert nur für Dateicontainer (nicht für nicht extrahierbare Schlüssel auf einem Token). Achtung: Die .pem-Datei ist Ihr privater Schlüssel — bewahren Sie sie geheim auf.
+status.extractkey = Privater Schlüssel wird extrahiert…
+dlg.extractkey.save = Wohin den privaten Schlüssel speichern (PEM)
+dlg.extractkey.pass.title = Container-Passwort
+dlg.extractkey.pass.prompt = Container-Passwort (meist leer — Feld leer lassen):
+log.extractkey.done = Privater Schlüssel gespeichert (PKCS#8/PEM): {0}
+log.extractkey.pub = Kurve {0}; öffentlicher Schlüssel stimmt mit dem Fingerabdruck im Container überein
+log.extractkey.fail = Schlüssel konnte nicht extrahiert werden: {0}
+cli.usage.extractkey = privaten Schlüssel aus einem Dateicontainer als PKCS#8/PEM extrahieren (ohne CSP)
+cli.extractkey.ok = Privater Schlüssel gespeichert (PKCS#8/PEM): {0}
+cli.extractkey.pub = Kurve {0}, öffentlicher Schlüssel X={1}

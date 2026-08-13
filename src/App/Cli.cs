@@ -31,6 +31,7 @@ namespace CryptoProExport.App
             ("installed",                            "cli.usage.installed"),
             ("uninstall <folder>",                   "cli.usage.uninstall"),
             ("topfx <container> <out.pfx> [pass]",   "cli.usage.topfx"),
+            ("extractkey <folder> <out.pem> [pass]", "cli.usage.extractkey"),
             ("full <destDir> [cert.cer] [pin]",      "cli.usage.full"),
             ("help",                                 "cli.usage.help"),
             ("--lang <xx>",                          "cli.usage.lang"),
@@ -191,6 +192,18 @@ namespace CryptoProExport.App
                         var r = cm.ExportContainerToPfx(args[1], args[2], args.Length > 3 ? args[3] : null);
                         Out(r.Success ? Strings.Format("cli.done", args[2]) : Strings.Format("cli.error", r.Output));
                         return r.Success ? 0 : 2;
+                    }
+                    case "extractkey":
+                    {
+                        // Извлечь закрытый ключ прямо из файлового контейнера, без CSP.
+                        // .pem — это секрет, поэтому в лог идут только путь и открытый ключ,
+                        // а не тело ключа.
+                        if (args.Length < 3) { Usage(); return 1; }
+                        var r = ContainerKeyExtractor.Extract(args[1], args.Length > 3 ? args[3] : "");
+                        File.WriteAllText(args[2], GostKeyExport.ToPkcs8Pem(r));
+                        Out(Strings.Format("cli.extractkey.ok", args[2]));
+                        Out("  " + Strings.Format("cli.extractkey.pub", r.CurveOid, Convert.ToHexString(r.PublicX)));
+                        return 0;
                     }
                     case "full":
                     {
