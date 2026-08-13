@@ -32,15 +32,34 @@ $hook = @{
 }
 
 $dataSet = @{}; foreach ($d in $data) { $dataSet[$d] = $true }
-$lines = @('#pragma once')
-foreach ($n in $hook.Keys) { $lines += "#pragma comment(linker, `"/EXPORT:$n=$($hook[$n])`")" }
-foreach ($n in $data)      { $lines += "#pragma comment(linker, `"/EXPORT:$n=winscard_real.$n,DATA`")" }
-foreach ($n in $all) { if (-not $hook.ContainsKey($n) -and -not $dataSet.ContainsKey($n)) { $lines += "#pragma comment(linker, `"/EXPORT:$n=winscard_real.$n`")" } }
-Set-Content -Path (Join-Path $dir 'forwarders.h') -Value $lines -Encoding ASCII
 
-# 3. compile x64 within vcvars64
+# 3. compile x64 — MSVC если есть, иначе MinGW-w64. Экспорты у них задаются по-разному:
+#    MSVC — через #pragma /EXPORT в forwarders.h; MinGW игнорирует эти прагмы, экспорт даёт .def.
 $vc = 'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat'
-$cmd = "call `"$vc`" >nul && cl /nologo /O2 /MT /LD proxy.c /Fe:winscard.dll"
-cmd /c $cmd
-Write-Host "exit=$LASTEXITCODE"
+$gcc = @('C:\tools\msys64\mingw64\bin\gcc.exe') | Where-Object { Test-Path $_ } | Select-Object -First 1
+if (-not $gcc) { $g = Get-Command gcc -ErrorAction SilentlyContinue; if ($g) { $gcc = $g.Source } }
+
+if (Test-Path $vc) {
+    $lines = @('#pragma once')
+    foreach ($n in $hook.Keys) { $lines += "#pragma comment(linker, `"/EXPORT:$n=$($hook[$n])`")" }
+    foreach ($n in $data)      { $lines += "#pragma comment(linker, `"/EXPORT:$n=winscard_real.$n,DATA`")" }
+    foreach ($n in $all) { if (-not $hook.ContainsKey($n) -and -not $dataSet.ContainsKey($n)) { $lines += "#pragma comment(linker, `"/EXPORT:$n=winscard_real.$n`")" } }
+    Set-Content -Path (Join-Path $dir 'forwarders.h') -Value $lines -Encoding ASCII
+    cmd /c "call `"$vc`" >nul && cl /nologo /O2 /MT /LD proxy.c /Fe:winscard.dll"
+    Write-Host "MSVC exit=$LASTEXITCODE"
+}
+elseif ($gcc) {
+    # forwarders.h нужен для #include в proxy.c; прагмы /EXPORT — только MSVC, для MinGW пусто.
+    Set-Content -Path (Join-Path $dir 'forwarders.h') -Value '#pragma once' -Encoding ASCII
+    $def = @('LIBRARY winscard', 'EXPORTS')
+    foreach ($n in ($all + $data)) {
+        if ($hook.ContainsKey($n)) { $def += "$n=$($hook[$n])" } else { $def += "$n=winscard_real.$n" }
+    }
+    Set-Content -Path (Join-Path $dir 'winscard.def') -Value $def -Encoding ASCII
+    & $gcc -O2 -shared -o (Join-Path $dir 'winscard.dll') (Join-Path $dir 'proxy.c') (Join-Path $dir 'winscard.def') -lkernel32
+    Write-Host "MinGW ($gcc) exit=$LASTEXITCODE"
+}
+else {
+    throw "Нет компилятора: ни MSVC BuildTools, ни MinGW-w64 gcc (C:\tools\msys64\mingw64\bin). Поставить MinGW: pacman -S mingw-w64-x86_64-gcc"
+}
 Get-ChildItem (Join-Path $dir 'winscard.dll') -ErrorAction SilentlyContinue | Select-Object FullName,Length
