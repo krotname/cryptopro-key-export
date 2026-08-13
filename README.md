@@ -262,7 +262,7 @@ CryptoProExport.exe installed
 CryptoProExport.exe uninstall <folder>
 CryptoProExport.exe topfx <containerName> <out.pfx> [password]
 CryptoProExport.exe extractkey <folder> <out.pem> [password]  # закрытый ключ в PKCS#8/PEM без CSP
-CryptoProExport.exe extractpfx <folder> <out.pfx> <pfxPass> [password] [cert.cer]  # .pfx без CSP
+CryptoProExport.exe extractpfx <folder> <out.pfx> <pfxPass> [password] [cert.cer]  # .pfx без CSP, для OpenSSL
 CryptoProExport.exe full <destDir> [cert.cer] [pin]
 CryptoProExport.exe --lang <код>          # язык вывода; можно совмещать с любой командой
 ```

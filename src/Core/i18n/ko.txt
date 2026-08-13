@@ -285,6 +285,7 @@ btn.extractkey = 키 추출 (PEM)
 btn.extractpfx = PFX 만들기 (CSP 없이)
 tip.extractkey = 파일 컨테이너(*.key 파일 6개)에서 개인 키를 직접 추출합니다 — CryptoPro CSP 없이.\n키는 내장 GOST 프리미티브로 복호화되어 PKCS#8/PEM 형식으로 저장됩니다(OpenSSL gost-engine 호환).\n파일 컨테이너에만 작동합니다(토큰의 추출 불가 키에는 해당 없음). 주의: .pem 파일은 개인 키이므로 비밀로 보관하세요.
 tip.extractpfx = 파일 컨테이너에서 곧바로 PKCS#12 (.pfx) 파일을 만듭니다 — CryptoPro CSP도 certmgr도 필요 없습니다.\n개인 키는 내장 GOST 프리미티브로 복호화하고, 인증서는 header.key에서 가져옵니다 (거기에 없으면 .cer 파일을 지정할 수 있습니다).\n.pfx 안의 키는 비밀번호로 보호되며 (PKCS#12의 3DES), 인증서는 암호화하지 않습니다. 주의: .pfx 파일에는 개인 키가 들어 있습니다 — 비밀로 보관하십시오.
+중요: CryptoPro는 이런 파일을 가져오지 못합니다 — 이 파일은 OpenSSL 등 CryptoPro 이외의 프로그램을 위한 것입니다. 키를 CryptoPro로 되돌리려면 «PFX로 내보내기» 단추를 사용하십시오 (certmgr 경유, CSP 설치 필요).
 status.extractkey = 개인 키를 추출하는 중…
 status.extractpfx = PKCS#12 만드는 중…
 dlg.extractkey.save = 개인 키를 저장할 위치 (PEM)
@@ -300,6 +301,7 @@ log.extractkey.fail = 키를 추출하지 못했습니다: {0}
 log.extractpfx.done = CSP 없이 PKCS#12를 만들었습니다: {0}
 log.extractpfx.nocert = 컨테이너에 인증서가 없습니다 — .cer 파일을 지정하십시오
 log.extractpfx.fail = PKCS#12를 만들지 못했습니다: {0}
+log.extractpfx.note = CryptoPro는 이 파일을 가져오지 못합니다 — OpenSSL용입니다. CryptoPro에는 «PFX로 내보내기»(certmgr)를 쓰십시오.
 cli.usage.extractkey = 파일 컨테이너에서 개인 키를 PKCS#8/PEM으로 추출 (CSP 불필요)
 cli.usage.extractpfx = 파일 컨테이너에서 PKCS#12 만들기 (CSP와 certmgr 없이)
 cli.extractkey.ok = 개인 키를 저장했습니다 (PKCS#8/PEM): {0}

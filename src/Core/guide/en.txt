@@ -73,11 +73,18 @@ interface languages fall back to the English text.
   Install into CryptoPro  put an extracted folder into the CSP store
   Export to PFX         write the container out as .pfx
   Extract key (PEM)     the private key as PKCS#8/PEM, no CSP
-  Build PFX (no CSP)    a .pfx straight from the container folder
+  Build PFX (no CSP)    a .pfx from the container folder, for OpenSSL
   Log                   open the folder with the program logs
   Help                  this window
 
   Every button has a tooltip — hold the cursor over it.
+
+  Two buttons produce a .pfx, and the files are DIFFERENT. "Export to
+  PFX" goes through CryptoPro's certmgr, and CryptoPro will take that
+  file back. "Build PFX (no CSP)" builds the file on its own, without
+  CryptoPro — but CryptoPro will NOT import it: it is meant for
+  OpenSSL and other software. For a backup you plan to restore into
+  CryptoPro, take the first one.
 
 
 5. COMMAND LINE
@@ -94,7 +101,7 @@ interface languages fall back to the English text.
   uninstall <folder>                  remove an installed container
   topfx <container> <file.pfx> [pw]   export to PKCS#12
   extractkey <folder> <file.pem> [pw] extract the key to PKCS#8/PEM (no CSP)
-  extractpfx <folder> <file.pfx> <pw> build a PKCS#12 (no CSP);
+  extractpfx <folder> <file.pfx> <pw> build a PKCS#12 for OpenSSL;
                                       then [container-pw] [cert.cer]
   full <folder> [cert.cer] [pin]      off the token + all the rest
   help                                this manual

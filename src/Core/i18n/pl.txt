@@ -285,6 +285,7 @@ btn.extractkey = Wyodrębnij klucz (PEM)
 btn.extractpfx = Zbuduj PFX (bez CSP)
 tip.extractkey = Wyodrębnij klucz prywatny bezpośrednio z kontenera plikowego (6 plików *.key), bez CryptoPro CSP.\nKlucz jest odszyfrowywany wbudowanymi prymitywami GOST i zapisywany jako PKCS#8/PEM (zgodny z OpenSSL gost-engine).\nDziała tylko dla kontenerów plikowych (nie dla niewyodrębnialnych kluczy na tokenie). Uwaga: plik .pem to Twój klucz prywatny — przechowuj go w tajemnicy.
 tip.extractpfx = Zbuduj plik PKCS#12 (.pfx) bezpośrednio z kontenera plikowego — bez CryptoPro CSP i bez certmgr.\nKlucz prywatny jest odszyfrowywany wbudowanymi prymitywami GOST, a certyfikat pochodzi z header.key (jeśli go tam nie ma, można wskazać plik .cer).\nKlucz w .pfx jest chroniony hasłem (3DES z PKCS#12), certyfikat pozostaje jawny. Uwaga: plik .pfx zawiera Twój klucz prywatny — trzymaj go w tajemnicy.
+Ważne: CryptoPro NIE importuje takiego pliku — jest on dla OpenSSL i innych programów spoza CryptoPro. Aby wrócić z kluczem do CryptoPro, użyj przycisku «Eksport do PFX» (przez certmgr, wymaga zainstalowanego CSP).
 status.extractkey = Wyodrębnianie klucza prywatnego…
 status.extractpfx = Budowanie PKCS#12…
 dlg.extractkey.save = Gdzie zapisać klucz prywatny (PEM)
@@ -300,6 +301,7 @@ log.extractkey.fail = Nie udało się wyodrębnić klucza: {0}
 log.extractpfx.done = PKCS#12 zbudowany bez CSP: {0}
 log.extractpfx.nocert = W kontenerze nie ma certyfikatu — wskaż plik .cer
 log.extractpfx.fail = Nie udało się zbudować PKCS#12: {0}
+log.extractpfx.note = CryptoPro nie importuje tego pliku — jest on dla OpenSSL. Dla CryptoPro użyj «Eksport do PFX» (certmgr).
 cli.usage.extractkey = wyodrębnij klucz prywatny z kontenera plikowego do PKCS#8/PEM (bez CSP)
 cli.usage.extractpfx = zbuduj PKCS#12 z kontenera plikowego (bez CSP i certmgr)
 cli.extractkey.ok = Zapisano klucz prywatny (PKCS#8/PEM): {0}

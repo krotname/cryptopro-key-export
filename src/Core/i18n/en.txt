@@ -285,6 +285,7 @@ btn.extractkey = Extract key (PEM)
 btn.extractpfx = Build PFX (no CSP)
 tip.extractkey = Extract the private key directly from a file container (6 *.key files) — without CryptoPro CSP.\nThe key is decrypted with built-in GOST primitives and saved as PKCS#8/PEM (compatible with OpenSSL gost-engine).\nWorks only for file containers (not for non-extractable keys on a token). Warning: the .pem file is your private key — keep it secret.
 tip.extractpfx = Build a PKCS#12 (.pfx) file straight from a file container — without CryptoPro CSP and without certmgr.\nThe private key is extracted with built-in GOST primitives, the certificate is taken from header.key (if it is not there, you can point to a .cer file).\nThe key inside the .pfx is password-protected (PKCS#12 3DES), the certificate is stored in the clear. Warning: the .pfx file holds your private key — keep it secret.
+Important: CryptoPro does NOT import such a file — it is for OpenSSL and other non-CryptoPro software. To bring the key back into CryptoPro use the «Export to PFX» button (via certmgr, an installed CSP is required).
 status.extractkey = Extracting the private key…
 status.extractpfx = Building PKCS#12…
 dlg.extractkey.save = Where to save the private key (PEM)
@@ -300,6 +301,7 @@ log.extractkey.fail = Failed to extract the key: {0}
 log.extractpfx.done = PKCS#12 built without CSP: {0}
 log.extractpfx.nocert = The container holds no certificate — point to a .cer file
 log.extractpfx.fail = Failed to build PKCS#12: {0}
+log.extractpfx.note = CryptoPro does not import this file — it is for OpenSSL. For CryptoPro use «Export to PFX» (certmgr).
 cli.usage.extractkey = extract the private key from a file container to PKCS#8/PEM (no CSP)
 cli.usage.extractpfx = build a PKCS#12 from a file container (no CSP, no certmgr)
 cli.extractkey.ok = Private key saved (PKCS#8/PEM): {0}

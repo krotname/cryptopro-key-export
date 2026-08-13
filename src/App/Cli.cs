@@ -217,6 +217,7 @@ namespace CryptoProExport.App
                         File.WriteAllBytes(args[2], Pkcs12Export.Build(r, args[3], cert,
                             ContainerStore.ReadName(args[1])));
                         Out(Strings.Format("cli.extractpfx.ok", args[2]));
+                        Out("  " + Strings.Get("log.extractpfx.note"));
                         return 0;
                     }
                     case "full":

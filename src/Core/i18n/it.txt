@@ -285,6 +285,7 @@ btn.extractkey = Estrai chiave (PEM)
 btn.extractpfx = Crea PFX (senza CSP)
 tip.extractkey = Estrai la chiave privata direttamente da un contenitore di file (6 file *.key), senza CryptoPro CSP.\nLa chiave viene decifrata con primitive GOST integrate e salvata come PKCS#8/PEM (compatibile con OpenSSL gost-engine).\nFunziona solo per i contenitori di file (non per le chiavi non esportabili su token). Attenzione: il file .pem è la tua chiave privata, conservalo come un segreto.
 tip.extractpfx = Crea un file PKCS#12 (.pfx) direttamente da un contenitore di file, senza CryptoPro CSP e senza certmgr.\nLa chiave privata viene decifrata con le primitive GOST integrate e il certificato viene preso da header.key (se non c'è, si può indicare un file .cer).\nLa chiave nel .pfx è protetta da password (3DES di PKCS#12); il certificato resta in chiaro. Attenzione: il file .pfx contiene la vostra chiave privata — conservatelo come un segreto.
+Importante: CryptoPro NON importa un file simile — è pensato per OpenSSL e altri programmi non CryptoPro. Per riportare la chiave in CryptoPro usate il pulsante «Esporta in PFX» (tramite certmgr, serve il CSP installato).
 status.extractkey = Estrazione della chiave privata…
 status.extractpfx = Creazione del PKCS#12…
 dlg.extractkey.save = Dove salvare la chiave privata (PEM)
@@ -300,6 +301,7 @@ log.extractkey.fail = Impossibile estrarre la chiave: {0}
 log.extractpfx.done = PKCS#12 creato senza CSP: {0}
 log.extractpfx.nocert = Nel contenitore non c'è un certificato: indicare un file .cer
 log.extractpfx.fail = Impossibile creare il PKCS#12: {0}
+log.extractpfx.note = CryptoPro non importa questo file — è per OpenSSL. Per CryptoPro usate «Esporta in PFX» (certmgr).
 cli.usage.extractkey = estrai la chiave privata da un contenitore di file in PKCS#8/PEM (senza CSP)
 cli.usage.extractpfx = crea un PKCS#12 da un contenitore di file (senza CSP e certmgr)
 cli.extractkey.ok = Chiave privata salvata (PKCS#8/PEM): {0}
