@@ -113,16 +113,23 @@ namespace CryptoProExport
         /// из п. 19, и так же не ловится <c>catch</c>. На прежних ЭЦП 2.0 и Lite файлов было ноль,
         /// поэтому <c>ReadBinary</c> ни разу не вызывался и падения не было видно.
         ///
+        /// Носители чужих вендоров (JaCarta, eToken…) исключаются по той же причине: файловая
+        /// память rtCOMLite — это API Рутокен S, к чужой смарт-карте она неприменима, а вызов
+        /// ReadBinary на непустом каталоге уже один раз стоил падения процесса. На практике
+        /// rtCOMLite их и не показывает (13.08.2026: при четырёх считывателях EnumReaders вернул
+        /// три — только Рутокены), но полагаться на это как на защиту не стоит.
+        ///
         /// Признак берётся из PKCS#11, а при отсутствии драйвера — из имени считывателя:
-        /// «Aktiv Rutoken ECP 0», «Aktiv Rutoken lite 0» классифицируются и по нему.
-        /// Чистая функция: покрыта тестами без обращения к железу.
+        /// «Aktiv Rutoken ECP 0», «Aktiv Rutoken lite 0», «Aladdin Token JC 0» классифицируются
+        /// и по нему. Чистая функция: покрыта тестами без обращения к железу.
         /// </summary>
         public static bool ShouldWalk(string readerName, ISet<string> skipReaders)
         {
             if (string.IsNullOrEmpty(readerName)) return false;
             if (skipReaders != null && skipReaders.Contains(readerName)) return false;
             RutokenKind kind = Pkcs11Token.Classify(readerName);
-            return kind != RutokenKind.RutokenEcp && kind != RutokenKind.RutokenLite;
+            return kind != RutokenKind.RutokenEcp && kind != RutokenKind.RutokenLite
+                && kind != RutokenKind.Other;
         }
 
         /// <summary>Перечислить и прочитать все контейнеры со всех подключённых Рутокенов.</summary>

@@ -31,6 +31,9 @@ namespace CryptoProExport.Tests
         [InlineData("Aktiv Rutoken lite 0", false)]
         [InlineData("Aktiv ruToken 0", true)]      // Рутокен S — ровно тот случай, ради которого обход и нужен
         [InlineData("Generic Smart Card Reader 0", true)]
+        // Носитель чужого вендора: файловая память rtCOMLite — API Рутокен S, к нему неприменима.
+        [InlineData("Aladdin Token JC 0", false)]
+        [InlineData("JaCarta 0", false)]
         [InlineData("", false)]
         [InlineData(null, false)]
         public void ShouldWalk_SkipsSmartCardRutokensByReaderName(string reader, bool expected)

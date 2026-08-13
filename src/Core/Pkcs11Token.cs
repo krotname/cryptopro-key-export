@@ -46,11 +46,12 @@ namespace CryptoProExport
     /// <summary>Одно PKCS#11-устройство и его состояние (собирается без ввода PIN).</summary>
     public sealed class Pkcs11TokenInfo
     {
-        public string Reader;    // описание слота (совпадает с именем считывателя CSP)
-        public string Label;     // метка токена
-        public string Model;     // модель, напр. «Rutoken ECP»
-        public string Serial;    // серийный номер
-        public string Firmware;  // версия прошивки
+        public string Reader;        // описание слота (совпадает с именем считывателя CSP)
+        public string Label;         // метка токена
+        public string Model;         // модель, напр. «Rutoken ECP»
+        public string Manufacturer;  // производитель, напр. «Aktiv Co.», «Aladdin R.D.»
+        public string Serial;        // серийный номер
+        public string Firmware;      // версия прошивки
         public RutokenKind Kind;
 
         /// <summary>PIN пользователя заводской (флаг CKF_USER_PIN_TO_BE_CHANGED) — узнаётся без попытки входа.</summary>
@@ -67,7 +68,7 @@ namespace CryptoProExport
     }
 
     /// <summary>
-    /// Работа с Рутокеном по PKCS#11 (rtPKCS11ECP.dll) — параллельно rtCOMLite.
+    /// Работа с токеном по PKCS#11 — параллельно rtCOMLite.
     ///
     /// Зачем отдельный путь: на Рутокен ЭЦП и Lite файловая память через rtCOMLite не видна
     /// (AGENTS п. 20), а PKCS#11 показывает контейнер КриптоПро как объект CKO_DATA и сам
@@ -77,17 +78,41 @@ namespace CryptoProExport
     /// Закрытый ключ через PKCS#11 не извлекается (CKA_EXTRACTABLE=false, аппаратно) — это ограничение
     /// железа, а не кода.
     ///
-    /// Библиотека берётся из системы (ставится с драйвером Рутокена), а не вшивается: она большая
-    /// и обновляется вместе с драйвером. Если её нет — класс молча сообщает о недоступности.
+    /// Библиотеки берутся из системы (ставятся с драйвером носителя), а не вшиваются: они большие
+    /// и обновляются вместе с драйвером. Если ни одной нет — класс молча сообщает о недоступности.
     /// </summary>
     [SupportedOSPlatform("windows")]
     public static class Pkcs11Token
     {
-        private const string DllName = "rtPKCS11ECP.dll";
+        private const string RutokenDll = "rtPKCS11ECP.dll";
+        private const string JaCartaDll = "jcPKCS11-2.dll";
         private const string CryptoProApp = "CryptoPro CSP";
 
-        /// <summary>Кандидаты расположения rtPKCS11ECP.dll: системный каталог по разрядности + установка Рутокена.</summary>
+        /// <summary>
+        /// Известные библиотеки PKCS#11 и вендор каждой. Библиотека показывает <b>только свои</b>
+        /// носители: проверено 13.08.2026 на машине с четырьмя считывателями — rtPKCS11ECP.dll
+        /// отдала три слота (все Рутокены) и не увидела JaCarta, jcPKCS11-2.dll отдала один слот
+        /// (только JaCarta). Поэтому увидеть носители разных вендоров можно лишь загрузив
+        /// несколько библиотек и объединив слоты (см. <see cref="Enumerate"/>).
+        /// Имена вендоров — торговые марки и не переводятся.
+        /// </summary>
+        public static readonly IReadOnlyList<(string Vendor, string Dll)> KnownLibraries =
+            new (string Vendor, string Dll)[]
+            {
+                ("Rutoken", RutokenDll),
+                ("JaCarta", JaCartaDll),
+            };
+
+        /// <summary>Кандидаты расположения всех известных библиотек — в порядке <see cref="KnownLibraries"/>.</summary>
         internal static IEnumerable<string> LibraryCandidates()
+        {
+            foreach (var lib in KnownLibraries)
+                foreach (var c in LibraryCandidates(lib.Dll))
+                    yield return c;
+        }
+
+        /// <summary>Кандидаты расположения одной библиотеки: системный каталог по разрядности + каталог установки.</summary>
+        internal static IEnumerable<string> LibraryCandidates(string dll)
         {
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -97,14 +122,19 @@ namespace CryptoProExport
                 if (!string.IsNullOrEmpty(path) && seen.Add(path))
                     yield return path;
 
-            static IEnumerable<string> Paths()
+            IEnumerable<string> Paths()
             {
-                yield return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), DllName);
+                yield return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), dll);
 
                 // Явная ветка на случай нестандартного окружения (переопределённый %WINDIR%\System32).
                 string win = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
                 if (!string.IsNullOrEmpty(win))
-                    yield return Path.Combine(win, Environment.Is64BitProcess ? "System32" : "SysWOW64", DllName);
+                    yield return Path.Combine(win, Environment.Is64BitProcess ? "System32" : "SysWOW64", dll);
+
+                // Каталог установки перечисляется только для Рутокена: JaCarta Unified Client
+                // кладёт jcPKCS11-2.dll исключительно в системный каталог (проверено на машине,
+                // где клиент установлен, — в Program Files библиотеки нет).
+                if (!string.Equals(dll, RutokenDll, StringComparison.OrdinalIgnoreCase)) yield break;
 
                 foreach (var pf in new[]
                 {
@@ -113,21 +143,32 @@ namespace CryptoProExport
                 })
                 {
                     if (string.IsNullOrEmpty(pf)) continue;
-                    yield return Path.Combine(pf, "Aktiv Co", "RutokenControlCenter", DllName.ToLowerInvariant());
-                    yield return Path.Combine(pf, "Aktiv Co", "Rutoken", DllName);
+                    yield return Path.Combine(pf, "Aktiv Co", "RutokenControlCenter", dll.ToLowerInvariant());
+                    yield return Path.Combine(pf, "Aktiv Co", "Rutoken", dll);
                 }
             }
         }
 
-        /// <summary>Путь к библиотеке PKCS#11 Рутокена или null, если она не установлена.</summary>
-        public static string LibraryPath()
+        /// <summary>
+        /// Установленные в системе библиотеки PKCS#11 — по одной (первой найденной) на вендора.
+        /// Пустой список означает, что ни одного драйвера с PKCS#11 нет.
+        /// </summary>
+        public static List<(string Vendor, string Path)> AvailableLibraries()
         {
-            foreach (var c in LibraryCandidates())
+            var found = new List<(string Vendor, string Path)>();
+            foreach (var lib in KnownLibraries)
             {
-                try { if (File.Exists(c)) return c; }
-                catch { /* недоступный путь — пропускаем */ }
+                foreach (var candidate in LibraryCandidates(lib.Dll))
+                {
+                    bool exists;
+                    try { exists = File.Exists(candidate); }
+                    catch { continue; }   // недоступный путь — пропускаем
+                    if (!exists) continue;
+                    found.Add((lib.Vendor, candidate));
+                    break;
+                }
             }
-            return null;
+            return found;
         }
 
         /// <summary>
@@ -166,23 +207,41 @@ namespace CryptoProExport
             return name.Trim();
         }
 
-        /// <summary>Установлена ли библиотека PKCS#11 Рутокена в системе.</summary>
-        public static bool IsAvailable => LibraryPath() != null;
+        /// <summary>Установлена ли в системе хотя бы одна известная библиотека PKCS#11.</summary>
+        public static bool IsAvailable => AvailableLibraries().Count > 0;
 
         /// <summary>
-        /// Определить семейство токена по строке модели PKCS#11 (CKA/CK_TOKEN_INFO.model).
+        /// Определить семейство токена по строке модели PKCS#11 (CK_TOKEN_INFO.model) и,
+        /// если модель ни о чём не говорит, по производителю (CK_TOKEN_INFO.manufacturerID).
+        ///
+        /// Производитель нужен не для красоты: у живой JaCarta модель — просто <c>PRO</c>
+        /// (проверено 13.08.2026), и по одной модели носитель попадал бы в «не опознан».
+        /// Производитель там <c>Aladdin R.D.</c>, чего достаточно.
+        ///
         /// Чистая функция: покрыта тестами без обращения к железу.
         /// </summary>
-        public static RutokenKind Classify(string model)
+        public static RutokenKind Classify(string model, string manufacturer = null)
         {
-            if (string.IsNullOrWhiteSpace(model)) return RutokenKind.Unknown;
-            string m = model.Trim().ToLowerInvariant();
+            RutokenKind byModel = ClassifyText(model);
+            if (byModel != RutokenKind.Unknown) return byModel;
+
+            // По производителю опознаём только чужих вендоров: «Aktiv Co.» без внятной модели
+            // оставляем неопознанным намеренно — иначе носитель попал бы в файловый обход
+            // rtCOMLite как Рутокен S (см. RutokenExporter.ShouldWalk).
+            return ClassifyText(manufacturer) == RutokenKind.Other ? RutokenKind.Other : RutokenKind.Unknown;
+        }
+
+        private static RutokenKind ClassifyText(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return RutokenKind.Unknown;
+            string m = text.Trim().ToLowerInvariant();
 
             if (m.Contains("ecp") || m.Contains("эцп")) return RutokenKind.RutokenEcp;
             if (m.Contains("lite")) return RutokenKind.RutokenLite;
             // «Rutoken S», «Rutoken» без уточнения, «Рутокен S» — файловая память.
             if (m.Contains("rutoken") || m.Contains("рутокен")) return RutokenKind.RutokenS;
-            if (m.Contains("jacarta") || m.Contains("etoken") || m.Contains("esmart")) return RutokenKind.Other;
+            if (m.Contains("jacarta") || m.Contains("aladdin") || m.Contains("etoken")
+                || m.Contains("esmart")) return RutokenKind.Other;
             return RutokenKind.Unknown;
         }
 
@@ -233,15 +292,32 @@ namespace CryptoProExport
             var result = new List<Pkcs11TokenInfo>();
             cancel.ThrowIfCancellationRequested();
 
-            string lib = LibraryPath();
-            if (lib == null)
+            var libs = AvailableLibraries();
+            if (libs.Count == 0)
             {
                 log(Strings.Get("pkcs11.nolib"));
                 return result;
             }
 
+            // Один считыватель показывается один раз: теоретически носитель может быть виден
+            // двум установленным библиотекам, и дважды перечисленный токен запутал бы и вывод,
+            // и SkipReaders.
+            var seenReaders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (_, path) in libs)
+            {
+                // Сбой одной библиотеки не должен скрывать носители остальных вендоров.
+                cancel.ThrowIfCancellationRequested();
+                EnumerateLibrary(path, readContainers, result, seenReaders, log, cancel);
+            }
+            return result;
+        }
+
+        /// <summary>Перечислить токены одной библиотеки PKCS#11, добавляя их в <paramref name="result"/>.</summary>
+        private static void EnumerateLibrary(string lib, bool readContainers, List<Pkcs11TokenInfo> result,
+                                             ISet<string> seenReaders, Action<string> log, CancellationToken cancel)
+        {
             Pkcs11InteropFactories factories;
-            IPkcs11Library p11 = null;
+            IPkcs11Library p11;
             try
             {
                 factories = new Pkcs11InteropFactories();
@@ -249,15 +325,17 @@ namespace CryptoProExport
             }
             catch (Exception e)
             {
-                log(Strings.Format("pkcs11.loadfail", e.Message));
-                return result;
+                // Путь в сообщении обязателен: библиотек несколько, и «не загрузилась» без имени
+                // не подсказало бы, какой драйвер чинить.
+                log(Strings.Format("pkcs11.loadfail", lib + ": " + e.Message));
+                return;
             }
 
             try
             {
                 List<ISlot> slots;
                 try { slots = p11.GetSlotList(SlotsType.WithTokenPresent); }
-                catch (Exception e) { log(Strings.Format("pkcs11.enumfail", e.Message)); return result; }
+                catch (Exception e) { log(Strings.Format("pkcs11.enumfail", lib + ": " + e.Message)); return; }
 
                 foreach (ISlot slot in slots)
                 {
@@ -268,13 +346,15 @@ namespace CryptoProExport
                     try
                     {
                         try { info.Reader = slot.GetSlotInfo().SlotDescription?.Trim(); } catch { }
+                        if (!string.IsNullOrEmpty(info.Reader) && !seenReaders.Add(info.Reader)) continue;
 
                         ITokenInfo ti = slot.GetTokenInfo();
                         info.Label = ti.Label?.Trim();
                         info.Model = ti.Model?.Trim();
+                        info.Manufacturer = ti.ManufacturerId?.Trim();
                         info.Serial = ti.SerialNumber?.Trim();
                         info.Firmware = ti.FirmwareVersion;
-                        info.Kind = Classify(info.Model);
+                        info.Kind = Classify(info.Model, info.Manufacturer);
 
                         var f = ti.TokenFlags;
                         info.PinDefault = f.UserPinToBeChanged;
@@ -297,7 +377,6 @@ namespace CryptoProExport
             {
                 try { p11.Dispose(); } catch { }
             }
-            return result;
         }
 
         /// <summary>

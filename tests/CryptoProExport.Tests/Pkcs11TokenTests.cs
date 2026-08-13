@@ -38,6 +38,30 @@ namespace CryptoProExport.Tests
             Assert.Equal(RutokenKind.RutokenLite, Pkcs11Token.Classify("rutoken LITE"));
         }
 
+        [Fact]
+        public void Classify_FallsBackToManufacturerWhenModelSaysNothing()
+        {
+            // Живая JaCarta 13.08.2026: model='PRO', manufacturerID='Aladdin R.D.'.
+            // По одной модели носитель попадал бы в «не опознан».
+            Assert.Equal(RutokenKind.Unknown, Pkcs11Token.Classify("PRO"));
+            Assert.Equal(RutokenKind.Other, Pkcs11Token.Classify("PRO", "Aladdin R.D."));
+        }
+
+        [Fact]
+        public void Classify_PrefersModelOverManufacturer()
+        {
+            // Модель говорит внятно — производителя не спрашиваем.
+            Assert.Equal(RutokenKind.RutokenLite, Pkcs11Token.Classify("Rutoken lite", "Aktiv Co."));
+        }
+
+        [Fact]
+        public void Classify_DoesNotGuessRutokenFamilyFromManufacturer()
+        {
+            // «Aktiv Co.» без внятной модели остаётся неопознанным намеренно: иначе носитель
+            // попал бы в файловый обход rtCOMLite как Рутокен S (RutokenExporter.ShouldWalk).
+            Assert.Equal(RutokenKind.Unknown, Pkcs11Token.Classify("SomeCard 42", "Aktiv Co."));
+        }
+
         [Theory]
         [InlineData(RutokenKind.RutokenS)]
         [InlineData(RutokenKind.RutokenLite)]
@@ -147,6 +171,43 @@ namespace CryptoProExport.Tests
             Assert.NotEmpty(candidates);
             Assert.All(candidates, c => Assert.True(System.IO.Path.IsPathRooted(c), c));
             Assert.Contains(candidates, c => c.EndsWith("rtPKCS11ECP.dll", StringComparison.OrdinalIgnoreCase));
+        }
+
+        [Fact]
+        public void LibraryCandidates_CoverEveryKnownVendor()
+        {
+            // Одна библиотека показывает только своего вендора, поэтому кандидаты обязаны
+            // быть у каждой известной: иначе носитель просто не увидят (так и было с JaCarta).
+            var candidates = Pkcs11Token.LibraryCandidates().ToArray();
+            Assert.NotEmpty(Pkcs11Token.KnownLibraries);
+            Assert.All(Pkcs11Token.KnownLibraries, lib =>
+            {
+                Assert.False(string.IsNullOrWhiteSpace(lib.Vendor));
+                Assert.Contains(candidates, c => c.EndsWith(lib.Dll, StringComparison.OrdinalIgnoreCase));
+            });
+            Assert.Contains(candidates, c => c.EndsWith("jcPKCS11-2.dll", StringComparison.OrdinalIgnoreCase));
+        }
+
+        [Fact]
+        public void LibraryCandidates_ForSingleDllMentionOnlyThatDll()
+        {
+            var jc = Pkcs11Token.LibraryCandidates("jcPKCS11-2.dll").ToArray();
+            Assert.NotEmpty(jc);
+            Assert.All(jc, c => Assert.EndsWith("jcPKCS11-2.dll", c, StringComparison.OrdinalIgnoreCase));
+        }
+
+        [Fact]
+        public void AvailableLibraries_ReturnsAtMostOnePathPerVendorAndNeverThrows()
+        {
+            // На машине без драйверов список пуст — это штатный случай, а не ошибка.
+            var libs = Pkcs11Token.AvailableLibraries();
+            Assert.All(libs, l =>
+            {
+                Assert.True(System.IO.File.Exists(l.Path), l.Path);
+                Assert.Contains(Pkcs11Token.KnownLibraries, k => k.Vendor == l.Vendor);
+            });
+            Assert.Equal(libs.Count, libs.Select(l => l.Vendor).Distinct(StringComparer.Ordinal).Count());
+            Assert.Equal(libs.Count > 0, Pkcs11Token.IsAvailable);
         }
 
         [Fact]
