@@ -36,10 +36,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Установить .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
+      # .NET SDK 10 предустановлен на раннере (adler-ubuntu-xeon) системно —
+      # actions/setup-dotnet здесь не нужен и на self-hosted раннере только мешает.
+
+      - name: Версия .NET
+        run: dotnet --version
 
       - name: Сборка всего решения (предупреждения = ошибки)
         run: dotnet build CryptoProExport.slnx -c Release -warnaserror
@@ -92,9 +93,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
+      # .NET SDK 10 предустановлен на раннере — setup-dotnet не нужен (см. job build).
       - name: Публикация ${{ matrix.rid }}
         run: >
           dotnet publish src/App/CryptoProExport.App.csproj -c Release
