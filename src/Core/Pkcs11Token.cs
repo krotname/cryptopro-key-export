@@ -34,6 +34,13 @@ namespace CryptoProExport
         public byte[] Certificate;
         /// <summary>Размер внутреннего блоба CKO_DATA (сериализованный контейнер CSP). 0 — не найден.</summary>
         public int RawLength;
+
+        /// <summary>
+        /// На токене есть сертификат, но нет объекта CKO_DATA контейнера КриптоПро.
+        /// Такой сертификат всё равно читается без PIN и извлекается командой <c>token</c>,
+        /// поэтому он попадает в список — просто называть его «контейнером» нельзя.
+        /// </summary>
+        public bool CertificateOnly;
     }
 
     /// <summary>Одно PKCS#11-устройство и его состояние (собирается без ввода PIN).</summary>
@@ -179,6 +186,23 @@ namespace CryptoProExport
             return RutokenKind.Unknown;
         }
 
+        /// <summary>
+        /// Имена считывателей, чей токен обслуживается по смарт-карточному профилю (ЭЦП, Lite).
+        /// Файловую память таких токенов обходить нельзя — см. <see cref="RutokenExporter.ShouldWalk"/>.
+        /// Чистая функция: покрыта тестами без обращения к железу.
+        /// </summary>
+        public static ISet<string> SmartCardReaders(IEnumerable<Pkcs11TokenInfo> tokens)
+        {
+            var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var t in tokens ?? new List<Pkcs11TokenInfo>())
+            {
+                if (t == null || string.IsNullOrEmpty(t.Reader)) continue;
+                if (t.Kind == RutokenKind.RutokenEcp || t.Kind == RutokenKind.RutokenLite)
+                    set.Add(t.Reader);
+            }
+            return set;
+        }
+
         /// <summary>Локализованное название семейства токена.</summary>
         public static string KindName(RutokenKind kind) => Strings.Get(kind switch
         {
@@ -299,6 +323,7 @@ namespace CryptoProExport
                         certs[label] = der;
                 }
 
+                var containers = new List<Pkcs11Container>();
                 foreach (var h in FindByClass(session, factories, CKO.CKO_DATA))
                 {
                     cancel.ThrowIfCancellationRequested();
@@ -316,8 +341,10 @@ namespace CryptoProExport
                     };
                     if (!string.IsNullOrEmpty(label) && certs.TryGetValue(label, out var der))
                         container.Certificate = der;
-                    info.Containers.Add(container);
+                    containers.Add(container);
                 }
+
+                info.Containers.AddRange(Combine(containers, certs));
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception e)
@@ -328,6 +355,43 @@ namespace CryptoProExport
             {
                 try { session?.CloseSession(); } catch { }
             }
+        }
+
+        /// <summary>
+        /// Свести контейнеры и сертификаты токена в один список: сначала контейнеры КриптоПро
+        /// (CKO_DATA), затем сертификаты, которым контейнер не нашёлся.
+        ///
+        /// Зачем второй проход: сертификат привязывается к контейнеру по совпадению меток, и
+        /// сертификат с непарной меткой раньше исчезал совсем — ни в списке, ни в извлечении
+        /// командой <c>token</c>. Между тем он лежит публичным объектом и читается без PIN, то есть
+        /// это ровно то, ради чего сделана CSP-free ветка. Случай не выдуманный: контейнеры,
+        /// которые кладёт на токен сам CSP, объектами PKCS#11 не становятся (AGENTS п. 25), так
+        /// что сертификат вполне может оказаться на токене без парного CKO_DATA.
+        ///
+        /// Чистая функция: покрыта тестами без обращения к железу.
+        /// </summary>
+        public static List<Pkcs11Container> Combine(IList<Pkcs11Container> containers,
+                                                    IDictionary<string, byte[]> certs)
+        {
+            var result = new List<Pkcs11Container>();
+            var used = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var c in containers ?? new List<Pkcs11Container>())
+            {
+                result.Add(c);
+                if (c.Certificate != null && !string.IsNullOrEmpty(c.Name)) used.Add(c.Name);
+            }
+
+            foreach (var pair in certs ?? new Dictionary<string, byte[]>())
+            {
+                if (used.Contains(pair.Key)) continue;
+                result.Add(new Pkcs11Container
+                {
+                    Name = pair.Key,
+                    Certificate = pair.Value,
+                    CertificateOnly = true,
+                });
+            }
+            return result;
         }
 
         private static List<IObjectHandle> FindByClass(ISession session, Pkcs11InteropFactories factories, CKO cls)

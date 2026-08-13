@@ -69,6 +69,78 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void Combine_KeepsContainersAndTheirCerts()
+        {
+            var cert = new byte[] { 1, 2, 3 };
+            var containers = new List<Pkcs11Container>
+            {
+                new Pkcs11Container { Name = "cont", Application = "CryptoPro CSP", Certificate = cert },
+            };
+            var certs = new Dictionary<string, byte[]> { ["cont"] = cert };
+
+            var result = Pkcs11Token.Combine(containers, certs);
+
+            // Сертификат уже приложен к контейнеру — второй записи быть не должно.
+            Assert.Single(result);
+            Assert.Equal("cont", result[0].Name);
+            Assert.False(result[0].CertificateOnly);
+        }
+
+        [Fact]
+        public void Combine_SurfacesCertificateWithoutMatchingContainer()
+        {
+            // Сценарий отказа до правки: сертификат с меткой, которой нет ни у одного CKO_DATA,
+            // исчезал полностью — ни в списке, ни в извлечении командой token.
+            var cert = new byte[] { 9, 9 };
+            var containers = new List<Pkcs11Container>
+            {
+                new Pkcs11Container { Name = "cont", Application = "CryptoPro CSP" },
+            };
+            var certs = new Dictionary<string, byte[]> { ["одинокий"] = cert };
+
+            var result = Pkcs11Token.Combine(containers, certs);
+
+            Assert.Equal(2, result.Count);
+            var lone = Assert.Single(result, c => c.CertificateOnly);
+            Assert.Equal("одинокий", lone.Name);
+            Assert.Same(cert, lone.Certificate);
+            // У контейнера без сертификата ничего не появилось.
+            Assert.Null(result.Single(c => c.Name == "cont").Certificate);
+        }
+
+        [Fact]
+        public void Combine_ToleratesNulls()
+        {
+            Assert.Empty(Pkcs11Token.Combine(null, null));
+        }
+
+        [Fact]
+        public void SmartCardReaders_SelectsOnlyEcpAndLite()
+        {
+            var tokens = new List<Pkcs11TokenInfo>
+            {
+                new Pkcs11TokenInfo { Reader = "Aktiv Rutoken ECP 0", Kind = RutokenKind.RutokenEcp },
+                new Pkcs11TokenInfo { Reader = "Aktiv Rutoken lite 0", Kind = RutokenKind.RutokenLite },
+                new Pkcs11TokenInfo { Reader = "Aktiv ruToken 0", Kind = RutokenKind.RutokenS },
+                new Pkcs11TokenInfo { Reader = null, Kind = RutokenKind.RutokenEcp },
+                null,
+            };
+
+            var set = Pkcs11Token.SmartCardReaders(tokens);
+
+            Assert.Equal(2, set.Count);
+            Assert.Contains("Aktiv Rutoken ECP 0", set);
+            Assert.Contains("Aktiv Rutoken lite 0", set);
+            Assert.DoesNotContain("Aktiv ruToken 0", set);
+        }
+
+        [Fact]
+        public void SmartCardReaders_ToleratesNull()
+        {
+            Assert.Empty(Pkcs11Token.SmartCardReaders(null));
+        }
+
+        [Fact]
         public void LibraryCandidates_AreRootedAndNamed()
         {
             var candidates = Pkcs11Token.LibraryCandidates().ToArray();

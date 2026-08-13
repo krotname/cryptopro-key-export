@@ -158,6 +158,7 @@ pipe.keyexport.fail = خطأ في keyexport داخل «{0}»: {1} {2}
 token.connect = يجري الاتصال بخدمة البطاقات الذكية…
 token.found = الأجهزة الموجودة: {0}
 token.open = يجري فتح المفتاح: {0}
+token.skip.smartcard = يجري تخطي {0}: روتوكن بطاقة ذكية، لا توجد ذاكرة ملفات للحاويات
 token.rtcom.loadfail = لم تُحمَّل النسخة المضمّنة من rtCOMLite (‏{0}‏)؛ نجرّب المسجَّلة في النظام
 token.rtcom.mismatch = النسخة المضمّنة من rtCOMLite لا تصلح (‏{0}‏)؛ نجرّب المسجَّلة في النظام
 token.rtcom.extractfail = تعذّر فك النسخة المضمّنة من rtCOMLite (‏{0}‏)؛ نجرّب المسجَّلة في النظام
@@ -247,6 +248,7 @@ cli.lang.missing = يحتاج ‎--lang‎ إلى رمز لغة. اللغات ا
 
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = موجود
+common.certonly = شهادة فقط
 pkcs11.nolib = تعذّر العثور على PKCS#11 الخاص بـ Rutoken (rtPKCS11ECP.dll) — ثبّت تعريفات Rutoken لأجل Rutoken ECP/Lite
 pkcs11.loadfail = تعذّر تحميل PKCS#11 الخاص بـ Rutoken: {0}
 pkcs11.enumfail = تعذّر تعداد فتحات PKCS#11: {0}
@@ -273,5 +275,6 @@ cli.token.none = لم يُعثر على رموز PKCS#11 (تأكّد من إدخ
 cli.token.line = {0}: {1} [{2}]، الرقم التسلسلي {3}، البرنامج الثابت {4}
 cli.token.pin = PIN: {0}
 cli.token.container = الحاوية «{0}»، الشهادة: {1}
+cli.token.certonly = الشهادة «{0}» (بدون حاوية CryptoPro)
 cli.token.cert.saved = حُفظت الشهادة دون CSP: {0}
 cli.token.certfail = تعذّر حفظ الشهادة «{0}»: {1}

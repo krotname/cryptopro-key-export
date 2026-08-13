@@ -158,6 +158,7 @@ pipe.keyexport.fail = keyexport-FEHLER in «{0}»: {1} {2}
 token.connect = Verbindung zum Smartcard-Dienst…
 token.found = Gefundene Geräte: {0}
 token.open = Token wird geöffnet: {0}
+token.skip.smartcard = {0} wird übersprungen: Smartcard-Rutoken, kein dateibasierter Containerspeicher
 token.rtcom.loadfail = Die eingebettete rtCOMLite lud nicht ({0}); wir versuchen die im System registrierte
 token.rtcom.mismatch = Die eingebettete rtCOMLite passt nicht ({0}); wir versuchen die im System registrierte
 token.rtcom.extractfail = Die eingebettete rtCOMLite ließ sich nicht entpacken ({0}); wir versuchen die im System registrierte
@@ -247,6 +248,7 @@ cli.lang.missing = --lang braucht einen Sprachcode. Verfügbare Sprachen: {0}
 
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = vorhanden
+common.certonly = nur Zertifikat
 pkcs11.nolib = Rutoken PKCS#11 (rtPKCS11ECP.dll) nicht gefunden — installieren Sie die Rutoken-Treiber für Rutoken ECP/Lite
 pkcs11.loadfail = Rutoken PKCS#11 konnte nicht geladen werden: {0}
 pkcs11.enumfail = PKCS#11-Slots konnten nicht aufgelistet werden: {0}
@@ -273,5 +275,6 @@ cli.token.none = Keine PKCS#11-Token gefunden (prüfen Sie, ob ein Token steckt 
 cli.token.line = {0}: {1} [{2}], Seriennr. {3}, Firmware {4}
 cli.token.pin = PIN: {0}
 cli.token.container = Container „{0}“, Zertifikat: {1}
+cli.token.certonly = Zertifikat „{0}“ (kein CryptoPro-Container)
 cli.token.cert.saved = Zertifikat ohne CSP gespeichert: {0}
 cli.token.certfail = Zertifikat „{0}“ konnte nicht gespeichert werden: {1}

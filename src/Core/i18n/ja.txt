@@ -158,6 +158,7 @@ pipe.keyexport.fail = 「{0}」の keyexport でエラー: {1} {2}
 token.connect = スマートカードサービスに接続しています…
 token.found = 見つかったデバイス数: {0}
 token.open = トークンを開いています: {0}
+token.skip.smartcard = {0} をスキップします: スマートカード型 Rutoken で、コンテナーのファイルメモリがありません
 token.rtcom.loadfail = 内蔵の rtCOMLite が読み込めませんでした（{0}）。システムに登録されたものを試します
 token.rtcom.mismatch = 内蔵の rtCOMLite が適合しません（{0}）。システムに登録されたものを試します
 token.rtcom.extractfail = 内蔵の rtCOMLite を展開できませんでした（{0}）。システムに登録されたものを試します
@@ -247,6 +248,7 @@ cli.lang.missing = --lang には言語コードが必要です。利用できる
 
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = あり
+common.certonly = 証明書のみ
 pkcs11.nolib = Rutoken の PKCS#11 (rtPKCS11ECP.dll) が見つかりません — Rutoken ECP/Lite 用の Rutoken ドライバーを導入してください
 pkcs11.loadfail = Rutoken の PKCS#11 を読み込めませんでした: {0}
 pkcs11.enumfail = PKCS#11 スロットを列挙できませんでした: {0}
@@ -273,5 +275,6 @@ cli.token.none = PKCS#11 トークンが見つかりません（トークンが�
 cli.token.line = {0}: {1} [{2}]、シリアル {3}、ファームウェア {4}
 cli.token.pin = PIN: {0}
 cli.token.container = コンテナー「{0}」、証明書: {1}
+cli.token.certonly = 証明書「{0}」（CryptoPro コンテナーなし）
 cli.token.cert.saved = CSP なしで証明書を保存: {0}
 cli.token.certfail = 証明書「{0}」を保存できませんでした: {1}

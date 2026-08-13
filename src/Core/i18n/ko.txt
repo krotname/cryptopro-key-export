@@ -158,6 +158,7 @@ pipe.keyexport.fail = 「{0}」의 keyexport 오류: {1} {2}
 token.connect = 스마트카드 서비스에 연결하는 중…
 token.found = 찾은 장치 수: {0}
 token.open = 토큰을 여는 중: {0}
+token.skip.smartcard = {0} 건너뜀: 스마트카드 Rutoken, 컨테이너 파일 메모리 없음
 token.rtcom.loadfail = 내장 rtCOMLite를 불러오지 못했습니다({0}). 시스템에 등록된 것을 시도합니다
 token.rtcom.mismatch = 내장 rtCOMLite가 맞지 않습니다({0}). 시스템에 등록된 것을 시도합니다
 token.rtcom.extractfail = 내장 rtCOMLite를 풀지 못했습니다({0}). 시스템에 등록된 것을 시도합니다
@@ -247,6 +248,7 @@ cli.lang.missing = --lang에는 언어 코드가 필요합니다. 사용할 수 
 
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = 있음
+common.certonly = 인증서만
 pkcs11.nolib = Rutoken PKCS#11(rtPKCS11ECP.dll)을 찾을 수 없습니다 — Rutoken ECP/Lite용 Rutoken 드라이버를 설치하세요
 pkcs11.loadfail = Rutoken PKCS#11을 불러오지 못했습니다: {0}
 pkcs11.enumfail = PKCS#11 슬롯을 열거하지 못했습니다: {0}
@@ -273,5 +275,6 @@ cli.token.none = PKCS#11 토큰을 찾을 수 없습니다 (토큰이 삽입되�
 cli.token.line = {0}: {1} [{2}], 일련번호 {3}, 펌웨어 {4}
 cli.token.pin = PIN: {0}
 cli.token.container = 컨테이너 «{0}», 인증서: {1}
+cli.token.certonly = 인증서 «{0}» (CryptoPro 컨테이너 없음)
 cli.token.cert.saved = CSP 없이 인증서 저장됨: {0}
 cli.token.certfail = 인증서 «{0}»을(를) 저장하지 못했습니다: {1}

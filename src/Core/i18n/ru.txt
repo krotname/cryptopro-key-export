@@ -13,6 +13,7 @@ common.close = Закрыть
 common.browse = Обзор…
 common.none = нет
 common.present = есть
+common.certonly = только сертификат
 files.all = Все файлы
 
 # --- панель настроек ---
@@ -187,6 +188,7 @@ pin.state.locked = PIN заблокирован
 token.connect = Подключаемся к службе смарт-карт…
 token.found = Найдено устройств: {0}
 token.open = Открываем токен: {0}
+token.skip.smartcard = Пропускаем {0}: смарт-карточный Рутокен, файловой памяти контейнеров нет
 token.rtcom.loadfail = Встроенный rtCOMLite не загрузился ({0}); пробуем зарегистрированный в системе
 token.rtcom.mismatch = Встроенный rtCOMLite не подходит ({0}); пробуем зарегистрированный в системе
 token.rtcom.extractfail = Не удалось распаковать встроенный rtCOMLite ({0}); пробуем зарегистрированный в системе
@@ -268,6 +270,7 @@ cli.token.none = Токены PKCS#11 не найдены (проверьте, �
 cli.token.line = {0}: {1} [{2}], серийный {3}, прошивка {4}
 cli.token.pin = PIN: {0}
 cli.token.container = контейнер «{0}», сертификат: {1}
+cli.token.certonly = сертификат «{0}» (контейнера КриптоПро нет)
 cli.token.cert.saved = сертификат сохранён без CSP: {0}
 cli.token.certfail = не удалось сохранить сертификат «{0}»: {1}
 cli.keyexport.ok = Готово: ключ экспортируемый

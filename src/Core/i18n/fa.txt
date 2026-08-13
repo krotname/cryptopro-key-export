@@ -158,6 +158,7 @@ pipe.keyexport.fail = خطای keyexport در «{0}»: {1} {2}
 token.connect = در حال اتصال به سرویس کارت هوشمند…
 token.found = دستگاه‌های یافت‌شده: {0}
 token.open = در حال گشودن توکن: {0}
+token.skip.smartcard = از {0} صرف‌نظر می‌شود: روتوکن کارت هوشمند، حافظهٔ فایلی مخزن ندارد
 token.rtcom.loadfail = نسخهٔ توکار rtCOMLite بارگذاری نشد ({0})؛ نسخهٔ ثبت‌شده در سامانه را می‌آزماییم
 token.rtcom.mismatch = نسخهٔ توکار rtCOMLite مناسب نیست ({0})؛ نسخهٔ ثبت‌شده در سامانه را می‌آزماییم
 token.rtcom.extractfail = نسخهٔ توکار rtCOMLite باز نشد ({0})؛ نسخهٔ ثبت‌شده در سامانه را می‌آزماییم
@@ -247,6 +248,7 @@ cli.lang.missing = --lang به کد زبان نیاز دارد. زبان‌ها�
 
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = موجود
+common.certonly = فقط گواهی
 pkcs11.nolib = PKCS#11 مربوط به Rutoken (rtPKCS11ECP.dll) یافت نشد — درایورهای Rutoken را برای Rutoken ECP/Lite نصب کنید
 pkcs11.loadfail = بارگیری PKCS#11 مربوط به Rutoken ناموفق بود: {0}
 pkcs11.enumfail = فهرست‌کردن شکاف‌های PKCS#11 ناموفق بود: {0}
@@ -273,5 +275,6 @@ cli.token.none = هیچ توکن PKCS#11 یافت نشد (بررسی کنید ت
 cli.token.line = {0}: {1} [{2}]، شمارهٔ سریال {3}، میان‌افزار {4}
 cli.token.pin = PIN: {0}
 cli.token.container = مخزن «{0}»، گواهی: {1}
+cli.token.certonly = گواهی «{0}» (بدون مخزن CryptoPro)
 cli.token.cert.saved = گواهی بدون CSP ذخیره شد: {0}
 cli.token.certfail = ذخیرهٔ گواهی «{0}» ناموفق بود: {1}

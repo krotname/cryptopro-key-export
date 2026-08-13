@@ -158,6 +158,7 @@ pipe.keyexport.fail = ERRO de keyexport em «{0}»: {1} {2}
 token.connect = A ligar ao serviço de cartões inteligentes…
 token.found = Dispositivos encontrados: {0}
 token.open = A abrir o token: {0}
+token.skip.smartcard = A ignorar {0}: Rutoken smart card, sem memória de contentores em ficheiros
 token.rtcom.loadfail = A cópia integrada do rtCOMLite não carregou ({0}); tentamos a registada no sistema
 token.rtcom.mismatch = A cópia integrada do rtCOMLite não serve ({0}); tentamos a registada no sistema
 token.rtcom.extractfail = Não foi possível descompactar a cópia integrada do rtCOMLite ({0}); tentamos a registada no sistema
@@ -247,6 +248,7 @@ cli.lang.missing = --lang precisa de um código de idioma. Idiomas disponíveis:
 
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = presente
+common.certonly = apenas certificado
 pkcs11.nolib = PKCS#11 do Rutoken (rtPKCS11ECP.dll) não encontrado — instale os drivers do Rutoken para Rutoken ECP/Lite
 pkcs11.loadfail = Falha ao carregar o PKCS#11 do Rutoken: {0}
 pkcs11.enumfail = Falha ao enumerar os slots PKCS#11: {0}
@@ -273,5 +275,6 @@ cli.token.none = Nenhum token PKCS#11 encontrado (verifique se há um token inse
 cli.token.line = {0}: {1} [{2}], série {3}, firmware {4}
 cli.token.pin = PIN: {0}
 cli.token.container = contêiner «{0}», certificado: {1}
+cli.token.certonly = certificado «{0}» (sem contentor CryptoPro)
 cli.token.cert.saved = certificado salvo sem CSP: {0}
 cli.token.certfail = falha ao salvar o certificado «{0}»: {1}
