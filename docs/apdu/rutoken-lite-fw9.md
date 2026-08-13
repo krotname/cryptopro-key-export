@@ -164,6 +164,20 @@ logs/*.apdu.log                 трассы APDU (содержат сертиф
 # из каталога с исходниками (нужен MSVC x64 + Windows SDK):
 cl /nologo /LD /O2 /MT proxy_winscard.c /Fe:winscard.dll user32.lib   # прокси
 cl /nologo /O2   /MT litedump.c        /Fe:litedump.exe  winscard.lib  # ридер
+```
+
+**Обязательный preflight по PIN — не пропускать.** `litedump` делает `VERIFY PIN`, а у Рутокена
+счётчик попыток: слепой ввод `12345678` на токене с изменённым PIN **тратит попытку и при повторах
+блокирует токен**. Поэтому PIN не подбирают — сперва проверяют его дефолтность **без единой попытки
+входа** по флагу `CKF_USER_PIN_TO_BE_CHANGED` (PKCS#11 `CK_TOKEN_INFO`, в проекте — `Pkcs11Token`,
+AGENTS п. 21), заодно смотрят, что счётчик чист (`UserPinCountLow`/`UserPinFinalTry`/`UserPinLocked`).
+`litedump` запускают **только если дефолтность подтверждена**; если PIN не заводской — берут верный у
+владельца и подставляют его, а не значение из примера. При PIN, отличном от 8 символов, поправить
+`Lc` в `VERIFY` (`00 20 00 02 <Lc> …`).
+
+```powershell
+CryptoProExport.exe token           # покажет состояние PIN (дефолтный / счётчик) без траты попыток
+# только при подтверждённой дефолтности:
 litedump.exe "Aktiv Rutoken lite 0" 0B00 12345678 dump                 # съём EF (только чтение)
 ```
 
