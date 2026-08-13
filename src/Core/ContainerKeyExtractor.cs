@@ -75,7 +75,7 @@ namespace CryptoProExport
 
             var domain = ECGost3410NamedCurves.GetByOid(new DerObjectIdentifier(curveOid));
             if (domain == null)
-                throw new ContainerKeyException($"Кривая {curveOid} не поддерживается");
+                throw new ContainerKeyException(Strings.Format("err.extract.curve", curveOid));
             BigInteger q = domain.N;
 
             // Ключ хранения из пароля и соли; на пустом пароле функция даёт нетривиальный ключ.
@@ -88,22 +88,24 @@ namespace CryptoProExport
             var p = new BigInteger(1, Reverse(primDec)).Mod(q);
             var m = new BigInteger(1, Reverse(mask)).Mod(q);
             if (p.SignValue == 0 || m.SignValue == 0)
-                throw new ContainerKeyException("Вырожденные primary/маска — неверный пароль или битый контейнер");
+                throw new ContainerKeyException(Strings.Get("err.extract.degenerate"));
 
             BigInteger d = p.Multiply(m.ModInverse(q)).Mod(q);
             if (d.SignValue == 0)
-                throw new ContainerKeyException("Нулевой закрытый ключ — неверный пароль или битый контейнер");
+                throw new ContainerKeyException(Strings.Get("err.extract.degenerate"));
 
             ECPoint pub = domain.G.Multiply(d).Normalize();
             byte[] x = Pad32(pub.AffineXCoord.ToBigInteger());
             byte[] y = Pad32(pub.AffineYCoord.ToBigInteger());
 
-            // Оракул: первые 8 байт X в little-endian = отпечаток из header.key.
+            // Оракул: первые 8 байт X в little-endian = отпечаток из header.key. Отпечаток —
+            // единственная проверка целостности разбора, поэтому контейнер без него принимать
+            // нельзя: на неверном пароле получился бы математически валидный, но чужой ключ.
+            if (fingerprint == null)
+                throw new ContainerKeyException(Strings.Get("err.extract.nofingerprint"));
             byte[] fpComputed = Reverse(x);
-            bool verified = fingerprint != null && Slice(fpComputed, 8).AsSpan().SequenceEqual(fingerprint);
-            if (fingerprint != null && !verified)
-                throw new ContainerKeyException(
-                    "Отпечаток открытого ключа из header.key не сошёлся — неверный пароль или битый контейнер");
+            if (!Slice(fpComputed, 8).AsSpan().SequenceEqual(fingerprint))
+                throw new ContainerKeyException(Strings.Get("err.extract.fingerprint"));
 
             return new Result
             {
@@ -111,7 +113,7 @@ namespace CryptoProExport
                 CurveOid = curveOid,
                 PublicX = x,
                 PublicY = y,
-                FingerprintVerified = verified,
+                FingerprintVerified = true,
                 D = d,
             };
         }
@@ -124,7 +126,7 @@ namespace CryptoProExport
             var seq = AsSequence(der, "primary.key");
             byte[] enc = OctetsAt(seq, 0, "primary.key");
             if (enc.Length != 32)
-                throw new ContainerKeyException($"primary.key: ожидалось 32 байта, получено {enc.Length}");
+                throw Corrupt($"primary.key: {enc.Length} bytes, expected 32");
             return enc;
         }
 
@@ -133,11 +135,11 @@ namespace CryptoProExport
         {
             var seq = AsSequence(der, "masks.key");
             if (seq.Count < 2)
-                throw new ContainerKeyException($"masks.key: ожидалось ≥2 элемента, получено {seq.Count}");
+                throw Corrupt($"masks.key: {seq.Count} elements");
             byte[] mask = OctetsAt(seq, 0, "masks.key");
             byte[] salt = OctetsAt(seq, 1, "masks.key");
             if (mask.Length != 32)
-                throw new ContainerKeyException($"masks.key: маска {mask.Length} байт вместо 32");
+                throw Corrupt($"masks.key mask: {mask.Length} bytes");
             return (mask, salt);
         }
 
@@ -149,7 +151,7 @@ namespace CryptoProExport
         {
             Asn1Object root;
             try { root = Asn1Object.FromByteArray(der); }
-            catch (Exception e) { throw new ContainerKeyException("header.key: не разбирается как ASN.1: " + e.Message); }
+            catch (Exception e) { throw Corrupt("header.key ASN.1: " + e.Message); }
 
             var oids = new List<string>();
             var octets8 = new List<byte[]>();
@@ -159,7 +161,7 @@ namespace CryptoProExport
             foreach (string id in oids)
                 if (IsCurveOid(id)) { curveOid = id; break; }
             if (curveOid == null)
-                throw new ContainerKeyException("header.key: OID кривой ГОСТ не найден");
+                throw Corrupt("header.key: no GOST curve OID");
 
             byte[] fingerprint = octets8.Count > 0 ? octets8[0] : null;
             return (curveOid, fingerprint);
@@ -200,15 +202,15 @@ namespace CryptoProExport
         private static Asn1Sequence AsSequence(byte[] der, string file)
         {
             try { return (Asn1Sequence)Asn1Object.FromByteArray(der); }
-            catch (Exception e) { throw new ContainerKeyException($"{file}: не разбирается как SEQUENCE: {e.Message}"); }
+            catch (Exception e) { throw Corrupt($"{file} SEQUENCE: {e.Message}"); }
         }
 
         private static byte[] OctetsAt(Asn1Sequence seq, int index, string file)
         {
             if (index >= seq.Count)
-                throw new ContainerKeyException($"{file}: нет элемента #{index}");
+                throw Corrupt($"{file}: element #{index} missing");
             if (seq[index] is not Asn1OctetString os)
-                throw new ContainerKeyException($"{file}: элемент #{index} не OCTET STRING");
+                throw Corrupt($"{file}: element #{index} not OCTET STRING");
             return os.GetOctets();
         }
 
@@ -216,9 +218,17 @@ namespace CryptoProExport
         {
             string path = Path.Combine(dir, name);
             if (!File.Exists(path))
-                throw new ContainerKeyException($"В папке контейнера нет {name}: {dir}");
+                throw new ContainerKeyException(Strings.Format("err.extract.nofile", name, dir));
             return File.ReadAllBytes(path);
         }
+
+        /// <summary>
+        /// Локализованное «контейнер повреждён». Технический хвост {0} — диагностический токен
+        /// (имя файла, длина, смещение) на латинице, как коды в CryptoErrors: он не переводится,
+        /// человекочитаемая часть сообщения — переводится.
+        /// </summary>
+        private static ContainerKeyException Corrupt(string detail) =>
+            new ContainerKeyException(Strings.Format("err.extract.corrupt", detail));
 
         // ---------- утилиты байтов ----------
 
@@ -241,7 +251,7 @@ namespace CryptoProExport
         {
             byte[] b = v.ToByteArrayUnsigned();
             if (b.Length == 32) return b;
-            if (b.Length > 32) throw new ContainerKeyException($"Число длиннее 32 байт ({b.Length})");
+            if (b.Length > 32) throw Corrupt($"value {b.Length} bytes > 32");
             var r = new byte[32];
             Array.Copy(b, 0, r, 32 - b.Length, b.Length);
             return r;
@@ -300,7 +310,7 @@ namespace CryptoProExport
         private static byte[] Ecb(byte[] key, byte[] data, bool encrypt)
         {
             if (data.Length % 8 != 0)
-                throw new ContainerKeyException($"Длина данных ГОСТ 28147 не кратна 8: {data.Length}");
+                throw new ContainerKeyException(Strings.Format("err.extract.corrupt", $"GOST 28147 length {data.Length} not /8"));
             var engine = new Gost28147Engine();
             engine.Init(encrypt, new ParametersWithSBox(new KeyParameter(key), ParamZSBox));
             var outp = new byte[data.Length];

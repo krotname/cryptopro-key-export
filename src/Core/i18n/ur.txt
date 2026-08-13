@@ -293,3 +293,11 @@ log.extractkey.fail = کلید نکالنے میں ناکامی: {0}
 cli.usage.extractkey = فائل کنٹینر سے نجی کلید کو PKCS#8/PEM میں نکالیں (CSP کے بغیر)
 cli.extractkey.ok = نجی کلید محفوظ ہو گئی (PKCS#8/PEM): {0}
 cli.extractkey.pub = وکر {0}، عوامی کلید X={1}
+
+# --- container-extraction errors (CSP-free) ---
+err.extract.nofile = کنٹینر فولڈر میں {0} موجود نہیں: {1}
+err.extract.curve = وکر {0} تعاون یافتہ نہیں
+err.extract.nofingerprint = header.key میں عوامی کلید کا فنگر پرنٹ نہیں — کنٹینر کی شناخت نہیں ہوئی
+err.extract.fingerprint = عوامی کلید کا فنگر پرنٹ مطابقت نہیں رکھتا — غلط پاس ورڈ یا خراب کنٹینر
+err.extract.degenerate = تجزیہ نے ناقص کلید دی — غلط پاس ورڈ یا خراب کنٹینر
+err.extract.corrupt = کنٹینر خراب ہے یا شناخت نہیں ہوا: {0}

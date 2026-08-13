@@ -41,7 +41,7 @@ namespace CryptoProExport
         {
             var curveOid = new DerObjectIdentifier(result.CurveOid);
             if (ECGost3410NamedCurves.GetByOid(curveOid) == null)
-                throw new ContainerKeyException($"Кривая {result.CurveOid} не поддерживается");
+                throw new ContainerKeyException(Strings.Format("err.extract.curve", result.CurveOid));
 
             var algId = new AlgorithmIdentifier(
                 Gost3410_2012_256,

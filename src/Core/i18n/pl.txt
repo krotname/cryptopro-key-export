@@ -293,3 +293,11 @@ log.extractkey.fail = Nie udało się wyodrębnić klucza: {0}
 cli.usage.extractkey = wyodrębnij klucz prywatny z kontenera plikowego do PKCS#8/PEM (bez CSP)
 cli.extractkey.ok = Zapisano klucz prywatny (PKCS#8/PEM): {0}
 cli.extractkey.pub = krzywa {0}, klucz publiczny X={1}
+
+# --- container-extraction errors (CSP-free) ---
+err.extract.nofile = Folder kontenera nie zawiera {0}: {1}
+err.extract.curve = Krzywa {0} nie jest obsługiwana
+err.extract.nofingerprint = header.key nie zawiera odcisku klucza publicznego — nie rozpoznano kontenera
+err.extract.fingerprint = Odcisk klucza publicznego nie pasuje — błędne hasło lub uszkodzony kontener
+err.extract.degenerate = Analiza dała zdegenerowany klucz — błędne hasło lub uszkodzony kontener
+err.extract.corrupt = Kontener jest uszkodzony lub nierozpoznany: {0}

@@ -293,3 +293,11 @@ log.extractkey.fail = استخراج کلید ناموفق بود: {0}
 cli.usage.extractkey = استخراج کلید خصوصی از محفظه‌ی فایلی به PKCS#8/PEM (بدون CSP)
 cli.extractkey.ok = کلید خصوصی ذخیره شد (PKCS#8/PEM): {0}
 cli.extractkey.pub = خم {0}، کلید عمومی X={1}
+
+# --- container-extraction errors (CSP-free) ---
+err.extract.nofile = پوشه‌ی محفظه فاقد {0} است: {1}
+err.extract.curve = خم {0} پشتیبانی نمی‌شود
+err.extract.nofingerprint = header.key اثر انگشت کلید عمومی ندارد — محفظه شناسایی نشد
+err.extract.fingerprint = اثر انگشت کلید عمومی مطابقت ندارد — گذرواژه نادرست یا محفظه‌ی خراب
+err.extract.degenerate = تجزیه به کلید منحط منجر شد — گذرواژه نادرست یا محفظه‌ی خراب
+err.extract.corrupt = محفظه خراب است یا شناخته نشد: {0}

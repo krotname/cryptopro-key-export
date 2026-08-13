@@ -293,3 +293,11 @@ log.extractkey.fail = تعذّر استخراج المفتاح: {0}
 cli.usage.extractkey = استخراج المفتاح الخاص من حاوية ملفات إلى PKCS#8/PEM (بدون CSP)
 cli.extractkey.ok = تم حفظ المفتاح الخاص (PKCS#8/PEM): {0}
 cli.extractkey.pub = المنحنى {0}، المفتاح العام X={1}
+
+# --- container-extraction errors (CSP-free) ---
+err.extract.nofile = مجلد الحاوية لا يحتوي على {0}: {1}
+err.extract.curve = المنحنى {0} غير مدعوم
+err.extract.nofingerprint = لا يحتوي header.key على بصمة المفتاح العام — لم يتم التعرف على الحاوية
+err.extract.fingerprint = بصمة المفتاح العام غير مطابقة — كلمة مرور خاطئة أو حاوية تالفة
+err.extract.degenerate = أنتج التحليل مفتاحًا منحطًا — كلمة مرور خاطئة أو حاوية تالفة
+err.extract.corrupt = الحاوية تالفة أو غير معروفة: {0}

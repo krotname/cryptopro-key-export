@@ -293,3 +293,11 @@ log.extractkey.fail = कुंजी निकालने में विफ�
 cli.usage.extractkey = फ़ाइल कंटेनर से निजी कुंजी को PKCS#8/PEM में निकालें (CSP के बिना)
 cli.extractkey.ok = निजी कुंजी सहेजी गई (PKCS#8/PEM): {0}
 cli.extractkey.pub = वक्र {0}, सार्वजनिक कुंजी X={1}
+
+# --- container-extraction errors (CSP-free) ---
+err.extract.nofile = कंटेनर फ़ोल्डर में {0} नहीं है: {1}
+err.extract.curve = वक्र {0} समर्थित नहीं है
+err.extract.nofingerprint = header.key में सार्वजनिक कुंजी का फ़िंगरप्रिंट नहीं है — कंटेनर पहचाना नहीं गया
+err.extract.fingerprint = सार्वजनिक कुंजी का फ़िंगरप्रिंट मेल नहीं खाता — गलत पासवर्ड या क्षतिग्रस्त कंटेनर
+err.extract.degenerate = विश्लेषण से पतित कुंजी मिली — गलत पासवर्ड या क्षतिग्रस्त कंटेनर
+err.extract.corrupt = कंटेनर क्षतिग्रस्त है या पहचाना नहीं गया: {0}

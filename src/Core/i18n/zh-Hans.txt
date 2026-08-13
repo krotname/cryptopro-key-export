@@ -293,3 +293,11 @@ log.extractkey.fail = 提取密钥失败: {0}
 cli.usage.extractkey = 从文件容器中将私钥提取为 PKCS#8/PEM（无需 CSP）
 cli.extractkey.ok = 私钥已保存 (PKCS#8/PEM): {0}
 cli.extractkey.pub = 曲线 {0}，公钥 X={1}
+
+# --- container-extraction errors (CSP-free) ---
+err.extract.nofile = 容器文件夹中没有 {0}: {1}
+err.extract.curve = 不支持曲线 {0}
+err.extract.nofingerprint = header.key 中没有公钥指纹 — 无法识别容器
+err.extract.fingerprint = 公钥指纹不匹配 — 密码错误或容器已损坏
+err.extract.degenerate = 解析得到退化的密钥 — 密码错误或容器已损坏
+err.extract.corrupt = 容器已损坏或无法识别: {0}

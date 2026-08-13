@@ -293,3 +293,11 @@ log.extractkey.fail = Impossibile estrarre la chiave: {0}
 cli.usage.extractkey = estrai la chiave privata da un contenitore di file in PKCS#8/PEM (senza CSP)
 cli.extractkey.ok = Chiave privata salvata (PKCS#8/PEM): {0}
 cli.extractkey.pub = curva {0}, chiave pubblica X={1}
+
+# --- container-extraction errors (CSP-free) ---
+err.extract.nofile = La cartella del contenitore non contiene {0}: {1}
+err.extract.curve = La curva {0} non è supportata
+err.extract.nofingerprint = header.key non contiene l'impronta della chiave pubblica — contenitore non riconosciuto
+err.extract.fingerprint = L'impronta della chiave pubblica non corrisponde — password errata o contenitore danneggiato
+err.extract.degenerate = L'analisi ha prodotto una chiave degenere — password errata o contenitore danneggiato
+err.extract.corrupt = Il contenitore è danneggiato o non riconosciuto: {0}

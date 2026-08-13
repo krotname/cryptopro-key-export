@@ -293,3 +293,11 @@ log.extractkey.fail = Gagal mengekstrak kunci: {0}
 cli.usage.extractkey = ekstrak kunci privat dari kontainer berkas ke PKCS#8/PEM (tanpa CSP)
 cli.extractkey.ok = Kunci privat disimpan (PKCS#8/PEM): {0}
 cli.extractkey.pub = kurva {0}, kunci publik X={1}
+
+# --- container-extraction errors (CSP-free) ---
+err.extract.nofile = Folder kontainer tidak memiliki {0}: {1}
+err.extract.curve = Kurva {0} tidak didukung
+err.extract.nofingerprint = header.key tidak memiliki sidik jari kunci publik — kontainer tidak dikenali
+err.extract.fingerprint = Sidik jari kunci publik tidak cocok — kata sandi salah atau kontainer rusak
+err.extract.degenerate = Penguraian menghasilkan kunci yang merosot — kata sandi salah atau kontainer rusak
+err.extract.corrupt = Kontainer rusak atau tidak dikenali: {0}

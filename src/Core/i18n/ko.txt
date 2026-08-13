@@ -293,3 +293,11 @@ log.extractkey.fail = 키를 추출하지 못했습니다: {0}
 cli.usage.extractkey = 파일 컨테이너에서 개인 키를 PKCS#8/PEM으로 추출 (CSP 불필요)
 cli.extractkey.ok = 개인 키를 저장했습니다 (PKCS#8/PEM): {0}
 cli.extractkey.pub = 곡선 {0}, 공개 키 X={1}
+
+# --- container-extraction errors (CSP-free) ---
+err.extract.nofile = 컨테이너 폴더에 {0}이(가) 없습니다: {1}
+err.extract.curve = 곡선 {0}은(는) 지원되지 않습니다
+err.extract.nofingerprint = header.key에 공개 키 지문이 없습니다 — 컨테이너를 인식할 수 없습니다
+err.extract.fingerprint = 공개 키 지문이 일치하지 않습니다 — 암호가 틀리거나 컨테이너가 손상되었습니다
+err.extract.degenerate = 분석 결과가 퇴화된 키입니다 — 암호가 틀리거나 컨테이너가 손상되었습니다
+err.extract.corrupt = 컨테이너가 손상되었거나 인식할 수 없습니다: {0}

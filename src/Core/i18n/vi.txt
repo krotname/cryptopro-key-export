@@ -293,3 +293,11 @@ log.extractkey.fail = Không thể trích khóa: {0}
 cli.usage.extractkey = trích khóa riêng từ vùng chứa tệp sang PKCS#8/PEM (không cần CSP)
 cli.extractkey.ok = Đã lưu khóa riêng (PKCS#8/PEM): {0}
 cli.extractkey.pub = đường cong {0}, khóa công khai X={1}
+
+# --- container-extraction errors (CSP-free) ---
+err.extract.nofile = Thư mục vùng chứa không có {0}: {1}
+err.extract.curve = Đường cong {0} không được hỗ trợ
+err.extract.nofingerprint = header.key không có dấu vân tay khóa công khai — không nhận dạng được vùng chứa
+err.extract.fingerprint = Dấu vân tay khóa công khai không khớp — sai mật khẩu hoặc vùng chứa bị hỏng
+err.extract.degenerate = Phân tích tạo ra khóa suy biến — sai mật khẩu hoặc vùng chứa bị hỏng
+err.extract.corrupt = Vùng chứa bị hỏng hoặc không nhận dạng được: {0}

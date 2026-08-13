@@ -293,3 +293,11 @@ log.extractkey.fail = Failed to extract the key: {0}
 cli.usage.extractkey = extract the private key from a file container to PKCS#8/PEM (no CSP)
 cli.extractkey.ok = Private key saved (PKCS#8/PEM): {0}
 cli.extractkey.pub = curve {0}, public key X={1}
+
+# --- container-extraction errors (CSP-free) ---
+err.extract.nofile = The container folder has no {0}: {1}
+err.extract.curve = Curve {0} is not supported
+err.extract.nofingerprint = header.key has no public-key fingerprint — container not recognized
+err.extract.fingerprint = Public-key fingerprint does not match — wrong password or corrupted container
+err.extract.degenerate = Parsing produced a degenerate key — wrong password or corrupted container
+err.extract.corrupt = Container is corrupted or unrecognized: {0}

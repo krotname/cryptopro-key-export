@@ -293,3 +293,11 @@ log.extractkey.fail = விசையை பிரித்தெடுக்க
 cli.usage.extractkey = கோப்பு கொள்கலனிலிருந்து தனிப்பட்ட விசையை PKCS#8/PEM ஆக பிரித்தெடு (CSP இல்லாமல்)
 cli.extractkey.ok = தனிப்பட்ட விசை சேமிக்கப்பட்டது (PKCS#8/PEM): {0}
 cli.extractkey.pub = வளைவு {0}, பொது விசை X={1}
+
+# --- container-extraction errors (CSP-free) ---
+err.extract.nofile = கொள்கலன் கோப்புறையில் {0} இல்லை: {1}
+err.extract.curve = வளைவு {0} ஆதரிக்கப்படவில்லை
+err.extract.nofingerprint = header.key இல் பொது விசையின் கைரேகை இல்லை — கொள்கலன் அடையாளம் காணப்படவில்லை
+err.extract.fingerprint = பொது விசையின் கைரேகை பொருந்தவில்லை — தவறான கடவுச்சொல் அல்லது சிதைந்த கொள்கலன்
+err.extract.degenerate = பகுப்பாய்வு சிதைந்த விசையைத் தந்தது — தவறான கடவுச்சொல் அல்லது சிதைந்த கொள்கலன்
+err.extract.corrupt = கொள்கலன் சிதைந்துள்ளது அல்லது அடையாளம் காண முடியவில்லை: {0}

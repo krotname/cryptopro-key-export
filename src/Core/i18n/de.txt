@@ -293,3 +293,11 @@ log.extractkey.fail = Schlüssel konnte nicht extrahiert werden: {0}
 cli.usage.extractkey = privaten Schlüssel aus einem Dateicontainer als PKCS#8/PEM extrahieren (ohne CSP)
 cli.extractkey.ok = Privater Schlüssel gespeichert (PKCS#8/PEM): {0}
 cli.extractkey.pub = Kurve {0}, öffentlicher Schlüssel X={1}
+
+# --- container-extraction errors (CSP-free) ---
+err.extract.nofile = Der Containerordner enthält kein {0}: {1}
+err.extract.curve = Kurve {0} wird nicht unterstützt
+err.extract.nofingerprint = header.key enthält keinen Fingerabdruck des öffentlichen Schlüssels — Container nicht erkannt
+err.extract.fingerprint = Fingerabdruck des öffentlichen Schlüssels stimmt nicht überein — falsches Passwort oder beschädigter Container
+err.extract.degenerate = Analyse ergab einen entarteten Schlüssel — falsches Passwort oder beschädigter Container
+err.extract.corrupt = Container ist beschädigt oder nicht erkannt: {0}

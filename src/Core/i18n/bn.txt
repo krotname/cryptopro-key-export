@@ -293,3 +293,11 @@ log.extractkey.fail = কী বের করা যায়নি: {0}
 cli.usage.extractkey = ফাইল কনটেইনার থেকে ব্যক্তিগত কী PKCS#8/PEM-এ বের করুন (CSP ছাড়া)
 cli.extractkey.ok = ব্যক্তিগত কী সংরক্ষিত হয়েছে (PKCS#8/PEM): {0}
 cli.extractkey.pub = বক্ররেখা {0}, পাবলিক কী X={1}
+
+# --- container-extraction errors (CSP-free) ---
+err.extract.nofile = কনটেইনার ফোল্ডারে {0} নেই: {1}
+err.extract.curve = বক্ররেখা {0} সমর্থিত নয়
+err.extract.nofingerprint = header.key-এ পাবলিক কী-এর ফিঙ্গারপ্রিন্ট নেই — কনটেইনার শনাক্ত করা যায়নি
+err.extract.fingerprint = পাবলিক কী-এর ফিঙ্গারপ্রিন্ট মেলেনি — ভুল পাসওয়ার্ড বা ক্ষতিগ্রস্ত কনটেইনার
+err.extract.degenerate = বিশ্লেষণে অবক্ষয়িত কী পাওয়া গেছে — ভুল পাসওয়ার্ড বা ক্ষতিগ্রস্ত কনটেইনার
+err.extract.corrupt = কনটেইনার ক্ষতিগ্রস্ত বা অচেনা: {0}
