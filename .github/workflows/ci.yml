@@ -111,6 +111,9 @@ jobs:
   # постоянный сборщик — Linux, а Windows-раннер может быть офлайн.
   windows-tests:
     name: Тесты и самопроверка (Windows)
+    # needs: build — самопроверку гоняем именно над артефактом Linux-сборки (тем, что
+    # уйдёт в релиз), а не над отдельно собранным на Windows exe.
+    needs: build
     if: ${{ vars.CI_RUNS_ON_WINDOWS != '' }}
     runs-on: ${{ fromJSON(vars.CI_RUNS_ON_WINDOWS || '["self-hosted","windows","adler-white-1w","cryptopro"]') }}
     timeout-minutes: 30
@@ -129,10 +132,27 @@ jobs:
       - name: Юнит-тесты
         run: dotnet test CryptoProExport.slnx -c Release --no-build --logger "console;verbosity=normal"
 
-      # Самопроверка гоняется на портативной сборке: рантайм .NET внутри неё.
-      # Обычный build даёт framework-dependent x86, а 32-битного рантайма на раннере нет.
-      - name: Портативная сборка + самопроверка GUI
-        run: pwsh build/publish.ps1 -Rid ${{ env.PORTABLE_RID }}
+      # Проверяем ровно тот портативный exe, что собрал Linux-job build и что уйдёт в
+      # релиз, а не пересобранный здесь. Если кросс-публикация на Linux даст иначе
+      # запускающийся или неполный single-file exe, --selftest/deps/help/CLI поймают это
+      # именно на релизном файле.
+      - name: Скачать портативный exe из job build
+        uses: actions/download-artifact@v4
+        with:
+          name: CryptoProExport-portable-${{ env.PORTABLE_RID }}
+          path: publish
+
+      - name: Самопроверка GUI (артефакт Linux-сборки)
+        shell: pwsh
+        run: |
+          # Рантайм .NET внутри портативной сборки; проверяем, что exe стартует, строит
+          # форму на всех языках и видит свои вшитые зависимости.
+          $exe = 'publish/CryptoProExport.exe'
+          $log = "$env:RUNNER_TEMP/selftest.txt"
+          $p = Start-Process $exe '--selftest' -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput $log
+          $text = [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($log))
+          $text
+          if ($p.ExitCode -ne 0) { throw "--selftest вернул код $($p.ExitCode)" }
 
       - name: Проверить отчёт о зависимостях
         shell: pwsh
@@ -231,8 +251,16 @@ jobs:
 
   release:
     name: Релиз по тегу
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    # Зависит и от windows-tests: при теге с настроенной CI_RUNS_ON_WINDOWS релиз не
+    # должен выйти, пока рантайм-проверки не прошли. always() нужен, чтобы job
+    # оценивался и когда windows-tests пропущен (нет Windows-раннера) — тогда его
+    # результат 'skipped' допустим, а вот 'failure' публикацию блокирует.
+    needs: [build, windows-tests]
+    if: >-
+      ${{ always()
+      && startsWith(github.ref, 'refs/tags/v')
+      && needs.build.result == 'success'
+      && (needs.windows-tests.result == 'success' || needs.windows-tests.result == 'skipped') }}
     # Релиз собирает тот же постоянный Linux-раннер. CI_RUNS_ON переводит его на другой,
     # если этот недоступен: например ["ubuntu-latest"].
     runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","adler-ubuntu-xeon"]') }}
