@@ -139,7 +139,7 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
-        public void SmartCardReaders_SelectsOnlyEcpAndLite()
+        public void SmartCardReaders_SelectsEveryReaderUnsafeForFileWalk()
         {
             var tokens = new List<Pkcs11TokenInfo>
             {
@@ -156,6 +156,23 @@ namespace CryptoProExport.Tests
             Assert.Contains("Aktiv Rutoken ECP 0", set);
             Assert.Contains("Aktiv Rutoken lite 0", set);
             Assert.DoesNotContain("Aktiv ruToken 0", set);
+        }
+
+        [Fact]
+        public void SmartCardReaders_IncludesForeignVendorsUnderFacelessReaderNames()
+        {
+            // Имя считывателя может ничего не говорить о вендоре («ACS ACR38U 0»), а PKCS#11
+            // уже опознал носитель по производителю. Без этого списка ShouldWalk пустил бы его
+            // в файловый обход rtCOMLite, где ReadBinary рушит кучу процесса (замечание Codex, PR #25).
+            var tokens = new List<Pkcs11TokenInfo>
+            {
+                new Pkcs11TokenInfo { Reader = "ACS ACR38U 0", Kind = RutokenKind.Other },
+            };
+
+            var set = Pkcs11Token.SmartCardReaders(tokens);
+
+            Assert.Contains("ACS ACR38U 0", set);
+            Assert.False(RutokenExporter.ShouldWalk("ACS ACR38U 0", set));
         }
 
         [Fact]

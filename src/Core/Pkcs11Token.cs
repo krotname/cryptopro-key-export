@@ -246,8 +246,14 @@ namespace CryptoProExport
         }
 
         /// <summary>
-        /// Имена считывателей, чей токен обслуживается по смарт-карточному профилю (ЭЦП, Lite).
-        /// Файловую память таких токенов обходить нельзя — см. <see cref="RutokenExporter.ShouldWalk"/>.
+        /// Имена считывателей, чью файловую память обходить нельзя: смарт-карточные Рутокены
+        /// (ЭЦП, Lite) и носители чужих вендоров — см. <see cref="RutokenExporter.ShouldWalk"/>.
+        ///
+        /// Чужие вендоры обязаны попадать сюда именно из PKCS#11: <c>ShouldWalk</c> получает только
+        /// имя считывателя, а оно бывает безликим (<c>ACS ACR38U 0</c>), и тогда классификация по
+        /// имени даёт <c>Unknown</c>. PKCS#11 в этот момент уже знает производителя — этот список
+        /// и есть способ донести знание до файлового обхода (замечание Codex на PR #25).
+        ///
         /// Чистая функция: покрыта тестами без обращения к железу.
         /// </summary>
         public static ISet<string> SmartCardReaders(IEnumerable<Pkcs11TokenInfo> tokens)
@@ -256,7 +262,8 @@ namespace CryptoProExport
             foreach (var t in tokens ?? new List<Pkcs11TokenInfo>())
             {
                 if (t == null || string.IsNullOrEmpty(t.Reader)) continue;
-                if (t.Kind == RutokenKind.RutokenEcp || t.Kind == RutokenKind.RutokenLite)
+                if (t.Kind == RutokenKind.RutokenEcp || t.Kind == RutokenKind.RutokenLite
+                    || t.Kind == RutokenKind.Other)
                     set.Add(t.Reader);
             }
             return set;
