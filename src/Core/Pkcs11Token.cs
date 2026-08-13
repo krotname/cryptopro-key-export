@@ -416,9 +416,10 @@ namespace CryptoProExport
                         info.PinFinalTry = f.UserPinFinalTry;
                         info.PinLocked = f.UserPinLocked;
 
-                        if (readContainers)
-                            ReadContainers(slot, factories, info, log, cancel);
-                        ok = true;
+                        // Сбой чтения объектов — тоже неполное чтение: ReadContainers гасит
+                        // исключение сам (список объектов не должен ронять перечисление токенов),
+                        // поэтому об успехе он сообщает возвращаемым значением.
+                        ok = !readContainers || ReadContainers(slot, factories, info, log, cancel);
                     }
                     catch (OperationCanceledException) { throw; }   // отмена — не ошибка токена
                     catch (Exception e)
@@ -438,8 +439,10 @@ namespace CryptoProExport
         /// <summary>
         /// Прочитать публичные контейнеры КриптоПро (CKO_DATA с приложением «CryptoPro CSP») и
         /// связанные с ними сертификаты (CKO_CERTIFICATE с той же меткой). Без входа по PIN.
+        /// Возвращает <c>false</c>, если объекты прочитать не удалось: исключение здесь гасится
+        /// (список объектов не должен ронять перечисление токенов), и о неудаче надо сообщить иначе.
         /// </summary>
-        private static void ReadContainers(ISlot slot, Pkcs11InteropFactories factories,
+        private static bool ReadContainers(ISlot slot, Pkcs11InteropFactories factories,
                                            Pkcs11TokenInfo info, Action<string> log, CancellationToken cancel)
         {
             ISession session = null;
@@ -480,11 +483,13 @@ namespace CryptoProExport
                 }
 
                 info.Containers.AddRange(Combine(containers, certs));
+                return true;
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception e)
             {
                 log(Strings.Format("pkcs11.readfail", e.Message));
+                return false;
             }
             finally
             {
