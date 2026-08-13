@@ -75,6 +75,13 @@ namespace CryptoProExport
         {
             if (string.IsNullOrEmpty(pin)) throw new LiteApduException(Strings.Format("err.lite.pin", "—"));
             Directory.CreateDirectory(outDir);
+            // Убираем возможные *.key от прошлого экспорта: у другого контейнера может не быть пары
+            // подписи, и старые masks2/primary2.key дали бы «сборный» из двух ключей контейнер.
+            foreach (var (_, stale) in Files)
+            {
+                string p = Path.Combine(outDir, stale);
+                if (File.Exists(p)) File.Delete(p);
+            }
             using (var s = ApduSession.Open(reader))
             {
                 if (!s.SelectPath(dfIndex, 0))

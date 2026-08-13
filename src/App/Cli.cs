@@ -238,7 +238,10 @@ namespace CryptoProExport.App
                         {
                             var tok = Pkcs11Token.Enumerate(readContainers: false, log: Out)
                                 .Find(t => string.Equals(t.Reader, reader, StringComparison.OrdinalIgnoreCase));
-                            if (tok != null && tok.PinDefault && !tok.PinLocked) pin = "12345678";
+                            // Авто-PIN только при заводском PIN И полностью чистом счётчике:
+                            // при подъеденном счётчике даже верный ввод рискует, а промах — блокирует.
+                            if (tok != null && tok.PinDefault &&
+                                !tok.PinCountLow && !tok.PinFinalTry && !tok.PinLocked) pin = "12345678";
                             else { Err(Strings.Format("err.lite.pin", "—")); return 2; }
                         }
                         int done = 0;
