@@ -25,6 +25,32 @@ namespace CryptoProExport.Tests
         }
 
         [Theory]
+        // Смарт-карточные Рутокены обходить нельзя: на ЭЦП 3.0 ReadBinary рушит кучу процесса
+        // (0xC0000374), а контейнеров в файловой памяти у них всё равно нет.
+        [InlineData("Aktiv Rutoken ECP 0", false)]
+        [InlineData("Aktiv Rutoken lite 0", false)]
+        [InlineData("Aktiv ruToken 0", true)]      // Рутокен S — ровно тот случай, ради которого обход и нужен
+        [InlineData("Generic Smart Card Reader 0", true)]
+        [InlineData("", false)]
+        [InlineData(null, false)]
+        public void ShouldWalk_SkipsSmartCardRutokensByReaderName(string reader, bool expected)
+        {
+            Assert.Equal(expected, RutokenExporter.ShouldWalk(reader, null));
+        }
+
+        [Fact]
+        public void ShouldWalk_HonoursExplicitSkipList()
+        {
+            // Имя считывателя ни о чём не говорит, а PKCS#11 уже определил модель — верим ему.
+            var skip = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "ACS ACR38U 0",
+            };
+            Assert.False(RutokenExporter.ShouldWalk("acs acr38u 0", skip));
+            Assert.True(RutokenExporter.ShouldWalk("ACS ACR38U 1", skip));
+        }
+
+        [Theory]
         [InlineData("Иванов", "Иванов")]
         [InlineData(@"a/b\c:d", "a_b_c_d")]
         [InlineData("", "container")]

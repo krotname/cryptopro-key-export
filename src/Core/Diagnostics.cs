@@ -49,9 +49,14 @@ namespace CryptoProExport
                         t.Reader ?? "?", Pkcs11Token.KindName(t.Kind),
                         t.Serial ?? "?", Pkcs11Token.PinState(t)));
                     foreach (var c in t.Containers)
-                        lines.Add("    " + Strings.Format("diag.pkcs11.container",
-                            c.Name ?? Strings.Get("log.container.unnamed"),
-                            Strings.Get(c.Certificate != null ? "common.present" : "common.none")));
+                        // Сертификат без парного CKO_DATA контейнером не является — у него своя
+                        // формулировка, как в list и token (замечание Codex на PR #24).
+                        lines.Add("    " + (c.CertificateOnly
+                            ? Strings.Format("diag.pkcs11.certonly",
+                                c.Name ?? Strings.Get("log.container.unnamed"))
+                            : Strings.Format("diag.pkcs11.container",
+                                c.Name ?? Strings.Get("log.container.unnamed"),
+                                Strings.Get(c.Certificate != null ? "common.present" : "common.none"))));
                 }
             }
 

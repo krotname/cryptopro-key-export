@@ -96,6 +96,35 @@ namespace CryptoProExport
         /// </summary>
         public CancellationToken Cancel { get; set; } = CancellationToken.None;
 
+        /// <summary>
+        /// Считыватели, которые обходить не нужно, — обычно смарт-карточные Рутокены,
+        /// опознанные по PKCS#11 (<see cref="Pkcs11Token.SmartCardReaders"/>). Список задаёт
+        /// вызывающий: он уже перечислил токены и знает их модели точнее, чем rtCOMLite.
+        /// </summary>
+        public ISet<string> SkipReaders { get; set; }
+
+        /// <summary>
+        /// Нужно ли обходить файловую память этого считывателя.
+        ///
+        /// Обход смарт-карточных Рутокенов не просто бесполезен (файлов контейнера там нет,
+        /// AGENTS пп. 20, 22) — он <b>убивает процесс</b>. На Рутокен ЭЦП 3.0 (прошивка 30.02)
+        /// в каталоге <c>/4096/4097/</c> лежит файл 256 байт, и <c>rtISCard::ReadBinary</c> на нём
+        /// рушит кучу процесса (0xC0000374) прямо внутри нативного вызова — как SAFEARRAY-методы
+        /// из п. 19, и так же не ловится <c>catch</c>. На прежних ЭЦП 2.0 и Lite файлов было ноль,
+        /// поэтому <c>ReadBinary</c> ни разу не вызывался и падения не было видно.
+        ///
+        /// Признак берётся из PKCS#11, а при отсутствии драйвера — из имени считывателя:
+        /// «Aktiv Rutoken ECP 0», «Aktiv Rutoken lite 0» классифицируются и по нему.
+        /// Чистая функция: покрыта тестами без обращения к железу.
+        /// </summary>
+        public static bool ShouldWalk(string readerName, ISet<string> skipReaders)
+        {
+            if (string.IsNullOrEmpty(readerName)) return false;
+            if (skipReaders != null && skipReaders.Contains(readerName)) return false;
+            RutokenKind kind = Pkcs11Token.Classify(readerName);
+            return kind != RutokenKind.RutokenEcp && kind != RutokenKind.RutokenLite;
+        }
+
         /// <summary>Перечислить и прочитать все контейнеры со всех подключённых Рутокенов.</summary>
         public List<RutokenContainer> ReadAllContainers()
         {
@@ -117,6 +146,11 @@ namespace CryptoProExport
                     Cancel.ThrowIfCancellationRequested();
                     string tokenName = Convert.ToString(rObj);
                     if (string.IsNullOrEmpty(tokenName)) continue;
+                    if (!ShouldWalk(tokenName, SkipReaders))
+                    {
+                        Log(Strings.Format("token.skip.smartcard", tokenName));
+                        continue;
+                    }
                     Log(Strings.Format("token.open", tokenName));
                     dynamic rt = ctx.OpenReader(tokenName, RT_SHARED, OpenTimeoutMs);
                     try

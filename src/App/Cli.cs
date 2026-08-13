@@ -76,12 +76,15 @@ namespace CryptoProExport.App
                         {
                             Out($"  {t.Reader} [{Pkcs11Token.KindName(t.Kind)}]");
                             foreach (var c in t.Containers)
-                                Out("    " + Strings.Format("cli.token.container", c.Name ?? "?",
-                                    Strings.Get(c.Certificate != null ? "common.present" : "common.none")));
+                                Out("    " + DescribeTokenEntry(c));
                         }
 
                         Out(Strings.Get("cli.list.tokens"));
-                        var exp = new RutokenExporter { Log = Out };
+                        var exp = new RutokenExporter
+                        {
+                            Log = Out,
+                            SkipReaders = Pkcs11Token.SmartCardReaders(tokens),
+                        };
                         foreach (var c in exp.ReadAllContainers())
                             Out($"  {c.TokenName} {c.TokenDir} \"{c.ContainerName}\" " +
                                 Strings.Format("cli.list.files", c.Files.Count));
@@ -101,8 +104,7 @@ namespace CryptoProExport.App
                             Out("  " + Strings.Format("cli.token.pin", Pkcs11Token.PinState(t)));
                             foreach (var c in t.Containers)
                             {
-                                Out("  " + Strings.Format("cli.token.container", c.Name ?? "?",
-                                    Strings.Get(c.Certificate != null ? "common.present" : "common.none")));
+                                Out("  " + DescribeTokenEntry(c));
                                 if (outDir != null && c.Certificate != null && !SaveTokenCert(outDir, t, c, usedPaths))
                                     anySaveFailed = true;
                             }
@@ -212,6 +214,16 @@ namespace CryptoProExport.App
                 return 3;
             }
         }
+
+        /// <summary>
+        /// Строка списка для одной записи токена. Сертификат без парного контейнера КриптоПро
+        /// называть «контейнером» нельзя — у него отдельная формулировка.
+        /// </summary>
+        private static string DescribeTokenEntry(Pkcs11Container c) =>
+            c.CertificateOnly
+                ? Strings.Format("cli.token.certonly", c.Name ?? "?")
+                : Strings.Format("cli.token.container", c.Name ?? "?",
+                    Strings.Get(c.Certificate != null ? "common.present" : "common.none"));
 
         /// <summary>
         /// Сохранить извлечённый с токена сертификат (.cer) — без обращения к CSP.

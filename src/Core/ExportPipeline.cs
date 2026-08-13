@@ -49,6 +49,10 @@ namespace CryptoProExport
         {
             Directory.CreateDirectory(destParent);
             Exporter.UserPin = userPin;
+            // Смарт-карточные Рутокены (ЭЦП, Lite) из обхода исключаются: файлов контейнера там нет,
+            // а ReadBinary на ЭЦП 3.0 рушит процесс (см. RutokenExporter.ShouldWalk).
+            Exporter.SkipReaders = Pkcs11Token.SmartCardReaders(
+                Pkcs11Token.Enumerate(readContainers: false, cancel: Cancel));
             var saved = new List<(RutokenContainer, string)>();
             foreach (var c in Exporter.ReadAllContainers())
             {
