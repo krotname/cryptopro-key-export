@@ -10,3 +10,4 @@ csptest.exe
 send-resp.txt
 bin/
 obj/
+winscard.def

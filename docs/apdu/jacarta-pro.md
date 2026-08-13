@@ -37,11 +37,12 @@ CSP идёт к карте через системный PC/SC: `cpscard.dll` �
 `winscard.dll` — значит перехват на `winscard.dll` видит **все** APDU. Реализованы два
 независимых перехватчика, дающих одинаковый результат:
 
-- **Нативный winscard-прокси** (`harness/winscard-proxy/`, x64, собран MinGW-w64). `winscard.dll`,
-  форвардящий все 80 экспортов в копию `winscard_orig.dll`, кроме `SCardTransmit` — тот логирует
-  APDU и вызывает настоящий. Кладётся рядом с копией `csptest.exe`; loader берёт `winscard.dll`
-  из каталога exe первым. Именно им сняты файлы `jcrec` для реконструкции. Для .NET-хостов
-  (apphost жёстко ищет DLL) прокси грузится через `NativeLibrary.Load`.
+- **Нативный winscard-прокси** (`harness/proxy.c` + `harness/build.ps1`, x64). `winscard.dll`,
+  форвардящий все экспорты в копию `winscard_real.dll`, кроме хука `SCardTransmit` — тот логирует
+  APDU (данные VERIFY/CHANGE REFERENCE DATA маскируются) и вызывает настоящий. `build.ps1` собирает
+  его MSVC (`cl`), а при отсутствии BuildTools — MinGW-w64 (`gcc` через `.def`). Кладётся рядом с
+  копией `csptest.exe`; loader берёт `winscard.dll` из каталога exe первым. Им сняты файлы `jcrec`
+  для реконструкции. Для .NET-хостов (apphost жёстко ищет DLL) прокси грузится через `NativeLibrary.Load`.
 - **Frida** (`pip install frida-tools`) — быстрый динамический хук `SCardTransmit`/`SCardConnectW`/
   `SCardBeginTransaction`/`SCardStatusW` в `csptest.exe` без сборки; Python-драйвер спавнит
   `csptest`, снимает лог и stdout (cp866).
