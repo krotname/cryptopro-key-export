@@ -318,3 +318,6 @@ err.extract.corrupt = Il contenitore è danneggiato o non riconosciuto: {0}
 err.pfx.nocert = Nessun certificato né nel contenitore né negli argomenti: indicare un file .cer
 err.pfx.badcert = Il file del certificato non è stato letto come X.509 con chiave GOST a 256 bit
 err.pfx.certmismatch = Il certificato appartiene a un'altra chiave: le chiavi pubbliche non coincidono
+cli.usage.liteexport = leggere un contenitore Rutoken Lite via APDU e recuperare la chiave (senza CSP)
+err.lite.none = nessun contenitore CryptoPro trovato su {0} via APDU
+err.lite.pin = la carta ha rifiutato il PIN ({0}); controlla il PIN, indovinare non è consentito

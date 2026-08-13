@@ -318,3 +318,6 @@ err.extract.corrupt = কনটেইনার ক্ষতিগ্রস্ত
 err.pfx.nocert = কনটেইনারে বা আর্গুমেন্টে কোনো সার্টিফিকেট নেই — একটি .cer ফাইল দেখান
 err.pfx.badcert = সার্টিফিকেট ফাইলটি ২৫৬-বিট GOST কী সহ X.509 হিসেবে পড়া যায়নি
 err.pfx.certmismatch = সার্টিফিকেটটি অন্য কী-এর: পাবলিক কী মেলেনি
+cli.usage.liteexport = APDU দিয়ে Rutoken Lite কনটেইনার পড়ুন এবং কী পুনরুদ্ধার করুন (CSP ছাড়া)
+err.lite.none = {0}-এ APDU দিয়ে কোনো CryptoPro কনটেইনার পাওয়া যায়নি
+err.lite.pin = কার্ড PIN প্রত্যাখ্যান করেছে ({0}); PIN যাচাই করুন, অনুমান নিষিদ্ধ

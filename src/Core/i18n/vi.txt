@@ -318,3 +318,6 @@ err.extract.corrupt = Vùng chứa bị hỏng hoặc không nhận dạng đư�
 err.pfx.nocert = Không có chứng chỉ trong vùng chứa lẫn trong tham số — hãy chỉ tới tệp .cer
 err.pfx.badcert = Tệp chứng chỉ không đọc được như X.509 với khóa GOST 256 bit
 err.pfx.certmismatch = Chứng chỉ thuộc về khóa khác: khóa công khai không khớp
+cli.usage.liteexport = đọc vùng chứa Rutoken Lite qua APDU và khôi phục khóa (không cần CSP)
+err.lite.none = không tìm thấy vùng chứa CryptoPro trên {0} qua APDU
+err.lite.pin = thẻ đã từ chối mã PIN ({0}); hãy kiểm tra PIN, không được đoán
