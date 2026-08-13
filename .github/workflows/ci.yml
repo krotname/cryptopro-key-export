@@ -1,9 +1,17 @@
 name: build
 
-# Сборка идёт только на Windows: проект — WinForms + CryptoAPI (net10.0-windows).
-# Результат — один портативный exe (win-x86), внутри которого всё: .NET, p12utility,
-# rtCOMLite и руководство. x86 выбран как универсальный: идёт и на x64 (WOW64),
-# и на ARM64 (эмуляция), а вшитый 32-битный rtCOMLite грузится только в такой процесс.
+# Постоянный сборщик — домашний Ubuntu Xeon (self-hosted раннер adler-ubuntu-xeon).
+# Linux компилирует весь проект, включая WinForms (EnableWindowsTargeting), и публикует
+# портативный self-contained exe (win-x86). Это и есть основной CI-гейт: сборка без
+# предупреждений и успешная публикация под все RID.
+#
+# Рантайм-проверки (юнит-тесты, --selftest, запуск exe, отчёт deps, руководство, коды CLI)
+# требуют Windows: WinForms-exe на Linux не запускается, а 12 из 302 тестов дёргают cmd.exe
+# и системные пути (на Linux проходит 290, падают ровно эти платформенные). Поэтому они
+# вынесены в job `windows-tests`, который идёт только когда переменная репозитория
+# CI_RUNS_ON_WINDOWS указывает на доступный Windows-раннер; иначе пропускается и PR не
+# блокирует. Полный набор разработчик гоняет локально на Windows перед коммитом
+# (AGENTS.md: обязательный минимум).
 on:
   push:
     branches: [main]
@@ -16,17 +24,97 @@ env:
 
 jobs:
   build:
-    name: Сборка, тесты, портативный exe
-    # Windows-job'ы идут на собственном раннере правообладателя
-    # (adler-white-1w-cryptopro). Переменная репозитория CI_RUNS_ON_WINDOWS
-    # временно переводит их на другой раннер, когда собственный недоступен:
-    # например ["windows-latest"]. Она отдельная от CI_RUNS_ON, потому что
-    # та переключает Linux-job релиза и значения у них несовместимы.
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON_WINDOWS || '["self-hosted","windows","adler-white-1w","cryptopro"]') }}
+    name: Сборка и портативный exe (Linux)
+    # По умолчанию — постоянный домашний Ubuntu Xeon. Переменная репозитория CI_RUNS_ON
+    # переводит Linux-job'ы на другой раннер, если этот недоступен: например ["ubuntu-latest"].
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","adler-ubuntu-xeon"]') }}
     timeout-minutes: 30
     outputs:
       sha256: ${{ steps.portable.outputs.sha256 }}
       version: ${{ steps.portable.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Установить .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Сборка всего решения (предупреждения = ошибки)
+        run: dotnet build CryptoProExport.slnx -c Release -warnaserror
+
+      # Портативная сборка тем же вызовом, что build/publish.ps1, но без --selftest:
+      # запуск WinForms-exe возможен только на Windows (см. job windows-tests).
+      - name: Портативная сборка (self-contained ${{ env.PORTABLE_RID }})
+        run: >
+          dotnet publish src/App/CryptoProExport.App.csproj -c Release
+          -r ${{ env.PORTABLE_RID }} --self-contained true -p:DebugType=embedded
+          -o publish
+
+      - name: Проверить «ровно один exe» и посчитать контрольную сумму
+        id: portable
+        run: |
+          set -euo pipefail
+          ls -1 publish
+          count=$(find publish -maxdepth 1 -type f | wc -l)
+          if [ "$count" -ne 1 ]; then
+            echo "Ожидался один файл в publish, а их $count" >&2
+            exit 1
+          fi
+          hash=$(sha256sum publish/CryptoProExport.exe | cut -d' ' -f1)
+          version=$(dotnet msbuild src/App/CryptoProExport.App.csproj -nologo -getProperty:Version)
+          echo "SHA-256: $hash"
+          echo "Версия:  $version"
+          printf '%s *CryptoProExport.exe\n' "$hash" > publish/CryptoProExport.exe.sha256
+          echo "sha256=$hash"     >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Выложить портативный exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: CryptoProExport-portable-${{ env.PORTABLE_RID }}
+          path: |
+            publish/CryptoProExport.exe
+            publish/CryptoProExport.exe.sha256
+          retention-days: 30
+
+  # Другие архитектуры собираем, чтобы ловить регрессии компиляции.
+  # Портативной сборкой остаётся x86 — только в ней работает вшитый rtCOMLite.
+  architectures:
+    name: Сборка под ${{ matrix.rid }}
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","adler-ubuntu-xeon"]') }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        rid: [win-x64, win-arm64]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Публикация ${{ matrix.rid }}
+        run: >
+          dotnet publish src/App/CryptoProExport.App.csproj -c Release
+          -r ${{ matrix.rid }} --self-contained true -p:DebugType=embedded
+          -o out-${{ matrix.rid }}
+      - name: Итог
+        run: |
+          f="out-${{ matrix.rid }}/CryptoProExport.exe"
+          printf '%s: %s\n' "$(basename "$f")" "$(du -h "$f" | cut -f1)"
+
+  # Рантайм-проверки на Windows: юнит-тесты (302), портативная сборка с --selftest,
+  # отчёт deps, встроенное руководство, локализация вывода и коды возврата CLI.
+  # Идёт только при заданной переменной CI_RUNS_ON_WINDOWS (напр. ["windows-latest"]
+  # или собственный Windows-раннер). Без неё job пропускается и не блокирует PR:
+  # постоянный сборщик — Linux, а Windows-раннер может быть офлайн.
+  windows-tests:
+    name: Тесты и самопроверка (Windows)
+    if: ${{ vars.CI_RUNS_ON_WINDOWS != '' }}
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON_WINDOWS || '["self-hosted","windows","adler-white-1w","cryptopro"]') }}
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v4
@@ -46,23 +134,6 @@ jobs:
       # Обычный build даёт framework-dependent x86, а 32-битного рантайма на раннере нет.
       - name: Портативная сборка + самопроверка GUI
         run: pwsh build/publish.ps1 -Rid ${{ env.PORTABLE_RID }}
-
-      - name: Проверить, что exe ровно один, и посчитать контрольную сумму
-        id: portable
-        shell: pwsh
-        run: |
-          $files = Get-ChildItem publish -File
-          $files | ForEach-Object { "{0} ({1:N1} МБ)" -f $_.Name, ($_.Length / 1MB) }
-          if ($files.Count -ne 1) { throw "Ожидался один файл, а их $($files.Count)" }
-
-          $exe = Join-Path (Resolve-Path publish) 'CryptoProExport.exe'
-          $hash = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLower()
-          $version = [Diagnostics.FileVersionInfo]::GetVersionInfo($exe).FileVersion
-          "SHA-256: $hash"
-          "Версия:  $version"
-          "$hash *CryptoProExport.exe" | Set-Content publish/CryptoProExport.exe.sha256 -Encoding ascii
-          "sha256=$hash"     >> $env:GITHUB_OUTPUT
-          "version=$version" >> $env:GITHUB_OUTPUT
 
       - name: Проверить отчёт о зависимостях
         shell: pwsh
@@ -159,50 +230,13 @@ jobs:
           }
           if ($bad) { throw "Коды возврата разошлись с контрактом: $($bad -join '; ')" }
 
-      - name: Выложить портативный exe
-        uses: actions/upload-artifact@v4
-        with:
-          name: CryptoProExport-portable-${{ env.PORTABLE_RID }}
-          path: |
-            publish/CryptoProExport.exe
-            publish/CryptoProExport.exe.sha256
-          retention-days: 30
-
-  # Другие архитектуры собираем, чтобы ловить регрессии компиляции.
-  # Портативной сборкой остаётся x86 — только в ней работает вшитый rtCOMLite.
-  architectures:
-    name: Сборка под ${{ matrix.rid }}
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON_WINDOWS || '["self-hosted","windows","adler-white-1w","cryptopro"]') }}
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        rid: [win-x64, win-arm64]
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-      - name: Публикация ${{ matrix.rid }}
-        run: >
-          dotnet publish src/App/CryptoProExport.App.csproj -c Release
-          -r ${{ matrix.rid }} --self-contained true -p:DebugType=embedded
-          -o out-${{ matrix.rid }}
-      - name: Итог
-        shell: pwsh
-        run: |
-          $exe = Get-Item "out-${{ matrix.rid }}/CryptoProExport.exe"
-          "{0}: {1:N1} МБ" -f $exe.Name, ($exe.Length / 1MB)
-
   release:
     name: Релиз по тегу
     needs: build
     if: startsWith(github.ref, 'refs/tags/v')
-    # По умолчанию job идёт на собственном раннере правообладателя (adler).
-    # Переменная репозитория CI_RUNS_ON временно переводит его на другой раннер,
-    # когда собственный недоступен: например ["ubuntu-latest"].
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","linux","adler"]') }}
+    # Релиз собирает тот же постоянный Linux-раннер. CI_RUNS_ON переводит его на другой,
+    # если этот недоступен: например ["ubuntu-latest"].
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","adler-ubuntu-xeon"]') }}
     permissions:
       contents: write
 
