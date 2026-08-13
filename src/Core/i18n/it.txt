@@ -269,6 +269,7 @@ diag.pkcs11.found = trovato: {0}
 diag.pkcs11.missing = non trovato (necessario per Rutoken ECP/Lite — installato con i driver Rutoken)
 diag.pkcs11.token = token: {0} [{1}], seriale {2}, {3}
 diag.pkcs11.container = contenitore «{0}», certificato: {1}
+diag.pkcs11.certonly = certificato «{0}» (nessun contenitore CryptoPro)
 cli.usage.token = diagnostica i token via PKCS#11 (tipo, PIN, contenitori); [outDir] salva il .cer
 cli.list.pkcs11 = Token (PKCS#11):
 cli.token.none = Nessun token PKCS#11 trovato (verifica che un token sia inserito e che i driver Rutoken siano installati).

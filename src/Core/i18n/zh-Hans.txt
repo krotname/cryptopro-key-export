@@ -269,6 +269,7 @@ diag.pkcs11.found = 已找到：{0}
 diag.pkcs11.missing = 未找到（Rutoken ECP/Lite 需要——随 Rutoken 驱动一起安装）
 diag.pkcs11.token = 令牌：{0} [{1}]，序列号 {2}，{3}
 diag.pkcs11.container = 容器“{0}”，证书：{1}
+diag.pkcs11.certonly = 证书“{0}”（无 CryptoPro 容器）
 cli.usage.token = 通过 PKCS#11 诊断令牌（类型、PIN、容器）；[outDir] 保存 .cer
 cli.list.pkcs11 = 令牌 (PKCS#11)：
 cli.token.none = 未找到 PKCS#11 令牌（请检查令牌已插入且已安装 Rutoken 驱动）。

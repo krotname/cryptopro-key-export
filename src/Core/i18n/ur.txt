@@ -269,6 +269,7 @@ diag.pkcs11.found = مل گیا: {0}
 diag.pkcs11.missing = نہیں ملا (Rutoken ECP/Lite کے لیے درکار — Rutoken ڈرائیور کے ساتھ نصب ہوتا ہے)
 diag.pkcs11.token = ٹوکن: {0} [{1}]، سیریل {2}، {3}
 diag.pkcs11.container = کنٹینر «{0}»، سرٹیفکیٹ: {1}
+diag.pkcs11.certonly = سرٹیفکیٹ «{0}» (CryptoPro کنٹینر نہیں)
 cli.usage.token = PKCS#11 کے ذریعے ٹوکن کی تشخیص (قسم، PIN، کنٹینرز)؛ [outDir] ‎.cer محفوظ کرتا ہے
 cli.list.pkcs11 = ٹوکن (PKCS#11):
 cli.token.none = کوئی PKCS#11 ٹوکن نہیں ملا (یقینی بنائیں کہ ٹوکن لگا ہوا ہے اور Rutoken ڈرائیور نصب ہیں)۔

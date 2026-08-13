@@ -269,6 +269,7 @@ diag.pkcs11.found = đã tìm thấy: {0}
 diag.pkcs11.missing = không tìm thấy (cần cho Rutoken ECP/Lite — cài cùng trình điều khiển Rutoken)
 diag.pkcs11.token = token: {0} [{1}], số sê-ri {2}, {3}
 diag.pkcs11.container = vùng chứa «{0}», chứng chỉ: {1}
+diag.pkcs11.certonly = chứng chỉ «{0}» (không có vùng chứa CryptoPro)
 cli.usage.token = chẩn đoán token qua PKCS#11 (loại, PIN, vùng chứa); [outDir] lưu .cer
 cli.list.pkcs11 = Token (PKCS#11):
 cli.token.none = Không tìm thấy token PKCS#11 (kiểm tra token đã cắm và trình điều khiển Rutoken đã cài).

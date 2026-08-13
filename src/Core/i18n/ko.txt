@@ -269,6 +269,7 @@ diag.pkcs11.found = 찾음: {0}
 diag.pkcs11.missing = 찾을 수 없음 (Rutoken ECP/Lite에 필요 — Rutoken 드라이버와 함께 설치됨)
 diag.pkcs11.token = 토큰: {0} [{1}], 일련번호 {2}, {3}
 diag.pkcs11.container = 컨테이너 «{0}», 인증서: {1}
+diag.pkcs11.certonly = 인증서 «{0}» (CryptoPro 컨테이너 없음)
 cli.usage.token = PKCS#11로 토큰 진단(유형, PIN, 컨테이너); [outDir]는 .cer 저장
 cli.list.pkcs11 = 토큰 (PKCS#11):
 cli.token.none = PKCS#11 토큰을 찾을 수 없습니다 (토큰이 삽입되어 있고 Rutoken 드라이버가 설치되었는지 확인하세요).

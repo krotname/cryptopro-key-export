@@ -269,6 +269,7 @@ diag.pkcs11.found = मिला: {0}
 diag.pkcs11.missing = नहीं मिला (Rutoken ECP/Lite के लिए आवश्यक — Rutoken ड्राइवर के साथ स्थापित होता है)
 diag.pkcs11.token = टोकन: {0} [{1}], क्रमांक {2}, {3}
 diag.pkcs11.container = कंटेनर «{0}», प्रमाणपत्र: {1}
+diag.pkcs11.certonly = प्रमाणपत्र «{0}» (CryptoPro कंटेनर नहीं)
 cli.usage.token = PKCS#11 से टोकन का निदान (प्रकार, PIN, कंटेनर); [outDir] .cer सहेजता है
 cli.list.pkcs11 = टोकन (PKCS#11):
 cli.token.none = कोई PKCS#11 टोकन नहीं मिला (जाँचें कि टोकन लगा है और Rutoken ड्राइवर स्थापित हैं)।

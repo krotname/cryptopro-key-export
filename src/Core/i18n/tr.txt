@@ -269,6 +269,7 @@ diag.pkcs11.found = bulundu: {0}
 diag.pkcs11.missing = bulunamadı (Rutoken ECP/Lite için gerekli — Rutoken sürücüleriyle kurulur)
 diag.pkcs11.token = token: {0} [{1}], seri {2}, {3}
 diag.pkcs11.container = kapsayıcı «{0}», sertifika: {1}
+diag.pkcs11.certonly = sertifika «{0}» (CryptoPro kapsayıcısı yok)
 cli.usage.token = token’ları PKCS#11 ile tanıla (tür, PIN, kapsayıcılar); [outDir] .cer kaydeder
 cli.list.pkcs11 = Token’lar (PKCS#11):
 cli.token.none = PKCS#11 token’ı bulunamadı (token’ın takılı ve Rutoken sürücülerinin kurulu olduğunu kontrol edin).

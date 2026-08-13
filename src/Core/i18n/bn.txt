@@ -269,6 +269,7 @@ diag.pkcs11.found = পাওয়া গেছে: {0}
 diag.pkcs11.missing = পাওয়া যায়নি (Rutoken ECP/Lite-এর জন্য প্রয়োজন — Rutoken ড্রাইভারের সঙ্গে ইনস্টল হয়)
 diag.pkcs11.token = টোকেন: {0} [{1}], সিরিয়াল {2}, {3}
 diag.pkcs11.container = কনটেইনার «{0}», সার্টিফিকেট: {1}
+diag.pkcs11.certonly = সার্টিফিকেট «{0}» (CryptoPro কনটেইনার নেই)
 cli.usage.token = PKCS#11-এর মাধ্যমে টোকেন নির্ণয় (ধরন, PIN, কনটেইনার); [outDir] .cer সংরক্ষণ করে
 cli.list.pkcs11 = টোকেন (PKCS#11):
 cli.token.none = কোনো PKCS#11 টোকেন পাওয়া যায়নি (টোকেন প্রবেশ করানো আছে ও Rutoken ড্রাইভার ইনস্টল আছে কিনা দেখুন)।

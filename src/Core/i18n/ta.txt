@@ -269,6 +269,7 @@ diag.pkcs11.found = கிடைத்தது: {0}
 diag.pkcs11.missing = கிடைக்கவில்லை (Rutoken ECP/Lite-க்குத் தேவை — Rutoken இயக்கிகளுடன் நிறுவப்படும்)
 diag.pkcs11.token = டோக்கன்: {0} [{1}], வரிசை எண் {2}, {3}
 diag.pkcs11.container = கொள்கலன் «{0}», சான்றிதழ்: {1}
+diag.pkcs11.certonly = சான்றிதழ் «{0}» (CryptoPro கொள்கலன் இல்லை)
 cli.usage.token = PKCS#11 வழியாக டோக்கன்களை கண்டறிதல் (வகை, PIN, கொள்கலன்கள்); [outDir] .cer-ஐ சேமிக்கும்
 cli.list.pkcs11 = டோக்கன்கள் (PKCS#11):
 cli.token.none = PKCS#11 டோக்கன்கள் எதுவும் கிடைக்கவில்லை (டோக்கன் செருகப்பட்டுள்ளதா, Rutoken இயக்கிகள் நிறுவப்பட்டுள்ளதா எனச் சரிபார்க்கவும்).

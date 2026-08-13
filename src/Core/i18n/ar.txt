@@ -269,6 +269,7 @@ diag.pkcs11.found = وُجد: {0}
 diag.pkcs11.missing = غير موجود (مطلوب لأجل Rutoken ECP/Lite — يُثبَّت مع تعريفات Rutoken)
 diag.pkcs11.token = الرمز: {0} [{1}]، الرقم التسلسلي {2}، {3}
 diag.pkcs11.container = الحاوية «{0}»، الشهادة: {1}
+diag.pkcs11.certonly = الشهادة «{0}» (بدون حاوية CryptoPro)
 cli.usage.token = تشخيص الرموز عبر PKCS#11 (النوع، PIN، الحاويات)؛ [outDir] يحفظ ملف .cer
 cli.list.pkcs11 = الرموز (PKCS#11):
 cli.token.none = لم يُعثر على رموز PKCS#11 (تأكّد من إدخال الرمز وتثبيت تعريفات Rutoken).

@@ -269,6 +269,7 @@ diag.pkcs11.found = 検出: {0}
 diag.pkcs11.missing = 未検出（Rutoken ECP/Lite に必要 — Rutoken ドライバーと共に導入されます）
 diag.pkcs11.token = トークン: {0} [{1}]、シリアル {2}、{3}
 diag.pkcs11.container = コンテナー「{0}」、証明書: {1}
+diag.pkcs11.certonly = 証明書「{0}」（CryptoPro コンテナーなし）
 cli.usage.token = PKCS#11 でトークンを診断（種類・PIN・コンテナー）; [outDir] で .cer を保存
 cli.list.pkcs11 = トークン (PKCS#11):
 cli.token.none = PKCS#11 トークンが見つかりません（トークンが挿入され、Rutoken ドライバーが導入されているか確認してください）。

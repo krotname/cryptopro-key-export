@@ -269,6 +269,7 @@ diag.pkcs11.found = ditemukan: {0}
 diag.pkcs11.missing = tidak ditemukan (diperlukan untuk Rutoken ECP/Lite — dipasang bersama driver Rutoken)
 diag.pkcs11.token = token: {0} [{1}], seri {2}, {3}
 diag.pkcs11.container = kontainer «{0}», sertifikat: {1}
+diag.pkcs11.certonly = sertifikat «{0}» (tanpa kontainer CryptoPro)
 cli.usage.token = diagnosis token via PKCS#11 (jenis, PIN, kontainer); [outDir] menyimpan .cer
 cli.list.pkcs11 = Token (PKCS#11):
 cli.token.none = Tidak ada token PKCS#11 ditemukan (pastikan token terpasang dan driver Rutoken terinstal).

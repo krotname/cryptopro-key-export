@@ -269,6 +269,7 @@ diag.pkcs11.found = یافت شد: {0}
 diag.pkcs11.missing = یافت نشد (برای Rutoken ECP/Lite لازم است — همراه درایورهای Rutoken نصب می‌شود)
 diag.pkcs11.token = توکن: {0} [{1}]، شمارهٔ سریال {2}، {3}
 diag.pkcs11.container = مخزن «{0}»، گواهی: {1}
+diag.pkcs11.certonly = گواهی «{0}» (بدون مخزن CryptoPro)
 cli.usage.token = تشخیص توکن‌ها از طریق PKCS#11 (نوع، PIN، مخزن‌ها)؛ [outDir] فایل .cer را ذخیره می‌کند
 cli.list.pkcs11 = توکن‌ها (PKCS#11):
 cli.token.none = هیچ توکن PKCS#11 یافت نشد (بررسی کنید توکن وارد شده و درایورهای Rutoken نصب باشند).
