@@ -73,16 +73,13 @@ $csptest = "C:\Program Files\Crypto Pro\CSP\csptest.exe"
 
 ## CI
 GitHub Actions **работает** (`.github/workflows/ci.yml`). Прежнее утверждение,
-что Actions заблокированы биллингом, не подтвердилось — прогоны идут. Четыре job:
-- `build` (Linux) — сборка с `-warnaserror`, портативная сборка, контроль «в publish ровно
+что Actions заблокированы биллингом, не подтвердилось — прогоны идут. Три job:
+- `build` — сборка с `-warnaserror`, тесты, портативная сборка с `--selftest`, проверка отчёта
+  о зависимостях, проверка встроенного руководства, контроль «в publish ровно
   один файл», SHA-256, артефакт с exe и суммой;
-- `architectures` (Linux) — матрица `win-x64`/`win-arm64`: только публикация, чтобы ловить
-  регрессии компиляции под другие RID;
-- `windows-tests` — юнит-тесты, `--selftest`, проверка отчёта о зависимостях и встроенного
-  руководства: всё, что нужно реально запускать. Идёт только при заданной переменной
-  `CI_RUNS_ON_WINDOWS`;
-- `release` (Linux) — по тегу `v*` создаёт GitHub Release с портативным exe и контрольной
-  суммой; ждёт `windows-tests` и выкладывает артефакт именно Linux-сборки.
+- `architectures` — матрица `win-x64`/`win-arm64`: только публикация, чтобы ловить регрессии
+  компиляции под другие RID;
+- `release` — по тегу `v*` создаёт GitHub Release с портативным exe и контрольной суммой.
 
 **Релиз публикуется через REST API (`curl`), а не через `gh`.** На собственном Linux-раннере
 `adler` GitHub CLI не установлен, и шаг падал на каждом теге (`gh: command not found`, код 127);
@@ -92,29 +89,42 @@ GitHub Actions **работает** (`.github/workflows/ci.yml`). Прежнее
 разбивать ответ по запятым нельзя — шаблон сам содержит запятую; при `set -euo pipefail` пустой
 `grep` убивает шаг молча, поэтому у извлечения стоит `|| true` и явная проверка с сообщением.
 
-**Раннеры (с 13.08.2026).** Постоянный сборщик — домашний Linux-раннер `adler-ubuntu-xeon`
-(метки `self-hosted,Linux,adler-ubuntu-xeon`): на нём идут `build`, `architectures` и
-`release`. .NET SDK 10 стоит там системно, поэтому `actions/setup-dotnet` в Linux-job'ах не
-нужен и только мешает. Рантайм-проверки, которым нужна Windows (юнит-тесты, `--selftest`,
-CLI, двусторонняя проверка `deps`), вынесены в отдельный job `windows-tests` — он идёт
-**только** при заданной переменной репозитория `CI_RUNS_ON_WINDOWS`. Прежний Windows-раннер
-`adler-white-1w-cryptopro` (служба на ADLER-WHITE-1W, каталог `C:\actions-runner-cryptopro`)
-остаётся значением по умолчанию для этого job'а, но сервер включён не всегда: если job'ы висят
-в `queued`, дело в нём. Путь отхода — переменные `CI_RUNS_ON_WINDOWS` (`["windows-latest"]`)
-и `CI_RUNS_ON` (`["ubuntu-latest"]`); значения у них разные и несовместимые. **После merge
-переменные надо убрать**: минуты Windows списываются из квоты Pro с коэффициентом ×2.
+**Раннеры.** Windows-job'ы (`build`, `architectures`) идут на собственном раннере
+`adler-white-1w-cryptopro` — служба на домашнем сервере ADLER-WHITE-1W, каталог
+`C:\actions-runner-cryptopro`, метки `self-hosted,Windows,X64,adler-white-1w,cryptopro`.
+**Это целевой сборщик проекта**: продукт — Windows (WinForms + CryptoAPI, `net10.0-windows`),
+и полная валидация (юнит-тесты, `--selftest`, `deps`, коды CLI) возможна только на Windows.
+Ушли с `windows-latest`, потому что минуты Windows списываются из квоты Pro с коэффициентом ×2.
+`release` остаётся на Linux-раннере брокера (`adler`). Пути отхода: переменные репозитория
+`CI_RUNS_ON_WINDOWS` (`["windows-latest"]`) и `CI_RUNS_ON` (`["ubuntu-latest"]`) — они разные,
+значения несовместимы.
 
-**На собственном Windows-раннере КриптоПро CSP установлен**, на GitHub-hosted его нет.
-Поэтому проверка `deps` двусторонняя: шаг сам смотрит регистрацию CryptoAPI-провайдеров в
-реестре (обе ветки, exe 32-битный) и ждёт код 0 при найденном CSP и код 2 при отсутствующем.
+**Резерв — домашний Linux-раннер `adler-ubuntu-xeon`** (метки `self-hosted,Linux,adler-ubuntu-xeon`,
+всегда включён). На Linux компилируется весь проект, включая WinForms (`EnableWindowsTargeting`),
+и собирается портативный exe — этим он и полезен для ручной сборки (`build\publish-remote.ps1`).
+**Но автоматическим фолбэком CI он не является**: job'ы `build`/`architectures` в текущем `ci.yml`
+читают только `CI_RUNS_ON_WINDOWS` (не `CI_RUNS_ON` — тот влияет лишь на Linux-job `release`), а
+сами шаги `build` завязаны на Windows (pwsh, `Start-Process` над exe, чтение реестра в `deps`),
+так что на Linux-раннере они бы просто упали. Единственный автоматический фолбэк для
+`build`/`architectures` — `CI_RUNS_ON_WINDOWS=["windows-latest"]` (hosted Windows, ×2 минуты).
+Чтобы CI реально шёл на Ubuntu, нужно переструктурировать `build` под Linux (compile/publish без
+запуска exe и с рантайм-тестами в отдельном Windows-job'е) — так было в PR #32/#34, но решение
+владельца — держать целевым сборщиком Windows-раннер, а Ubuntu Xeon оставить резервом ручной
+сборки. Причина: WinForms-exe на Linux не запускается, а из 302 юнит-тестов там падают 12
+платформенных (cmd.exe, разделители путей, разрядность), поэтому `--selftest` и полный набор
+тестов возможны только на Windows.
+
+**На собственном Windows-раннере КриптоПро CSP установлен**, на GitHub-hosted его нет. Поэтому
+проверка `deps` двусторонняя: шаг сам смотрит регистрацию CryptoAPI-провайдеров в реестре
+(обе ветки, exe 32-битный) и ждёт код 0 при найденном CSP и код 2 при отсутствующем.
 Просто «ждём код 2» больше не годится. Сверять отчёт по именам провайдеров нельзя —
 подробный вывод перечисляет все три известных в любом случае, с пометкой «есть»/«нет»;
 маркер берётся из строки про сам CSP, а язык задаётся `--lang ru` явно.
 
-**.NET SDK на Windows-раннере не установлен системно.** Служба идёт под
-`NT AUTHORITY\NETWORK SERVICE` и в `Program Files` писать не может, поэтому в
-`C:\actions-runner-cryptopro\.env` задан `DOTNET_INSTALL_DIR=C:\actions-runner-cryptopro\_dotnet`
-— `actions/setup-dotnet` ставит SDK туда, и каталог переживает перезапуски.
+**.NET SDK на Windows-раннере не установлен системно.** Служба идёт под `NT AUTHORITY\NETWORK SERVICE`
+и в `Program Files` писать не может, поэтому в `C:\actions-runner-cryptopro\.env` задан
+`DOTNET_INSTALL_DIR=C:\actions-runner-cryptopro\_dotnet` — `actions/setup-dotnet` ставит SDK
+туда, и каталог переживает перезапуски.
 
 ## Подводные камни окружения (реальные, уже наступали)
 1. **Манифест WinForms.** Корневой тег строго `<assembly xmlns="urn:schemas-microsoft-com:asm.v1" …>`.
