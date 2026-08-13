@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
@@ -32,13 +33,15 @@ namespace CryptoProExport
                 lines.Add("  " + Strings.Get("diag.rtcom.warn"));
             if (detailed) lines.AddRange(RutokenExporter.DescribeSource());
 
-            // 2b. PKCS#11 Рутокена — путь для Рутокен ЭЦП/Lite (где rtCOMLite файлы не отдаёт).
-            //     Берётся из системы (драйвер Рутокена), не вшивается. В detailed — перечень токенов.
-            string p11 = Pkcs11Token.LibraryPath();
-            lines.Add(Strings.Format("diag.pkcs11", p11 == null
+            // 2b. PKCS#11 — путь для смарт-карточных носителей (где rtCOMLite файлы не отдаёт).
+            //     Библиотеки берутся из системы (драйверы носителей), не вшиваются. Их может быть
+            //     несколько: каждая показывает только своего вендора. В detailed — перечень токенов.
+            var p11 = Pkcs11Token.AvailableLibraries();
+            lines.Add(Strings.Format("diag.pkcs11", p11.Count == 0
                 ? Strings.Get("diag.pkcs11.missing")
-                : Strings.Format("diag.pkcs11.found", p11)));
-            if (detailed && p11 != null)
+                : Strings.Format("diag.pkcs11.found",
+                    string.Join("; ", p11.Select(l => l.Vendor + " — " + l.Path)))));
+            if (detailed && p11.Count > 0)
             {
                 // Сообщения об ошибках PKCS#11 идут в сам отчёт: deps — диагностическая команда,
                 // и «токенов не видно» без причины здесь бесполезно.

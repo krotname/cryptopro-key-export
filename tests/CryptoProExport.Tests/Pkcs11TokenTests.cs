@@ -38,6 +38,30 @@ namespace CryptoProExport.Tests
             Assert.Equal(RutokenKind.RutokenLite, Pkcs11Token.Classify("rutoken LITE"));
         }
 
+        [Fact]
+        public void Classify_FallsBackToManufacturerWhenModelSaysNothing()
+        {
+            // Живая JaCarta 13.08.2026: model='PRO', manufacturerID='Aladdin R.D.'.
+            // По одной модели носитель попадал бы в «не опознан».
+            Assert.Equal(RutokenKind.Unknown, Pkcs11Token.Classify("PRO"));
+            Assert.Equal(RutokenKind.Other, Pkcs11Token.Classify("PRO", "Aladdin R.D."));
+        }
+
+        [Fact]
+        public void Classify_PrefersModelOverManufacturer()
+        {
+            // Модель говорит внятно — производителя не спрашиваем.
+            Assert.Equal(RutokenKind.RutokenLite, Pkcs11Token.Classify("Rutoken lite", "Aktiv Co."));
+        }
+
+        [Fact]
+        public void Classify_DoesNotGuessRutokenFamilyFromManufacturer()
+        {
+            // «Aktiv Co.» без внятной модели остаётся неопознанным намеренно: иначе носитель
+            // попал бы в файловый обход rtCOMLite как Рутокен S (RutokenExporter.ShouldWalk).
+            Assert.Equal(RutokenKind.Unknown, Pkcs11Token.Classify("SomeCard 42", "Aktiv Co."));
+        }
+
         [Theory]
         [InlineData(RutokenKind.RutokenS)]
         [InlineData(RutokenKind.RutokenLite)]
@@ -115,7 +139,7 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
-        public void SmartCardReaders_SelectsOnlyEcpAndLite()
+        public void SmartCardReaders_SelectsEveryReaderUnsafeForFileWalk()
         {
             var tokens = new List<Pkcs11TokenInfo>
             {
@@ -135,6 +159,88 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void SmartCardReaders_IncludesForeignVendorsUnderFacelessReaderNames()
+        {
+            // Имя считывателя может ничего не говорить о вендоре («ACS ACR38U 0»), а PKCS#11
+            // уже опознал носитель по производителю. Без этого списка ShouldWalk пустил бы его
+            // в файловый обход rtCOMLite, где ReadBinary рушит кучу процесса (замечание Codex, PR #25).
+            var tokens = new List<Pkcs11TokenInfo>
+            {
+                new Pkcs11TokenInfo { Reader = "ACS ACR38U 0", Kind = RutokenKind.Other },
+            };
+
+            var set = Pkcs11Token.SmartCardReaders(tokens);
+
+            Assert.Contains("ACS ACR38U 0", set);
+            Assert.False(RutokenExporter.ShouldWalk("ACS ACR38U 0", set));
+        }
+
+        // ---------- дедупликация считывателей между библиотеками разных вендоров ----------
+
+        [Fact]
+        public void Place_LetsASuccessfulReadReplaceAFailedOne()
+        {
+            // Первая библиотека сорвалась на считывателе, вторая его прочитала: в списке должна
+            // остаться одна строка — удачная, и на прежнем месте (замечание Codex, PR #25).
+            var result = new List<Pkcs11TokenInfo>();
+            var seen = new Dictionary<string, (int Index, bool Ok)>(StringComparer.OrdinalIgnoreCase);
+
+            Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0" }, ok: false);
+            Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "Другой 0", Serial = "a" }, ok: true);
+            Assert.False(Pkcs11Token.AlreadyRead(seen, "JC 0"));
+
+            Assert.True(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0", Serial = "b" }, ok: true));
+
+            Assert.Equal(2, result.Count);
+            Assert.Equal("b", result[0].Serial);       // заменена на месте, порядок не прыгнул
+            Assert.Equal("a", result[1].Serial);
+            Assert.True(Pkcs11Token.AlreadyRead(seen, "JC 0"));
+        }
+
+        [Fact]
+        public void Place_KeepsOneRowPerReader()
+        {
+            var result = new List<Pkcs11TokenInfo>();
+            var seen = new Dictionary<string, (int Index, bool Ok)>(StringComparer.OrdinalIgnoreCase);
+
+            Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0", Serial = "ok" }, ok: true);
+            // Прочитанный удачно второй раз не кладётся, и неудачная попытка его не портит.
+            Assert.False(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "jc 0", Serial = "x" }, ok: true));
+            Assert.False(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0", Serial = "y" }, ok: false));
+
+            Assert.Single(result);
+            Assert.Equal("ok", result[0].Serial);
+        }
+
+        [Fact]
+        public void Place_DoesNotStackTwoFailuresForOneReader()
+        {
+            var result = new List<Pkcs11TokenInfo>();
+            var seen = new Dictionary<string, (int Index, bool Ok)>(StringComparer.OrdinalIgnoreCase);
+
+            Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0", Serial = "first" }, ok: false);
+            Assert.False(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0", Serial = "second" }, ok: false));
+
+            Assert.Single(result);
+            Assert.Equal("first", result[0].Serial);
+        }
+
+        [Fact]
+        public void Place_AddsReadersWithoutNameAsIs()
+        {
+            // Имени нет — дедуплицировать нечем; терять такой токен нельзя.
+            var result = new List<Pkcs11TokenInfo>();
+            var seen = new Dictionary<string, (int Index, bool Ok)>(StringComparer.OrdinalIgnoreCase);
+
+            Assert.True(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = null }, ok: true));
+            Assert.True(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "" }, ok: false));
+
+            Assert.Equal(2, result.Count);
+            Assert.Empty(seen);
+            Assert.False(Pkcs11Token.AlreadyRead(seen, null));
+        }
+
+        [Fact]
         public void SmartCardReaders_ToleratesNull()
         {
             Assert.Empty(Pkcs11Token.SmartCardReaders(null));
@@ -147,6 +253,43 @@ namespace CryptoProExport.Tests
             Assert.NotEmpty(candidates);
             Assert.All(candidates, c => Assert.True(System.IO.Path.IsPathRooted(c), c));
             Assert.Contains(candidates, c => c.EndsWith("rtPKCS11ECP.dll", StringComparison.OrdinalIgnoreCase));
+        }
+
+        [Fact]
+        public void LibraryCandidates_CoverEveryKnownVendor()
+        {
+            // Одна библиотека показывает только своего вендора, поэтому кандидаты обязаны
+            // быть у каждой известной: иначе носитель просто не увидят (так и было с JaCarta).
+            var candidates = Pkcs11Token.LibraryCandidates().ToArray();
+            Assert.NotEmpty(Pkcs11Token.KnownLibraries);
+            Assert.All(Pkcs11Token.KnownLibraries, lib =>
+            {
+                Assert.False(string.IsNullOrWhiteSpace(lib.Vendor));
+                Assert.Contains(candidates, c => c.EndsWith(lib.Dll, StringComparison.OrdinalIgnoreCase));
+            });
+            Assert.Contains(candidates, c => c.EndsWith("jcPKCS11-2.dll", StringComparison.OrdinalIgnoreCase));
+        }
+
+        [Fact]
+        public void LibraryCandidates_ForSingleDllMentionOnlyThatDll()
+        {
+            var jc = Pkcs11Token.LibraryCandidates("jcPKCS11-2.dll").ToArray();
+            Assert.NotEmpty(jc);
+            Assert.All(jc, c => Assert.EndsWith("jcPKCS11-2.dll", c, StringComparison.OrdinalIgnoreCase));
+        }
+
+        [Fact]
+        public void AvailableLibraries_ReturnsAtMostOnePathPerVendorAndNeverThrows()
+        {
+            // На машине без драйверов список пуст — это штатный случай, а не ошибка.
+            var libs = Pkcs11Token.AvailableLibraries();
+            Assert.All(libs, l =>
+            {
+                Assert.True(System.IO.File.Exists(l.Path), l.Path);
+                Assert.Contains(Pkcs11Token.KnownLibraries, k => k.Vendor == l.Vendor);
+            });
+            Assert.Equal(libs.Count, libs.Select(l => l.Vendor).Distinct(StringComparer.Ordinal).Count());
+            Assert.Equal(libs.Count > 0, Pkcs11Token.IsAvailable);
         }
 
         [Fact]
