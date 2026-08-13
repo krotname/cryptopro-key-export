@@ -282,17 +282,29 @@ cli.token.certfail = 无法保存证书“{0}”：{1}
 
 # --- extract private key (CSP-free) ---
 btn.extractkey = 提取密钥 (PEM)
+btn.extractpfx = 生成 PFX（无需 CSP）
 tip.extractkey = 直接从文件容器（6 个 *.key 文件）中提取私钥 — 无需 CryptoPro CSP。\n密钥用内置 GOST 原语解密并保存为 PKCS#8/PEM（与 OpenSSL gost-engine 兼容）。\n仅适用于文件容器（不适用于令牌上不可导出的密钥）。注意：.pem 文件就是您的私钥，请妥善保密。
+tip.extractpfx = 直接从文件容器生成 PKCS#12 (.pfx) 文件——无需 CryptoPro CSP，也无需 certmgr。\n私钥用内置的 GOST 原语解密，证书取自 header.key（若其中没有，可以指定一个 .cer 文件）。\n.pfx 中的私钥用口令保护（PKCS#12 的 3DES），证书以明文存放。注意：.pfx 文件包含您的私钥——请妥善保密。
 status.extractkey = 正在提取私钥…
+status.extractpfx = 正在生成 PKCS#12…
 dlg.extractkey.save = 私钥保存位置 (PEM)
 dlg.extractkey.pass.title = 容器密码
 dlg.extractkey.pass.prompt = 容器密码（通常为空 — 请留空）:
+dlg.extractpfx.save = PKCS#12 (.pfx) 保存位置
+dlg.extractpfx.pass.title = .pfx 的口令
+dlg.extractpfx.pass.prompt = 用于保护 .pfx 中私钥的口令：
+dlg.extractpfx.cert = 该私钥对应的证书文件 (.cer)
 log.extractkey.done = 私钥已保存 (PKCS#8/PEM): {0}
 log.extractkey.pub = 曲线 {0}；公钥与容器中的指纹匹配
 log.extractkey.fail = 提取密钥失败: {0}
+log.extractpfx.done = 已在无 CSP 的情况下生成 PKCS#12：{0}
+log.extractpfx.nocert = 容器中没有证书——请指定 .cer 文件
+log.extractpfx.fail = 生成 PKCS#12 失败：{0}
 cli.usage.extractkey = 从文件容器中将私钥提取为 PKCS#8/PEM（无需 CSP）
+cli.usage.extractpfx = 从文件容器生成 PKCS#12（无需 CSP 和 certmgr）
 cli.extractkey.ok = 私钥已保存 (PKCS#8/PEM): {0}
 cli.extractkey.pub = 曲线 {0}，公钥 X={1}
+cli.extractpfx.ok = 已在无 CSP 的情况下生成 PKCS#12：{0}
 
 # --- container-extraction errors (CSP-free) ---
 err.extract.nofile = 容器文件夹中没有 {0}: {1}
@@ -301,3 +313,6 @@ err.extract.nofingerprint = header.key 中没有公钥指纹 — 无法识别容
 err.extract.fingerprint = 公钥指纹不匹配 — 密码错误或容器已损坏
 err.extract.degenerate = 解析得到退化的密钥 — 密码错误或容器已损坏
 err.extract.corrupt = 容器已损坏或无法识别: {0}
+err.pfx.nocert = 容器和参数中都没有证书——请指定 .cer 文件
+err.pfx.badcert = 证书文件无法解析为带 256 位 GOST 公钥的 X.509
+err.pfx.certmismatch = 证书属于另一把私钥：公钥不一致

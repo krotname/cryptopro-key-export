@@ -282,17 +282,29 @@ cli.token.certfail = «{0}» sertifikası kaydedilemedi: {1}
 
 # --- extract private key (CSP-free) ---
 btn.extractkey = Anahtarı çıkar (PEM)
+btn.extractpfx = PFX oluştur (CSP'siz)
 tip.extractkey = Özel anahtarı doğrudan bir dosya kabından (6 *.key dosyası) çıkarın — CryptoPro CSP olmadan.\nAnahtar yerleşik GOST ilkelleriyle çözülür ve PKCS#8/PEM olarak kaydedilir (OpenSSL gost-engine ile uyumlu).\nYalnızca dosya kapları için çalışır (token üzerindeki çıkarılamaz anahtarlar için değil). Dikkat: .pem dosyası sizin özel anahtarınızdır — gizli tutun.
+tip.extractpfx = PKCS#12 (.pfx) dosyasını doğrudan bir dosya kapsayıcısından oluşturun — CryptoPro CSP ve certmgr olmadan.\nÖzel anahtar yerleşik GOST ilkelleriyle çözülür, sertifika header.key içinden alınır (orada yoksa bir .cer dosyası gösterebilirsiniz).\n.pfx içindeki anahtar parolayla korunur (PKCS#12 3DES), sertifika açık durur. Dikkat: .pfx dosyası özel anahtarınızı içerir — gizli tutun.
 status.extractkey = Özel anahtar çıkarılıyor…
+status.extractpfx = PKCS#12 oluşturuluyor…
 dlg.extractkey.save = Özel anahtar nereye kaydedilsin (PEM)
 dlg.extractkey.pass.title = Kap parolası
 dlg.extractkey.pass.prompt = Kap parolası (genellikle boş — alanı boş bırakın):
+dlg.extractpfx.save = PKCS#12 (.pfx) nereye kaydedilsin
+dlg.extractpfx.pass.title = .pfx parolası
+dlg.extractpfx.pass.prompt = .pfx içindeki özel anahtarı koruyacak parola:
+dlg.extractpfx.cert = Bu anahtar için sertifika dosyası (.cer)
 log.extractkey.done = Özel anahtar kaydedildi (PKCS#8/PEM): {0}
 log.extractkey.pub = eğri {0}; ortak anahtar kaptaki parmak iziyle eşleşiyor
 log.extractkey.fail = Anahtar çıkarılamadı: {0}
+log.extractpfx.done = PKCS#12 CSP olmadan oluşturuldu: {0}
+log.extractpfx.nocert = Kapsayıcıda sertifika yok — bir .cer dosyası gösterin
+log.extractpfx.fail = PKCS#12 oluşturulamadı: {0}
 cli.usage.extractkey = özel anahtarı bir dosya kabından PKCS#8/PEM'e çıkar (CSP olmadan)
+cli.usage.extractpfx = dosya kapsayıcısından PKCS#12 oluştur (CSP ve certmgr olmadan)
 cli.extractkey.ok = Özel anahtar kaydedildi (PKCS#8/PEM): {0}
 cli.extractkey.pub = eğri {0}, ortak anahtar X={1}
+cli.extractpfx.ok = PKCS#12 CSP olmadan oluşturuldu: {0}
 
 # --- container-extraction errors (CSP-free) ---
 err.extract.nofile = Kap klasöründe {0} yok: {1}
@@ -301,3 +313,6 @@ err.extract.nofingerprint = header.key ortak anahtar parmak izi içermiyor — k
 err.extract.fingerprint = Ortak anahtar parmak izi eşleşmiyor — yanlış parola veya bozuk kap
 err.extract.degenerate = Ayrıştırma bozuk bir anahtar üretti — yanlış parola veya bozuk kap
 err.extract.corrupt = Kap bozuk veya tanınmıyor: {0}
+err.pfx.nocert = Ne kapsayıcıda ne de argümanlarda sertifika var — bir .cer dosyası gösterin
+err.pfx.badcert = Sertifika dosyası 256 bit GOST anahtarlı X.509 olarak çözümlenmedi
+err.pfx.certmismatch = Sertifika başka bir anahtara ait: açık anahtarlar uyuşmuyor

@@ -282,17 +282,29 @@ cli.token.certfail = no se pudo guardar el certificado «{0}»: {1}
 
 # --- extract private key (CSP-free) ---
 btn.extractkey = Extraer clave (PEM)
+btn.extractpfx = Crear PFX (sin CSP)
 tip.extractkey = Extraer la clave privada directamente de un contenedor de archivos (6 archivos *.key), sin CryptoPro CSP.\nLa clave se descifra con primitivas GOST integradas y se guarda como PKCS#8/PEM (compatible con OpenSSL gost-engine).\nSolo funciona con contenedores de archivos (no con claves no exportables en un token). Atención: el archivo .pem es su clave privada; guárdelo en secreto.
+tip.extractpfx = Crear un archivo PKCS#12 (.pfx) directamente desde un contenedor de archivos, sin CryptoPro CSP y sin certmgr.\nLa clave privada se descifra con primitivas GOST integradas y el certificado se toma de header.key (si no está allí, puede indicar un archivo .cer).\nLa clave dentro del .pfx está protegida con contraseña (3DES de PKCS#12); el certificado queda sin cifrar. Atención: el archivo .pfx contiene su clave privada — guárdelo en secreto.
 status.extractkey = Extrayendo la clave privada…
+status.extractpfx = Creando PKCS#12…
 dlg.extractkey.save = Dónde guardar la clave privada (PEM)
 dlg.extractkey.pass.title = Contraseña del contenedor
 dlg.extractkey.pass.prompt = Contraseña del contenedor (normalmente vacía — deje el campo en blanco):
+dlg.extractpfx.save = Dónde guardar el PKCS#12 (.pfx)
+dlg.extractpfx.pass.title = Contraseña del .pfx
+dlg.extractpfx.pass.prompt = Contraseña que protegerá la clave privada dentro del .pfx:
+dlg.extractpfx.cert = Archivo de certificado (.cer) para esta clave
 log.extractkey.done = Clave privada guardada (PKCS#8/PEM): {0}
 log.extractkey.pub = curva {0}; la clave pública coincide con la huella del contenedor
 log.extractkey.fail = No se pudo extraer la clave: {0}
+log.extractpfx.done = PKCS#12 creado sin CSP: {0}
+log.extractpfx.nocert = El contenedor no tiene certificado: indique un archivo .cer
+log.extractpfx.fail = No se pudo crear el PKCS#12: {0}
 cli.usage.extractkey = extraer la clave privada de un contenedor de archivos a PKCS#8/PEM (sin CSP)
+cli.usage.extractpfx = crear un PKCS#12 desde un contenedor de archivos (sin CSP ni certmgr)
 cli.extractkey.ok = Clave privada guardada (PKCS#8/PEM): {0}
 cli.extractkey.pub = curva {0}, clave pública X={1}
+cli.extractpfx.ok = PKCS#12 creado sin CSP: {0}
 
 # --- container-extraction errors (CSP-free) ---
 err.extract.nofile = La carpeta del contenedor no tiene {0}: {1}
@@ -301,3 +313,6 @@ err.extract.nofingerprint = header.key no tiene huella de la clave pública — 
 err.extract.fingerprint = La huella de la clave pública no coincide — contraseña incorrecta o contenedor dañado
 err.extract.degenerate = El análisis produjo una clave degenerada — contraseña incorrecta o contenedor dañado
 err.extract.corrupt = El contenedor está dañado o no se reconoce: {0}
+err.pfx.nocert = No hay certificado ni en el contenedor ni en los argumentos: indique un archivo .cer
+err.pfx.badcert = El archivo de certificado no se analizó como X.509 con clave GOST de 256 bits
+err.pfx.certmismatch = El certificado pertenece a otra clave: las claves públicas no coinciden

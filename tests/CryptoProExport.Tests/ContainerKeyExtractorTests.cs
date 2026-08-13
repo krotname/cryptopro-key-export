@@ -3,6 +3,7 @@ using System.IO;
 using CryptoProExport;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.CryptoPro;
+using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Math.EC;
@@ -43,6 +44,8 @@ namespace CryptoProExport.Tests
                 Assert.Equal(built.PublicX, result.PublicX);
                 Assert.Equal(built.PublicY, result.PublicY);
                 Assert.Equal(CurveOid, result.CurveOid);
+                // Из двух сертификатов в header.key должен выбраться свой, а не чужой
+                Assert.Equal(built.Certificate, result.Certificate);
             }
             finally { TryDelete(dir); }
         }
@@ -130,9 +133,9 @@ namespace CryptoProExport.Tests
 
         // ---------- сборка синтетического контейнера (обратная к разбору) ----------
 
-        private sealed class Built
+        internal sealed class Built
         {
-            public byte[] PrivateKey, PublicX, PublicY;
+            public byte[] PrivateKey, PublicX, PublicY, Certificate;
         }
 
         /// <summary>
@@ -140,7 +143,7 @@ namespace CryptoProExport.Tests
         /// mask = m little-endian, header с OID кривой и отпечатком (первые 8 байт X little-endian).
         /// Всё детерминировано по seed, поэтому тест воспроизводим без живого ключа.
         /// </summary>
-        private static Built BuildSyntheticContainer(string dir, int seed, string password)
+        internal static Built BuildSyntheticContainer(string dir, int seed, string password)
         {
             var domain = ECGost3410NamedCurves.GetByOid(new DerObjectIdentifier(CurveOid));
             BigInteger q = domain.N;
@@ -170,12 +173,51 @@ namespace CryptoProExport.Tests
                 new DerOctetString(maskBytes),
                 new DerOctetString(salt),
                 new DerOctetString(new byte[4])));
-            // header.key: минимальный ASN.1 с OID кривой и восьмибайтовым отпечатком
+            // header.key: OID кривой, восьмибайтовый отпечаток и два сертификата — свой и чужой.
+            // Сертификаты лежат так же, как в настоящем контейнере: открытым DER в элементе с
+            // неявным контекстным тегом ([5] — ключ подписи, [6] — ключ обмена). Чужой добавлен
+            // намеренно: экстрактор обязан выбрать тот, чей открытый ключ сошёлся с d·G.
+            byte[] own = FakeCertificate(x, y, "CN=own");
+            ECPoint other = domain.G.Multiply(RandomMod(rng, q)).Normalize();
+            byte[] alien = FakeCertificate(Pad32(other.AffineXCoord.ToBigInteger()),
+                                           Pad32(other.AffineYCoord.ToBigInteger()), "CN=alien");
             WriteDer(dir, "header.key", new DerSequence(
                 new DerObjectIdentifier(CurveOid),
-                new DerOctetString(fingerprint)));
+                new DerOctetString(fingerprint),
+                new DerTaggedObject(false, 6, new DerOctetString(alien)),
+                new DerTaggedObject(false, 5, new DerOctetString(own))));
 
-            return new Built { PrivateKey = Pad32(d), PublicX = x, PublicY = y };
+            return new Built { PrivateKey = Pad32(d), PublicX = x, PublicY = y, Certificate = own };
+        }
+
+        /// <summary>
+        /// Сертификат X.509 нужной формы: подпись фиктивная, потому что проверяется не она,
+        /// а разбор и выбор по открытому ключу. Открытый ключ лежит как у КриптоПро —
+        /// OCTET STRING из 64 байт (X‖Y little-endian) внутри BIT STRING.
+        /// </summary>
+        internal static byte[] FakeCertificate(byte[] x, byte[] y, string name)
+        {
+            byte[] pub = new byte[64];
+            Array.Copy(ContainerKeyExtractor.Reverse(x), 0, pub, 0, 32);
+            Array.Copy(ContainerKeyExtractor.Reverse(y), 0, pub, 32, 32);
+
+            var algId = new AlgorithmIdentifier(
+                new DerObjectIdentifier("1.2.643.7.1.1.1.1"),
+                new DerSequence(new DerObjectIdentifier(CurveOid),
+                                new DerObjectIdentifier("1.2.643.7.1.1.2.2")));
+            var sigAlg = new AlgorithmIdentifier(new DerObjectIdentifier("1.2.643.7.1.1.3.2"));
+
+            var tbs = new V3TbsCertificateGenerator();
+            tbs.SetSerialNumber(new DerInteger(BigInteger.One));
+            tbs.SetIssuer(new X509Name(name));
+            tbs.SetSubject(new X509Name(name));
+            tbs.SetSignature(sigAlg);
+            tbs.SetStartDate(new Time(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
+            tbs.SetEndDate(new Time(new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
+            tbs.SetSubjectPublicKeyInfo(new SubjectPublicKeyInfo(algId, new DerOctetString(pub)));
+
+            return new DerSequence(tbs.GenerateTbsCertificate(), sigAlg,
+                                   new DerBitString(new byte[64])).GetEncoded();
         }
 
         private static BigInteger RandomMod(Random rng, BigInteger q)

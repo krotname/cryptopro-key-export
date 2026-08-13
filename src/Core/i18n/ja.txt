@@ -282,17 +282,29 @@ cli.token.certfail = 証明書「{0}」を保存できませんでした: {1}
 
 # --- extract private key (CSP-free) ---
 btn.extractkey = 鍵を取り出す (PEM)
+btn.extractpfx = PFX を作成 (CSP なし)
 tip.extractkey = ファイルコンテナ（6 個の *.key ファイル）から秘密鍵を直接取り出します — CryptoPro CSP なしで。\n鍵は内蔵の GOST プリミティブで復号し、PKCS#8/PEM 形式で保存します（OpenSSL gost-engine と互換）。\nファイルコンテナのみ対応（トークン上の取り出せない鍵は不可）。注意: .pem ファイルはあなたの秘密鍵です。厳重に保管してください。
+tip.extractpfx = ファイルコンテナーから直接 PKCS#12 (.pfx) ファイルを作成します — CryptoPro CSP も certmgr も使いません。\n秘密鍵は内蔵の GOST プリミティブで復号し、証明書は header.key から取り出します (そこに無い場合は .cer ファイルを指定できます)。\n.pfx 内の鍵はパスワードで保護されます (PKCS#12 の 3DES)。証明書は暗号化されません。注意: .pfx ファイルはあなたの秘密鍵そのものです — 秘密に保管してください。
 status.extractkey = 秘密鍵を取り出しています…
+status.extractpfx = PKCS#12 を作成しています…
 dlg.extractkey.save = 秘密鍵の保存先 (PEM)
 dlg.extractkey.pass.title = コンテナのパスワード
 dlg.extractkey.pass.prompt = コンテナのパスワード（通常は空 — 空欄のままにしてください）:
+dlg.extractpfx.save = PKCS#12 (.pfx) の保存先
+dlg.extractpfx.pass.title = .pfx のパスワード
+dlg.extractpfx.pass.prompt = .pfx 内の秘密鍵を保護するパスワード:
+dlg.extractpfx.cert = この鍵に対応する証明書ファイル (.cer)
 log.extractkey.done = 秘密鍵を保存しました (PKCS#8/PEM): {0}
 log.extractkey.pub = 曲線 {0}；公開鍵はコンテナ内のフィンガープリントと一致しました
 log.extractkey.fail = 鍵を取り出せませんでした: {0}
+log.extractpfx.done = CSP なしで PKCS#12 を作成しました: {0}
+log.extractpfx.nocert = コンテナーに証明書がありません — .cer ファイルを指定してください
+log.extractpfx.fail = PKCS#12 を作成できませんでした: {0}
 cli.usage.extractkey = ファイルコンテナから秘密鍵を PKCS#8/PEM に取り出す（CSP 不要）
+cli.usage.extractpfx = ファイルコンテナーから PKCS#12 を作成する (CSP と certmgr なし)
 cli.extractkey.ok = 秘密鍵を保存しました (PKCS#8/PEM): {0}
 cli.extractkey.pub = 曲線 {0}、公開鍵 X={1}
+cli.extractpfx.ok = CSP なしで PKCS#12 を作成しました: {0}
 
 # --- container-extraction errors (CSP-free) ---
 err.extract.nofile = コンテナフォルダに {0} がありません: {1}
@@ -301,3 +313,6 @@ err.extract.nofingerprint = header.key に公開鍵のフィンガープリン�
 err.extract.fingerprint = 公開鍵のフィンガープリントが一致しません — パスワードが違うか、コンテナが破損しています
 err.extract.degenerate = 解析結果が退化した鍵になりました — パスワードが違うか、コンテナが破損しています
 err.extract.corrupt = コンテナが破損しているか認識できません: {0}
+err.pfx.nocert = コンテナーにも引数にも証明書がありません — .cer ファイルを指定してください
+err.pfx.badcert = 証明書ファイルを 256 ビット GOST 鍵の X.509 として読めませんでした
+err.pfx.certmismatch = 証明書は別の鍵のものです: 公開鍵が一致しません

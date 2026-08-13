@@ -282,17 +282,29 @@ cli.token.certfail = Zertifikat „{0}“ konnte nicht gespeichert werden: {1}
 
 # --- extract private key (CSP-free) ---
 btn.extractkey = Schlüssel extrahieren (PEM)
+btn.extractpfx = PFX erzeugen (ohne CSP)
 tip.extractkey = Den privaten Schlüssel direkt aus einem Dateicontainer (6 *.key-Dateien) extrahieren — ohne CryptoPro CSP.\nDer Schlüssel wird mit integrierten GOST-Primitiven entschlüsselt und als PKCS#8/PEM gespeichert (kompatibel mit OpenSSL gost-engine).\nFunktioniert nur für Dateicontainer (nicht für nicht extrahierbare Schlüssel auf einem Token). Achtung: Die .pem-Datei ist Ihr privater Schlüssel — bewahren Sie sie geheim auf.
+tip.extractpfx = Eine PKCS#12-Datei (.pfx) direkt aus einem Dateicontainer erzeugen — ohne CryptoPro CSP und ohne certmgr.\nDer private Schlüssel wird mit eingebauten GOST-Primitiven entschlüsselt, das Zertifikat stammt aus header.key (fehlt es dort, kann eine .cer-Datei angegeben werden).\nDer Schlüssel in der .pfx ist mit einem Passwort geschützt (PKCS#12 3DES), das Zertifikat liegt unverschlüsselt. Achtung: Die .pfx-Datei enthält Ihren privaten Schlüssel — bewahren Sie sie geheim auf.
 status.extractkey = Privater Schlüssel wird extrahiert…
+status.extractpfx = PKCS#12 wird erzeugt…
 dlg.extractkey.save = Wohin den privaten Schlüssel speichern (PEM)
 dlg.extractkey.pass.title = Container-Passwort
 dlg.extractkey.pass.prompt = Container-Passwort (meist leer — Feld leer lassen):
+dlg.extractpfx.save = Wohin die PKCS#12-Datei (.pfx) speichern
+dlg.extractpfx.pass.title = Passwort für die .pfx
+dlg.extractpfx.pass.prompt = Passwort, das den privaten Schlüssel in der .pfx schützt:
+dlg.extractpfx.cert = Zertifikatsdatei (.cer) für diesen Schlüssel
 log.extractkey.done = Privater Schlüssel gespeichert (PKCS#8/PEM): {0}
 log.extractkey.pub = Kurve {0}; öffentlicher Schlüssel stimmt mit dem Fingerabdruck im Container überein
 log.extractkey.fail = Schlüssel konnte nicht extrahiert werden: {0}
+log.extractpfx.done = PKCS#12 ohne CSP erzeugt: {0}
+log.extractpfx.nocert = Im Container ist kein Zertifikat — geben Sie eine .cer-Datei an
+log.extractpfx.fail = PKCS#12 konnte nicht erzeugt werden: {0}
 cli.usage.extractkey = privaten Schlüssel aus einem Dateicontainer als PKCS#8/PEM extrahieren (ohne CSP)
+cli.usage.extractpfx = PKCS#12 aus einem Dateicontainer erzeugen (ohne CSP und certmgr)
 cli.extractkey.ok = Privater Schlüssel gespeichert (PKCS#8/PEM): {0}
 cli.extractkey.pub = Kurve {0}, öffentlicher Schlüssel X={1}
+cli.extractpfx.ok = PKCS#12 ohne CSP erzeugt: {0}
 
 # --- container-extraction errors (CSP-free) ---
 err.extract.nofile = Der Containerordner enthält kein {0}: {1}
@@ -301,3 +313,6 @@ err.extract.nofingerprint = header.key enthält keinen Fingerabdruck des öffent
 err.extract.fingerprint = Fingerabdruck des öffentlichen Schlüssels stimmt nicht überein — falsches Passwort oder beschädigter Container
 err.extract.degenerate = Analyse ergab einen entarteten Schlüssel — falsches Passwort oder beschädigter Container
 err.extract.corrupt = Container ist beschädigt oder nicht erkannt: {0}
+err.pfx.nocert = Weder im Container noch in den Argumenten ist ein Zertifikat — geben Sie eine .cer-Datei an
+err.pfx.badcert = Die Zertifikatsdatei ließ sich nicht als X.509 mit einem 256-Bit-GOST-Schlüssel lesen
+err.pfx.certmismatch = Das Zertifikat gehört zu einem anderen Schlüssel: die öffentlichen Schlüssel stimmen nicht überein
