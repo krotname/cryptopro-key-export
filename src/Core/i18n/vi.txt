@@ -282,17 +282,31 @@ cli.token.certfail = không lưu được chứng chỉ «{0}»: {1}
 
 # --- extract private key (CSP-free) ---
 btn.extractkey = Trích khóa (PEM)
+btn.extractpfx = Tạo PFX (không cần CSP)
 tip.extractkey = Trích khóa riêng trực tiếp từ vùng chứa tệp (6 tệp *.key), không cần CryptoPro CSP.\nKhóa được giải mã bằng các nguyên hàm GOST tích hợp và lưu dưới dạng PKCS#8/PEM (tương thích với OpenSSL gost-engine).\nChỉ hoạt động với vùng chứa tệp (không dùng cho khóa không thể trích xuất trên token). Cảnh báo: tệp .pem là khóa riêng của bạn — hãy giữ bí mật.
+tip.extractpfx = Tạo tệp PKCS#12 (.pfx) trực tiếp từ vùng chứa tệp — không cần CryptoPro CSP và không cần certmgr.\nKhóa riêng được giải mã bằng các nguyên hàm GOST tích hợp, chứng chỉ lấy từ header.key (nếu không có ở đó, bạn có thể chỉ tới tệp .cer).\nKhóa trong .pfx được bảo vệ bằng mật khẩu (3DES của PKCS#12), chứng chỉ để nguyên không mã hóa. Lưu ý: tệp .pfx chứa khóa riêng của bạn — hãy giữ bí mật.
+Quan trọng: CryptoPro KHÔNG nhập tệp như vậy — tệp này dành cho OpenSSL và các phần mềm ngoài CryptoPro. Để đưa khóa trở lại CryptoPro, hãy dùng nút «Xuất ra PFX» (qua certmgr, cần cài CSP).
 status.extractkey = Đang trích khóa riêng…
+status.extractpfx = Đang tạo PKCS#12…
 dlg.extractkey.save = Nơi lưu khóa riêng (PEM)
 dlg.extractkey.pass.title = Mật khẩu vùng chứa
 dlg.extractkey.pass.prompt = Mật khẩu vùng chứa (thường để trống — hãy để trống ô này):
+dlg.extractpfx.save = Nơi lưu tệp PKCS#12 (.pfx)
+dlg.extractpfx.pass.title = Mật khẩu cho .pfx
+dlg.extractpfx.pass.prompt = Mật khẩu sẽ bảo vệ khóa riêng bên trong .pfx:
+dlg.extractpfx.cert = Tệp chứng chỉ (.cer) cho khóa này
 log.extractkey.done = Đã lưu khóa riêng (PKCS#8/PEM): {0}
 log.extractkey.pub = đường cong {0}; khóa công khai khớp với dấu vân tay trong vùng chứa
 log.extractkey.fail = Không thể trích khóa: {0}
+log.extractpfx.done = Đã tạo PKCS#12 không cần CSP: {0}
+log.extractpfx.nocert = Vùng chứa không có chứng chỉ — hãy chỉ tới tệp .cer
+log.extractpfx.fail = Không tạo được PKCS#12: {0}
+log.extractpfx.note = CryptoPro không nhập tệp này — tệp dành cho OpenSSL. Với CryptoPro hãy dùng «Xuất ra PFX» (certmgr).
 cli.usage.extractkey = trích khóa riêng từ vùng chứa tệp sang PKCS#8/PEM (không cần CSP)
+cli.usage.extractpfx = tạo PKCS#12 từ vùng chứa tệp (không cần CSP và certmgr)
 cli.extractkey.ok = Đã lưu khóa riêng (PKCS#8/PEM): {0}
 cli.extractkey.pub = đường cong {0}, khóa công khai X={1}
+cli.extractpfx.ok = Đã tạo PKCS#12 không cần CSP: {0}
 
 # --- container-extraction errors (CSP-free) ---
 err.extract.nofile = Thư mục vùng chứa không có {0}: {1}
@@ -301,3 +315,6 @@ err.extract.nofingerprint = header.key không có dấu vân tay khóa công kha
 err.extract.fingerprint = Dấu vân tay khóa công khai không khớp — sai mật khẩu hoặc vùng chứa bị hỏng
 err.extract.degenerate = Phân tích tạo ra khóa suy biến — sai mật khẩu hoặc vùng chứa bị hỏng
 err.extract.corrupt = Vùng chứa bị hỏng hoặc không nhận dạng được: {0}
+err.pfx.nocert = Không có chứng chỉ trong vùng chứa lẫn trong tham số — hãy chỉ tới tệp .cer
+err.pfx.badcert = Tệp chứng chỉ không đọc được như X.509 với khóa GOST 256 bit
+err.pfx.certmismatch = Chứng chỉ thuộc về khóa khác: khóa công khai không khớp

@@ -282,17 +282,31 @@ cli.token.certfail = سرٹیفکیٹ «{0}» محفوظ نہیں ہو سکا: {
 
 # --- extract private key (CSP-free) ---
 btn.extractkey = کلید نکالیں (PEM)
+btn.extractpfx = PFX بنائیں (بغیر CSP)
 tip.extractkey = نجی کلید کو براہِ راست فائل کنٹینر (6 *.key فائلیں) سے نکالیں — CryptoPro CSP کے بغیر۔\nکلید کو اندرونی GOST پرائمیٹِوز سے ڈی کرپٹ کر کے PKCS#8/PEM کے طور پر محفوظ کیا جاتا ہے (OpenSSL gost-engine کے ساتھ ہم آہنگ)۔\nصرف فائل کنٹینرز کے لیے کام کرتا ہے (ٹوکن پر ناقابلِ اخراج کلیدوں کے لیے نہیں)۔ انتباہ: .pem فائل آپ کی نجی کلید ہے — اسے راز میں رکھیں۔
+tip.extractpfx = PKCS#12‏ (.pfx) فائل براہِ راست فائل کنٹینر سے بنائیں — CryptoPro CSP کے بغیر اور certmgr کے بغیر۔\nنجی کلید اندرونی GOST پرمیٹِوز سے کھولی جاتی ہے اور سرٹیفکیٹ header.key سے لیا جاتا ہے (اگر وہاں نہ ہو تو آپ ‎.cer فائل بتا سکتے ہیں)۔\n‎.pfx کے اندر کلید پاس ورڈ سے محفوظ ہوتی ہے (PKCS#12 کا ‎3DES)، سرٹیفکیٹ بغیر خفیہ کاری کے رہتا ہے۔ خبردار: ‎.pfx فائل میں آپ کی نجی کلید ہے — اسے خفیہ رکھیں۔
+اہم: کرپٹو پرو ایسی فائل درآمد نہیں کرتا — یہ OpenSSL اور کرپٹو پرو سے باہر کے دیگر پروگراموں کے لیے ہے۔ کلید کو واپس کرپٹو پرو میں لانے کے لیے «PFX میں برآمد» بٹن استعمال کریں (certmgr کے ذریعے، نصب شدہ CSP درکار ہے)۔
 status.extractkey = نجی کلید نکالی جا رہی ہے…
+status.extractpfx = PKCS#12 بنایا جا رہا ہے…
 dlg.extractkey.save = نجی کلید کہاں محفوظ کریں (PEM)
 dlg.extractkey.pass.title = کنٹینر کا پاس ورڈ
 dlg.extractkey.pass.prompt = کنٹینر کا پاس ورڈ (عموماً خالی — خانہ خالی چھوڑ دیں):
+dlg.extractpfx.save = PKCS#12‏ (.pfx) کہاں محفوظ کریں
+dlg.extractpfx.pass.title = ‎.pfx کا پاس ورڈ
+dlg.extractpfx.pass.prompt = وہ پاس ورڈ جو ‎.pfx کے اندر نجی کلید کی حفاظت کرے گا:
+dlg.extractpfx.cert = اس کلید کے لیے سرٹیفکیٹ فائل (‎.cer)
 log.extractkey.done = نجی کلید محفوظ ہو گئی (PKCS#8/PEM): {0}
 log.extractkey.pub = وکر {0}؛ عوامی کلید کنٹینر میں موجود فنگر پرنٹ سے مطابقت رکھتی ہے
 log.extractkey.fail = کلید نکالنے میں ناکامی: {0}
+log.extractpfx.done = CSP کے بغیر PKCS#12 بن گیا: {0}
+log.extractpfx.nocert = کنٹینر میں سرٹیفکیٹ نہیں ہے — ‎.cer فائل بتائیں
+log.extractpfx.fail = PKCS#12 نہیں بن سکا: {0}
+log.extractpfx.note = کرپٹو پرو یہ فائل درآمد نہیں کرتا — یہ OpenSSL کے لیے ہے۔ کرپٹو پرو کے لیے «PFX میں برآمد» (certmgr) استعمال کریں۔
 cli.usage.extractkey = فائل کنٹینر سے نجی کلید کو PKCS#8/PEM میں نکالیں (CSP کے بغیر)
+cli.usage.extractpfx = فائل کنٹینر سے PKCS#12 بنائیں (CSP اور certmgr کے بغیر)
 cli.extractkey.ok = نجی کلید محفوظ ہو گئی (PKCS#8/PEM): {0}
 cli.extractkey.pub = وکر {0}، عوامی کلید X={1}
+cli.extractpfx.ok = CSP کے بغیر PKCS#12 بن گیا: {0}
 
 # --- container-extraction errors (CSP-free) ---
 err.extract.nofile = کنٹینر فولڈر میں {0} موجود نہیں: {1}
@@ -301,3 +315,6 @@ err.extract.nofingerprint = header.key میں عوامی کلید کا فنگر 
 err.extract.fingerprint = عوامی کلید کا فنگر پرنٹ مطابقت نہیں رکھتا — غلط پاس ورڈ یا خراب کنٹینر
 err.extract.degenerate = تجزیہ نے ناقص کلید دی — غلط پاس ورڈ یا خراب کنٹینر
 err.extract.corrupt = کنٹینر خراب ہے یا شناخت نہیں ہوا: {0}
+err.pfx.nocert = نہ کنٹینر میں سرٹیفکیٹ ہے نہ دلائل میں — ‎.cer فائل بتائیں
+err.pfx.badcert = سرٹیفکیٹ فائل ‎256-بٹ GOST کلید والے X.509 کے طور پر نہیں پڑھی جا سکی
+err.pfx.certmismatch = سرٹیفکیٹ کسی اور کلید کا ہے: عوامی کلیدیں مختلف ہیں

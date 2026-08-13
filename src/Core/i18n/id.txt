@@ -282,17 +282,31 @@ cli.token.certfail = gagal menyimpan sertifikat «{0}»: {1}
 
 # --- extract private key (CSP-free) ---
 btn.extractkey = Ekstrak kunci (PEM)
+btn.extractpfx = Buat PFX (tanpa CSP)
 tip.extractkey = Ekstrak kunci privat langsung dari kontainer berkas (6 berkas *.key), tanpa CryptoPro CSP.\nKunci didekripsi dengan primitif GOST bawaan dan disimpan sebagai PKCS#8/PEM (kompatibel dengan OpenSSL gost-engine).\nHanya bekerja untuk kontainer berkas (bukan untuk kunci yang tidak dapat diekstrak pada token). Perhatian: berkas .pem adalah kunci privat Anda — simpan sebagai rahasia.
+tip.extractpfx = Buat berkas PKCS#12 (.pfx) langsung dari kontainer berkas — tanpa CryptoPro CSP dan tanpa certmgr.\nKunci privat didekripsi dengan primitif GOST bawaan, sertifikat diambil dari header.key (jika tidak ada di sana, Anda dapat menunjuk berkas .cer).\nKunci di dalam .pfx dilindungi kata sandi (3DES PKCS#12), sertifikat disimpan terbuka. Perhatian: berkas .pfx berisi kunci privat Anda — jaga kerahasiaannya.
+Penting: CryptoPro TIDAK mengimpor berkas seperti ini — berkas ini untuk OpenSSL dan perangkat lunak non-CryptoPro lainnya. Untuk mengembalikan kunci ke CryptoPro gunakan tombol «Ekspor ke PFX» (lewat certmgr, perlu CSP terpasang).
 status.extractkey = Mengekstrak kunci privat…
+status.extractpfx = Membuat PKCS#12…
 dlg.extractkey.save = Tempat menyimpan kunci privat (PEM)
 dlg.extractkey.pass.title = Kata sandi kontainer
 dlg.extractkey.pass.prompt = Kata sandi kontainer (biasanya kosong — biarkan kolom kosong):
+dlg.extractpfx.save = Tempat menyimpan PKCS#12 (.pfx)
+dlg.extractpfx.pass.title = Kata sandi untuk .pfx
+dlg.extractpfx.pass.prompt = Kata sandi yang akan melindungi kunci privat di dalam .pfx:
+dlg.extractpfx.cert = Berkas sertifikat (.cer) untuk kunci ini
 log.extractkey.done = Kunci privat disimpan (PKCS#8/PEM): {0}
 log.extractkey.pub = kurva {0}; kunci publik cocok dengan sidik jari di kontainer
 log.extractkey.fail = Gagal mengekstrak kunci: {0}
+log.extractpfx.done = PKCS#12 dibuat tanpa CSP: {0}
+log.extractpfx.nocert = Kontainer tidak memuat sertifikat — tunjuk berkas .cer
+log.extractpfx.fail = Gagal membuat PKCS#12: {0}
+log.extractpfx.note = CryptoPro tidak mengimpor berkas ini — berkas ini untuk OpenSSL. Untuk CryptoPro gunakan «Ekspor ke PFX» (certmgr).
 cli.usage.extractkey = ekstrak kunci privat dari kontainer berkas ke PKCS#8/PEM (tanpa CSP)
+cli.usage.extractpfx = buat PKCS#12 dari kontainer berkas (tanpa CSP dan certmgr)
 cli.extractkey.ok = Kunci privat disimpan (PKCS#8/PEM): {0}
 cli.extractkey.pub = kurva {0}, kunci publik X={1}
+cli.extractpfx.ok = PKCS#12 dibuat tanpa CSP: {0}
 
 # --- container-extraction errors (CSP-free) ---
 err.extract.nofile = Folder kontainer tidak memiliki {0}: {1}
@@ -301,3 +315,6 @@ err.extract.nofingerprint = header.key tidak memiliki sidik jari kunci publik �
 err.extract.fingerprint = Sidik jari kunci publik tidak cocok — kata sandi salah atau kontainer rusak
 err.extract.degenerate = Penguraian menghasilkan kunci yang merosot — kata sandi salah atau kontainer rusak
 err.extract.corrupt = Kontainer rusak atau tidak dikenali: {0}
+err.pfx.nocert = Tidak ada sertifikat di kontainer maupun di argumen — tunjuk berkas .cer
+err.pfx.badcert = Berkas sertifikat tidak terbaca sebagai X.509 dengan kunci GOST 256 bit
+err.pfx.certmismatch = Sertifikat milik kunci lain: kunci publiknya berbeda

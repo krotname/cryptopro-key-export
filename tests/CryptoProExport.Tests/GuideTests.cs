@@ -87,6 +87,7 @@ namespace CryptoProExport.Tests
         [InlineData("uninstall")]
         [InlineData("topfx")]
         [InlineData("extractkey")]
+        [InlineData("extractpfx")]
         [InlineData("full")]
         [InlineData("help")]
         [InlineData("--lang")]

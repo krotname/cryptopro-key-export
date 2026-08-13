@@ -282,17 +282,31 @@ cli.token.certfail = प्रमाणपत्र «{0}» सहेजा न�
 
 # --- extract private key (CSP-free) ---
 btn.extractkey = कुंजी निकालें (PEM)
+btn.extractpfx = PFX बनाएँ (बिना CSP)
 tip.extractkey = निजी कुंजी को सीधे फ़ाइल कंटेनर (6 *.key फ़ाइलें) से निकालें — CryptoPro CSP के बिना।\nकुंजी को अंतर्निहित GOST प्रिमिटिव्स से डिक्रिप्ट कर PKCS#8/PEM के रूप में सहेजा जाता है (OpenSSL gost-engine के अनुकूल)।\nकेवल फ़ाइल कंटेनरों के लिए काम करता है (टोकन पर न निकाली जा सकने वाली कुंजियों के लिए नहीं)। चेतावनी: .pem फ़ाइल आपकी निजी कुंजी है — इसे गुप्त रखें।
+tip.extractpfx = PKCS#12 (.pfx) फ़ाइल सीधे फ़ाइल कंटेनर से बनाएँ — बिना CryptoPro CSP और बिना certmgr के।\nनिजी कुंजी अंतर्निहित GOST प्रिमिटिव से डिक्रिप्ट होती है और प्रमाणपत्र header.key से लिया जाता है (यदि वहाँ न हो तो आप .cer फ़ाइल बता सकते हैं)।\n.pfx के भीतर कुंजी पासवर्ड से सुरक्षित रहती है (PKCS#12 का 3DES), प्रमाणपत्र बिना एन्क्रिप्शन रहता है। ध्यान दें: .pfx फ़ाइल में आपकी निजी कुंजी है — इसे गुप्त रखें।
+महत्वपूर्ण: CryptoPro ऐसी फ़ाइल आयात नहीं करता — यह OpenSSL और CryptoPro से बाहर के अन्य प्रोग्रामों के लिए है। कुंजी को CryptoPro में वापस लाने के लिए «PFX में निर्यात» बटन का उपयोग करें (certmgr के ज़रिए, स्थापित CSP आवश्यक)।
 status.extractkey = निजी कुंजी निकाली जा रही है…
+status.extractpfx = PKCS#12 बनाया जा रहा है…
 dlg.extractkey.save = निजी कुंजी कहाँ सहेजें (PEM)
 dlg.extractkey.pass.title = कंटेनर पासवर्ड
 dlg.extractkey.pass.prompt = कंटेनर पासवर्ड (आमतौर पर खाली — फ़ील्ड खाली छोड़ें):
+dlg.extractpfx.save = PKCS#12 (.pfx) कहाँ सहेजें
+dlg.extractpfx.pass.title = .pfx का पासवर्ड
+dlg.extractpfx.pass.prompt = .pfx के भीतर निजी कुंजी की रक्षा करने वाला पासवर्ड:
+dlg.extractpfx.cert = इस कुंजी के लिए प्रमाणपत्र फ़ाइल (.cer)
 log.extractkey.done = निजी कुंजी सहेजी गई (PKCS#8/PEM): {0}
 log.extractkey.pub = वक्र {0}; सार्वजनिक कुंजी कंटेनर के फ़िंगरप्रिंट से मेल खाती है
 log.extractkey.fail = कुंजी निकालने में विफल: {0}
+log.extractpfx.done = CSP के बिना PKCS#12 बना: {0}
+log.extractpfx.nocert = कंटेनर में प्रमाणपत्र नहीं है — .cer फ़ाइल बताएँ
+log.extractpfx.fail = PKCS#12 नहीं बन सका: {0}
+log.extractpfx.note = CryptoPro यह फ़ाइल आयात नहीं करता — यह OpenSSL के लिए है। CryptoPro के लिए «PFX में निर्यात» (certmgr) उपयोग करें।
 cli.usage.extractkey = फ़ाइल कंटेनर से निजी कुंजी को PKCS#8/PEM में निकालें (CSP के बिना)
+cli.usage.extractpfx = फ़ाइल कंटेनर से PKCS#12 बनाएँ (बिना CSP और certmgr)
 cli.extractkey.ok = निजी कुंजी सहेजी गई (PKCS#8/PEM): {0}
 cli.extractkey.pub = वक्र {0}, सार्वजनिक कुंजी X={1}
+cli.extractpfx.ok = CSP के बिना PKCS#12 बना: {0}
 
 # --- container-extraction errors (CSP-free) ---
 err.extract.nofile = कंटेनर फ़ोल्डर में {0} नहीं है: {1}
@@ -301,3 +315,6 @@ err.extract.nofingerprint = header.key में सार्वजनिक क
 err.extract.fingerprint = सार्वजनिक कुंजी का फ़िंगरप्रिंट मेल नहीं खाता — गलत पासवर्ड या क्षतिग्रस्त कंटेनर
 err.extract.degenerate = विश्लेषण से पतित कुंजी मिली — गलत पासवर्ड या क्षतिग्रस्त कंटेनर
 err.extract.corrupt = कंटेनर क्षतिग्रस्त है या पहचाना नहीं गया: {0}
+err.pfx.nocert = प्रमाणपत्र न कंटेनर में है न तर्कों में — .cer फ़ाइल बताएँ
+err.pfx.badcert = प्रमाणपत्र फ़ाइल 256-बिट GOST कुंजी वाले X.509 के रूप में नहीं पढ़ी गई
+err.pfx.certmismatch = प्रमाणपत्र किसी और कुंजी का है: सार्वजनिक कुंजियाँ मेल नहीं खातीं

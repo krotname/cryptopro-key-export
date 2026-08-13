@@ -32,6 +32,7 @@ namespace CryptoProExport.App
             ("uninstall <folder>",                   "cli.usage.uninstall"),
             ("topfx <container> <out.pfx> [pass]",   "cli.usage.topfx"),
             ("extractkey <folder> <out.pem> [pass]", "cli.usage.extractkey"),
+            ("extractpfx <folder> <out.pfx> <pfx-pass> [pass] [cert.cer]", "cli.usage.extractpfx"),
             ("full <destDir> [cert.cer] [pin]",      "cli.usage.full"),
             ("help",                                 "cli.usage.help"),
             ("--lang <xx>",                          "cli.usage.lang"),
@@ -203,6 +204,20 @@ namespace CryptoProExport.App
                         File.WriteAllText(args[2], GostKeyExport.ToPkcs8Pem(r));
                         Out(Strings.Format("cli.extractkey.ok", args[2]));
                         Out("  " + Strings.Format("cli.extractkey.pub", r.CurveOid, Convert.ToHexString(r.PublicX)));
+                        return 0;
+                    }
+                    case "extractpfx":
+                    {
+                        // Собрать .pfx из файлового контейнера целиком своими силами: ни CSP,
+                        // ни certmgr. Сертификат берётся из header.key, а если его там нет —
+                        // из файла, переданного пятым аргументом.
+                        if (args.Length < 4) { Usage(); return 1; }
+                        var r = ContainerKeyExtractor.Extract(args[1], args.Length > 4 ? args[4] : "");
+                        byte[] cert = args.Length > 5 ? File.ReadAllBytes(args[5]) : null;
+                        File.WriteAllBytes(args[2], Pkcs12Export.Build(r, args[3], cert,
+                            ContainerStore.ReadName(args[1])));
+                        Out(Strings.Format("cli.extractpfx.ok", args[2]));
+                        Out("  " + Strings.Get("log.extractpfx.note"));
                         return 0;
                     }
                     case "full":

@@ -282,17 +282,31 @@ cli.token.certfail = ذخیرهٔ گواهی «{0}» ناموفق بود: {1}
 
 # --- extract private key (CSP-free) ---
 btn.extractkey = استخراج کلید (PEM)
+btn.extractpfx = ساخت PFX (بدون CSP)
 tip.extractkey = کلید خصوصی را مستقیماً از یک محفظه‌ی فایلی (۶ فایل *.key) استخراج کنید — بدون CryptoPro CSP.\nکلید با اولیه‌های GOST داخلی رمزگشایی و به‌صورت PKCS#8/PEM ذخیره می‌شود (سازگار با OpenSSL gost-engine).\nفقط برای محفظه‌های فایلی کار می‌کند (نه برای کلیدهای غیرقابل‌استخراج روی توکن). هشدار: فایل .pem کلید خصوصی شماست — آن را محرمانه نگه دارید.
+tip.extractpfx = فایل PKCS#12‏ (.pfx) را مستقیماً از یک محفظهٔ فایلی بسازید — بدون CryptoPro CSP و بدون certmgr.\nکلید خصوصی با اولیه‌های GOST داخلی رمزگشایی می‌شود و گواهی از header.key برداشته می‌شود (اگر آنجا نبود می‌توانید یک فایل ‎.cer را معرفی کنید).\nکلید درون ‎.pfx با گذرواژه محافظت می‌شود (‎3DES استاندارد PKCS#12) و گواهی رمزنشده می‌ماند. هشدار: فایل ‎.pfx حاوی کلید خصوصی شماست — آن را محرمانه نگه دارید.
+مهم: کریپتوپرو چنین فایلی را وارد نمی‌کند — این فایل برای OpenSSL و دیگر نرم‌افزارهای بیرون از کریپتوپرو است. برای بازگرداندن کلید به کریپتوپرو از دکمهٔ «برون‌بری به PFX» استفاده کنید (از راه certmgr، نیازمند CSP نصب‌شده).
 status.extractkey = در حال استخراج کلید خصوصی…
+status.extractpfx = در حال ساخت PKCS#12…
 dlg.extractkey.save = محل ذخیره‌ی کلید خصوصی (PEM)
 dlg.extractkey.pass.title = گذرواژه‌ی محفظه
 dlg.extractkey.pass.prompt = گذرواژه‌ی محفظه (معمولاً خالی — این فیلد را خالی بگذارید):
+dlg.extractpfx.save = فایل PKCS#12‏ (.pfx) کجا ذخیره شود
+dlg.extractpfx.pass.title = گذرواژهٔ ‎.pfx
+dlg.extractpfx.pass.prompt = گذرواژه‌ای که کلید خصوصی درون ‎.pfx را محافظت می‌کند:
+dlg.extractpfx.cert = فایل گواهی (‎.cer) برای این کلید
 log.extractkey.done = کلید خصوصی ذخیره شد (PKCS#8/PEM): {0}
 log.extractkey.pub = خم {0}؛ کلید عمومی با اثر انگشت داخل محفظه مطابقت دارد
 log.extractkey.fail = استخراج کلید ناموفق بود: {0}
+log.extractpfx.done = PKCS#12 بدون CSP ساخته شد: {0}
+log.extractpfx.nocert = در محفظه گواهی نیست — یک فایل ‎.cer معرفی کنید
+log.extractpfx.fail = ساخت PKCS#12 ممکن نشد: {0}
+log.extractpfx.note = کریپتوپرو این فایل را وارد نمی‌کند — برای OpenSSL است. برای کریپتوپرو از «برون‌بری به PFX» (certmgr) استفاده کنید.
 cli.usage.extractkey = استخراج کلید خصوصی از محفظه‌ی فایلی به PKCS#8/PEM (بدون CSP)
+cli.usage.extractpfx = ساخت PKCS#12 از محفظهٔ فایلی (بدون CSP و certmgr)
 cli.extractkey.ok = کلید خصوصی ذخیره شد (PKCS#8/PEM): {0}
 cli.extractkey.pub = خم {0}، کلید عمومی X={1}
+cli.extractpfx.ok = PKCS#12 بدون CSP ساخته شد: {0}
 
 # --- container-extraction errors (CSP-free) ---
 err.extract.nofile = پوشه‌ی محفظه فاقد {0} است: {1}
@@ -301,3 +315,6 @@ err.extract.nofingerprint = header.key اثر انگشت کلید عمومی ن�
 err.extract.fingerprint = اثر انگشت کلید عمومی مطابقت ندارد — گذرواژه نادرست یا محفظه‌ی خراب
 err.extract.degenerate = تجزیه به کلید منحط منجر شد — گذرواژه نادرست یا محفظه‌ی خراب
 err.extract.corrupt = محفظه خراب است یا شناخته نشد: {0}
+err.pfx.nocert = نه در محفظه گواهی هست و نه در آرگومان‌ها — یک فایل ‎.cer معرفی کنید
+err.pfx.badcert = فایل گواهی به‌عنوان X.509 با کلید GOST‏ ۲۵۶ بیتی خوانده نشد
+err.pfx.certmismatch = گواهی متعلق به کلید دیگری است: کلیدهای عمومی یکسان نیستند

@@ -29,7 +29,7 @@ namespace CryptoProExport.App
         private ColumnHeader _colWhere, _colName, _colDetails;
         private Label _lblP12, _lblDest, _lblPin, _lblPinHint, _lblLang;
         private Button _btnP12, _btnDest;
-        private Button _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnInstall, _btnCheck, _btnPfx, _btnExtractKey, _btnLogs, _btnHelp;
+        private Button _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnInstall, _btnCheck, _btnPfx, _btnExtractKey, _btnExtractPfx, _btnLogs, _btnHelp;
         private Button _btnCancel;
         private Button[] _actionButtons;
         private ComboBox _cmbLang;
@@ -150,6 +150,7 @@ namespace CryptoProExport.App
             _btnInstall = MakeButton((_, __) => Run("status.install", DoInstall));
             _btnPfx = MakeButton((_, __) => Run("status.pfx", DoExportPfx));
             _btnExtractKey = MakeButton((_, __) => Run("status.extractkey", DoExtractKey));
+            _btnExtractPfx = MakeButton((_, __) => Run("status.extractpfx", DoExtractPfx));
             _btnLogs = MakeButton((_, __) => OpenLogFolder());
             _btnHelp = MakeButton((_, __) => Guide.Show(this));
             _btnCancel = MakeButton((_, __) => CancelCurrent());
@@ -157,7 +158,7 @@ namespace CryptoProExport.App
             _actionButtons = new[]
             {
                 _btnRefresh, _btnExport, _btnExtract, _btnFull,
-                _btnCheck, _btnInstall, _btnPfx, _btnExtractKey, _btnLogs, _btnHelp,
+                _btnCheck, _btnInstall, _btnPfx, _btnExtractKey, _btnExtractPfx, _btnLogs, _btnHelp,
             };
             buttons.Controls.AddRange(_actionButtons);
             buttons.Controls.Add(_btnCancel);
@@ -237,6 +238,7 @@ namespace CryptoProExport.App
             SetButton(_btnInstall, "btn.install", "tip.install");
             SetButton(_btnPfx, "btn.pfx", "tip.pfx");
             SetButton(_btnExtractKey, "btn.extractkey", "tip.extractkey");
+            SetButton(_btnExtractPfx, "btn.extractpfx", "tip.extractpfx");
             SetButton(_btnLogs, "btn.logs", "tip.logs");
             SetButton(_btnHelp, "btn.help", "tip.help");
             SetButton(_btnCancel, "btn.cancel", "tip.cancel");
@@ -584,6 +586,61 @@ namespace CryptoProExport.App
             }
         }
 
+        /// <summary>
+        /// Собрать .pfx из файлового контейнера без CSP: ключ из *.key, сертификат из header.key.
+        /// Если сертификата в контейнере нет, спрашиваем файл .cer — остальное не меняется.
+        /// </summary>
+        private void DoExtractPfx()
+        {
+            string folder = AskFolder(Strings.Get("dlg.folder.container"), TextOf(_txtDest).Trim());
+            if (folder == null) { Log(Strings.Get("log.cancelled")); return; }
+            if (!ContainerStore.LooksLikeContainer(folder))
+            {
+                Log(Strings.Get("log.install.notcontainer"));
+                return;
+            }
+
+            string pass = AskText(Strings.Get("dlg.extractkey.pass.title"),
+                                  Strings.Get("dlg.extractkey.pass.prompt"), "", password: true);
+            if (pass == null) { Log(Strings.Get("log.cancelled")); return; }
+
+            string pfxPass = AskText(Strings.Get("dlg.extractpfx.pass.title"),
+                                     Strings.Get("dlg.extractpfx.pass.prompt"), "", password: true);
+            if (pfxPass == null) { Log(Strings.Get("log.cancelled")); return; }
+
+            string name = ContainerStore.ReadName(folder)
+                          ?? Path.GetFileName(folder.TrimEnd(Path.DirectorySeparatorChar));
+            string dest = AskSaveFile(Strings.Get("dlg.extractpfx.save"),
+                                      "PKCS#12 (*.pfx)|*.pfx|" + Strings.Get("files.all") + "|*.*",
+                                      TextOf(_txtDest).Trim(), Sanitize(name) + ".pfx");
+            if (dest == null) { Log(Strings.Get("log.cancelled")); return; }
+
+            try
+            {
+                var r = ContainerKeyExtractor.Extract(folder, pass);
+                byte[] cert = r.Certificate;
+                if (cert == null)
+                {
+                    Log(Strings.Get("log.extractpfx.nocert"));
+                    string certFile = AskOpenFile(Strings.Get("dlg.extractpfx.cert"),
+                                                  "X.509 (*.cer;*.crt;*.der)|*.cer;*.crt;*.der|"
+                                                  + Strings.Get("files.all") + "|*.*");
+                    if (certFile == null) { Log(Strings.Get("log.cancelled")); return; }
+                    cert = File.ReadAllBytes(certFile);
+                }
+
+                File.WriteAllBytes(dest, Pkcs12Export.Build(r, pfxPass, cert, name));
+                Log(Strings.Format("log.extractpfx.done", dest));
+                // Ограничение говорим сразу и на месте: иначе владелец решит, что это
+                // резервная копия, из которой ключ вернётся в КриптоПро (замечание Codex).
+                Log("  " + Strings.Get("log.extractpfx.note"));
+            }
+            catch (ContainerKeyException e)
+            {
+                Log(Strings.Format("log.extractpfx.fail", e.Message));
+            }
+        }
+
         private void OpenLogFolder()
         {
             try
@@ -628,6 +685,13 @@ namespace CryptoProExport.App
                 AddExtension = true, DefaultExt = defaultExt, OverwritePrompt = true,
             };
             if (Directory.Exists(initialDir)) d.InitialDirectory = initialDir;
+            return d.ShowDialog(this) == DialogResult.OK ? d.FileName : null;
+        }
+
+        private string AskOpenFile(string title, string filter)
+        {
+            if (InvokeRequired) return (string)Invoke(new Func<string>(() => AskOpenFile(title, filter)));
+            using var d = new OpenFileDialog { Title = title, Filter = filter, CheckFileExists = true };
             return d.ShowDialog(this) == DialogResult.OK ? d.FileName : null;
         }
 
