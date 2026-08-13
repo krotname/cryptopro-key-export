@@ -282,17 +282,31 @@ cli.token.certfail = تعذّر حفظ الشهادة «{0}»: {1}
 
 # --- extract private key (CSP-free) ---
 btn.extractkey = استخراج المفتاح (PEM)
+btn.extractpfx = إنشاء PFX (بدون CSP)
 tip.extractkey = استخرج المفتاح الخاص مباشرة من حاوية ملفات (6 ملفات *.key) — بدون CryptoPro CSP.\nيُفكّ تشفير المفتاح باستخدام أوليّات GOST المدمجة ويُحفظ بصيغة PKCS#8/PEM (متوافق مع OpenSSL gost-engine).\nيعمل فقط مع حاويات الملفات (وليس مع المفاتيح غير القابلة للاستخراج على التوكن). تنبيه: ملف .pem هو مفتاحك الخاص — احفظه سرًا.
+tip.extractpfx = أنشئ ملف PKCS#12‏ (.pfx) مباشرةً من حاوية ملفات — بدون CryptoPro CSP وبدون certmgr.\nيُفكّ تشفير المفتاح الخاص باستخدام أوليّات GOST المدمجة، ويُؤخذ الشهادة من header.key (وإن لم تكن هناك يمكنك تحديد ملف ‎.cer).\nالمفتاح داخل ‎.pfx محميّ بكلمة مرور (‎3DES وفق PKCS#12)، أما الشهادة فتُخزَّن دون تشفير. تنبيه: ملف ‎.pfx يحتوي مفتاحك الخاص — احفظه سرًا.
+مهم: لا يستورد CryptoPro هذا الملف — فهو مخصّص لـ OpenSSL وسائر البرامج خارج CryptoPro. لإعادة المفتاح إلى CryptoPro استخدم زرّ «تصدير إلى PFX» (عبر certmgr، ويلزم CSP مثبَّت).
 status.extractkey = جارٍ استخراج المفتاح الخاص…
+status.extractpfx = جارٍ إنشاء PKCS#12…
 dlg.extractkey.save = مكان حفظ المفتاح الخاص (PEM)
 dlg.extractkey.pass.title = كلمة مرور الحاوية
 dlg.extractkey.pass.prompt = كلمة مرور الحاوية (غالبًا فارغة — اترك الحقل فارغًا):
+dlg.extractpfx.save = أين يُحفظ ملف PKCS#12‏ (.pfx)
+dlg.extractpfx.pass.title = كلمة مرور ملف ‎.pfx
+dlg.extractpfx.pass.prompt = كلمة المرور التي ستحمي المفتاح الخاص داخل ‎.pfx:
+dlg.extractpfx.cert = ملف الشهادة (‎.cer) لهذا المفتاح
 log.extractkey.done = تم حفظ المفتاح الخاص (PKCS#8/PEM): {0}
 log.extractkey.pub = المنحنى {0}؛ المفتاح العام يطابق البصمة الموجودة في الحاوية
 log.extractkey.fail = تعذّر استخراج المفتاح: {0}
+log.extractpfx.done = تم إنشاء PKCS#12 بدون CSP: {0}
+log.extractpfx.nocert = لا توجد شهادة في الحاوية — حدِّد ملف ‎.cer
+log.extractpfx.fail = تعذّر إنشاء PKCS#12: {0}
+log.extractpfx.note = لا يستورد CryptoPro هذا الملف — فهو مخصّص لـ OpenSSL. ولـ CryptoPro استخدم «تصدير إلى PFX» (certmgr).
 cli.usage.extractkey = استخراج المفتاح الخاص من حاوية ملفات إلى PKCS#8/PEM (بدون CSP)
+cli.usage.extractpfx = إنشاء PKCS#12 من حاوية ملفات (بدون CSP وبدون certmgr)
 cli.extractkey.ok = تم حفظ المفتاح الخاص (PKCS#8/PEM): {0}
 cli.extractkey.pub = المنحنى {0}، المفتاح العام X={1}
+cli.extractpfx.ok = تم إنشاء PKCS#12 بدون CSP: {0}
 
 # --- container-extraction errors (CSP-free) ---
 err.extract.nofile = مجلد الحاوية لا يحتوي على {0}: {1}
@@ -301,3 +315,6 @@ err.extract.nofingerprint = لا يحتوي header.key على بصمة المف�
 err.extract.fingerprint = بصمة المفتاح العام غير مطابقة — كلمة مرور خاطئة أو حاوية تالفة
 err.extract.degenerate = أنتج التحليل مفتاحًا منحطًا — كلمة مرور خاطئة أو حاوية تالفة
 err.extract.corrupt = الحاوية تالفة أو غير معروفة: {0}
+err.pfx.nocert = لا توجد شهادة في الحاوية ولا في المعطيات — حدِّد ملف ‎.cer
+err.pfx.badcert = لم يُقرأ ملف الشهادة بوصفه X.509 بمفتاح GOST بطول 256 بت
+err.pfx.certmismatch = الشهادة تخصّ مفتاحًا آخر: المفتاحان العامّان غير متطابقين

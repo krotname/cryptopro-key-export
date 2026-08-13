@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.CryptoPro;
+using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Parameters;
@@ -53,6 +54,13 @@ namespace CryptoProExport
             /// <summary>Отпечаток из header.key сошёлся с посчитанным открытым ключом (всегда true при успехе).</summary>
             public bool FingerprintVerified { get; internal set; }
 
+            /// <summary>
+            /// Сертификат этого ключа из header.key в DER, или <c>null</c>, если его там нет.
+            /// Берётся только сертификат, чей открытый ключ совпал с посчитанным d·G: в контейнере
+            /// с двумя ключами (подпись + обмен) сертификатов два, и чужой не подойдёт.
+            /// </summary>
+            public byte[] Certificate { get; internal set; }
+
             internal BigInteger D { get; set; }
         }
 
@@ -71,7 +79,9 @@ namespace CryptoProExport
 
             byte[] primEnc = ParsePrimary(primaryRaw);
             var (mask, salt) = ParseMasks(masksRaw);
-            var (curveOid, fingerprint) = ParseHeader(headerRaw);
+            var header = ParseHeader(headerRaw);
+            string curveOid = header.CurveOid;
+            byte[] fingerprint = header.Fingerprint;
 
             var domain = ECGost3410NamedCurves.GetByOid(new DerObjectIdentifier(curveOid));
             if (domain == null)
@@ -114,6 +124,7 @@ namespace CryptoProExport
                 PublicX = x,
                 PublicY = y,
                 FingerprintVerified = true,
+                Certificate = PickCertificate(header.Certificates, x, y),
                 D = d,
             };
         }
@@ -143,11 +154,27 @@ namespace CryptoProExport
             return (mask, salt);
         }
 
+        /// <summary>Что удалось вычитать из header.key.</summary>
+        internal sealed class Header
+        {
+            /// <summary>OID набора параметров кривой.</summary>
+            public string CurveOid;
+
+            /// <summary>Отпечаток открытого ключа: первые 8 байт X little-endian (или null).</summary>
+            public byte[] Fingerprint;
+
+            /// <summary>Сертификаты, найденные в header.key, в порядке появления (обычно 1–2).</summary>
+            public List<byte[]> Certificates = new List<byte[]>();
+        }
+
         /// <summary>
-        /// header.key: обычный ASN.1. Оттуда берём OID кривой и единственный восьмибайтовый
-        /// OCTET STRING — отпечаток открытого ключа (первые 8 байт X little-endian).
+        /// header.key: обычный ASN.1. Оттуда берём OID кривой, первый восьмибайтовый OCTET STRING
+        /// (отпечаток открытого ключа первого ключа контейнера) и сертификаты. Сертификат лежит
+        /// открытым DER в элементе с неявным контекстным тегом ([5] для первого ключа, [6] для
+        /// второго) — сжатия и нестандартной обёртки нет. Внутрь сертификата обход не заходит:
+        /// иначе его OID-ы и восьмибайтовые строки смешались бы с полями самого контейнера.
         /// </summary>
-        internal static (string curveOid, byte[] fingerprint) ParseHeader(byte[] der)
+        internal static Header ParseHeader(byte[] der)
         {
             Asn1Object root;
             try { root = Asn1Object.FromByteArray(der); }
@@ -155,16 +182,64 @@ namespace CryptoProExport
 
             var oids = new List<string>();
             var octets8 = new List<byte[]>();
-            Walk(root, oids, octets8);
+            var header = new Header();
+            Walk(root, oids, octets8, header.Certificates);
 
-            string curveOid = null;
             foreach (string id in oids)
-                if (IsCurveOid(id)) { curveOid = id; break; }
-            if (curveOid == null)
+                if (IsCurveOid(id)) { header.CurveOid = id; break; }
+            if (header.CurveOid == null)
                 throw Corrupt("header.key: no GOST curve OID");
 
-            byte[] fingerprint = octets8.Count > 0 ? octets8[0] : null;
-            return (curveOid, fingerprint);
+            header.Fingerprint = octets8.Count > 0 ? octets8[0] : null;
+            return header;
+        }
+
+        /// <summary>
+        /// Выбрать из найденных сертификатов тот, чей открытый ключ равен посчитанному d·G.
+        /// В контейнере с двумя ключами (подпись и обмен) сертификатов два, и взять «первый»
+        /// нельзя — к разобранному primary.key относится только один из них. Совпадение
+        /// открытого ключа заодно работает вторым, независимым от отпечатка оракулом.
+        /// </summary>
+        private static byte[] PickCertificate(List<byte[]> candidates, byte[] x, byte[] y)
+        {
+            byte[] expected = new byte[64];
+            Array.Copy(Reverse(x), 0, expected, 0, 32);      // X little-endian
+            Array.Copy(Reverse(y), 0, expected, 32, 32);     // затем Y little-endian
+            foreach (byte[] der in candidates)
+            {
+                byte[] pub = CertificatePublicKey(der);
+                if (pub != null && pub.AsSpan().SequenceEqual(expected)) return der;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Открытый ключ ГОСТ из сертификата: 64 байта (X‖Y little-endian), завёрнутые в OCTET
+        /// STRING внутри BIT STRING поля subjectPublicKey. Возвращает null, если разобрать не вышло
+        /// или ключ не той длины (например, 512-битный).
+        /// </summary>
+        internal static byte[] CertificatePublicKey(byte[] certDer)
+        {
+            try
+            {
+                var cert = X509CertificateStructure.GetInstance(Asn1Object.FromByteArray(certDer));
+                byte[] inner = cert.SubjectPublicKeyInfo.PublicKey.GetBytes();
+                byte[] pub = Asn1OctetString.GetInstance(Asn1Object.FromByteArray(inner)).GetOctets();
+                return pub.Length == 64 ? pub : null;
+            }
+            catch (Exception) { return null; }
+        }
+
+        /// <summary>Похож ли блоб на сертификат X.509 (строгий разбор DER, без «хвоста»).</summary>
+        private static byte[] AsCertificate(byte[] der)
+        {
+            if (der.Length < 64 || der[0] != 0x30) return null;
+            try
+            {
+                var cert = X509CertificateStructure.GetInstance(Asn1Object.FromByteArray(der));
+                return cert.SubjectPublicKeyInfo != null && cert.Subject != null ? der : null;
+            }
+            catch (Exception) { return null; }
         }
 
         /// <summary>Наборы параметров кривых ГОСТ Р 34.10 (256 бит): CryptoPro A/B/C/XchA/XchB и tc26.</summary>
@@ -173,7 +248,7 @@ namespace CryptoProExport
             || id.StartsWith("1.2.643.2.2.36", StringComparison.Ordinal)
             || id.StartsWith("1.2.643.7.1.2.1.1", StringComparison.Ordinal);
 
-        private static void Walk(Asn1Object o, List<string> oids, List<byte[]> octets8)
+        private static void Walk(Asn1Object o, List<string> oids, List<byte[]> octets8, List<byte[]> certs)
         {
             switch (o)
             {
@@ -183,18 +258,22 @@ namespace CryptoProExport
                 case Asn1OctetString os:
                     byte[] v = os.GetOctets();
                     if (v.Length == 8) octets8.Add(v);
+                    // Элементы с неявным контекстным тегом BouncyCastle отдаёт как OCTET STRING;
+                    // именно так выглядит сертификат в header.key. Внутрь него не заходим.
+                    byte[] cert = AsCertificate(v);
+                    if (cert != null) { certs.Add(cert); break; }
                     // Вложенный DER внутри OCTET STRING (в header.key так упакованы структуры).
-                    try { Walk(Asn1Object.FromByteArray(v), oids, octets8); }
+                    try { Walk(Asn1Object.FromByteArray(v), oids, octets8, certs); }
                     catch (Exception) { /* не ASN.1 — это просто байты */ }
                     break;
                 case Asn1Sequence seq:
-                    foreach (Asn1Encodable e in seq) Walk(e.ToAsn1Object(), oids, octets8);
+                    foreach (Asn1Encodable e in seq) Walk(e.ToAsn1Object(), oids, octets8, certs);
                     break;
                 case Asn1Set set:
-                    foreach (Asn1Encodable e in set) Walk(e.ToAsn1Object(), oids, octets8);
+                    foreach (Asn1Encodable e in set) Walk(e.ToAsn1Object(), oids, octets8, certs);
                     break;
                 case Asn1TaggedObject t:
-                    Walk(t.GetBaseObject().ToAsn1Object(), oids, octets8);
+                    Walk(t.GetBaseObject().ToAsn1Object(), oids, octets8, certs);
                     break;
             }
         }

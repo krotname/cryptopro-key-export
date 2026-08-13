@@ -188,6 +188,9 @@ src/Core/           библиотека (net10.0-windows)
   RutokenExporter.cs   экспорт контейнера с токена (rtCOMLite, late-binding COM) — Рутокен S
   Pkcs11Token.cs       токены по PKCS#11 (Рутокен + JaCarta): тип, PIN, контейнеры, .cer без CSP
   CertFromContainer.cs извлечение .cer и проверка прав ключа (CryptoAPI P/Invoke)
+  ContainerKeyExtractor.cs закрытый ключ и сертификат из файлов контейнера, без CSP
+  GostKeyExport.cs     закрытый ключ ГОСТ в PKCS#8/PEM
+  Pkcs12Export.cs      сборка .pfx своими силами (без certmgr и CSP)
   P12Utility.cs        обёртка p12utility (--cprepair/--keyexport/--cppublic)
   CertMgr.cs           обёртка certmgr: сертификат в хранилище + экспорт в .pfx
   ContainerStore.cs    установка контейнера в хранилище CSP (HDIMAGE)
@@ -268,6 +271,7 @@ CryptoProExport.exe installed
 CryptoProExport.exe uninstall <folder>
 CryptoProExport.exe topfx <containerName> <out.pfx> [password]
 CryptoProExport.exe extractkey <folder> <out.pem> [password]  # закрытый ключ в PKCS#8/PEM без CSP
+CryptoProExport.exe extractpfx <folder> <out.pfx> <pfxPass> [password] [cert.cer]  # .pfx без CSP, для OpenSSL
 CryptoProExport.exe full <destDir> [cert.cer] [pin]
 CryptoProExport.exe --lang <код>          # язык вывода; можно совмещать с любой командой
 ```
