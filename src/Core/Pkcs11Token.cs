@@ -302,10 +302,11 @@ namespace CryptoProExport
             // Один считыватель показывается один раз: теоретически носитель может быть виден
             // двум установленным библиотекам, и дважды перечисленный токен запутал бы и вывод,
             // и SkipReaders.
+            // Сбой одной библиотеки не скрывает носители остальных вендоров: EnumerateLibrary
+            // сообщает о нём в лог и возвращает управление, цикл продолжается.
             var seenReaders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var (_, path) in libs)
             {
-                // Сбой одной библиотеки не должен скрывать носители остальных вендоров.
                 cancel.ThrowIfCancellationRequested();
                 EnumerateLibrary(path, readContainers, result, seenReaders, log, cancel);
             }
