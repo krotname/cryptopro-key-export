@@ -175,6 +175,71 @@ namespace CryptoProExport.Tests
             Assert.False(RutokenExporter.ShouldWalk("ACS ACR38U 0", set));
         }
 
+        // ---------- дедупликация считывателей между библиотеками разных вендоров ----------
+
+        [Fact]
+        public void Place_LetsASuccessfulReadReplaceAFailedOne()
+        {
+            // Первая библиотека сорвалась на считывателе, вторая его прочитала: в списке должна
+            // остаться одна строка — удачная, и на прежнем месте (замечание Codex, PR #25).
+            var result = new List<Pkcs11TokenInfo>();
+            var seen = new Dictionary<string, (int Index, bool Ok)>(StringComparer.OrdinalIgnoreCase);
+
+            Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0" }, ok: false);
+            Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "Другой 0", Serial = "a" }, ok: true);
+            Assert.False(Pkcs11Token.AlreadyRead(seen, "JC 0"));
+
+            Assert.True(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0", Serial = "b" }, ok: true));
+
+            Assert.Equal(2, result.Count);
+            Assert.Equal("b", result[0].Serial);       // заменена на месте, порядок не прыгнул
+            Assert.Equal("a", result[1].Serial);
+            Assert.True(Pkcs11Token.AlreadyRead(seen, "JC 0"));
+        }
+
+        [Fact]
+        public void Place_KeepsOneRowPerReader()
+        {
+            var result = new List<Pkcs11TokenInfo>();
+            var seen = new Dictionary<string, (int Index, bool Ok)>(StringComparer.OrdinalIgnoreCase);
+
+            Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0", Serial = "ok" }, ok: true);
+            // Прочитанный удачно второй раз не кладётся, и неудачная попытка его не портит.
+            Assert.False(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "jc 0", Serial = "x" }, ok: true));
+            Assert.False(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0", Serial = "y" }, ok: false));
+
+            Assert.Single(result);
+            Assert.Equal("ok", result[0].Serial);
+        }
+
+        [Fact]
+        public void Place_DoesNotStackTwoFailuresForOneReader()
+        {
+            var result = new List<Pkcs11TokenInfo>();
+            var seen = new Dictionary<string, (int Index, bool Ok)>(StringComparer.OrdinalIgnoreCase);
+
+            Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0", Serial = "first" }, ok: false);
+            Assert.False(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0", Serial = "second" }, ok: false));
+
+            Assert.Single(result);
+            Assert.Equal("first", result[0].Serial);
+        }
+
+        [Fact]
+        public void Place_AddsReadersWithoutNameAsIs()
+        {
+            // Имени нет — дедуплицировать нечем; терять такой токен нельзя.
+            var result = new List<Pkcs11TokenInfo>();
+            var seen = new Dictionary<string, (int Index, bool Ok)>(StringComparer.OrdinalIgnoreCase);
+
+            Assert.True(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = null }, ok: true));
+            Assert.True(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "" }, ok: false));
+
+            Assert.Equal(2, result.Count);
+            Assert.Empty(seen);
+            Assert.False(Pkcs11Token.AlreadyRead(seen, null));
+        }
+
         [Fact]
         public void SmartCardReaders_ToleratesNull()
         {

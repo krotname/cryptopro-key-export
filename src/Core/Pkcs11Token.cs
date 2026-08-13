@@ -308,21 +308,63 @@ namespace CryptoProExport
 
             // Один считыватель показывается один раз: теоретически носитель может быть виден
             // двум установленным библиотекам, и дважды перечисленный токен запутал бы и вывод,
-            // и SkipReaders.
+            // и SkipReaders. Но «уже видели» — не то же самое, что «уже прочитали»: если первая
+            // библиотека на этом считывателе сорвалась, второй дают попробовать, и удачное
+            // чтение заменяет неудачную запись (замечание Codex на PR #25).
             // Сбой одной библиотеки не скрывает носители остальных вендоров: EnumerateLibrary
             // сообщает о нём в лог и возвращает управление, цикл продолжается.
-            var seenReaders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var seen = new Dictionary<string, (int Index, bool Ok)>(StringComparer.OrdinalIgnoreCase);
             foreach (var (_, path) in libs)
             {
                 cancel.ThrowIfCancellationRequested();
-                EnumerateLibrary(path, readContainers, result, seenReaders, log, cancel);
+                EnumerateLibrary(path, readContainers, result, seen, log, cancel);
             }
             return result;
         }
 
+        /// <summary>
+        /// Этот считыватель уже прочитан удачно другой библиотекой — второй раз к нему не идём.
+        /// Неудачная попытка «прочитанным» не считается: сбой драйвера одного вендора не должен
+        /// прятать данные, которые отдаёт другой (замечание Codex на PR #25).
+        /// </summary>
+        internal static bool AlreadyRead(IReadOnlyDictionary<string, (int Index, bool Ok)> seen, string reader)
+            => !string.IsNullOrEmpty(reader) && seen.TryGetValue(reader, out var prev) && prev.Ok;
+
+        /// <summary>
+        /// Положить прочитанный токен в список с дедупликацией по имени считывателя.
+        /// Удачное чтение заменяет прежнюю неудачную запись того же считывателя — на его месте,
+        /// чтобы порядок не прыгал; неудачное поверх неудачной не кладётся, иначе один носитель
+        /// занял бы в списке две строки. Считыватель без имени дедуплицировать нечем — такой
+        /// токен просто добавляется.
+        ///
+        /// Возвращает <c>false</c>, если запись отброшена. Чистая функция: покрыта тестами.
+        /// </summary>
+        internal static bool Place(List<Pkcs11TokenInfo> result, Dictionary<string, (int Index, bool Ok)> seen,
+                                   Pkcs11TokenInfo info, bool ok)
+        {
+            if (string.IsNullOrEmpty(info.Reader))
+            {
+                result.Add(info);
+                return true;
+            }
+
+            if (seen.TryGetValue(info.Reader, out var prev))
+            {
+                if (prev.Ok || !ok) return false;
+                result[prev.Index] = info;
+                seen[info.Reader] = (prev.Index, true);
+                return true;
+            }
+
+            seen[info.Reader] = (result.Count, ok);
+            result.Add(info);
+            return true;
+        }
+
         /// <summary>Перечислить токены одной библиотеки PKCS#11, добавляя их в <paramref name="result"/>.</summary>
         private static void EnumerateLibrary(string lib, bool readContainers, List<Pkcs11TokenInfo> result,
-                                             ISet<string> seenReaders, Action<string> log, CancellationToken cancel)
+                                             Dictionary<string, (int Index, bool Ok)> seen,
+                                             Action<string> log, CancellationToken cancel)
         {
             Pkcs11InteropFactories factories;
             IPkcs11Library p11;
@@ -351,11 +393,15 @@ namespace CryptoProExport
                     // прервать нельзя, поэтому текущий шаг дочитывается (как в RutokenExporter).
                     cancel.ThrowIfCancellationRequested();
                     var info = new Pkcs11TokenInfo();
+                    try { info.Reader = slot.GetSlotInfo().SlotDescription?.Trim(); } catch { }
+
+                    // Считыватель, уже прочитанный удачно, второй библиотеке не отдаём: незачем
+                    // дёргать драйвер и незачем показывать один носитель дважды.
+                    if (AlreadyRead(seen, info.Reader)) continue;
+
+                    bool ok = false;
                     try
                     {
-                        try { info.Reader = slot.GetSlotInfo().SlotDescription?.Trim(); } catch { }
-                        if (!string.IsNullOrEmpty(info.Reader) && !seenReaders.Add(info.Reader)) continue;
-
                         ITokenInfo ti = slot.GetTokenInfo();
                         info.Label = ti.Label?.Trim();
                         info.Model = ti.Model?.Trim();
@@ -372,13 +418,15 @@ namespace CryptoProExport
 
                         if (readContainers)
                             ReadContainers(slot, factories, info, log, cancel);
+                        ok = true;
                     }
                     catch (OperationCanceledException) { throw; }   // отмена — не ошибка токена
                     catch (Exception e)
                     {
                         log(Strings.Format("pkcs11.tokenfail", info.Reader ?? "?", e.Message));
                     }
-                    result.Add(info);
+
+                    Place(result, seen, info, ok);
                 }
             }
             finally
