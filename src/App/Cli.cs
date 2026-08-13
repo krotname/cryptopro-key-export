@@ -33,6 +33,7 @@ namespace CryptoProExport.App
             ("topfx <container> <out.pfx> [pass]",   "cli.usage.topfx"),
             ("extractkey <folder> <out.pem> [pass]", "cli.usage.extractkey"),
             ("extractpfx <folder> <out.pfx> <pfx-pass> [pass] [cert.cer]", "cli.usage.extractpfx"),
+            ("liteexport <reader> <outDir> [pin]",   "cli.usage.liteexport"),
             ("full <destDir> [cert.cer] [pin]",      "cli.usage.full"),
             ("help",                                 "cli.usage.help"),
             ("--lang <xx>",                          "cli.usage.lang"),
@@ -219,6 +220,45 @@ namespace CryptoProExport.App
                         Out(Strings.Format("cli.extractpfx.ok", args[2]));
                         Out("  " + Strings.Get("log.extractpfx.note"));
                         return 0;
+                    }
+                    case "liteexport":
+                    {
+                        // Снять контейнер КриптоПро с Рутокен Lite по APDU (мимо CSP, rtCOMLite
+                        // Lite не видит) и восстановить закрытый ключ офлайн-разбором §3.1.
+                        // PIN не подбираем: если не задан, берём заводской ТОЛЬКО когда PKCS#11
+                        // подтверждает дефолтность (счётчик при этом не тратится).
+                        if (args.Length < 3) { Usage(); return 1; }
+                        string reader = args[1], outDir = args[2];
+                        string pin = args.Length > 3 ? args[3] : null;
+                        var lite = new RutokenLiteApdu { Log = Out };
+                        var containers = lite.ListContainers(reader);
+                        if (containers.Count == 0) { Err(Strings.Format("err.lite.none", reader)); return 2; }
+                        foreach (var c in containers) Out($"  [{c.DfIndex:X2}] {c.Name}");
+                        if (string.IsNullOrEmpty(pin))
+                        {
+                            var tok = Pkcs11Token.Enumerate(readContainers: false, log: Out)
+                                .Find(t => string.Equals(t.Reader, reader, StringComparison.OrdinalIgnoreCase));
+                            if (tok != null && tok.PinDefault && !tok.PinLocked) pin = "12345678";
+                            else { Err(Strings.Format("err.lite.pin", "—")); return 2; }
+                        }
+                        int done = 0;
+                        foreach (var c in containers)
+                        {
+                            // Имя контейнера может нести ФИО — в путь на диске не кладём, только индекс.
+                            string dir = Path.Combine(outDir, $"lite_{c.DfIndex:X2}");
+                            lite.ReadContainer(reader, c.DfIndex, pin, dir);
+                            Out(Strings.Format("cli.done", dir));
+                            try
+                            {
+                                var r = ContainerKeyExtractor.Extract(dir);
+                                File.WriteAllText(Path.Combine(dir, "private.pem"), GostKeyExport.ToPkcs8Pem(r));
+                                Out(Strings.Format("cli.extractkey.ok", Path.Combine(dir, "private.pem")));
+                                Out("  " + Strings.Format("cli.extractkey.pub", r.CurveOid, Convert.ToHexString(r.PublicX)));
+                                done++;
+                            }
+                            catch (ContainerKeyException ex) { Err(Strings.Format("cli.error", ex.Message)); }
+                        }
+                        return done > 0 ? 0 : 2;
                     }
                     case "full":
                     {

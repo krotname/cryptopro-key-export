@@ -318,3 +318,6 @@ err.extract.corrupt = محفظه خراب است یا شناخته نشد: {0}
 err.pfx.nocert = نه در محفظه گواهی هست و نه در آرگومان‌ها — یک فایل ‎.cer معرفی کنید
 err.pfx.badcert = فایل گواهی به‌عنوان X.509 با کلید GOST‏ ۲۵۶ بیتی خوانده نشد
 err.pfx.certmismatch = گواهی متعلق به کلید دیگری است: کلیدهای عمومی یکسان نیستند
+cli.usage.liteexport = خواندن محفظه‌ی Rutoken Lite از طریق APDU و بازیابی کلید (بدون CSP)
+err.lite.none = هیچ محفظه‌ی CryptoPro روی {0} از طریق APDU یافت نشد
+err.lite.pin = کارت PIN را رد کرد ({0})؛ PIN را بررسی کنید، حدس زدن مجاز نیست

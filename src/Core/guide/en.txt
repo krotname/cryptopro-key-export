@@ -103,6 +103,7 @@ interface languages fall back to the English text.
   extractkey <folder> <file.pem> [pw] extract the key to PKCS#8/PEM (no CSP)
   extractpfx <folder> <file.pfx> <pw> build a PKCS#12 for OpenSSL;
                                       then [container-pw] [cert.cer]
+  liteexport <reader> <dir> [pin]     read a Lite container by APDU + recover
   full <folder> [cert.cer] [pin]      off the token + all the rest
   help                                this manual
   --lang <code>                       interface language

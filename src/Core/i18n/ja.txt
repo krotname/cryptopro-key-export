@@ -318,3 +318,6 @@ err.extract.corrupt = コンテナが破損しているか認識できません:
 err.pfx.nocert = コンテナーにも引数にも証明書がありません — .cer ファイルを指定してください
 err.pfx.badcert = 証明書ファイルを 256 ビット GOST 鍵の X.509 として読めませんでした
 err.pfx.certmismatch = 証明書は別の鍵のものです: 公開鍵が一致しません
+cli.usage.liteexport = Rutoken Lite コンテナを APDU で読み取り、鍵を復元する（CSP 不要）
+err.lite.none = {0} で CryptoPro コンテナが APDU 経由で見つかりません
+err.lite.pin = カードが PIN を拒否しました（{0}）。PIN を確認してください。推測は禁止です

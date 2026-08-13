@@ -103,6 +103,7 @@ CryptoPro Key Export — руководство
   extractkey <папка> <файл.pem> [пар] извлечь ключ в PKCS#8/PEM (без CSP)
   extractpfx <папка> <файл.pfx> <пар> собрать PKCS#12 для OpenSSL;
                                       дальше [пар-контейнера] [cert.cer]
+  liteexport <ридер> <папка> [pin]     снять контейнер Lite по APDU + разбор
   full <папка> [cert.cer] [pin]       снять с токена + всё остальное
   help                                это руководство
   --lang <код>                        язык интерфейса и сообщений

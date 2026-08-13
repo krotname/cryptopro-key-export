@@ -318,3 +318,6 @@ err.extract.corrupt = کنٹینر خراب ہے یا شناخت نہیں ہوا
 err.pfx.nocert = نہ کنٹینر میں سرٹیفکیٹ ہے نہ دلائل میں — ‎.cer فائل بتائیں
 err.pfx.badcert = سرٹیفکیٹ فائل ‎256-بٹ GOST کلید والے X.509 کے طور پر نہیں پڑھی جا سکی
 err.pfx.certmismatch = سرٹیفکیٹ کسی اور کلید کا ہے: عوامی کلیدیں مختلف ہیں
+cli.usage.liteexport = APDU کے ذریعے Rutoken Lite کنٹینر پڑھیں اور کلید بازیافت کریں (CSP کے بغیر)
+err.lite.none = {0} پر APDU کے ذریعے کوئی CryptoPro کنٹینر نہیں ملا
+err.lite.pin = کارڈ نے PIN مسترد کر دیا ({0})؛ PIN چیک کریں، اندازہ لگانا منع ہے

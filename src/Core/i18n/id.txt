@@ -318,3 +318,6 @@ err.extract.corrupt = Kontainer rusak atau tidak dikenali: {0}
 err.pfx.nocert = Tidak ada sertifikat di kontainer maupun di argumen — tunjuk berkas .cer
 err.pfx.badcert = Berkas sertifikat tidak terbaca sebagai X.509 dengan kunci GOST 256 bit
 err.pfx.certmismatch = Sertifikat milik kunci lain: kunci publiknya berbeda
+cli.usage.liteexport = baca kontainer Rutoken Lite melalui APDU dan pulihkan kunci (tanpa CSP)
+err.lite.none = tidak ada kontainer CryptoPro ditemukan di {0} melalui APDU
+err.lite.pin = kartu menolak PIN ({0}); periksa PIN, menebak tidak diizinkan
