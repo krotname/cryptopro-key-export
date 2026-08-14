@@ -74,30 +74,82 @@ namespace CryptoProExport
         public string ReadContainer(string reader, int dfIndex, string pin, string outDir)
         {
             if (string.IsNullOrEmpty(pin)) throw new LiteApduException(Strings.Format("err.lite.pin", "—"));
-            Directory.CreateDirectory(outDir);
-            // Убираем возможные *.key от прошлого экспорта: у другого контейнера может не быть пары
-            // подписи, и старые masks2/primary2.key дали бы «сборный» из двух ключей контейнер.
-            foreach (var (_, stale) in Files)
-            {
-                string p = Path.Combine(outDir, stale);
-                if (File.Exists(p)) File.Delete(p);
-            }
+            if (dfIndex <= 0 || dfIndex > byte.MaxValue)
+                throw new ArgumentOutOfRangeException(nameof(dfIndex));
+
+            // До успешной авторизации и полного чтения карту с диском не смешиваем: прежняя
+            // реализация удаляла старые *.key ещё до VERIFY PIN, и опечатка в PIN уничтожала
+            // уже существующий годный бэкап.
+            var blobs = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+            string name = null;
             using (var s = ApduSession.Open(reader))
             {
                 if (!s.SelectPath(dfIndex, 0))
                     throw new LiteApduException(Strings.Format("err.lite.none", reader));
                 s.VerifyPin(pin);
-                string name = null;
                 foreach (var (suffix, file) in Files)
                 {
                     byte[] blob = s.TryReadEf(dfIndex, suffix);
                     if (blob == null) continue;                  // пары подписи может не быть
                     blob = TrimDer(blob);                        // на карте EF добит FF до размера файла
-                    File.WriteAllBytes(Path.Combine(outDir, file), blob);
+                    blobs[file] = blob;
                     if (suffix == 0x06) name = ParseName(blob);
                     Say($"  {file} ({blob.Length})");   // только данные — переводить нечего
                 }
-                return name;
+            }
+            SaveFiles(outDir, blobs);
+            return name;
+        }
+
+        /// <summary>
+        /// Записать уже полностью прочитанный набор файлов. Обязательная четвёрка должна быть
+        /// целой, а необязательная пара подписи — либо целиком, либо отсутствовать. Старые файлы
+        /// удаляются только после успешной подготовки новых временных файлов.
+        /// </summary>
+        internal static void SaveFiles(string outDir, IReadOnlyDictionary<string, byte[]> blobs)
+        {
+            if (outDir == null) throw new ArgumentNullException(nameof(outDir));
+            foreach (string required in new[] { "masks.key", "primary.key", "header.key", "name.key" })
+                if (blobs == null || !blobs.ContainsKey(required) || blobs[required] == null)
+                    throw new LiteApduException(Strings.Format("err.extract.nofile", required, outDir));
+
+            bool hasMasks2 = blobs.ContainsKey("masks2.key") && blobs["masks2.key"] != null;
+            bool hasPrimary2 = blobs.ContainsKey("primary2.key") && blobs["primary2.key"] != null;
+            if (hasMasks2 != hasPrimary2)
+            {
+                string missing = hasMasks2 ? "primary2.key" : "masks2.key";
+                throw new LiteApduException(Strings.Format("err.extract.nofile", missing, outDir));
+            }
+
+            Directory.CreateDirectory(outDir);
+            var temporary = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                foreach (var (_, file) in Files)
+                {
+                    if (!blobs.TryGetValue(file, out byte[] bytes) || bytes == null) continue;
+                    string target = Path.Combine(outDir, file);
+                    string tmp = target + "." + Guid.NewGuid().ToString("N") + ".tmp";
+                    File.WriteAllBytes(tmp, bytes);
+                    temporary[target] = tmp;
+                }
+
+                foreach (var pair in temporary)
+                    File.Move(pair.Value, pair.Key, overwrite: true);
+
+                // У контейнера без ключа подписи не должны остаться файлы от прошлого экспорта.
+                foreach (var (_, file) in Files)
+                    if (!blobs.ContainsKey(file))
+                    {
+                        string stale = Path.Combine(outDir, file);
+                        if (File.Exists(stale)) File.Delete(stale);
+                    }
+            }
+            finally
+            {
+                foreach (string tmp in temporary.Values)
+                    if (File.Exists(tmp))
+                        try { File.Delete(tmp); } catch (IOException) { }
             }
         }
 
@@ -130,6 +182,7 @@ namespace CryptoProExport
         /// <summary>FCP: тег 0x80 (2 байта) = число байт содержимого EF. -1 если нет.</summary>
         internal static int FcpSize(byte[] fcp)
         {
+            if (fcp == null) return -1;
             int i = 0;
             if (fcp.Length >= 2 && fcp[0] == 0x62) i = 2;       // войти в шаблон FCP
             while (i + 2 <= fcp.Length)
@@ -222,13 +275,12 @@ namespace CryptoProExport
                 {
                     int chunk = Math.Min(255, size - got);
                     var r = Transmit(new byte[] { 0x00, 0xB0, (byte)(got >> 8), (byte)got, (byte)chunk });
-                    if (!Ok(r) || r.Length - 2 == 0) break;
-                    int n = r.Length - 2;
-                    Array.Copy(r, 0, buf, got, Math.Min(n, size - got));
+                    if (!Ok(r)) throw new LiteApduException("READ BINARY: " + Status(r));
+                    int n = Math.Min(r.Length - 2, size - got);
+                    if (n <= 0) throw new LiteApduException("READ BINARY: empty response");
+                    Array.Copy(r, 0, buf, got, n);
                     got += n;
-                    if (n < chunk) break;
                 }
-                if (got < size) { var t = new byte[got]; Array.Copy(buf, t, got); return t; }
                 return buf;
             }
 
@@ -244,13 +296,22 @@ namespace CryptoProExport
             public void VerifyPin(string pin)
             {
                 Transmit(new byte[] { 0x80, 0x40, 0x00, 0x00 });     // штатная преамбула из трассы CSP
+                if (pin.Length > byte.MaxValue)
+                    throw new LiteApduException(Strings.Format("err.lite.pin", "invalid length"));
+                foreach (char c in pin)
+                    if (c > 0x7F)
+                        throw new LiteApduException(Strings.Format("err.lite.pin", "non-ASCII"));
                 var bytes = System.Text.Encoding.ASCII.GetBytes(pin);
                 var apdu = new byte[5 + bytes.Length];
                 apdu[0] = 0x00; apdu[1] = 0x20; apdu[2] = 0x00; apdu[3] = 0x02; apdu[4] = (byte)bytes.Length;
                 Array.Copy(bytes, 0, apdu, 5, bytes.Length);
                 var r = Transmit(apdu);
-                if (!Ok(r)) throw new LiteApduException(Strings.Format("err.lite.pin", Hex((r[r.Length - 2] << 8) | r[r.Length - 1])));
+                if (!Ok(r)) throw new LiteApduException(Strings.Format("err.lite.pin", Status(r)));
             }
+
+            private static string Status(byte[] response) => response != null && response.Length >= 2
+                ? Hex((response[response.Length - 2] << 8) | response[response.Length - 1])
+                : "invalid response";
 
             private static string Hex(int code) => "0x" + ((uint)code).ToString("X8");
 

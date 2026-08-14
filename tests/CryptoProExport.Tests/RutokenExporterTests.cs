@@ -95,5 +95,43 @@ namespace CryptoProExport.Tests
             Assert.Equal("явное имя", Path.GetFileName(folder));
             Assert.True(File.Exists(Path.Combine(folder, "name.key")));
         }
+
+        [Fact]
+        public void SaveTo_DuplicateNameCreatesIndependentFolder()
+        {
+            var first = new RutokenContainer { ContainerName = "одинаковое имя" };
+            first.Files["primary.key"] = new byte[] { 1 };
+            var second = new RutokenContainer { ContainerName = "одинаковое имя" };
+            second.Files["primary.key"] = new byte[] { 2 };
+
+            string a = first.SaveTo(_root);
+            string b = second.SaveTo(_root);
+
+            Assert.NotEqual(a, b);
+            Assert.Equal(new byte[] { 1 }, File.ReadAllBytes(Path.Combine(a, "primary.key")));
+            Assert.Equal(new byte[] { 2 }, File.ReadAllBytes(Path.Combine(b, "primary.key")));
+        }
+
+        [Fact]
+        public void SaveTo_RejectsFileNameThatEscapesStagingFolder()
+        {
+            var container = new RutokenContainer { ContainerName = "hostile" };
+            container.Files[@"..\outside.key"] = new byte[] { 1 };
+
+            Assert.Throws<IOException>(() => container.SaveTo(_root));
+            Assert.False(File.Exists(Path.Combine(_root, "outside.key")));
+        }
+
+        [Fact]
+        public void SaveTo_RejectsUnknownKeyFileAndMissingData()
+        {
+            var unknown = new RutokenContainer { ContainerName = "hostile" };
+            unknown.Files["important.key"] = new byte[] { 1 };
+            Assert.Throws<IOException>(() => unknown.SaveTo(_root));
+
+            var empty = new RutokenContainer { ContainerName = "empty" };
+            empty.Files["name.key"] = null;
+            Assert.Throws<IOException>(() => empty.SaveTo(_root));
+        }
     }
 }

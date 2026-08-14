@@ -191,11 +191,18 @@ namespace CryptoProExport
         public static string UniqueCertPath(string outDir, string containerName, string tokenSerial,
                                             ISet<string> taken)
         {
+            taken ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             string name = CertFileName(containerName, tokenSerial);
             string stem = Path.GetFileNameWithoutExtension(name);
             string path = Path.Combine(outDir ?? string.Empty, name);
-            for (int n = 2; !taken.Add(path); n++)
+            for (int n = 2; ; n++)
+            {
+                // Коллизии бывают не только внутри текущего перечисления: повторный запуск
+                // раньше молча затирал сертификат, уже лежащий в папке с прошлого сеанса.
+                bool reserved = taken.Add(path);
+                if (reserved && !File.Exists(path)) break;
                 path = Path.Combine(outDir ?? string.Empty, $"{stem}({n}).cer");
+            }
             return path;
         }
 

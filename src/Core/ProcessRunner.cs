@@ -80,6 +80,13 @@ namespace CryptoProExport
             if (!p.WaitForExit(timeoutMs))
             {
                 try { p.Kill(true); } catch { }
+                // Kill только посылает завершение. Дожидаемся фактического выхода и закрытия
+                // stdout/stderr, чтобы вызывающий не продолжил работу с контейнером, пока
+                // просроченная утилита всё ещё дописывает его в фоне.
+                try { p.WaitForExit(5000); } catch (InvalidOperationException) { }
+                Task.WaitAll(new Task[] { outTask, errTask }, 3000);
+                if (Volatile.Read(ref killedByCancel.Value))
+                    throw new OperationCanceledException(Strings.Format("tool.cancelled", Path.GetFileName(exe)), cancel);
                 return new ToolResult
                 {
                     Success = false,

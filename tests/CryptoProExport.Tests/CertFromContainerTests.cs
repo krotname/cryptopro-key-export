@@ -31,5 +31,18 @@ namespace CryptoProExport.Tests
                 try { Directory.Delete(dir, recursive: true); } catch (IOException) { }
             }
         }
+
+        [Fact]
+        public void AllFoundKeysExportable_RejectsMixedContainer()
+        {
+            var exchange = new CertFromContainer.ExportCheck { KeyFound = true, Exportable = true };
+            var signature = new CertFromContainer.ExportCheck { KeyFound = true, Exportable = false };
+
+            Assert.False(CertFromContainer.AllFoundKeysExportable(exchange, signature));
+            Assert.True(CertFromContainer.AllFoundKeysExportable(exchange,
+                new CertFromContainer.ExportCheck { KeyFound = false }));
+            Assert.False(CertFromContainer.AllFoundKeysExportable(
+                new CertFromContainer.ExportCheck { KeyFound = false }));
+        }
     }
 }

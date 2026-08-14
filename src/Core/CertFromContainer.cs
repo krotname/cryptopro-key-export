@@ -153,6 +153,24 @@ namespace CryptoProExport
         }
 
         /// <summary>
+        /// Все реально присутствующие ключи контейнера экспортируемы. Отсутствующий тип ключа
+        /// не считается ошибкой, но хотя бы один ключ должен быть найден. Нужна агрегированная
+        /// проверка: контейнер с экспортируемым ключом обмена и заблокированным ключом подписи
+        /// нельзя считать полностью готовым к резервному копированию.
+        /// </summary>
+        public static bool AllFoundKeysExportable(params ExportCheck[] checks)
+        {
+            bool any = false;
+            foreach (var check in checks ?? Array.Empty<ExportCheck>())
+            {
+                if (check == null || !check.KeyFound) continue;
+                any = true;
+                if (check.Error != 0 || !check.Exportable) return false;
+            }
+            return any;
+        }
+
+        /// <summary>
         /// Проверить, снят ли запрет на экспорт закрытого ключа: читает права ключа
         /// (KP_PERMISSIONS) и смотрит флаг CRYPT_EXPORT. Сам ключ при этом не выгружается.
         ///

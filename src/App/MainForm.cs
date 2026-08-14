@@ -39,6 +39,13 @@ namespace CryptoProExport.App
         private CancellationTokenSource _cancellation;
         private bool _busy;
 
+        private sealed class TokenCertificateSelection
+        {
+            public string Name;
+            public string Serial;
+            public byte[] Certificate;
+        }
+
         public MainForm()
         {
             BuildUi();
@@ -407,7 +414,13 @@ namespace CryptoProExport.App
                     AddRow(Strings.Format("log.container.token", $"{t.Reader} [{Pkcs11Token.KindName(t.Kind)}]"),
                            c.Name ?? Strings.Get("log.container.unnamed"),
                            "PKCS#11 · " + Strings.Get(c.CertificateOnly ? "common.certonly"
-                                                      : c.Certificate != null ? "common.present" : "common.none"));
+                                                      : c.Certificate != null ? "common.present" : "common.none"),
+                           new TokenCertificateSelection
+                           {
+                               Name = c.Name,
+                               Serial = t.Serial,
+                               Certificate = c.Certificate,
+                           });
 
             cancel.ThrowIfCancellationRequested();
             try
@@ -444,37 +457,30 @@ namespace CryptoProExport.App
             string destRoot = TextOf(_txtDest).Trim();
             if (string.IsNullOrEmpty(destRoot)) { Log(Strings.Get("log.need.dest")); return; }
             string dest = Path.Combine(destRoot, "certs_" + Sanitize(container));
+
+            // Для строки PKCS#11 сохраняем именно сертификат выбранного токена. Поиск заново
+            // только по метке раньше брал первый попавшийся токен с тем же именем контейнера.
+            var tokenSelection = SelectedTokenCertificate();
+            if (tokenSelection != null)
+            {
+                if (tokenSelection.Certificate == null)
+                {
+                    Log(Strings.Get("log.cert.fail"));
+                    return;
+                }
+                Directory.CreateDirectory(dest);
+                string path = Pkcs11Token.UniqueCertPath(dest, tokenSelection.Name,
+                    tokenSelection.Serial, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+                File.WriteAllBytes(path, tokenSelection.Certificate);
+                Log(Strings.Format("cli.token.cert.saved", path));
+                return;
+            }
+
             var (ex, sg) = CertFromContainer.SaveCerts(container, dest);
             Log(Strings.Format("log.cert.exchange", ex ?? Strings.Get("common.none")));
             Log(Strings.Format("log.cert.sign", sg ?? Strings.Get("common.none")));
             if (ex == null && sg == null)
-            {
-                // CSP сертификат не отдал (нет провайдера или контейнер только на токене) —
-                // пробуем взять его прямо с токена по PKCS#11, без CSP (Рутокен ЭЦП/Lite).
-                string fromToken = SaveCertFromToken(container, dest);
-                if (fromToken != null)
-                    Log(Strings.Format("cli.token.cert.saved", fromToken));
-                else
-                    Log(Strings.Get("log.cert.fail"));
-            }
-        }
-
-        /// <summary>
-        /// Сохранить сертификат выбранного контейнера прямо с токена (PKCS#11, без CSP).
-        /// Возвращает путь к .cer или null, если такого контейнера с сертификатом на токенах нет.
-        /// </summary>
-        private static string SaveCertFromToken(string container, string destDir)
-        {
-            foreach (var t in Pkcs11Token.Enumerate(readContainers: true))
-                foreach (var c in t.Containers)
-                    if (c.Certificate != null && string.Equals(c.Name, container, StringComparison.Ordinal))
-                    {
-                        Directory.CreateDirectory(destDir);
-                        string path = Path.Combine(destDir, Sanitize(container) + ".cer");
-                        File.WriteAllBytes(path, c.Certificate);
-                        return path;
-                    }
-            return null;
+                Log(Strings.Get("log.cert.fail"));
         }
 
         private void DoFull(CancellationToken cancel)
@@ -485,8 +491,9 @@ namespace CryptoProExport.App
             if (confirm != DialogResult.OK) { Log(Strings.Get("log.cancelled.user")); return; }
 
             var pipe = new ExportPipeline(NullIfEmpty(TextOf(_txtP12))) { Log = Log, Cancel = cancel };
-            pipe.ExportAndMakeExportable(dest, userPin: NullIfEmpty(TextOf(_txtPin)));
-            Log(Strings.Get("log.full.done"));
+            var result = pipe.ExportAndMakeExportable(dest, userPin: NullIfEmpty(TextOf(_txtPin)));
+            if (result.AllSucceeded) Log(Strings.Get("log.full.done"));
+            else Log(Strings.Format("log.exported", result.Exported));
             RefreshList(cancel);   // из рабочего потока: внутри всё, что трогает UI, идёт через Invoke
         }
 
@@ -752,10 +759,10 @@ namespace CryptoProExport.App
             _status.Text = text;
         }
 
-        private void AddRow(string where, string name, string details)
+        private void AddRow(string where, string name, string details, object tag = null)
         {
-            if (InvokeRequired) { BeginInvoke(new Action(() => AddRow(where, name, details))); return; }
-            _lv.Items.Add(new ListViewItem(new[] { where, name, details }));
+            if (InvokeRequired) { BeginInvoke(new Action(() => AddRow(where, name, details, tag))); return; }
+            _lv.Items.Add(new ListViewItem(new[] { where, name, details }) { Tag = tag });
         }
 
         /// <summary>
@@ -774,6 +781,15 @@ namespace CryptoProExport.App
         {
             if (InvokeRequired) return (string)Invoke(new Func<string>(SelectedContainerName));
             return _lv.SelectedItems.Count > 0 ? _lv.SelectedItems[0].SubItems[1].Text : null;
+        }
+
+        private TokenCertificateSelection SelectedTokenCertificate()
+        {
+            if (InvokeRequired)
+                return (TokenCertificateSelection)Invoke(new Func<TokenCertificateSelection>(SelectedTokenCertificate));
+            return _lv.SelectedItems.Count > 0
+                ? _lv.SelectedItems[0].Tag as TokenCertificateSelection
+                : null;
         }
 
         private void Log(string msg)

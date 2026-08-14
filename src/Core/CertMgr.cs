@@ -87,7 +87,7 @@ namespace CryptoProExport
                 {
                     Success = false,
                     ExitCode = -3,
-                    Output = Strings.Format("err.key.locked", Strings.Get("btn.full"), CryptoErrors.Describe(check.Error)),
+                    Output = Strings.Format("err.key.locked", Strings.Get("btn.full"), check),
                 };
 
             string tempDir = null;

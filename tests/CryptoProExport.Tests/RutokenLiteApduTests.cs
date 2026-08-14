@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Xunit;
 
@@ -86,6 +88,55 @@ namespace CryptoProExport.Tests
             var lite = new RutokenLiteApdu();
             Assert.Throws<LiteApduException>(() =>
                 lite.ListContainers("no such reader 3E8F-nonexistent"));
+        }
+
+        [Fact]
+        public void SaveFiles_InvalidRead_DoesNotDestroyPreviousBackup()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "cpx-lite-save-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            string oldHeader = Path.Combine(dir, "header.key");
+            File.WriteAllBytes(oldHeader, new byte[] { 9, 9, 9 });
+            try
+            {
+                var incomplete = new Dictionary<string, byte[]>
+                {
+                    ["header.key"] = new byte[] { 1 },
+                    ["primary.key"] = new byte[] { 2 },
+                    ["masks.key"] = new byte[] { 3 },
+                    // name.key отсутствует: чтение карты не завершилось.
+                };
+
+                Assert.Throws<LiteApduException>(() => RutokenLiteApdu.SaveFiles(dir, incomplete));
+                Assert.Equal(new byte[] { 9, 9, 9 }, File.ReadAllBytes(oldHeader));
+            }
+            finally { Directory.Delete(dir, recursive: true); }
+        }
+
+        [Fact]
+        public void SaveFiles_RemovesStaleOptionalPairOnlyAfterCompleteRead()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "cpx-lite-save-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            File.WriteAllBytes(Path.Combine(dir, "masks2.key"), new byte[] { 8 });
+            File.WriteAllBytes(Path.Combine(dir, "primary2.key"), new byte[] { 8 });
+            try
+            {
+                var complete = new Dictionary<string, byte[]>
+                {
+                    ["name.key"] = new byte[] { 1 },
+                    ["header.key"] = new byte[] { 2 },
+                    ["primary.key"] = new byte[] { 3 },
+                    ["masks.key"] = new byte[] { 4 },
+                };
+
+                RutokenLiteApdu.SaveFiles(dir, complete);
+
+                Assert.Equal(new byte[] { 2 }, File.ReadAllBytes(Path.Combine(dir, "header.key")));
+                Assert.False(File.Exists(Path.Combine(dir, "masks2.key")));
+                Assert.False(File.Exists(Path.Combine(dir, "primary2.key")));
+            }
+            finally { Directory.Delete(dir, recursive: true); }
         }
     }
 }

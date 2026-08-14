@@ -55,6 +55,7 @@ namespace CryptoProExport
         /// <summary>Похожа ли папка на контейнер КриптоПро (есть обязательные файлы).</summary>
         public static bool LooksLikeContainer(string folder) =>
             Directory.Exists(folder)
+            && File.Exists(Path.Combine(folder, "name.key"))
             && File.Exists(Path.Combine(folder, "header.key"))
             && File.Exists(Path.Combine(folder, "primary.key"))
             && File.Exists(Path.Combine(folder, "masks.key"));
@@ -103,12 +104,12 @@ namespace CryptoProExport
                                 ?? Path.GetFileName(Path.GetFullPath(containerFolder));
             bool wantRename = !string.IsNullOrWhiteSpace(newName) && newName != sourceName;
 
-            string target = CopyInto(storeDir, wantRename ? newName : sourceName, containerFolder);
+            string target = CopyInto(storeDir, wantRename ? newName : sourceName, containerFolder,
+                                     wantRename ? newName : null);
             var result = new InstallResult { Folder = target, Name = sourceName };
 
             if (wantRename)
             {
-                File.WriteAllBytes(Path.Combine(target, "name.key"), NameKey.Build(newName));
                 if (!systemStore || IsVisibleToCsp(newName))
                 {
                     result.Name = newName;
@@ -132,17 +133,32 @@ namespace CryptoProExport
         }
 
         /// <summary>Скопировать файлы контейнера в свободную папку хранилища. Возвращает путь папки.</summary>
-        private static string CopyInto(string storeDir, string folderBase, string containerFolder)
+        private static string CopyInto(string storeDir, string folderBase, string containerFolder,
+                                       string nameOverride = null)
         {
             Directory.CreateDirectory(storeDir);
             string target = FreeFolderFor(storeDir, folderBase);
-            Directory.CreateDirectory(target);
-            foreach (string file in ContainerFiles)
+            string staging = Path.Combine(storeDir, ".cpx-install-" + Guid.NewGuid().ToString("N") + ".tmp");
+            Directory.CreateDirectory(staging);
+            try
             {
-                string src = Path.Combine(containerFolder, file);
-                if (File.Exists(src)) File.Copy(src, Path.Combine(target, file), overwrite: true);
+                foreach (string file in ContainerFiles)
+                {
+                    string src = Path.Combine(containerFolder, file);
+                    if (File.Exists(src)) File.Copy(src, Path.Combine(staging, file));
+                }
+                if (nameOverride != null)
+                    File.WriteAllBytes(Path.Combine(staging, "name.key"), NameKey.Build(nameOverride));
+                Directory.Move(staging, target);
+                return target;
             }
-            return target;
+            finally
+            {
+                // Ошибка копирования не должна оставлять в HDIMAGE частичный контейнер,
+                // который выглядит установленным по первым трём успешно записанным файлам.
+                if (Directory.Exists(staging))
+                    try { Directory.Delete(staging, recursive: true); } catch (IOException) { }
+            }
         }
 
         /// <summary>Имя контейнера из name.key в папке (null — файла нет или он не разобран).</summary>
@@ -167,14 +183,20 @@ namespace CryptoProExport
         {
             string full = Path.GetFullPath(folder);
             string store = Path.GetFullPath(storeDir ?? HdImageDir);
-            if (!full.StartsWith(store + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            string parent = Path.GetDirectoryName(full);
+            if (!string.Equals(parent, store, StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentException(Strings.Format("err.folder.outside", folder), nameof(folder));
             if (!LooksLikeContainer(full))
                 throw new ArgumentException(Strings.Format("err.folder.notlike", folder), nameof(folder));
 
+            string[] nested = Directory.GetDirectories(full);
+            if (nested.Length != 0)
+                throw new InvalidOperationException(Strings.Format("err.folder.extra", nested[0]));
+
+            var allowed = new HashSet<string>(ContainerFiles, StringComparer.OrdinalIgnoreCase);
             foreach (string f in Directory.GetFiles(full))
             {
-                if (!f.EndsWith(".key", StringComparison.OrdinalIgnoreCase))
+                if (!allowed.Contains(Path.GetFileName(f)))
                     throw new InvalidOperationException(Strings.Format("err.folder.extra", f));
             }
             Directory.Delete(full, recursive: true);
@@ -188,7 +210,7 @@ namespace CryptoProExport
             for (int i = 0; i < 1000; i++)
             {
                 string candidate = Path.Combine(storeDir, $"{baseName}.{i:000}");
-                if (!Directory.Exists(candidate)) return candidate;
+                if (!Directory.Exists(candidate) && !File.Exists(candidate)) return candidate;
             }
             throw new IOException(Strings.Format("err.store.full", storeDir));
         }

@@ -6,6 +6,14 @@ using System.Threading;
 
 namespace CryptoProExport
 {
+    /// <summary>Итог полного цикла: сколько контейнеров снято и сколько действительно исправлено.</summary>
+    public sealed class ExportPipelineResult
+    {
+        public int Exported { get; internal set; }
+        public int Completed { get; internal set; }
+        public bool AllSucceeded => Exported > 0 && Completed == Exported;
+    }
+
     /// <summary>
     /// Полная цепочка «неэкспортируемый ключ с Рутокена → экспортируемый файловый контейнер»:
     ///   1) RutokenExporter — снять контейнер(ы) с токена на диск (обход CSP через rtCOMLite);
@@ -29,25 +37,30 @@ namespace CryptoProExport
         public CancellationToken Cancel
         {
             get => _cancel;
-            set { _cancel = value; Exporter.Cancel = value; P12.Cancel = value; }
+            set { _cancel = value; Exporter.Cancel = value; if (P12 != null) P12.Cancel = value; }
         }
 
         private CancellationToken _cancel = CancellationToken.None;
 
         public ExportPipeline(string p12UtilityPath = null)
         {
-            string p12 = p12UtilityPath ?? P12Utility.Resolve()
-                ?? throw new FileNotFoundException(Strings.Get("err.p12.unavailable"));
             Exporter = new RutokenExporter();
-            P12 = new P12Utility(p12);
             Exporter.Log = m => Log("[rutoken] " + m);
-            P12.Log = m => Log("[p12utility] " + m);
+
+            // Простому `export` p12utility не нужен. Отсутствие утилиты проверяется только
+            // перед полным циклом, иначе сборка без embedded tools не могла бы хотя бы снять
+            // файловый контейнер с Рутокен S.
+            string p12 = p12UtilityPath ?? P12Utility.Resolve();
+            if (p12 != null)
+            {
+                P12 = new P12Utility(p12);
+                P12.Log = m => Log("[p12utility] " + m);
+            }
         }
 
         /// <summary>Снять все контейнеры со всех токенов в подпапки destParent. Возвращает прочитанные контейнеры и пути.</summary>
         public List<(RutokenContainer container, string folder)> ExportFromTokens(string destParent, string userPin = null)
         {
-            Directory.CreateDirectory(destParent);
             Exporter.UserPin = userPin;
             // Смарт-карточные Рутокены (ЭЦП, Lite) из обхода исключаются: файлов контейнера там нет,
             // а ReadBinary на ЭЦП 3.0 рушит процесс (см. RutokenExporter.ShouldWalk).
@@ -68,17 +81,21 @@ namespace CryptoProExport
         /// Полный проход: снять контейнеры с токенов и сделать ключи экспортируемыми.
         /// Сертификат берётся автоматически через CryptoAPI (по имени контейнера, пока токен вставлен);
         /// при неудаче — используются переданные certExchange/certSignature (.cer).
-        /// Возвращает число снятых контейнеров: ноль означает, что токена не было, и вызывающему
-        /// это надо отличать от успеха.
+        /// Возвращает отдельно число снятых контейнеров и число полностью исправленных: простой
+        /// факт чтения с токена ещё не означает успех, если сертификат не найден или p12utility
+        /// завершилась с ошибкой.
         /// </summary>
-        public int ExportAndMakeExportable(
+        public ExportPipelineResult ExportAndMakeExportable(
             string destParent, string certExchange = null, string certSignature = null,
             string userPin = null, string containerPassword = null)
         {
-            int processed = 0;
+            if (P12 == null)
+                throw new FileNotFoundException(Strings.Get("err.p12.unavailable"));
+
+            var result = new ExportPipelineResult();
             foreach (var (container, folder) in ExportFromTokens(destParent, userPin))
             {
-                processed++;
+                result.Exported++;
                 Cancel.ThrowIfCancellationRequested();
                 string ex = certExchange, sg = certSignature;
 
@@ -105,8 +122,9 @@ namespace CryptoProExport
                 Log(r.Success
                     ? Strings.Format("pipe.keyexport.ok", folder)
                     : Strings.Format("pipe.keyexport.fail", folder, r.Explain(), r.Output));
+                if (r.Success) result.Completed++;
             }
-            return processed;
+            return result;
         }
     }
 }

@@ -44,6 +44,12 @@ namespace CryptoProExport.Tests
             Directory.CreateDirectory(empty);
             Assert.False(ContainerStore.LooksLikeContainer(empty));
             Assert.False(ContainerStore.LooksLikeContainer(Path.Combine(_root, "нет такой папки")));
+
+            string noName = Path.Combine(_root, "without-name");
+            Directory.CreateDirectory(noName);
+            foreach (string f in new[] { "header.key", "primary.key", "masks.key" })
+                File.WriteAllBytes(Path.Combine(noName, f), new byte[] { 1 });
+            Assert.False(ContainerStore.LooksLikeContainer(noName));
         }
 
         [Fact]
@@ -142,6 +148,48 @@ namespace CryptoProExport.Tests
             File.WriteAllText(Path.Combine(installed.Folder, "важный.txt"), "не удалять");
             Assert.Throws<InvalidOperationException>(() => ContainerStore.Uninstall(installed.Folder, _store));
             Assert.True(Directory.Exists(installed.Folder));
+        }
+
+        [Fact]
+        public void Uninstall_RefusesForeignKeyFileAndSubdirectory()
+        {
+            var withKey = ContainerStore.Install(_source, "с чужим key", _store);
+            File.WriteAllText(Path.Combine(withKey.Folder, "important.key"), "не удалять");
+            Assert.Throws<InvalidOperationException>(() => ContainerStore.Uninstall(withKey.Folder, _store));
+            Assert.True(File.Exists(Path.Combine(withKey.Folder, "important.key")));
+
+            var withDir = ContainerStore.Install(_source, "с подпапкой", _store);
+            string nested = Path.Combine(withDir.Folder, "важное");
+            Directory.CreateDirectory(nested);
+            File.WriteAllText(Path.Combine(nested, "data.txt"), "не удалять");
+            Assert.Throws<InvalidOperationException>(() => ContainerStore.Uninstall(withDir.Folder, _store));
+            Assert.True(File.Exists(Path.Combine(nested, "data.txt")));
+        }
+
+        [Fact]
+        public void Uninstall_RefusesNestedContainerEvenInsideStore()
+        {
+            string parent = Path.Combine(_store, "ordinary-folder");
+            string nested = Path.Combine(parent, "container.000");
+            Directory.CreateDirectory(nested);
+            foreach (string file in new[] { "name.key", "header.key", "primary.key", "masks.key" })
+                File.WriteAllBytes(Path.Combine(nested, file), new byte[] { 1 });
+
+            Assert.Throws<ArgumentException>(() => ContainerStore.Uninstall(nested, _store));
+            Assert.True(Directory.Exists(nested));
+        }
+
+        [Fact]
+        public void Install_SkipsFolderNameOccupiedByFile()
+        {
+            Directory.CreateDirectory(_store);
+            string occupied = Path.Combine(_store, "occupied.000");
+            File.WriteAllText(occupied, "keep");
+
+            var installed = ContainerStore.Install(_source, "occupied", _store);
+
+            Assert.Equal("occupied.001", Path.GetFileName(installed.Folder));
+            Assert.Equal("keep", File.ReadAllText(occupied));
         }
 
         [Fact]

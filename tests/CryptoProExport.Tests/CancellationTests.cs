@@ -99,5 +99,24 @@ namespace CryptoProExport.Tests
             Assert.True(result.Success);
             Assert.Equal(0, result.ExitCode);
         }
+
+        [Fact]
+        public void ProcessRunner_TimeoutStopsProcessBeforeReturning()
+        {
+            string cmd = Path.Combine(Environment.SystemDirectory, "cmd.exe");
+            string marker = Path.Combine(Path.GetTempPath(), "cpx-timeout-" + Guid.NewGuid().ToString("N") + ".txt");
+            try
+            {
+                var result = ProcessRunner.Run(cmd,
+                    $"/c ping -n 3 127.0.0.1 >nul & echo late>\"{marker}\"",
+                    Environment.SystemDirectory, 100);
+
+                Assert.False(result.Success);
+                Assert.Equal(-1, result.ExitCode);
+                Thread.Sleep(2500);
+                Assert.False(File.Exists(marker), "процесс продолжил работу уже после возврата timeout");
+            }
+            finally { if (File.Exists(marker)) File.Delete(marker); }
+        }
     }
 }
