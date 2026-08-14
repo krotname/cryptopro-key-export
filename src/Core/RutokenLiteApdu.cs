@@ -131,79 +131,74 @@ namespace CryptoProExport
             string staging = Path.Combine(parent, "." + leaf + "." + nonce + ".tmp");
             string rollback = Path.Combine(parent, "." + leaf + "." + nonce + ".rollback");
             Directory.CreateDirectory(staging);
-            bool oldMoved = false;
-            bool newMoved = false;
+            Directory.CreateDirectory(rollback);
+            var existed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             try
             {
-                if (Directory.Exists(destination))
-                    CopyNonContainerEntries(destination, staging);
                 foreach (var (_, file) in Files)
                 {
                     if (!blobs.TryGetValue(file, out byte[] bytes) || bytes == null) continue;
                     File.WriteAllBytes(Path.Combine(staging, file), bytes);
                 }
 
-                // Каталог меняется целиком. Если старый контейнер нельзя удалить (например,
-                // один *.key удерживает антивирус), новый откатывается, а старый возвращается
-                // на исходное имя — смешанного набора файлов не остаётся.
-                if (Directory.Exists(destination))
+                Directory.CreateDirectory(destination);
+                foreach (var (_, file) in Files)
                 {
-                    Directory.Move(destination, rollback);
-                    oldMoved = true;
+                    string target = Path.Combine(destination, file);
+                    if (!File.Exists(target)) continue;
+                    File.Copy(target, Path.Combine(rollback, file));
+                    existed.Add(file);
                 }
-                Directory.Move(staging, destination);
-                newMoved = true;
-                if (oldMoved)
+
+                try
                 {
-                    Directory.Delete(rollback, recursive: true);
-                    oldMoved = false;
+                    foreach (var (_, file) in Files)
+                    {
+                        string prepared = Path.Combine(staging, file);
+                        string target = Path.Combine(destination, file);
+                        if (File.Exists(prepared)) OverwriteFile(prepared, target);
+                        else if (File.Exists(target)) File.Delete(target);
+                    }
                 }
-            }
-            catch
-            {
-                if (newMoved && Directory.Exists(destination))
+                catch (Exception commitError)
                 {
-                    try { Directory.Move(destination, staging); newMoved = false; }
-                    catch (IOException) { }
+                    var rollbackErrors = new List<Exception>();
+                    foreach (var (_, file) in Files)
+                    {
+                        try
+                        {
+                            string target = Path.Combine(destination, file);
+                            if (existed.Contains(file))
+                                OverwriteFile(Path.Combine(rollback, file), target);
+                            else if (File.Exists(target))
+                                File.Delete(target);
+                        }
+                        catch (Exception e) { rollbackErrors.Add(e); }
+                    }
+                    if (rollbackErrors.Count != 0)
+                    {
+                        rollbackErrors.Insert(0, commitError);
+                        throw new AggregateException(rollbackErrors);
+                    }
+                    throw;
                 }
-                if (oldMoved && !Directory.Exists(destination) && Directory.Exists(rollback))
-                {
-                    Directory.Move(rollback, destination);
-                    oldMoved = false;
-                }
-                throw;
             }
             finally
             {
                 if (Directory.Exists(staging))
                     try { Directory.Delete(staging, recursive: true); } catch (IOException) { }
+                if (Directory.Exists(rollback))
+                    try { Directory.Delete(rollback, recursive: true); } catch (IOException) { }
             }
         }
 
-        /// <summary>Сохранить сертификаты, извлечённые ключи и другие чужие файлы при swap.</summary>
-        private static void CopyNonContainerEntries(string source, string destination)
+        /// <summary>Перезаписать содержимое файла, сохранив ACL существующего файла.</summary>
+        private static void OverwriteFile(string source, string target)
         {
-            var containerFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var (_, file) in Files) containerFiles.Add(file);
-            CopyDirectory(source, destination, containerFiles, topLevel: true);
-        }
-
-        private static void CopyDirectory(string source, string destination,
-                                          ISet<string> containerFiles, bool topLevel)
-        {
-            foreach (string file in Directory.GetFiles(source))
-            {
-                if (topLevel && containerFiles.Contains(Path.GetFileName(file))) continue;
-                File.Copy(file, Path.Combine(destination, Path.GetFileName(file)));
-            }
-            foreach (string directory in Directory.GetDirectories(source))
-            {
-                if ((File.GetAttributes(directory) & FileAttributes.ReparsePoint) != 0)
-                    throw new IOException(Strings.Format("err.folder.extra", directory));
-                string child = Path.Combine(destination, Path.GetFileName(directory));
-                Directory.CreateDirectory(child);
-                CopyDirectory(directory, child, containerFiles, topLevel: false);
-            }
+            using var input = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var output = new FileStream(target, FileMode.Create, FileAccess.Write, FileShare.None);
+            input.CopyTo(output);
+            output.Flush(flushToDisk: true);
         }
 
         /// <summary>
