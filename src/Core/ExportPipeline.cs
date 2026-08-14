@@ -100,19 +100,29 @@ namespace CryptoProExport
                 string ex = certExchange, sg = certSignature;
 
                 // Авто-извлечение сертификата из контейнера (пока токен ещё вставлен)
-                if (ex == null && sg == null && !string.IsNullOrEmpty(container.ContainerName))
+                if ((ex == null || sg == null) && !string.IsNullOrEmpty(container.ContainerName))
                 {
                     try
                     {
                         var found = CertFromContainer.SaveCerts(container.ContainerName, folder);
-                        ex = found.exchange; sg = found.signature;
-                        if (ex != null || sg != null)
+                        ex ??= found.exchange;
+                        sg ??= found.signature;
+                        if (found.exchange != null || found.signature != null)
                             Log(Strings.Format("pipe.cert.found", container.ContainerName));
                     }
                     catch (Exception e) { Log(Strings.Format("pipe.cert.autofail", e.Message)); }
                 }
 
                 if (ex == null && sg == null)
+                {
+                    Log(Strings.Format("pipe.keyexport.skip", folder));
+                    continue;
+                }
+
+                // У шест-файлового контейнера два независимых ключа. p12utility успешно
+                // обработает только переданный сертификат и вернёт 0, даже если второй ключ
+                // останется закрытым. Такой частичный результат нельзя засчитывать как full.
+                if (!AllPresentKeysHandled(container, ex, sg))
                 {
                     Log(Strings.Format("pipe.keyexport.skip", folder));
                     continue;
@@ -125,6 +135,17 @@ namespace CryptoProExport
                 if (r.Success) result.Completed++;
             }
             return result;
+        }
+
+        internal static bool AllPresentKeysHandled(RutokenContainer container,
+                                                   string certExchange, string certSignature)
+        {
+            if (container == null) return false;
+            bool hasExchange = container.Files.ContainsKey("primary.key");
+            bool hasSignature = container.Files.ContainsKey("primary2.key");
+            return (hasExchange || hasSignature)
+                && (!hasExchange || !string.IsNullOrEmpty(certExchange))
+                && (!hasSignature || !string.IsNullOrEmpty(certSignature));
         }
     }
 }
