@@ -138,5 +138,58 @@ namespace CryptoProExport.Tests
             }
             finally { Directory.Delete(dir, recursive: true); }
         }
+
+        [Fact]
+        public void SaveFiles_LockedOldFileRollsBackWholeContainer()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "cpx-lite-save-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            foreach (string file in new[] { "name.key", "header.key", "primary.key", "masks.key" })
+                File.WriteAllBytes(Path.Combine(dir, file), new byte[] { 9 });
+            var replacement = new Dictionary<string, byte[]>
+            {
+                ["name.key"] = new byte[] { 1 },
+                ["header.key"] = new byte[] { 2 },
+                ["primary.key"] = new byte[] { 3 },
+                ["masks.key"] = new byte[] { 4 },
+            };
+
+            try
+            {
+                using (File.Open(Path.Combine(dir, "header.key"), FileMode.Open,
+                                 FileAccess.Read, FileShare.None))
+                    Assert.Throws<IOException>(() => RutokenLiteApdu.SaveFiles(dir, replacement));
+
+                foreach (string file in new[] { "name.key", "header.key", "primary.key", "masks.key" })
+                    Assert.Equal(new byte[] { 9 }, File.ReadAllBytes(Path.Combine(dir, file)));
+            }
+            finally { Directory.Delete(dir, recursive: true); }
+        }
+
+        [Fact]
+        public void SaveFiles_PreservesNonContainerOutputsDuringSwap()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "cpx-lite-save-" + Guid.NewGuid().ToString("N"));
+            string nested = Path.Combine(dir, "notes");
+            Directory.CreateDirectory(nested);
+            File.WriteAllText(Path.Combine(dir, "private.pem"), "secret");
+            File.WriteAllText(Path.Combine(nested, "readme.txt"), "keep");
+            var replacement = new Dictionary<string, byte[]>
+            {
+                ["name.key"] = new byte[] { 1 },
+                ["header.key"] = new byte[] { 2 },
+                ["primary.key"] = new byte[] { 3 },
+                ["masks.key"] = new byte[] { 4 },
+            };
+
+            try
+            {
+                RutokenLiteApdu.SaveFiles(dir, replacement);
+
+                Assert.Equal("secret", File.ReadAllText(Path.Combine(dir, "private.pem")));
+                Assert.Equal("keep", File.ReadAllText(Path.Combine(dir, "notes", "readme.txt")));
+            }
+            finally { Directory.Delete(dir, recursive: true); }
+        }
     }
 }

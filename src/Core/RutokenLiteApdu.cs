@@ -121,35 +121,88 @@ namespace CryptoProExport
                 throw new LiteApduException(Strings.Format("err.extract.nofile", missing, outDir));
             }
 
-            Directory.CreateDirectory(outDir);
-            var temporary = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            string destination = Path.GetFullPath(outDir).TrimEnd(
+                Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string parent = Path.GetDirectoryName(destination)
+                ?? throw new ArgumentException(Strings.Format("err.folder.notlike", outDir), nameof(outDir));
+            Directory.CreateDirectory(parent);
+            string leaf = Path.GetFileName(destination);
+            string nonce = Guid.NewGuid().ToString("N");
+            string staging = Path.Combine(parent, "." + leaf + "." + nonce + ".tmp");
+            string rollback = Path.Combine(parent, "." + leaf + "." + nonce + ".rollback");
+            Directory.CreateDirectory(staging);
+            bool oldMoved = false;
+            bool newMoved = false;
             try
             {
+                if (Directory.Exists(destination))
+                    CopyNonContainerEntries(destination, staging);
                 foreach (var (_, file) in Files)
                 {
                     if (!blobs.TryGetValue(file, out byte[] bytes) || bytes == null) continue;
-                    string target = Path.Combine(outDir, file);
-                    string tmp = target + "." + Guid.NewGuid().ToString("N") + ".tmp";
-                    File.WriteAllBytes(tmp, bytes);
-                    temporary[target] = tmp;
+                    File.WriteAllBytes(Path.Combine(staging, file), bytes);
                 }
 
-                foreach (var pair in temporary)
-                    File.Move(pair.Value, pair.Key, overwrite: true);
-
-                // У контейнера без ключа подписи не должны остаться файлы от прошлого экспорта.
-                foreach (var (_, file) in Files)
-                    if (!blobs.ContainsKey(file))
-                    {
-                        string stale = Path.Combine(outDir, file);
-                        if (File.Exists(stale)) File.Delete(stale);
-                    }
+                // Каталог меняется целиком. Если старый контейнер нельзя удалить (например,
+                // один *.key удерживает антивирус), новый откатывается, а старый возвращается
+                // на исходное имя — смешанного набора файлов не остаётся.
+                if (Directory.Exists(destination))
+                {
+                    Directory.Move(destination, rollback);
+                    oldMoved = true;
+                }
+                Directory.Move(staging, destination);
+                newMoved = true;
+                if (oldMoved)
+                {
+                    Directory.Delete(rollback, recursive: true);
+                    oldMoved = false;
+                }
+            }
+            catch
+            {
+                if (newMoved && Directory.Exists(destination))
+                {
+                    try { Directory.Move(destination, staging); newMoved = false; }
+                    catch (IOException) { }
+                }
+                if (oldMoved && !Directory.Exists(destination) && Directory.Exists(rollback))
+                {
+                    Directory.Move(rollback, destination);
+                    oldMoved = false;
+                }
+                throw;
             }
             finally
             {
-                foreach (string tmp in temporary.Values)
-                    if (File.Exists(tmp))
-                        try { File.Delete(tmp); } catch (IOException) { }
+                if (Directory.Exists(staging))
+                    try { Directory.Delete(staging, recursive: true); } catch (IOException) { }
+            }
+        }
+
+        /// <summary>Сохранить сертификаты, извлечённые ключи и другие чужие файлы при swap.</summary>
+        private static void CopyNonContainerEntries(string source, string destination)
+        {
+            var containerFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (_, file) in Files) containerFiles.Add(file);
+            CopyDirectory(source, destination, containerFiles, topLevel: true);
+        }
+
+        private static void CopyDirectory(string source, string destination,
+                                          ISet<string> containerFiles, bool topLevel)
+        {
+            foreach (string file in Directory.GetFiles(source))
+            {
+                if (topLevel && containerFiles.Contains(Path.GetFileName(file))) continue;
+                File.Copy(file, Path.Combine(destination, Path.GetFileName(file)));
+            }
+            foreach (string directory in Directory.GetDirectories(source))
+            {
+                if ((File.GetAttributes(directory) & FileAttributes.ReparsePoint) != 0)
+                    throw new IOException(Strings.Format("err.folder.extra", directory));
+                string child = Path.Combine(destination, Path.GetFileName(directory));
+                Directory.CreateDirectory(child);
+                CopyDirectory(directory, child, containerFiles, topLevel: false);
             }
         }
 
@@ -277,7 +330,8 @@ namespace CryptoProExport
                     var r = Transmit(new byte[] { 0x00, 0xB0, (byte)(got >> 8), (byte)got, (byte)chunk });
                     if (!Ok(r)) throw new LiteApduException("READ BINARY: " + Status(r));
                     int n = Math.Min(r.Length - 2, size - got);
-                    if (n <= 0) throw new LiteApduException("READ BINARY: empty response");
+                    if (n <= 0)
+                        throw new LiteApduException(Strings.Format("err.com.call", "READ BINARY", Hex(0)));
                     Array.Copy(r, 0, buf, got, n);
                     got += n;
                 }
@@ -297,10 +351,10 @@ namespace CryptoProExport
             {
                 Transmit(new byte[] { 0x80, 0x40, 0x00, 0x00 });     // штатная преамбула из трассы CSP
                 if (pin.Length > byte.MaxValue)
-                    throw new LiteApduException(Strings.Format("err.lite.pin", "invalid length"));
+                    throw new LiteApduException(Strings.Format("err.lite.pin", Hex(0x6700)));
                 foreach (char c in pin)
                     if (c > 0x7F)
-                        throw new LiteApduException(Strings.Format("err.lite.pin", "non-ASCII"));
+                        throw new LiteApduException(Strings.Format("err.lite.pin", Hex(0x6A80)));
                 var bytes = System.Text.Encoding.ASCII.GetBytes(pin);
                 var apdu = new byte[5 + bytes.Length];
                 apdu[0] = 0x00; apdu[1] = 0x20; apdu[2] = 0x00; apdu[3] = 0x02; apdu[4] = (byte)bytes.Length;
@@ -311,7 +365,7 @@ namespace CryptoProExport
 
             private static string Status(byte[] response) => response != null && response.Length >= 2
                 ? Hex((response[response.Length - 2] << 8) | response[response.Length - 1])
-                : "invalid response";
+                : Hex(0);
 
             private static string Hex(int code) => "0x" + ((uint)code).ToString("X8");
 

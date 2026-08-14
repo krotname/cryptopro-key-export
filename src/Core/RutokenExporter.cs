@@ -38,9 +38,9 @@ namespace CryptoProExport
                 {
                     if (string.IsNullOrWhiteSpace(kv.Key) ||
                         !allowed.Contains(kv.Key))
-                        throw new IOException("Unsafe container file name: " + kv.Key);
+                        throw new IOException(Strings.Format("err.folder.notlike", kv.Key));
                     if (kv.Value == null)
-                        throw new IOException("Container file has no data: " + kv.Key);
+                        throw new IOException(Strings.Format("err.extract.nofile", kv.Key, staging));
                     File.WriteAllBytes(Path.Combine(staging, kv.Key), kv.Value);
                 }
 
