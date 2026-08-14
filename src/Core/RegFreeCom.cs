@@ -169,7 +169,9 @@ namespace CryptoProExport
                         int code = exception.scode < 0 ? exception.scode : hr;
                         string detail = exception.bstrDescription;
                         if (string.IsNullOrWhiteSpace(detail))
-                            detail = $"0x{code:X8}" + (argumentError < args.Length ? $", arg {argumentError}" : string.Empty);
+                            detail = $"0x{code:X8}" + (argumentError < args.Length
+                                ? $", {ComArgumentDetail(argumentError)}"
+                                : string.Empty);
                         throw new InvalidOperationException(
                             Strings.Format("err.com.call", name, detail),
                             Marshal.GetExceptionForHR(code));
@@ -186,6 +188,9 @@ namespace CryptoProExport
                 }
             }
         }
+
+        internal static string ComArgumentDetail(uint index) =>
+            Strings.Format("err.com.argument", index);
 
         [DllImport("oleaut32.dll")]
         [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]

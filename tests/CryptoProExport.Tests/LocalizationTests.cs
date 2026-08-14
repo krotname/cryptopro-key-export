@@ -143,6 +143,15 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void ComArgumentDetail_UsesTheSelectedLanguage()
+        {
+            using (Strings.Scope("en"))
+                Assert.Equal("argument 2", RegFreeCom.ComArgumentDetail(2));
+            using (Strings.Scope("ru"))
+                Assert.Equal("аргумент 2", RegFreeCom.ComArgumentDetail(2));
+        }
+
+        [Fact]
         public void Scope_RestoresThePreviousLanguage()
         {
             string before = Strings.Current;

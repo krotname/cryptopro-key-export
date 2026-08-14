@@ -249,6 +249,7 @@ err.header.missing = В папке нет header.key
 err.cert.required = Нужен минимум один сертификат (--cert/--certsg). Экспортируйте .cer из хранилища «Личное» или из контейнера.
 err.com.notfound = COM-библиотека не найдена
 err.com.call = {0} вернул {1}
+err.com.argument = аргумент {0}
 err.arg.quote = В аргументе командной строки нельзя использовать двойную кавычку — уберите её из пароля или пути
 err.extract.nofile = В папке контейнера нет {0}: {1}
 err.extract.curve = Кривая {0} не поддерживается

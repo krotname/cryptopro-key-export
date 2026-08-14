@@ -197,6 +197,7 @@ err.header.missing = A pasta não tem header.key
 err.cert.required = É preciso pelo menos um certificado (--cert/--certsg). Exporte o .cer do arquivo «Pessoal» ou do contentor.
 err.com.notfound = Biblioteca COM não encontrada
 err.com.call = {0} devolveu {1}
+err.com.argument = argumento {0}
 err.arg.quote = Um argumento de linha de comando não pode conter aspas duplas — remova-as da senha ou do caminho
 
 # --- permissões da chave ---

@@ -197,6 +197,7 @@ err.header.missing = Le dossier ne contient pas header.key
 err.cert.required = Au moins un certificat est nécessaire (--cert/--certsg). Exportez le .cer depuis le magasin « Personnel » ou depuis le conteneur.
 err.com.notfound = Bibliothèque COM introuvable
 err.com.call = {0} a renvoyé {1}
+err.com.argument = argument {0}
 err.arg.quote = Un argument de ligne de commande ne peut pas contenir de guillemet double — retirez-le du mot de passe ou du chemin
 
 # --- droits de la clé ---
