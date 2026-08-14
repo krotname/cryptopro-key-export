@@ -184,7 +184,7 @@ err.container.nokey = El contenedor «{0}» no se ha encontrado o no tiene una c
 err.key.locked = La clave privada no es exportable: levante antes la prohibición («{0}»). {1}
 err.cert.extract = No se ha podido extraer el certificado del contenedor
 err.pfx.missing = certmgr ha informado de éxito, pero el archivo no se ha creado: {0}
-err.folder.notcontainer = En la carpeta no hay ningún contenedor (hacen falta header.key, primary.key, masks.key): {0}
+err.folder.notcontainer = En la carpeta no hay ningún contenedor (hacen falta header.key, name.key y al menos un par primary/masks completo): {0}
 err.folder.outside = La carpeta está fuera del almacén de CryptoPro: {0}
 err.folder.notlike = La carpeta no parece un contenedor: {0}
 err.folder.extra = En la carpeta del contenedor hay archivos ajenos, se cancela el borrado: {0}
@@ -197,6 +197,7 @@ err.header.missing = En la carpeta no hay header.key
 err.cert.required = Hace falta al menos un certificado (--cert/--certsg). Exporte el .cer desde el almacén «Personal» o desde el contenedor.
 err.com.notfound = Biblioteca COM no encontrada
 err.com.call = {0} ha devuelto {1}
+err.com.argument = argumento {0}
 err.arg.quote = Un argumento de línea de comandos no puede contener comillas dobles: quítelas de la contraseña o de la ruta
 
 # --- permisos de la clave ---

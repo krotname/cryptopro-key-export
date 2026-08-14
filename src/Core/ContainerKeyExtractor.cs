@@ -73,8 +73,20 @@ namespace CryptoProExport
         {
             if (containerDir == null) throw new ArgumentNullException(nameof(containerDir));
 
-            byte[] primaryRaw = ReadKeyFile(containerDir, "primary.key");
-            byte[] masksRaw = ReadKeyFile(containerDir, "masks.key");
+            bool hasPrimary = File.Exists(Path.Combine(containerDir, "primary.key"));
+            bool hasMasks = File.Exists(Path.Combine(containerDir, "masks.key"));
+            bool hasPrimary2 = File.Exists(Path.Combine(containerDir, "primary2.key"));
+            bool hasMasks2 = File.Exists(Path.Combine(containerDir, "masks2.key"));
+            if (hasPrimary != hasMasks)
+                _ = ReadKeyFile(containerDir, hasPrimary ? "masks.key" : "primary.key");
+            if (hasPrimary2 != hasMasks2)
+                _ = ReadKeyFile(containerDir, hasPrimary2 ? "masks2.key" : "primary2.key");
+
+            bool useExchange = hasPrimary || !hasPrimary2;
+            string primaryFile = useExchange ? "primary.key" : "primary2.key";
+            string masksFile = useExchange ? "masks.key" : "masks2.key";
+            byte[] primaryRaw = ReadKeyFile(containerDir, primaryFile);
+            byte[] masksRaw = ReadKeyFile(containerDir, masksFile);
             byte[] headerRaw = ReadKeyFile(containerDir, "header.key");
 
             byte[] primEnc = ParsePrimary(primaryRaw);

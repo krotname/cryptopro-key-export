@@ -184,7 +184,7 @@ err.container.nokey = कंटेनर «{0}» नहीं मिला य�
 err.key.locked = निजी कुंजी निर्यात योग्य नहीं — पहले रोक हटाएँ («{0}»)। {1}
 err.cert.extract = कंटेनर से प्रमाणपत्र नहीं निकाला जा सका
 err.pfx.missing = certmgr ने सफलता बताई, पर फ़ाइल बनी नहीं: {0}
-err.folder.notcontainer = फ़ोल्डर में कंटेनर नहीं है (header.key, primary.key, masks.key चाहिए): {0}
+err.folder.notcontainer = फ़ोल्डर में कंटेनर नहीं है (header.key, name.key और कम से कम एक पूरी primary/masks जोड़ी चाहिए): {0}
 err.folder.outside = फ़ोल्डर CryptoPro के भंडार से बाहर है: {0}
 err.folder.notlike = फ़ोल्डर कंटेनर जैसा नहीं लगता: {0}
 err.folder.extra = कंटेनर के फ़ोल्डर में बाहरी फ़ाइलें हैं, हटाना रद्द: {0}
@@ -197,6 +197,7 @@ err.header.missing = फ़ोल्डर में header.key नहीं ह
 err.cert.required = कम से कम एक प्रमाणपत्र चाहिए (--cert/--certsg)। .cer को «व्यक्तिगत» भंडार से या कंटेनर से निकालें।
 err.com.notfound = COM लाइब्रेरी नहीं मिली
 err.com.call = {0} ने {1} लौटाया
+err.com.argument = तर्क {0}
 err.arg.quote = कमांड लाइन तर्क में दोहरा उद्धरण चिह्न नहीं हो सकता — इसे पासवर्ड या पथ से हटाएँ
 
 # --- कुंजी के अधिकार ---

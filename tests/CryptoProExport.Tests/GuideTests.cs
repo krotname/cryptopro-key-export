@@ -81,6 +81,7 @@ namespace CryptoProExport.Tests
         [InlineData("token")]
         [InlineData("extractcert")]
         [InlineData("checkexport")]
+        [InlineData("export")]
         [InlineData("keyexport")]
         [InlineData("install")]
         [InlineData("installed")]
@@ -88,6 +89,7 @@ namespace CryptoProExport.Tests
         [InlineData("topfx")]
         [InlineData("extractkey")]
         [InlineData("extractpfx")]
+        [InlineData("liteexport")]
         [InlineData("full")]
         [InlineData("help")]
         [InlineData("--lang")]
@@ -105,7 +107,7 @@ namespace CryptoProExport.Tests
             Assert.True(codes > 0, "раздел про коды возврата пропал");
             string tail = Ru.Substring(codes);
             Assert.Contains("checkexport", tail, StringComparison.Ordinal);
-            Assert.Contains("3 — ключ есть, но", tail, StringComparison.Ordinal);
+            Assert.Contains("3 — хотя бы один", tail, StringComparison.Ordinal);
         }
 
         [Fact]
@@ -115,7 +117,7 @@ namespace CryptoProExport.Tests
             Assert.True(codes > 0, "раздел про коды возврата пропал в английском руководстве");
             string tail = En.Substring(codes);
             Assert.Contains("checkexport", tail, StringComparison.Ordinal);
-            Assert.Contains("3 — the key is", tail, StringComparison.Ordinal);
+            Assert.Contains("3 — at least one", tail, StringComparison.Ordinal);
         }
 
         [Theory]

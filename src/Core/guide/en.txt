@@ -112,13 +112,14 @@ interface languages fall back to the English text.
   substance (no CSP, container not found or not visible), 3 —
   execution error.
 
-  checkexport is more precise: 0 — the key is exportable, 2 — the key
-  was not found (no container or no key of that type), 3 — the key is
-  there, but the export ban is still in place.
+  checkexport is more precise: 0 — all found keys are exportable,
+  2 — no key was found in the container, 3 — at least one found key
+  is still locked or its permissions could not be read.
 
-  For export, full and token the code 2 means "no container was taken
-  off" — usually because no token is plugged in. A script should treat
-  only 0 as success.
+  For export and full, code 2 means "no container was taken off".
+  A partially completed full returns 3. For token, code 2 means that
+  no token was found or no certificate was available for the requested
+  output folder. A script should treat only 0 as success.
 
   A GUI application only shows its output when it is redirected to a
   file: CryptoProExport.exe deps > deps.txt

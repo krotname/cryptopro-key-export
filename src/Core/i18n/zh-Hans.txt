@@ -184,7 +184,7 @@ err.container.nokey = 未找到容器「{0}」，或其中没有所需类型的�
 err.key.locked = 私钥不可导出 — 请先解除禁令（「{0}」）。{1}
 err.cert.extract = 无法从容器中提取证书
 err.pfx.missing = certmgr 报告成功，但文件未创建：{0}
-err.folder.notcontainer = 文件夹中没有容器（需要 header.key、primary.key、masks.key）：{0}
+err.folder.notcontainer = 文件夹中没有容器（需要 header.key、name.key 和至少一组完整的 primary/masks 文件对）：{0}
 err.folder.outside = 该文件夹不在 CryptoPro 存储区内：{0}
 err.folder.notlike = 该文件夹不像是容器：{0}
 err.folder.extra = 容器文件夹中有无关文件，已取消删除：{0}
@@ -197,6 +197,7 @@ err.header.missing = 文件夹中没有 header.key
 err.cert.required = 至少需要一份证书（--cert/--certsg）。请从「个人」存储或容器中导出 .cer。
 err.com.notfound = 未找到 COM 库
 err.com.call = {0} 返回了 {1}
+err.com.argument = 参数 {0}
 err.arg.quote = 命令行参数不能包含双引号，请从密码或路径中删除
 
 # --- 密钥权限 ---

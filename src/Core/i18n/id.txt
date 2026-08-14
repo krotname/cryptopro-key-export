@@ -184,7 +184,7 @@ err.container.nokey = Kontainer «{0}» tidak ditemukan atau tidak memuat kunci 
 err.key.locked = Kunci privat tidak dapat diekspor — cabut dulu larangannya («{0}»). {1}
 err.cert.extract = Sertifikat tidak dapat diambil dari kontainer
 err.pfx.missing = certmgr melaporkan berhasil, tetapi berkas tidak dibuat: {0}
-err.folder.notcontainer = Folder tidak berisi kontainer (perlu header.key, primary.key, masks.key): {0}
+err.folder.notcontainer = Folder tidak berisi kontainer (perlu header.key, name.key, dan setidaknya satu pasangan primary/masks yang lengkap): {0}
 err.folder.outside = Folder berada di luar penyimpanan CryptoPro: {0}
 err.folder.notlike = Folder tidak tampak seperti kontainer: {0}
 err.folder.extra = Folder kontainer berisi berkas asing, penghapusan dibatalkan: {0}
@@ -197,6 +197,7 @@ err.header.missing = Folder tidak memuat header.key
 err.cert.required = Diperlukan setidaknya satu sertifikat (--cert/--certsg). Ekspor .cer dari penyimpanan «Pribadi» atau dari kontainer.
 err.com.notfound = Pustaka COM tidak ditemukan
 err.com.call = {0} mengembalikan {1}
+err.com.argument = argumen {0}
 err.arg.quote = Argumen baris perintah tidak boleh berisi tanda kutip ganda — hapus dari kata sandi atau jalur
 
 # --- izin kunci ---

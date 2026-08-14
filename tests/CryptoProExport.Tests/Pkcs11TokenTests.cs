@@ -377,6 +377,24 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void UniqueCertPath_DoesNotOverwriteFileFromPreviousRun()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "cpx-cert-path-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            string existing = Path.Combine(dir, "Ivanov_aaa.cer");
+            File.WriteAllBytes(existing, new byte[] { 1 });
+            try
+            {
+                string next = Pkcs11Token.UniqueCertPath(dir, "Ivanov", "aaa",
+                    new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+
+                Assert.Equal(Path.Combine(dir, "Ivanov_aaa(2).cer"), next);
+                Assert.Equal(new byte[] { 1 }, File.ReadAllBytes(existing));
+            }
+            finally { Directory.Delete(dir, recursive: true); }
+        }
+
+        [Fact]
         public void LibraryCandidates_HasNoDuplicates()
         {
             var candidates = Pkcs11Token.LibraryCandidates().ToArray();

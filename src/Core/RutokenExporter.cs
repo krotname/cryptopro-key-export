@@ -21,11 +21,51 @@ namespace CryptoProExport
         /// <summary>Записать контейнер на диск как папку с 6 файлами .key.</summary>
         public string SaveTo(string parentDir, string folderName = null)
         {
-            string dst = Path.Combine(parentDir, SafeFolderName(folderName ?? ContainerName));
-            Directory.CreateDirectory(dst);
-            foreach (var kv in Files)
-                File.WriteAllBytes(Path.Combine(dst, kv.Key), kv.Value);
-            return dst;
+            if (parentDir == null) throw new ArgumentNullException(nameof(parentDir));
+
+            // Пишем сначала в отдельную папку и только готовый набор переименовываем в итоговый.
+            // Так сбой записи не портит прежний бэкап, а два токена с одинаковой меткой контейнера
+            // не смешивают свои *.key в одном каталоге.
+            Directory.CreateDirectory(parentDir);
+            string baseName = SafeFolderName(folderName ?? ContainerName);
+            string staging = Path.Combine(parentDir, "." + baseName + "." + Guid.NewGuid().ToString("N") + ".tmp");
+            Directory.CreateDirectory(staging);
+            try
+            {
+                var allowed = new HashSet<string>(ContainerStore.ContainerFiles,
+                                                  StringComparer.OrdinalIgnoreCase);
+                foreach (var kv in Files)
+                {
+                    if (string.IsNullOrWhiteSpace(kv.Key) ||
+                        !allowed.Contains(kv.Key))
+                        throw new IOException(Strings.Format("err.folder.notlike", kv.Key));
+                    if (kv.Value == null)
+                        throw new IOException(Strings.Format("err.extract.nofile", kv.Key, staging));
+                    File.WriteAllBytes(Path.Combine(staging, kv.Key), kv.Value);
+                }
+
+                for (int n = 1; n <= 1000; n++)
+                {
+                    string name = n == 1 ? baseName : $"{baseName}({n})";
+                    string dst = Path.Combine(parentDir, name);
+                    if (Directory.Exists(dst) || File.Exists(dst)) continue;
+                    try
+                    {
+                        Directory.Move(staging, dst);
+                        return dst;
+                    }
+                    catch (IOException) when (Directory.Exists(dst) || File.Exists(dst))
+                    {
+                        // Другой процесс занял имя между проверкой и Move — берём следующее.
+                    }
+                }
+                throw new IOException(Strings.Format("err.store.full", parentDir));
+            }
+            finally
+            {
+                if (Directory.Exists(staging))
+                    try { Directory.Delete(staging, recursive: true); } catch (IOException) { }
+            }
         }
 
         /// <summary>
@@ -41,7 +81,8 @@ namespace CryptoProExport
             foreach (char c in Path.GetInvalidFileNameChars())
                 name = name.Replace(c, '_');
             name = name.Trim().TrimEnd('.');   // хвостовые точки Windows молча отбрасывает
-            return name.Length == 0 ? "container" : name;
+            if (name.Length == 0) name = "container";
+            return name.Length > 80 ? name.Substring(0, 80) : name;
         }
     }
 

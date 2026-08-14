@@ -184,7 +184,7 @@ err.container.nokey = O contentor «{0}» não foi encontrado ou não tem chave 
 err.key.locked = A chave privada não é exportável — levante primeiro a proibição («{0}»). {1}
 err.cert.extract = Não foi possível extrair o certificado do contentor
 err.pfx.missing = O certmgr comunicou êxito, mas o ficheiro não foi criado: {0}
-err.folder.notcontainer = A pasta não tem contentor (são precisos header.key, primary.key, masks.key): {0}
+err.folder.notcontainer = A pasta não tem contentor (são precisos header.key, name.key e pelo menos um par primary/masks completo): {0}
 err.folder.outside = A pasta está fora do arquivo do CryptoPro: {0}
 err.folder.notlike = A pasta não parece um contentor: {0}
 err.folder.extra = A pasta do contentor tem ficheiros alheios, eliminação cancelada: {0}
@@ -197,6 +197,7 @@ err.header.missing = A pasta não tem header.key
 err.cert.required = É preciso pelo menos um certificado (--cert/--certsg). Exporte o .cer do arquivo «Pessoal» ou do contentor.
 err.com.notfound = Biblioteca COM não encontrada
 err.com.call = {0} devolveu {1}
+err.com.argument = argumento {0}
 err.arg.quote = Um argumento de linha de comando não pode conter aspas duplas — remova-as da senha ou do caminho
 
 # --- permissões da chave ---

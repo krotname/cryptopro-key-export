@@ -184,7 +184,7 @@ err.container.nokey = ظرف «{0}» یافت نشد یا کلیدی از نوع
 err.key.locked = کلید خصوصی برون‌بری‌پذیر نیست — نخست ممنوعیت را بردارید («{0}»). {1}
 err.cert.extract = گواهی از ظرف بیرون کشیده نشد
 err.pfx.missing = certmgr موفقیت را گزارش کرد، اما پرونده ساخته نشد: {0}
-err.folder.notcontainer = در پوشه ظرفی نیست (header.key، primary.key، masks.key لازم است): {0}
+err.folder.notcontainer = در پوشه ظرفی نیست (header.key، name.key و دست‌کم یک جفت کامل primary/masks لازم است): {0}
 err.folder.outside = پوشه بیرون از انبار CryptoPro است: {0}
 err.folder.notlike = پوشه شبیه ظرف نیست: {0}
 err.folder.extra = در پوشهٔ ظرف پرونده‌های بیگانه هست، حذف لغو شد: {0}
@@ -197,6 +197,7 @@ err.header.missing = در پوشه header.key نیست
 err.cert.required = دست‌کم یک گواهی لازم است (--cert/--certsg). پروندهٔ .cer را از انبار «شخصی» یا از ظرف برون‌بری کنید.
 err.com.notfound = کتابخانهٔ COM یافت نشد
 err.com.call = {0} مقدار {1} را بازگرداند
+err.com.argument = آرگومان {0}
 err.arg.quote = آرگومان خط فرمان نمی‌تواند شامل نقل‌قول دوتایی باشد — آن را از گذرواژه یا مسیر حذف کنید
 
 # --- اختیارات کلید ---

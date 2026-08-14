@@ -184,7 +184,7 @@ err.container.nokey = «{0}» kapsayıcısı bulunamadı ya da gerekli türde an
 err.key.locked = Özel anahtar dışa aktarılamaz — önce yasağı kaldırın («{0}»). {1}
 err.cert.extract = Sertifika kapsayıcıdan çıkarılamadı
 err.pfx.missing = certmgr başarı bildirdi, ama dosya oluşmadı: {0}
-err.folder.notcontainer = Klasörde kapsayıcı yok (header.key, primary.key, masks.key gerekir): {0}
+err.folder.notcontainer = Klasörde kapsayıcı yok (header.key, name.key ve en az bir eksiksiz primary/masks çifti gerekir): {0}
 err.folder.outside = Klasör CryptoPro deposunun dışında: {0}
 err.folder.notlike = Klasör kapsayıcıya benzemiyor: {0}
 err.folder.extra = Kapsayıcı klasöründe yabancı dosyalar var, silme iptal edildi: {0}
@@ -197,6 +197,7 @@ err.header.missing = Klasörde header.key yok
 err.cert.required = En az bir sertifika gerekir (--cert/--certsg). .cer dosyasını «Kişisel» deposundan ya da kapsayıcıdan dışa aktarın.
 err.com.notfound = COM kitaplığı bulunamadı
 err.com.call = {0} {1} döndürdü
+err.com.argument = bağımsız değişken {0}
 err.arg.quote = Komut satırı bağımsız değişkeni çift tırnak içeremez — parolanızdan veya yoldan kaldırın
 
 # --- anahtar izinleri ---

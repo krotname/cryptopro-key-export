@@ -99,6 +99,7 @@ namespace CryptoProExport.App
                         if (tokens.Count == 0) { Out(Strings.Get("cli.token.none")); return 2; }
                         string outDir = args.Length > 1 ? args[1] : null;
                         bool anySaveFailed = false;
+                        bool anyCertificate = false;
                         var usedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);   // защита от коллизии имён
                         foreach (var t in tokens)
                         {
@@ -108,12 +109,17 @@ namespace CryptoProExport.App
                             foreach (var c in t.Containers)
                             {
                                 Out("  " + DescribeTokenEntry(c));
-                                if (outDir != null && c.Certificate != null && !SaveTokenCert(outDir, t, c, usedPaths))
-                                    anySaveFailed = true;
+                                if (c.Certificate != null)
+                                {
+                                    anyCertificate = true;
+                                    if (outDir != null && !SaveTokenCert(outDir, t, c, usedPaths))
+                                        anySaveFailed = true;
+                                }
                             }
                         }
                         // Запрошенное извлечение, которое не удалось записать, — это провал команды,
                         // а не тихий успех: иначе скрипт посчитал бы .cer сохранённым (замечание Codex).
+                        if (outDir != null && !anyCertificate) return 2;
                         return anySaveFailed ? 3 : 0;
                     }
                     case "extractcert":
@@ -133,7 +139,7 @@ namespace CryptoProExport.App
                         Out(Strings.Format("cli.check.sign", sg));
                         // 2 — проверять нечего (нет контейнера/ключа), 3 — ключ есть, но запрет не снят
                         if (!ex.KeyFound && !sg.KeyFound) return 2;
-                        return (ex.Exportable || sg.Exportable) ? 0 : 3;
+                        return CertFromContainer.AllFoundKeysExportable(ex, sg) ? 0 : 3;
                     }
                     case "export":
                     {
@@ -245,11 +251,23 @@ namespace CryptoProExport.App
                             else { Err(Strings.Format("err.lite.pin", "—")); return 2; }
                         }
                         int done = 0;
+                        int failed = 0;
                         foreach (var c in containers)
                         {
                             // Имя контейнера может нести ФИО — в путь на диске не кладём, только индекс.
-                            string dir = Path.Combine(outDir, $"lite_{c.DfIndex:X2}");
-                            lite.ReadContainer(reader, c.DfIndex, pin, dir);
+                            string dir = RutokenLiteApdu.ReserveOutputDirectory(outDir, $"lite_{c.DfIndex:X2}");
+                            try { lite.ReadContainer(reader, c.DfIndex, pin, dir); }
+                            catch
+                            {
+                                // APDU не успела ничего сохранить — не оставляем ложный пустой результат.
+                                try
+                                {
+                                    if (Directory.Exists(dir) && !Directory.EnumerateFileSystemEntries(dir).Any())
+                                        Directory.Delete(dir);
+                                }
+                                catch (IOException) { }
+                                throw;
+                            }
                             Out(Strings.Format("cli.done", dir));
                             try
                             {
@@ -259,20 +277,24 @@ namespace CryptoProExport.App
                                 Out("  " + Strings.Format("cli.extractkey.pub", r.CurveOid, Convert.ToHexString(r.PublicX)));
                                 done++;
                             }
-                            catch (ContainerKeyException ex) { Err(Strings.Format("cli.error", ex.Message)); }
+                            catch (ContainerKeyException ex)
+                            {
+                                failed++;
+                                Err(Strings.Format("cli.error", ex.Message));
+                            }
                         }
-                        return done > 0 ? 0 : 2;
+                        return failed > 0 ? 3 : done > 0 ? 0 : 2;
                     }
                     case "full":
                     {
                         if (args.Length < 2) { Usage(); return 1; }
                         var pipe = new ExportPipeline { Log = Out };
-                        int processed = pipe.ExportAndMakeExportable(
+                        var result = pipe.ExportAndMakeExportable(
                             destParent: args[1],
                             certExchange: args.Length > 2 ? args[2] : null,
                             userPin: args.Length > 3 ? args[3] : null);
-                        Out(Strings.Format("log.exported", processed));
-                        return processed > 0 ? 0 : 2;
+                        Out(Strings.Format("log.exported", result.Exported));
+                        return result.AllSucceeded ? 0 : result.Exported == 0 ? 2 : 3;
                     }
                     default:
                         Usage();

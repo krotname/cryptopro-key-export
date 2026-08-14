@@ -184,7 +184,7 @@ err.container.nokey = কনটেইনার «{0}» পাওয়া যা
 err.key.locked = ব্যক্তিগত কী রপ্তানিযোগ্য নয় — আগে নিষেধাজ্ঞা তুলুন («{0}»)। {1}
 err.cert.extract = কনটেইনার থেকে সার্টিফিকেট বের করা যায়নি
 err.pfx.missing = certmgr সফলতার কথা বলেছে, কিন্তু ফাইল তৈরি হয়নি: {0}
-err.folder.notcontainer = ফোল্ডারে কনটেইনার নেই (header.key, primary.key, masks.key দরকার): {0}
+err.folder.notcontainer = ফোল্ডারে কনটেইনার নেই (header.key, name.key এবং অন্তত একটি সম্পূর্ণ primary/masks জোড়া দরকার): {0}
 err.folder.outside = ফোল্ডারটি CryptoPro-র ভাণ্ডারের বাইরে: {0}
 err.folder.notlike = ফোল্ডারটি কনটেইনারের মতো নয়: {0}
 err.folder.extra = কনটেইনারের ফোল্ডারে বাইরের ফাইল আছে, মোছা বাতিল: {0}
@@ -197,6 +197,7 @@ err.header.missing = ফোল্ডারে header.key নেই
 err.cert.required = অন্তত একটি সার্টিফিকেট দরকার (--cert/--certsg)। «ব্যক্তিগত» ভাণ্ডার থেকে বা কনটেইনার থেকে .cer বের করুন।
 err.com.notfound = COM লাইব্রেরি পাওয়া যায়নি
 err.com.call = {0} ফিরিয়েছে {1}
+err.com.argument = আর্গুমেন্ট {0}
 err.arg.quote = কমান্ড লাইন আর্গুমেন্টে ডবল কোট থাকতে পারে না — পাসওয়ার্ড বা পাথ থেকে সেটি সরান
 
 # --- কী-এর অধিকার ---

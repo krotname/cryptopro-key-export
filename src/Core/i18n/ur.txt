@@ -184,7 +184,7 @@ err.container.nokey = کنٹینر «{0}» نہیں ملا یا اس میں مط
 err.key.locked = نجی کلید برآمد کے قابل نہیں — پہلے پابندی ہٹائیں («{0}»)۔ {1}
 err.cert.extract = کنٹینر سے سرٹیفکیٹ نہ نکالا جا سکا
 err.pfx.missing = certmgr نے کامیابی بتائی، مگر فائل نہیں بنی: {0}
-err.folder.notcontainer = فولڈر میں کنٹینر نہیں ہے (header.key، primary.key، masks.key درکار ہیں): {0}
+err.folder.notcontainer = فولڈر میں کنٹینر نہیں ہے (header.key، name.key اور کم از کم ایک مکمل primary/masks جوڑا درکار ہے): {0}
 err.folder.outside = فولڈر CryptoPro کے ذخیرے سے باہر ہے: {0}
 err.folder.notlike = فولڈر کنٹینر جیسا نہیں لگتا: {0}
 err.folder.extra = کنٹینر کے فولڈر میں اجنبی فائلیں ہیں، حذف منسوخ: {0}
@@ -197,6 +197,7 @@ err.header.missing = فولڈر میں header.key نہیں ہے
 err.cert.required = کم از کم ایک سرٹیفکیٹ درکار ہے (--cert/--certsg)۔ .cer کو «ذاتی» ذخیرے سے یا کنٹینر سے برآمد کریں۔
 err.com.notfound = COM لائبریری نہیں ملی
 err.com.call = {0} نے {1} لوٹایا
+err.com.argument = آرگیومنٹ {0}
 err.arg.quote = کمانڈ لائن آرگیومنٹ میں ڈبل کوٹ نہیں ہو سکتا — اسے پاس ورڈ یا راستے سے ہٹا دیں
 
 # --- کلید کے حقوق ---

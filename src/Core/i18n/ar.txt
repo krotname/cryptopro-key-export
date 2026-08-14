@@ -184,7 +184,7 @@ err.container.nokey = لم يُعثر على الحاوية «{0}» أو لا ت
 err.key.locked = المفتاح الخاص غير قابل للتصدير — ارفع الحظر أولًا («{0}»). {1}
 err.cert.extract = تعذّر استخراج الشهادة من الحاوية
 err.pfx.missing = أبلغ certmgr عن النجاح، لكن الملف لم يُنشأ: {0}
-err.folder.notcontainer = لا توجد حاوية في المجلد (يلزم header.key و primary.key و masks.key): {0}
+err.folder.notcontainer = لا توجد حاوية في المجلد (يلزم header.key و name.key وزوج كامل واحد على الأقل primary/masks): {0}
 err.folder.outside = المجلد خارج مخزن CryptoPro: {0}
 err.folder.notlike = المجلد لا يشبه حاوية: {0}
 err.folder.extra = في مجلد الحاوية ملفات غريبة، أُلغي الحذف: {0}
@@ -197,6 +197,7 @@ err.header.missing = لا يوجد header.key في المجلد
 err.cert.required = يلزم شهادة واحدة على الأقل (--cert/--certsg). صدّر ملف .cer من مخزن «شخصي» أو من الحاوية.
 err.com.notfound = لم يُعثر على مكتبة COM
 err.com.call = أعاد {0} القيمة {1}
+err.com.argument = الوسيطة {0}
 err.arg.quote = لا يمكن أن يحتوي وسيط سطر الأوامر على علامة اقتباس مزدوجة — أزلها من كلمة المرور أو المسار
 
 # --- صلاحيات المفتاح ---

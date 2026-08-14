@@ -184,7 +184,7 @@ err.container.nokey = Le conteneur « {0} » est introuvable ou ne contient pas 
 err.key.locked = La clé privée n’est pas exportable — levez d’abord l’interdiction (« {0} »). {1}
 err.cert.extract = Impossible d’extraire le certificat du conteneur
 err.pfx.missing = certmgr a signalé un succès, mais le fichier n’a pas été créé : {0}
-err.folder.notcontainer = Le dossier ne contient pas de conteneur (header.key, primary.key, masks.key sont requis) : {0}
+err.folder.notcontainer = Le dossier ne contient pas de conteneur (header.key, name.key et au moins une paire primary/masks complète sont requis) : {0}
 err.folder.outside = Le dossier est hors du magasin CryptoPro : {0}
 err.folder.notlike = Le dossier ne ressemble pas à un conteneur : {0}
 err.folder.extra = Le dossier du conteneur contient des fichiers étrangers, suppression annulée : {0}
@@ -197,6 +197,7 @@ err.header.missing = Le dossier ne contient pas header.key
 err.cert.required = Au moins un certificat est nécessaire (--cert/--certsg). Exportez le .cer depuis le magasin « Personnel » ou depuis le conteneur.
 err.com.notfound = Bibliothèque COM introuvable
 err.com.call = {0} a renvoyé {1}
+err.com.argument = argument {0}
 err.arg.quote = Un argument de ligne de commande ne peut pas contenir de guillemet double — retirez-le du mot de passe ou du chemin
 
 # --- droits de la clé ---

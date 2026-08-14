@@ -184,7 +184,7 @@ err.container.nokey = コンテナー「{0}」が見つからないか、必要�
 err.key.locked = 秘密鍵がエクスポート不可です — 先に禁止を解除してください（「{0}」）。{1}
 err.cert.extract = コンテナーから証明書を取り出せませんでした
 err.pfx.missing = certmgr は成功と報告しましたが、ファイルが作られていません: {0}
-err.folder.notcontainer = フォルダーにコンテナーがありません（header.key、primary.key、masks.key が必要です）: {0}
+err.folder.notcontainer = フォルダーにコンテナーがありません（header.key、name.key、完全な primary/masks ペアが少なくとも 1 組必要です）: {0}
 err.folder.outside = フォルダーが CryptoPro の保管領域の外にあります: {0}
 err.folder.notlike = フォルダーがコンテナーには見えません: {0}
 err.folder.extra = コンテナーのフォルダーに無関係なファイルがあるため、削除を中止しました: {0}
@@ -197,6 +197,7 @@ err.header.missing = フォルダーに header.key がありません
 err.cert.required = 証明書が最低 1 つ必要です（--cert/--certsg）。「個人」ストアかコンテナーから .cer を書き出してください。
 err.com.notfound = COM ライブラリが見つかりません
 err.com.call = {0} は {1} を返しました
+err.com.argument = 引数 {0}
 err.arg.quote = コマンドライン引数に二重引用符は使用できません。パスワードまたはパスから削除してください
 
 # --- 鍵の権限 ---
