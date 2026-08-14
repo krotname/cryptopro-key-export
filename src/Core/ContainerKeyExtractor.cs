@@ -82,75 +82,134 @@ namespace CryptoProExport
             if (hasPrimary2 != hasMasks2)
                 _ = ReadKeyFile(containerDir, hasPrimary2 ? "masks2.key" : "primary2.key");
 
-            bool useExchange = hasPrimary || !hasPrimary2;
-            string primaryFile = useExchange ? "primary.key" : "primary2.key";
-            string masksFile = useExchange ? "masks.key" : "masks2.key";
+            return ExtractKey(containerDir, password, signature: !hasPrimary && hasPrimary2);
+        }
+
+        /// <summary>Разобрать конкретный ключ пары; используется при нормализации обоих primary.</summary>
+        internal static Result ExtractKey(string containerDir, string password, bool signature)
+        {
+            string primaryFile = signature ? "primary2.key" : "primary.key";
+            string masksFile = signature ? "masks2.key" : "masks.key";
             byte[] primaryRaw = ReadKeyFile(containerDir, primaryFile);
             byte[] masksRaw = ReadKeyFile(containerDir, masksFile);
             byte[] headerRaw = ReadKeyFile(containerDir, "header.key");
 
-            byte[] primEnc = ParsePrimary(primaryRaw);
+            List<byte[]> primaryCandidates = PrimaryCiphertexts(primaryRaw);
             var (mask, salt) = ParseMasks(masksRaw);
             var header = ParseHeader(headerRaw);
-            string curveOid = header.CurveOid;
-            byte[] fingerprint = header.Fingerprint;
-
-            var domain = ECGost3410NamedCurves.GetByOid(new DerObjectIdentifier(curveOid));
-            if (domain == null)
-                throw new ContainerKeyException(Strings.Format("err.extract.curve", curveOid));
-            BigInteger q = domain.N;
 
             // Ключ хранения из пароля и соли; на пустом пароле функция даёт нетривиальный ключ.
             byte[] storageKey = GostContainerCrypto.DeriveStorageKey(password ?? "", salt);
 
-            // Шифруется сам primary.key, маска в masks.key лежит открытым текстом.
-            byte[] primDec = GostContainerCrypto.EcbDecrypt(storageKey, primEnc);
-
-            // primary и маска — little-endian: байты разворачиваются перед переводом в число.
-            var p = new BigInteger(1, Reverse(primDec)).Mod(q);
-            var m = new BigInteger(1, Reverse(mask)).Mod(q);
-            if (p.SignValue == 0 || m.SignValue == 0)
-                throw new ContainerKeyException(Strings.Get("err.extract.degenerate"));
-
-            BigInteger d = p.Multiply(m.ModInverse(q)).Mod(q);
-            if (d.SignValue == 0)
-                throw new ContainerKeyException(Strings.Get("err.extract.degenerate"));
-
-            ECPoint pub = domain.G.Multiply(d).Normalize();
-            byte[] x = Pad32(pub.AffineXCoord.ToBigInteger());
-            byte[] y = Pad32(pub.AffineYCoord.ToBigInteger());
-
-            // Оракул: первые 8 байт X в little-endian = отпечаток из header.key. Отпечаток —
-            // единственная проверка целостности разбора, поэтому контейнер без него принимать
-            // нельзя: на неверном пароле получился бы математически валидный, но чужой ключ.
-            if (fingerprint == null)
-                throw new ContainerKeyException(Strings.Get("err.extract.nofingerprint"));
-            byte[] fpComputed = Reverse(x);
-            if (!Slice(fpComputed, 8).AsSpan().SequenceEqual(fingerprint))
-                throw new ContainerKeyException(Strings.Get("err.extract.fingerprint"));
-
-            return new Result
+            bool anyCurve = false;
+            foreach (string curveOid in header.CurveOids)
             {
-                PrivateKey = Pad32(d),
-                CurveOid = curveOid,
-                PublicX = x,
-                PublicY = y,
-                FingerprintVerified = true,
-                Certificate = PickCertificate(header.Certificates, x, y),
-                D = d,
-            };
+                var domain = ECGost3410NamedCurves.GetByOid(new DerObjectIdentifier(curveOid));
+                if (domain == null) continue;
+                anyCurve = true;
+                BigInteger q = domain.N;
+                var m = new BigInteger(1, Reverse(mask)).Mod(q);
+                if (m.SignValue == 0) continue;
+
+                foreach (byte[] primEnc in primaryCandidates)
+                {
+                    // Шифротекст primary и маска — little-endian после расшифрования.
+                    byte[] primDec = GostContainerCrypto.EcbDecrypt(storageKey, primEnc);
+                    var p = new BigInteger(1, Reverse(primDec)).Mod(q);
+                    if (p.SignValue == 0) continue;
+                    BigInteger d = p.Multiply(m.ModInverse(q)).Mod(q);
+                    if (d.SignValue == 0) continue;
+
+                    ECPoint pub = domain.G.Multiply(d).Normalize();
+                    byte[] x = Pad32(pub.AffineXCoord.ToBigInteger());
+                    byte[] y = Pad32(pub.AffineYCoord.ToBigInteger());
+                    byte[] fpComputed = Slice(Reverse(x), 8);
+                    bool fingerprintMatched = false;
+                    foreach (byte[] fingerprint in header.Fingerprints)
+                        if (fpComputed.AsSpan().SequenceEqual(fingerprint))
+                        { fingerprintMatched = true; break; }
+                    byte[] certificate = PickCertificate(header.Certificates, x, y);
+
+                    // Нужен хотя бы один независимый оракул из заголовка. В контейнере с
+                    // двумя ключами перебираются обе кривые и оба отпечатка, поэтому порядок
+                    // полей p12utility/носителя больше не влияет на выбор.
+                    if (!fingerprintMatched && certificate == null) continue;
+                    return new Result
+                    {
+                        PrivateKey = Pad32(d),
+                        CurveOid = curveOid,
+                        PublicX = x,
+                        PublicY = y,
+                        FingerprintVerified = fingerprintMatched || certificate != null,
+                        Certificate = certificate,
+                        D = d,
+                    };
+                }
+            }
+            if (!anyCurve)
+                throw new ContainerKeyException(Strings.Format("err.extract.curve", header.CurveOid));
+            if (header.Fingerprints.Count == 0 && header.Certificates.Count == 0)
+                throw new ContainerKeyException(Strings.Get("err.extract.nofingerprint"));
+            throw new ContainerKeyException(Strings.Get("err.extract.fingerprint"));
         }
 
         // ---------- разбор ASN.1 ----------
 
-        /// <summary>primary.key = SEQUENCE { OCTET STRING (32) } — зашифрованный primary.</summary>
+        /// <summary>
+        /// Зашифрованный primary из двух форматов КриптоПро:
+        /// <list type="bullet">
+        /// <item><c>SEQUENCE { OCTET STRING B }</c> — экспортируемый файловый ключ;</item>
+        /// <item><c>SEQUENCE { OCTET STRING A, [0] B }</c> — неэкспортируемый ключ на
+        /// пассивном носителе. Рабочий шифротекст лежит в поле <c>[0]</c>.</item>
+        /// </list>
+        /// </summary>
         internal static byte[] ParsePrimary(byte[] der)
         {
+            return PrimaryCiphertexts(der)[0];
+        }
+
+        /// <summary>
+        /// Привест primary неэкспортируемого пассивного носителя к файловой форме HDIMAGE.
+        /// Для уже экспортируемой формы возвращается канонический эквивалентный DER.
+        /// </summary>
+        internal static byte[] NormalizePrimaryForExport(byte[] der)
+        {
+            byte[] enc = ParsePrimary(der);
+            return BuildExportablePrimary(enc);
+        }
+
+        /// <summary>
+        /// Альтернативная CSP-обёртка из первого поля неэкспортируемой формы.
+        /// На Rutoken Lite после первого <c>p12utility --cprepair</c> она нужна для
+        /// отдельной HDIMAGE-копии ключа подписи; ключ обмена использует поле <c>[0]</c>.
+        /// </summary>
+        internal static byte[] NormalizePrimaryCspEnvelope(byte[] der)
+        {
             var seq = AsSequence(der, "primary.key");
-            byte[] enc = OctetsAt(seq, 0, "primary.key");
-            if (enc.Length != 32)
-                throw Corrupt($"primary.key: {enc.Length} bytes, expected 32");
-            return enc;
+            return BuildExportablePrimary(OctetsAt(seq, 0, "primary.key"));
+        }
+
+        internal static byte[] BuildExportablePrimary(byte[] encrypted)
+        {
+            if (encrypted == null || encrypted.Length != 32)
+                throw Corrupt($"primary.key: {encrypted?.Length ?? 0} bytes, expected 32");
+            return new DerSequence(new DerOctetString(encrypted)).GetEncoded();
+        }
+
+        private static List<byte[]> PrimaryCiphertexts(byte[] der)
+        {
+            var seq = AsSequence(der, "primary.key");
+            var candidates = new List<byte[]>();
+            if (seq.Count > 1 && seq[1] is Asn1TaggedObject tagged && tagged.TagNo == 0)
+            {
+                try { candidates.Add(Asn1OctetString.GetInstance(tagged, false).GetOctets()); }
+                catch (Exception e) { throw Corrupt("primary.key [0]: " + e.Message); }
+            }
+            candidates.Add(OctetsAt(seq, 0, "primary.key"));
+            foreach (byte[] candidate in candidates)
+                if (candidate.Length != 32)
+                    throw Corrupt($"primary.key: {candidate.Length} bytes, expected 32");
+            return candidates;
         }
 
         /// <summary>masks.key = SEQUENCE { OCTET STRING маска(32), OCTET STRING соль(12), OCTET STRING crc(4) }.</summary>
@@ -171,9 +230,11 @@ namespace CryptoProExport
         {
             /// <summary>OID набора параметров кривой.</summary>
             public string CurveOid;
+            public List<string> CurveOids = new List<string>();
 
             /// <summary>Отпечаток открытого ключа: первые 8 байт X little-endian (или null).</summary>
             public byte[] Fingerprint;
+            public List<byte[]> Fingerprints = new List<byte[]>();
 
             /// <summary>Сертификаты, найденные в header.key, в порядке появления (обычно 1–2).</summary>
             public List<byte[]> Certificates = new List<byte[]>();
@@ -189,7 +250,7 @@ namespace CryptoProExport
         internal static Header ParseHeader(byte[] der)
         {
             Asn1Object root;
-            try { root = Asn1Object.FromByteArray(der); }
+            try { root = Asn1Object.FromByteArray(RutokenLiteApdu.TrimDer(der)); }
             catch (Exception e) { throw Corrupt("header.key ASN.1: " + e.Message); }
 
             var oids = new List<string>();
@@ -198,11 +259,13 @@ namespace CryptoProExport
             Walk(root, oids, octets8, header.Certificates);
 
             foreach (string id in oids)
-                if (IsCurveOid(id)) { header.CurveOid = id; break; }
+                if (IsCurveOid(id) && !header.CurveOids.Contains(id)) header.CurveOids.Add(id);
+            header.CurveOid = header.CurveOids.Count > 0 ? header.CurveOids[0] : null;
             if (header.CurveOid == null)
                 throw Corrupt("header.key: no GOST curve OID");
 
-            header.Fingerprint = octets8.Count > 0 ? octets8[0] : null;
+            header.Fingerprints.AddRange(octets8);
+            header.Fingerprint = header.Fingerprints.Count > 0 ? header.Fingerprints[0] : null;
             return header;
         }
 

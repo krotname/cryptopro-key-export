@@ -6,7 +6,7 @@
     <AssemblyName>CryptoProExport.Core</AssemblyName>
     <RootNamespace>CryptoProExport</RootNamespace>
     <LangVersion>latest</LangVersion>
-    <Version>1.5.0</Version>
+    <Version>1.5.1</Version>
     <!-- позволяет собирать библиотеку для Windows на Linux-сборщике -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>

@@ -217,5 +217,18 @@ namespace CryptoProExport.Tests
         {
             Assert.Equal(expected, ContainerStore.Sanitize(input));
         }
+
+        [Fact]
+        public void HdImageFolderBase_IsShortAsciiStableAndNameSpecific()
+        {
+            string first = ContainerStore.HdImageFolderBase(
+                "очень длинное имя контейнера с пробелами");
+
+            Assert.Equal(8, first.Length);
+            Assert.Matches("^[a-z0-9]{8}$", first);
+            Assert.Equal(first, ContainerStore.HdImageFolderBase(
+                "очень длинное имя контейнера с пробелами"));
+            Assert.NotEqual(first, ContainerStore.HdImageFolderBase("другое имя"));
+        }
     }
 }

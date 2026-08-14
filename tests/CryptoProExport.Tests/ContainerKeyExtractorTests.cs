@@ -64,6 +64,68 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void ParsePrimary_NonExportableFormUsesTaggedCiphertext()
+        {
+            byte[] decoy = new byte[32];
+            byte[] encrypted = new byte[32];
+            for (int i = 0; i < 32; i++) { decoy[i] = (byte)i; encrypted[i] = (byte)(255 - i); }
+            byte[] der = new DerSequence(
+                new DerOctetString(decoy),
+                new DerTaggedObject(false, 0, new DerOctetString(encrypted))).GetEncoded();
+
+            Assert.Equal(encrypted, ContainerKeyExtractor.ParsePrimary(der));
+        }
+
+        [Fact]
+        public void NormalizePrimaryForExport_ConvertsTaggedFormToSingleOctetString()
+        {
+            byte[] cspEnvelope = new byte[32];
+            byte[] extractableCiphertext = new byte[32];
+            for (int i = 0; i < 32; i++) extractableCiphertext[i] = (byte)(255 - i);
+            byte[] der = new DerSequence(
+                new DerOctetString(cspEnvelope),
+                new DerTaggedObject(false, 0, new DerOctetString(extractableCiphertext))).GetEncoded();
+
+            byte[] normalized = ContainerKeyExtractor.NormalizePrimaryForExport(der);
+            var seq = (Asn1Sequence)Asn1Object.FromByteArray(normalized);
+
+            Assert.Single(seq);
+            Assert.Equal(36, normalized.Length);
+            Assert.Equal(extractableCiphertext, ContainerKeyExtractor.ParsePrimary(normalized));
+        }
+
+        [Fact]
+        public void NormalizePrimaryCspEnvelope_UsesFirstField()
+        {
+            byte[] first = new byte[32];
+            byte[] tagged = new byte[32];
+            for (int i = 0; i < 32; i++) { first[i] = (byte)i; tagged[i] = (byte)(255 - i); }
+            byte[] der = new DerSequence(
+                new DerOctetString(first),
+                new DerTaggedObject(false, 0, new DerOctetString(tagged))).GetEncoded();
+
+            byte[] normalized = ContainerKeyExtractor.NormalizePrimaryCspEnvelope(der);
+
+            Assert.Equal(36, normalized.Length);
+            Assert.Equal(first, ContainerKeyExtractor.ParsePrimary(normalized));
+        }
+
+        [Fact]
+        public void ParseHeader_AcceptsZeroPaddedFileFromP12Utility()
+        {
+            byte[] fingerprint = { 1, 2, 3, 4, 5, 6, 7, 8 };
+            byte[] der = new DerSequence(
+                new DerObjectIdentifier(CurveOid), new DerOctetString(fingerprint)).GetEncoded();
+            byte[] padded = new byte[der.Length + 1024];
+            Array.Copy(der, padded, der.Length);
+
+            var header = ContainerKeyExtractor.ParseHeader(padded);
+
+            Assert.Equal(CurveOid, header.CurveOid);
+            Assert.Equal(fingerprint, header.Fingerprint);
+        }
+
+        [Fact]
         public void Extract_MissingFile_Throws()
         {
             string dir = NewTempDir();
