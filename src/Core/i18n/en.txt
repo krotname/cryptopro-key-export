@@ -54,7 +54,7 @@ tip.cancel = Interrupt the current operation.\nWork stops at the nearest step: a
 col.location = Location
 col.container = Container
 col.details = Details
-tip.list = Key containers that were found.\n«Location» = CSP (visible to CryptoPro) or the Rutoken name (read directly off the token).\nSelect a row — the «Extract certificate» button works on the selected container.
+tip.list = Key containers that were found.\n«Location» = CSP (visible to CryptoPro), PKCS#11/APDU, or a Rutoken name read directly.\n«Export from token» and «Make exportable» act only on a selected APDU/rtCOMLite row; with no selection they scan every Rutoken S.\nOther actions use the selected container.
 tip.log = Execution log: p12utility commands, token steps and errors.\nThe text can be selected and copied (Ctrl+C) — useful when investigating problems.
 
 # --- status bar ---
@@ -107,6 +107,7 @@ log.logs.fail = Could not open the log folder: {0}
 # --- dialogs ---
 dlg.confirm.title = Confirmation
 dlg.confirm.full = Containers will be copied off every connected Rutoken, certificates will be extracted and the key export ban will be lifted.\n\nContinue?
+dlg.confirm.full.selected = Only the selected hardware container will be copied, its certificates extracted, and the key export ban lifted.\n\nContinue?
 dlg.folder.container = Folder with the extracted container (6 *.key files)
 dlg.install.title = Installing a container into CryptoPro
 dlg.install.prompt = The name the container will appear under in CryptoPro.\nChanging it is optional: a renamed copy is not always accepted by the CSP.
@@ -314,7 +315,6 @@ err.extract.nofile = The container folder has no {0}: {1}
 err.extract.curve = Curve {0} is not supported
 err.extract.nofingerprint = header.key has no public-key fingerprint — container not recognized
 err.extract.fingerprint = Public-key fingerprint does not match — wrong password or corrupted container
-err.extract.degenerate = Parsing produced a degenerate key — wrong password or corrupted container
 err.extract.corrupt = Container is corrupted or unrecognized: {0}
 err.pfx.nocert = No certificate in the container and none given — point to a .cer file
 err.pfx.badcert = The certificate file did not parse as X.509 with a 256-bit GOST key
@@ -322,3 +322,6 @@ err.pfx.certmismatch = The certificate belongs to another key: the public keys d
 cli.usage.liteexport = read a Rutoken Lite container over APDU and recover the key (no CSP)
 err.lite.none = no CryptoPro containers found on {0} over APDU
 err.lite.pin = the card rejected the PIN ({0}); check the PIN, guessing is not allowed
+log.export.directonly = The selected row does not expose a readable private-key container. Select an APDU/rtCOMLite row, or clear the selection to scan all Rutoken S devices.
+pipe.lite.normalized = Lite container «{0}» converted to the HDIMAGE file format
+pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAGE format: {1}

@@ -2,12 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Versioning;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace CryptoProExport
 {
     /// <summary>
     /// Хранилище файловых контейнеров КриптоПро (считыватель HDIMAGE) —
-    /// каталог <c>%LOCALAPPDATA%\Crypto Pro</c>, где каждая подпапка вида <c>&lt;имя&gt;.000</c>
+    /// каталог <c>%LOCALAPPDATA%\Crypto Pro</c>, где каждая подпапка имеет короткое
+    /// физическое имя вида <c>cpx12345.000</c>
     /// содержит те же 6 файлов *.key, что снимаются с Рутокена.
     ///
     /// Это даёт последний недостающий шаг: снятый с токена контейнер можно «установить» в CSP —
@@ -110,7 +113,9 @@ namespace CryptoProExport
                                 ?? Path.GetFileName(Path.GetFullPath(containerFolder));
             bool wantRename = !string.IsNullOrWhiteSpace(newName) && newName != sourceName;
 
-            string target = CopyInto(storeDir, wantRename ? newName : sourceName, containerFolder,
+            string requestedName = wantRename ? newName : sourceName;
+            string folderBase = systemStore ? HdImageFolderBase(requestedName) : requestedName;
+            string target = CopyInto(storeDir, folderBase, containerFolder,
                                      wantRename ? newName : null);
             var result = new InstallResult { Folder = target, Name = sourceName };
 
@@ -126,7 +131,9 @@ namespace CryptoProExport
                     // CSP копию с новым именем не принял — полностью откатываемся к исходному
                     // имени и раскладке папки, чтобы у пользователя остался рабочий контейнер.
                     Directory.Delete(target, recursive: true);
-                    result.Folder = CopyInto(storeDir, sourceName, containerFolder);
+                    result.Folder = CopyInto(storeDir,
+                        systemStore ? HdImageFolderBase(sourceName) : sourceName,
+                        containerFolder);
                 }
             }
 
@@ -179,9 +186,15 @@ namespace CryptoProExport
         private static bool IsVisibleToCsp(string containerName)
         {
             if (string.IsNullOrEmpty(containerName)) return false;
-            foreach (var c in CertFromContainer.EnumContainers())
-                if (string.Equals(c.Name, containerName, StringComparison.Ordinal)) return true;
-            return false;
+            // Имя без считывателя неоднозначно: одноимённый контейнер на вставленном токене
+            // раньше давал ложный успех, даже когда HDIMAGE отверг скопированные файлы.
+            // Проверяем только точный файловый путь и заодно не перечисляем чужие контейнеры.
+            string hdImage = CertMgr.HdImageContainer(containerName);
+            var exchange = CertFromContainer.CheckExportable(
+                hdImage, CertFromContainer.AT_KEYEXCHANGE);
+            var signature = CertFromContainer.CheckExportable(
+                hdImage, CertFromContainer.AT_SIGNATURE);
+            return exchange.KeyFound || signature.KeyFound;
         }
 
         /// <summary>Удалить установленный контейнер. Удаляет только папку, похожую на контейнер внутри хранилища.</summary>
@@ -219,6 +232,18 @@ namespace CryptoProExport
                 if (!Directory.Exists(candidate) && !File.Exists(candidate)) return candidate;
             }
             throw new IOException(Strings.Format("err.store.full", storeDir));
+        }
+
+        /// <summary>
+        /// Короткое ASCII-имя физической папки HDIMAGE. Логическое имя не теряется:
+        /// оно лежит в name.key. Длинные имена папок копировались без ошибки, но CSP 5
+        /// на Windows не считывал их как контейнеры. Восемь ASCII-символов совместимы с
+        /// классической раскладкой HDIMAGE; суффиксы .000, .001, … разрешают коллизии.
+        /// </summary>
+        internal static string HdImageFolderBase(string containerName)
+        {
+            byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(containerName ?? ""));
+            return "cpx" + Convert.ToHexString(hash, 0, 3).Substring(0, 5).ToLowerInvariant();
         }
 
         internal static string Sanitize(string name)

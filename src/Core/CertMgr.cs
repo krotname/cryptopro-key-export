@@ -80,6 +80,18 @@ namespace CryptoProExport
 
             var check = CertFromContainer.CheckExportable(
                 container, signatureKey ? CertFromContainer.AT_SIGNATURE : CertFromContainer.AT_KEYEXCHANGE);
+            // Одноключевая копия подписного ключа не должна требовать отдельного
+            // флага в GUI/CLI: если ключа обмена нет, а подписной есть, выбираем его.
+            if (!signatureKey && !check.KeyFound)
+            {
+                var signatureCheck = CertFromContainer.CheckExportable(
+                    container, CertFromContainer.AT_SIGNATURE);
+                if (signatureCheck.KeyFound)
+                {
+                    signatureKey = true;
+                    check = signatureCheck;
+                }
+            }
             if (!check.KeyFound)
                 return new ToolResult { Success = false, ExitCode = -2, Output = Strings.Format("err.container.nokey", container) };
             if (!check.Exportable)

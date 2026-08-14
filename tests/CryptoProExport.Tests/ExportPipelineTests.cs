@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using Org.BouncyCastle.Asn1;
 using Xunit;
 
 namespace CryptoProExport.Tests
@@ -30,6 +34,69 @@ namespace CryptoProExport.Tests
         {
             Assert.False(ExportPipeline.AllPresentKeysHandled(new RutokenContainer(),
                                                                "exchange.cer", "signature.cer"));
+        }
+
+        [Fact]
+        public void ResolveLitePin_UsesExplicitPinWithoutInspectingTokenFlags()
+        {
+            var token = new Pkcs11TokenInfo { PinLocked = true, PinFinalTry = true };
+
+            Assert.Equal("user-entered", ExportPipeline.ResolveLitePin(token, "user-entered"));
+        }
+
+        [Fact]
+        public void ResolveLitePin_UsesFactoryPinOnlyForCleanDefaultToken()
+        {
+            var token = new Pkcs11TokenInfo { PinDefault = true };
+
+            Assert.Equal("12345678", ExportPipeline.ResolveLitePin(token, null));
+        }
+
+        [Theory]
+        [InlineData(false, false, false, false)]
+        [InlineData(true, true, false, false)]
+        [InlineData(true, false, true, false)]
+        [InlineData(true, false, false, true)]
+        public void ResolveLitePin_RefusesGuessingOrUnsafeCounter(
+            bool isDefault, bool countLow, bool finalTry, bool locked)
+        {
+            var token = new Pkcs11TokenInfo
+            {
+                PinDefault = isDefault,
+                PinCountLow = countLow,
+                PinFinalTry = finalTry,
+                PinLocked = locked,
+            };
+
+            Assert.Throws<LiteApduException>(() => ExportPipeline.ResolveLitePin(token, null));
+        }
+
+        [Fact]
+        public void NormalizeLiteContainer_ConvertsBothPrimaryFilesAndPreservesHeader()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "cpx-normalize-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            try
+            {
+                ContainerKeyExtractorTests.BuildSyntheticContainer(dir, 23, "");
+                File.WriteAllBytes(Path.Combine(dir, "name.key"), NameKey.Build("normalize"));
+                byte[] encrypted = ContainerKeyExtractor.ParsePrimary(
+                    File.ReadAllBytes(Path.Combine(dir, "primary.key")));
+                byte[] cspEnvelope = new byte[32];
+                for (int i = 0; i < cspEnvelope.Length; i++) cspEnvelope[i] = (byte)(i + 1);
+                File.WriteAllBytes(Path.Combine(dir, "primary.key"), new DerSequence(
+                    new DerOctetString(cspEnvelope),
+                    new DerTaggedObject(false, 0, new DerOctetString(encrypted))).GetEncoded());
+                byte[] header = File.ReadAllBytes(Path.Combine(dir, "header.key"));
+
+                ExportPipeline.NormalizeLiteContainer(dir);
+
+                Assert.Equal(header, File.ReadAllBytes(Path.Combine(dir, "header.key")));
+                Assert.Equal(36, new FileInfo(Path.Combine(dir, "primary.key")).Length);
+                Assert.Equal(encrypted, ContainerKeyExtractor.ParsePrimary(
+                    File.ReadAllBytes(Path.Combine(dir, "primary.key"))));
+            }
+            finally { Directory.Delete(dir, recursive: true); }
         }
     }
 }

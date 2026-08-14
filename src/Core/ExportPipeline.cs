@@ -45,7 +45,7 @@ namespace CryptoProExport
         public ExportPipeline(string p12UtilityPath = null)
         {
             Exporter = new RutokenExporter();
-            Exporter.Log = m => Log("[rutoken] " + m);
+            Exporter.Log = m => Log("[rtCOMLite] " + m);
 
             // Простому `export` p12utility не нужен. Отсутствие утилиты проверяется только
             // перед полным циклом, иначе сборка без embedded tools не могла бы хотя бы снять
@@ -78,6 +78,91 @@ namespace CryptoProExport
         }
 
         /// <summary>
+        /// Сохранить один уже прочитанный через rtCOMLite контейнер. Нужен GUI, где выбранная
+        /// строка должна означать ровно один контейнер, а не незаметный обход всех носителей.
+        /// </summary>
+        public (RutokenContainer container, string folder) ExportContainer(
+            RutokenContainer container, string destParent)
+        {
+            if (container == null) throw new ArgumentNullException(nameof(container));
+            Cancel.ThrowIfCancellationRequested();
+            string folder = container.SaveTo(destParent);
+            Log(Strings.Format("pipe.saved", container.ContainerName, folder));
+            return (container, folder);
+        }
+
+        /// <summary>
+        /// Снять ровно один выбранный контейнер Rutoken Lite через PC/SC APDU. Если PIN не
+        /// задан пользователем, заводской PIN применяется лишь по безопасным флагам PKCS#11.
+        /// Имя контейнера не используется в имени каталога, чтобы не раскрывать персональные
+        /// данные; уникальность каталога обеспечивает <see cref="RutokenLiteApdu"/>.
+        /// </summary>
+        public (RutokenContainer container, string folder) ExportLiteContainer(
+            Pkcs11TokenInfo token, LiteContainerRef selected, string destParent, string userPin = null)
+        {
+            if (token == null) throw new ArgumentNullException(nameof(token));
+            if (selected == null) throw new ArgumentNullException(nameof(selected));
+            if (token.Kind != RutokenKind.RutokenLite)
+                throw new ArgumentException(Pkcs11Token.KindName(token.Kind), nameof(token));
+
+            string pin = ResolveLitePin(token, userPin);
+            string folder = RutokenLiteApdu.ReserveOutputDirectory(
+                destParent, $"lite_{selected.DfIndex:X2}");
+            var lite = new RutokenLiteApdu { Log = m => Log("[APDU] " + m) };
+            try
+            {
+                Cancel.ThrowIfCancellationRequested();
+                string actualName = lite.ReadContainer(token.Reader, selected.DfIndex, pin, folder);
+                var container = LoadSavedContainer(
+                    folder, token.Reader, $"APDU/{selected.DfIndex:X2}", actualName ?? selected.Name);
+                Log(Strings.Format("pipe.saved", container.ContainerName, folder));
+                return (container, folder);
+            }
+            catch
+            {
+                // ReserveOutputDirectory создаёт пустую папку заранее. После отказа карты или
+                // отмены не оставляем её как ложный результат; непустой каталог не трогаем.
+                try
+                {
+                    if (Directory.Exists(folder))
+                    {
+                        using var entries = Directory.EnumerateFileSystemEntries(folder).GetEnumerator();
+                        if (!entries.MoveNext()) Directory.Delete(folder);
+                    }
+                }
+                catch (IOException) { }
+                throw;
+            }
+        }
+
+        /// <summary>Выбрать PIN Lite без подбора и без риска добить счётчик попыток.</summary>
+        internal static string ResolveLitePin(Pkcs11TokenInfo token, string userPin)
+        {
+            if (!string.IsNullOrEmpty(userPin)) return userPin;
+            if (token != null && token.PinDefault && !token.PinCountLow &&
+                !token.PinFinalTry && !token.PinLocked)
+                return "12345678";
+            throw new LiteApduException(Strings.Format("err.lite.pin", "—"));
+        }
+
+        private static RutokenContainer LoadSavedContainer(
+            string folder, string tokenName, string tokenDir, string containerName)
+        {
+            var container = new RutokenContainer
+            {
+                TokenName = tokenName,
+                TokenDir = tokenDir,
+                ContainerName = containerName,
+            };
+            foreach (string file in ContainerStore.ContainerFiles)
+            {
+                string path = Path.Combine(folder, file);
+                if (File.Exists(path)) container.Files[file] = File.ReadAllBytes(path);
+            }
+            return container;
+        }
+
+        /// <summary>
         /// Полный проход: снять контейнеры с токенов и сделать ключи экспортируемыми.
         /// Сертификат берётся автоматически через CryptoAPI (по имени контейнера, пока токен вставлен);
         /// при неудаче — используются переданные certExchange/certSignature (.cer).
@@ -97,44 +182,241 @@ namespace CryptoProExport
             {
                 result.Exported++;
                 Cancel.ThrowIfCancellationRequested();
-                string ex = certExchange, sg = certSignature;
-
-                // Авто-извлечение сертификата из контейнера (пока токен ещё вставлен)
-                if ((ex == null || sg == null) && !string.IsNullOrEmpty(container.ContainerName))
-                {
-                    try
-                    {
-                        var found = CertFromContainer.SaveCerts(container.ContainerName, folder);
-                        ex ??= found.exchange;
-                        sg ??= found.signature;
-                        if (found.exchange != null || found.signature != null)
-                            Log(Strings.Format("pipe.cert.found", container.ContainerName));
-                    }
-                    catch (Exception e) { Log(Strings.Format("pipe.cert.autofail", e.Message)); }
-                }
-
-                if (ex == null && sg == null)
-                {
-                    Log(Strings.Format("pipe.keyexport.skip", folder));
-                    continue;
-                }
-
-                // У шест-файлового контейнера два независимых ключа. p12utility успешно
-                // обработает только переданный сертификат и вернёт 0, даже если второй ключ
-                // останется закрытым. Такой частичный результат нельзя засчитывать как full.
-                if (!AllPresentKeysHandled(container, ex, sg))
-                {
-                    Log(Strings.Format("pipe.keyexport.skip", folder));
-                    continue;
-                }
-
-                var r = P12.MakeExportable(folder, ex, sg, containerPassword);
-                Log(r.Success
-                    ? Strings.Format("pipe.keyexport.ok", folder)
-                    : Strings.Format("pipe.keyexport.fail", folder, r.Explain(), r.Output));
-                if (r.Success) result.Completed++;
+                if (MakeSavedContainerExportable(
+                    container, folder, certExchange, certSignature, containerPassword))
+                    result.Completed++;
             }
             return result;
+        }
+
+        /// <summary>Полный цикл для одного заранее выбранного rtCOMLite-контейнера.</summary>
+        public ExportPipelineResult ExportAndMakeExportable(
+            RutokenContainer container, string destParent,
+            string certExchange = null, string certSignature = null,
+            string containerPassword = null)
+        {
+            if (P12 == null)
+                throw new FileNotFoundException(Strings.Get("err.p12.unavailable"));
+            var saved = ExportContainer(container, destParent);
+            return CompleteOne(saved.container, saved.folder,
+                certExchange, certSignature, containerPassword);
+        }
+
+        /// <summary>Полный цикл для одного выбранного APDU-контейнера Rutoken Lite.</summary>
+        public ExportPipelineResult ExportLiteAndMakeExportable(
+            Pkcs11TokenInfo token, LiteContainerRef selected, string destParent,
+            string userPin = null, string certExchange = null, string certSignature = null,
+            string containerPassword = null)
+        {
+            if (P12 == null)
+                throw new FileNotFoundException(Strings.Get("err.p12.unavailable"));
+            var saved = ExportLiteContainer(token, selected, destParent, userPin);
+            return CompleteOne(saved.container, saved.folder,
+                certExchange, certSignature, containerPassword, normalizeLite: true);
+        }
+
+        private ExportPipelineResult CompleteOne(
+            RutokenContainer container, string folder,
+            string certExchange, string certSignature, string containerPassword,
+            bool normalizeLite = false)
+        {
+            var result = new ExportPipelineResult { Exported = 1 };
+            if (normalizeLite)
+            {
+                if (MakeLiteSavedContainerExportable(
+                    container, folder, certExchange, certSignature, containerPassword))
+                    result.Completed = 1;
+                return result;
+            }
+
+            if (!MakeSavedContainerExportable(
+                container, folder, certExchange, certSignature, containerPassword))
+                return result;
+            result.Completed = 1;
+            return result;
+        }
+
+        /// <summary>
+        /// Lite требует двухфазного ремонта. Первый cprepair преобразует обёртки ключей;
+        /// второй с <c>--normal_header</c> делает итоговую HDIMAGE-копию, из которой certmgr
+        /// реально экспортирует PFX. Для контейнера с двумя ключами создаются две
+        /// одноключевые копии: так CSP не подменяет одну пару второй.
+        /// </summary>
+        private bool MakeLiteSavedContainerExportable(
+            RutokenContainer container, string folder,
+            string certExchange, string certSignature, string containerPassword)
+        {
+            if (!TryResolveCertificates(container, folder, certExchange, certSignature,
+                                        out string ex, out string sg))
+                return false;
+
+            var first = P12.MakeExportable(folder, ex, sg, containerPassword, normalHeader: false);
+            if (!first.Success)
+            {
+                Log(Strings.Format("pipe.keyexport.fail", folder,
+                    first.Explain(), first.Output));
+                return false;
+            }
+
+            bool hasExchange = container.Files.ContainsKey("primary.key");
+            bool hasSignature = container.Files.ContainsKey("primary2.key");
+            string signatureFolder = null;
+            try
+            {
+                if (hasExchange && hasSignature)
+                    signatureFolder = CloneLiteOutput(folder, "signature");
+
+                if (hasExchange)
+                {
+                    NormalizeLiteContainer(folder, containerPassword, useCspEnvelope: false);
+                    RestoreOriginalHeader(folder);
+                    var exchangeRepair = P12.MakeExportable(
+                        folder, ex, null, containerPassword, normalHeader: true);
+                    if (!exchangeRepair.Success)
+                        throw new InvalidOperationException(exchangeRepair.Explain());
+                    if (hasSignature)
+                    {
+                        DeleteIfExists(Path.Combine(folder, "primary2.key"));
+                        DeleteIfExists(Path.Combine(folder, "masks2.key"));
+                        WriteContainerName(folder, container.ContainerName + " [exchange]");
+                    }
+                    Log(Strings.Format("pipe.lite.normalized", folder));
+                }
+
+                if (hasSignature)
+                {
+                    string target = signatureFolder ?? folder;
+                    NormalizeLiteContainer(target, containerPassword, useCspEnvelope: true);
+                    RestoreOriginalHeader(target);
+                    // p12utility 4.0.8 в normal-header выбирает подписную пару только
+                    // когда видит оба сертифика и обе пары на входе.
+                    var signatureRepair = P12.MakeExportable(
+                        target, ex, sg, containerPassword, normalHeader: true);
+                    if (!signatureRepair.Success)
+                        throw new InvalidOperationException(signatureRepair.Explain());
+                    if (hasExchange)
+                    {
+                        DeleteIfExists(Path.Combine(target, "primary.key"));
+                        DeleteIfExists(Path.Combine(target, "masks.key"));
+                        WriteContainerName(target, container.ContainerName + " [signature]");
+                    }
+                    Log(Strings.Format("pipe.lite.normalized", target));
+                }
+                return true;
+            }
+            catch (Exception e)
+            {
+                Log(Strings.Format("pipe.lite.normalizefail", folder, e.Message));
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// APDU отдаёт неэкспортируемый primary как <c>SEQUENCE { OCTET STRING A, [0] B }</c>.
+        /// После снятия флага HDIMAGE ожидает обычную файловую форму с одним B.
+        /// Все шесть файлов перечитываются после p12utility и меняются атомарно, чтобы не
+        /// откатить исправленный header.key и не оставить половину пары преобразованной.
+        /// </summary>
+        internal static void NormalizeLiteContainer(
+            string folder, string containerPassword = null, bool useCspEnvelope = false)
+        {
+            string exchangePath = Path.Combine(folder, "primary.key");
+            string signaturePath = Path.Combine(folder, "primary2.key");
+            bool hasExchange = File.Exists(exchangePath);
+            bool hasSignature = File.Exists(signaturePath);
+
+            // Сначала доказываем пароль и целостность обоих ключей по открытой части.
+            if (hasExchange)
+                _ = ContainerKeyExtractor.ExtractKey(folder, containerPassword ?? "", signature: false);
+            if (hasSignature)
+                _ = ContainerKeyExtractor.ExtractKey(folder, containerPassword ?? "", signature: true);
+            var blobs = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+            foreach (string file in ContainerStore.ContainerFiles)
+            {
+                string path = Path.Combine(folder, file);
+                if (File.Exists(path)) blobs[file] = File.ReadAllBytes(path);
+            }
+            if (hasExchange)
+                blobs["primary.key"] = useCspEnvelope
+                    ? ContainerKeyExtractor.NormalizePrimaryCspEnvelope(File.ReadAllBytes(exchangePath))
+                    : ContainerKeyExtractor.NormalizePrimaryForExport(File.ReadAllBytes(exchangePath));
+            if (hasSignature)
+                blobs["primary2.key"] = useCspEnvelope
+                    ? ContainerKeyExtractor.NormalizePrimaryCspEnvelope(File.ReadAllBytes(signaturePath))
+                    : ContainerKeyExtractor.NormalizePrimaryForExport(File.ReadAllBytes(signaturePath));
+            RutokenLiteApdu.SaveFiles(folder, blobs);
+        }
+
+        private static string CloneLiteOutput(string folder, string suffix)
+        {
+            string parent = Path.GetDirectoryName(folder);
+            string clone = RutokenLiteApdu.ReserveOutputDirectory(
+                parent, Path.GetFileName(folder) + "_" + suffix);
+            foreach (string file in Directory.GetFiles(folder))
+                File.Copy(file, Path.Combine(clone, Path.GetFileName(file)));
+            return clone;
+        }
+
+        private static void RestoreOriginalHeader(string folder)
+        {
+            string backup = Path.Combine(folder, "header.key.backup");
+            if (!File.Exists(backup))
+                throw new FileNotFoundException(Strings.Get("err.header.missing"), backup);
+            File.Copy(backup, Path.Combine(folder, "header.key"), overwrite: true);
+        }
+
+        private static void DeleteIfExists(string path)
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+
+        private static void WriteContainerName(string folder, string name)
+        {
+            File.WriteAllBytes(Path.Combine(folder, "name.key"), NameKey.Build(name));
+        }
+
+        private bool MakeSavedContainerExportable(
+            RutokenContainer container, string folder,
+            string certExchange, string certSignature, string containerPassword,
+            bool normalHeader = false)
+        {
+            if (!TryResolveCertificates(container, folder, certExchange, certSignature,
+                                        out string ex, out string sg)) return false;
+
+            var r = P12.MakeExportable(folder, ex, sg, containerPassword,
+                normalHeader: normalHeader);
+            Log(r.Success
+                ? Strings.Format("pipe.keyexport.ok", folder)
+                : Strings.Format("pipe.keyexport.fail", folder, r.Explain(), r.Output));
+            return r.Success;
+        }
+
+        private bool TryResolveCertificates(
+            RutokenContainer container, string folder,
+            string certExchange, string certSignature,
+            out string ex, out string sg)
+        {
+            Cancel.ThrowIfCancellationRequested();
+            ex = certExchange;
+            sg = certSignature;
+            if ((ex == null || sg == null) && !string.IsNullOrEmpty(container.ContainerName))
+            {
+                try
+                {
+                    var found = CertFromContainer.SaveCerts(container.ContainerName, folder);
+                    ex ??= found.exchange;
+                    sg ??= found.signature;
+                    if (found.exchange != null || found.signature != null)
+                        Log(Strings.Format("pipe.cert.found", container.ContainerName));
+                }
+                catch (Exception e) { Log(Strings.Format("pipe.cert.autofail", e.Message)); }
+            }
+            if (ex == null && sg == null || !AllPresentKeysHandled(container, ex, sg))
+            {
+                Log(Strings.Format("pipe.keyexport.skip", folder));
+                return false;
+            }
+            return true;
         }
 
         internal static bool AllPresentKeysHandled(RutokenContainer container,
