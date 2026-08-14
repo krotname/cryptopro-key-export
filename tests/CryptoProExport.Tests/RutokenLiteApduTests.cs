@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace CryptoProExport.Tests
@@ -190,6 +191,37 @@ namespace CryptoProExport.Tests
                 Assert.Equal("keep", File.ReadAllText(Path.Combine(dir, "notes", "readme.txt")));
             }
             finally { Directory.Delete(dir, recursive: true); }
+        }
+
+        [Fact]
+        public void ReserveOutputDirectory_ConcurrentCallersGetDifferentFolders()
+        {
+            string root = Path.Combine(Path.GetTempPath(), "cpx-lite-reserve-" + Guid.NewGuid().ToString("N"));
+            string first = null, second = null;
+            try
+            {
+                Parallel.Invoke(
+                    () => first = RutokenLiteApdu.ReserveOutputDirectory(root, "lite_01"),
+                    () => second = RutokenLiteApdu.ReserveOutputDirectory(root, "lite_01"));
+
+                Assert.NotEqual(first, second);
+                Assert.True(Directory.Exists(first));
+                Assert.True(Directory.Exists(second));
+            }
+            finally { if (Directory.Exists(root)) Directory.Delete(root, recursive: true); }
+        }
+
+        [Fact]
+        public void ReserveOutputDirectory_UnsafeNameCannotEscapeParent()
+        {
+            string root = Path.Combine(Path.GetTempPath(), "cpx-lite-reserve-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                string reserved = RutokenLiteApdu.ReserveOutputDirectory(root, @"..\outside");
+
+                Assert.Equal(Path.GetFullPath(root), Path.GetDirectoryName(Path.GetFullPath(reserved)));
+            }
+            finally { if (Directory.Exists(root)) Directory.Delete(root, recursive: true); }
         }
     }
 }

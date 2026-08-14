@@ -255,8 +255,19 @@ namespace CryptoProExport.App
                         foreach (var c in containers)
                         {
                             // Имя контейнера может нести ФИО — в путь на диске не кладём, только индекс.
-                            string dir = UniqueDirectory(outDir, $"lite_{c.DfIndex:X2}");
-                            lite.ReadContainer(reader, c.DfIndex, pin, dir);
+                            string dir = RutokenLiteApdu.ReserveOutputDirectory(outDir, $"lite_{c.DfIndex:X2}");
+                            try { lite.ReadContainer(reader, c.DfIndex, pin, dir); }
+                            catch
+                            {
+                                // APDU не успела ничего сохранить — не оставляем ложный пустой результат.
+                                try
+                                {
+                                    if (Directory.Exists(dir) && !Directory.EnumerateFileSystemEntries(dir).Any())
+                                        Directory.Delete(dir);
+                                }
+                                catch (IOException) { }
+                                throw;
+                            }
                             Out(Strings.Format("cli.done", dir));
                             try
                             {
@@ -328,18 +339,6 @@ namespace CryptoProExport.App
                 Out("    " + Strings.Format("cli.token.certfail", c.Name ?? "?", e.Message));
                 return false;
             }
-        }
-
-        /// <summary>Свободная папка без перезаписи результата прошлого запуска.</summary>
-        private static string UniqueDirectory(string parent, string baseName)
-        {
-            for (int n = 1; n <= 1000; n++)
-            {
-                string name = n == 1 ? baseName : $"{baseName}({n})";
-                string path = Path.Combine(parent, name);
-                if (!Directory.Exists(path) && !File.Exists(path)) return path;
-            }
-            throw new IOException(Strings.Format("err.store.full", parent));
         }
 
         /// <summary>

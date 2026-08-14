@@ -192,6 +192,43 @@ namespace CryptoProExport
             }
         }
 
+        /// <summary>
+        /// Атомарно занять имя каталога до долгого чтения карты. Простая проверка Exists
+        /// оставляет race между двумя процессами с одинаковым DF index.
+        /// </summary>
+        public static string ReserveOutputDirectory(string parent, string baseName)
+        {
+            if (parent == null) throw new ArgumentNullException(nameof(parent));
+            Directory.CreateDirectory(parent);
+            baseName = RutokenContainer.SafeFolderName(baseName);
+            string reservation = Path.Combine(parent, ".cpx-reserve-" + Guid.NewGuid().ToString("N") + ".tmp");
+            Directory.CreateDirectory(reservation);
+            try
+            {
+                for (int n = 1; n <= 1000; n++)
+                {
+                    string name = n == 1 ? baseName : $"{baseName}({n})";
+                    string path = Path.Combine(parent, name);
+                    if (Directory.Exists(path) || File.Exists(path)) continue;
+                    try
+                    {
+                        Directory.Move(reservation, path);
+                        return path;
+                    }
+                    catch (IOException) when (Directory.Exists(path) || File.Exists(path))
+                    {
+                        // Другой процесс занял кандидат после проверки — пробуем следующий.
+                    }
+                }
+                throw new IOException(Strings.Format("err.store.full", parent));
+            }
+            finally
+            {
+                if (Directory.Exists(reservation))
+                    try { Directory.Delete(reservation); } catch (IOException) { }
+            }
+        }
+
         /// <summary>Перезаписать содержимое файла, сохранив ACL существующего файла.</summary>
         private static void OverwriteFile(string source, string target)
         {
