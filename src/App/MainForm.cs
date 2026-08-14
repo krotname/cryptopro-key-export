@@ -46,6 +46,12 @@ namespace CryptoProExport.App
             public byte[] Certificate;
         }
 
+        private sealed class ContainerSelection
+        {
+            public string Name;
+            public TokenCertificateSelection Token;
+        }
+
         public MainForm()
         {
             BuildUi();
@@ -452,7 +458,8 @@ namespace CryptoProExport.App
 
         private void DoExtract()
         {
-            string container = SelectedContainerName();
+            ContainerSelection selected = SelectedContainer();
+            string container = selected?.Name;
             if (container == null) { Log(Strings.Get("log.need.container")); return; }
             string destRoot = TextOf(_txtDest).Trim();
             if (string.IsNullOrEmpty(destRoot)) { Log(Strings.Get("log.need.dest")); return; }
@@ -460,7 +467,7 @@ namespace CryptoProExport.App
 
             // Для строки PKCS#11 сохраняем именно сертификат выбранного токена. Поиск заново
             // только по метке раньше брал первый попавшийся токен с тем же именем контейнера.
-            var tokenSelection = SelectedTokenCertificate();
+            var tokenSelection = selected.Token;
             if (tokenSelection != null)
             {
                 if (tokenSelection.Certificate == null)
@@ -783,13 +790,18 @@ namespace CryptoProExport.App
             return _lv.SelectedItems.Count > 0 ? _lv.SelectedItems[0].SubItems[1].Text : null;
         }
 
-        private TokenCertificateSelection SelectedTokenCertificate()
+        /// <summary>Имя и Tag одной строки снимаются одним UI-вызовом, без selection race.</summary>
+        private ContainerSelection SelectedContainer()
         {
             if (InvokeRequired)
-                return (TokenCertificateSelection)Invoke(new Func<TokenCertificateSelection>(SelectedTokenCertificate));
-            return _lv.SelectedItems.Count > 0
-                ? _lv.SelectedItems[0].Tag as TokenCertificateSelection
-                : null;
+                return (ContainerSelection)Invoke(new Func<ContainerSelection>(SelectedContainer));
+            if (_lv.SelectedItems.Count == 0) return null;
+            ListViewItem item = _lv.SelectedItems[0];
+            return new ContainerSelection
+            {
+                Name = item.SubItems[1].Text,
+                Token = item.Tag as TokenCertificateSelection,
+            };
         }
 
         private void Log(string msg)

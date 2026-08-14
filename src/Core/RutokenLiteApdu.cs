@@ -360,7 +360,8 @@ namespace CryptoProExport
                 {
                     int chunk = Math.Min(255, size - got);
                     var r = Transmit(new byte[] { 0x00, 0xB0, (byte)(got >> 8), (byte)got, (byte)chunk });
-                    if (!Ok(r)) throw new LiteApduException("READ BINARY: " + Status(r));
+                    if (!Ok(r))
+                        throw new LiteApduException(Strings.Format("err.com.call", "READ BINARY", Status(r)));
                     int n = Math.Min(r.Length - 2, size - got);
                     if (n <= 0)
                         throw new LiteApduException(Strings.Format("err.com.call", "READ BINARY", Hex(0)));
