@@ -102,16 +102,24 @@ namespace CryptoProExport
         }
 
         /// <summary>
-        /// Записать уже полностью прочитанный набор файлов. Обязательная четвёрка должна быть
-        /// целой, а необязательная пара подписи — либо целиком, либо отсутствовать. Старые файлы
-        /// удаляются только после успешной подготовки новых временных файлов.
+        /// Записать уже полностью прочитанный набор файлов. Общие header/name обязательны,
+        /// каждая присутствующая пара ключа должна быть целой, и нужна хотя бы одна пара
+        /// (обмена или подписи). Старые файлы удаляются только после успешной подготовки новых.
         /// </summary>
         internal static void SaveFiles(string outDir, IReadOnlyDictionary<string, byte[]> blobs)
         {
             if (outDir == null) throw new ArgumentNullException(nameof(outDir));
-            foreach (string required in new[] { "masks.key", "primary.key", "header.key", "name.key" })
+            foreach (string required in new[] { "header.key", "name.key" })
                 if (blobs == null || !blobs.ContainsKey(required) || blobs[required] == null)
                     throw new LiteApduException(Strings.Format("err.extract.nofile", required, outDir));
+
+            bool hasMasks = blobs.ContainsKey("masks.key") && blobs["masks.key"] != null;
+            bool hasPrimary = blobs.ContainsKey("primary.key") && blobs["primary.key"] != null;
+            if (hasMasks != hasPrimary)
+            {
+                string missing = hasMasks ? "primary.key" : "masks.key";
+                throw new LiteApduException(Strings.Format("err.extract.nofile", missing, outDir));
+            }
 
             bool hasMasks2 = blobs.ContainsKey("masks2.key") && blobs["masks2.key"] != null;
             bool hasPrimary2 = blobs.ContainsKey("primary2.key") && blobs["primary2.key"] != null;
@@ -120,6 +128,9 @@ namespace CryptoProExport
                 string missing = hasMasks2 ? "primary2.key" : "masks2.key";
                 throw new LiteApduException(Strings.Format("err.extract.nofile", missing, outDir));
             }
+            if (!hasPrimary && !hasPrimary2)
+                throw new LiteApduException(Strings.Format(
+                    "err.extract.nofile", "primary.key / primary2.key", outDir));
 
             string destination = Path.GetFullPath(outDir).TrimEnd(
                 Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);

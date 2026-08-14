@@ -76,6 +76,24 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void Extract_AcceptsSignatureOnlyContainer()
+        {
+            string dir = NewTempDir();
+            try
+            {
+                var built = BuildSyntheticContainer(dir, seed: 17, password: "");
+                File.Move(Path.Combine(dir, "primary.key"), Path.Combine(dir, "primary2.key"));
+                File.Move(Path.Combine(dir, "masks.key"), Path.Combine(dir, "masks2.key"));
+
+                var result = ContainerKeyExtractor.Extract(dir);
+
+                Assert.Equal(built.PrivateKey, result.PrivateKey);
+                Assert.Equal(built.Certificate, result.Certificate);
+            }
+            finally { TryDelete(dir); }
+        }
+
+        [Fact]
         public void Pkcs8_RoundTripsThroughBouncyCastle()
         {
             string dir = NewTempDir();

@@ -50,6 +50,15 @@ namespace CryptoProExport.Tests
             foreach (string f in new[] { "header.key", "primary.key", "masks.key" })
                 File.WriteAllBytes(Path.Combine(noName, f), new byte[] { 1 });
             Assert.False(ContainerStore.LooksLikeContainer(noName));
+
+            string signatureOnly = Path.Combine(_root, "signature-only");
+            Directory.CreateDirectory(signatureOnly);
+            foreach (string f in new[] { "name.key", "header.key", "primary2.key", "masks2.key" })
+                File.WriteAllBytes(Path.Combine(signatureOnly, f), new byte[] { 1 });
+            Assert.True(ContainerStore.LooksLikeContainer(signatureOnly));
+
+            File.Delete(Path.Combine(signatureOnly, "masks2.key"));
+            Assert.False(ContainerStore.LooksLikeContainer(signatureOnly));
         }
 
         [Fact]

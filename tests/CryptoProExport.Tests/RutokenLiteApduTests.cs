@@ -141,6 +141,30 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void SaveFiles_AcceptsSignatureOnlyContainer()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "cpx-lite-save-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                var signatureOnly = new Dictionary<string, byte[]>
+                {
+                    ["name.key"] = new byte[] { 1 },
+                    ["header.key"] = new byte[] { 2 },
+                    ["primary2.key"] = new byte[] { 3 },
+                    ["masks2.key"] = new byte[] { 4 },
+                };
+
+                RutokenLiteApdu.SaveFiles(dir, signatureOnly);
+
+                Assert.True(File.Exists(Path.Combine(dir, "primary2.key")));
+                Assert.True(File.Exists(Path.Combine(dir, "masks2.key")));
+                Assert.False(File.Exists(Path.Combine(dir, "primary.key")));
+                Assert.False(File.Exists(Path.Combine(dir, "masks.key")));
+            }
+            finally { if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true); }
+        }
+
+        [Fact]
         public void SaveFiles_LockedOldFileRollsBackWholeContainer()
         {
             string dir = Path.Combine(Path.GetTempPath(), "cpx-lite-save-" + Guid.NewGuid().ToString("N"));

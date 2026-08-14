@@ -20,7 +20,7 @@ namespace CryptoProExport
     [SupportedOSPlatform("windows")]
     public static class ContainerStore
     {
-        /// <summary>Файлы, из которых состоит контейнер. Первые четыре обязательны.</summary>
+        /// <summary>Файлы контейнера: name/header и хотя бы одна полная пара primary/masks.</summary>
         public static readonly string[] ContainerFiles =
             { "name.key", "header.key", "primary.key", "masks.key", "primary2.key", "masks2.key" };
 
@@ -52,13 +52,19 @@ namespace CryptoProExport
             return list;
         }
 
-        /// <summary>Похожа ли папка на контейнер КриптоПро (есть обязательные файлы).</summary>
-        public static bool LooksLikeContainer(string folder) =>
-            Directory.Exists(folder)
-            && File.Exists(Path.Combine(folder, "name.key"))
-            && File.Exists(Path.Combine(folder, "header.key"))
-            && File.Exists(Path.Combine(folder, "primary.key"))
-            && File.Exists(Path.Combine(folder, "masks.key"));
+        /// <summary>Похожа ли папка на контейнер КриптоПро (общие файлы и целая пара ключа).</summary>
+        public static bool LooksLikeContainer(string folder)
+        {
+            if (!Directory.Exists(folder)
+                || !File.Exists(Path.Combine(folder, "name.key"))
+                || !File.Exists(Path.Combine(folder, "header.key"))) return false;
+
+            bool primary = File.Exists(Path.Combine(folder, "primary.key"));
+            bool masks = File.Exists(Path.Combine(folder, "masks.key"));
+            bool primary2 = File.Exists(Path.Combine(folder, "primary2.key"));
+            bool masks2 = File.Exists(Path.Combine(folder, "masks2.key"));
+            return primary == masks && primary2 == masks2 && (primary || primary2);
+        }
 
         /// <summary>Результат установки контейнера в хранилище.</summary>
         public sealed class InstallResult
