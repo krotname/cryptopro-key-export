@@ -71,6 +71,7 @@ namespace CryptoProExport.App
                         // Токены по PKCS#11 (Рутокен ЭЦП/Lite): контейнеры видны без ввода PIN.
                         // Лог обязателен: без него сбой драйвера выглядел бы как «токенов нет».
                         var tokens = Pkcs11Token.Enumerate(readContainers: true, log: Out);
+                        Out("[PKCS#11] " + Strings.Format("token.found", tokens.Count));
                         Out(Strings.Get("cli.list.pkcs11"));
                         // Секция печатается всегда, даже пустая: молчание читалось бы как
                         // «по PKCS#11 не смотрели», а не как «токенов не вставлено».
@@ -85,7 +86,10 @@ namespace CryptoProExport.App
                         Out(Strings.Get("cli.list.tokens"));
                         var exp = new RutokenExporter
                         {
-                            Log = Out,
+                            // Это отдельный backend, который видит только совместимые с
+                            // rtCOMLite Рутокены. Его счётчик нельзя выдавать за общее число
+                            // подключённых аппаратных устройств.
+                            Log = m => Out("[rtCOMLite] " + m),
                             SkipReaders = Pkcs11Token.SmartCardReaders(tokens),
                         };
                         foreach (var c in exp.ReadAllContainers())
