@@ -3,7 +3,7 @@
 > Документ-handoff для следующего разработчика или LLM-агента. Описывает состояние,
 > приоритеты и подводные камни. Перед работой прочитай также `AGENTS.md` и `README.md`.
 
-## 1. Текущее состояние (v1.5.1)
+## 1. Текущее состояние (v1.5.2)
 
 Готово и проверено на машине автора (Windows 11, КриптоПро CSP 5.0 R2 build 15873, .NET SDK 10):
 
@@ -14,7 +14,7 @@
 | `P12Utility` — обёртка p12utility | ✅ работает | `--cppublic` на тестовом контейнере 2816 = ExitCode 0 |
 | WinForms GUI | ✅ строится | `--selftest` ExitCode 0 |
 | Всплывающие подсказки в GUI | ✅ работает | `--selftest` строит 20 языков и проверяет 20 подсказок на каждом |
-| Вшитые зависимости (`BundledTools`) | ✅ работает | `deps`: p12utility и rtCOMLite распаковываются в `%LOCALAPPDATA%\CryptoProExport\bundled\1.5.1.0` |
+| Вшитые зависимости (`BundledTools`) | ✅ работает | `deps`: p12utility и rtCOMLite распаковываются в `%LOCALAPPDATA%\CryptoProExport\bundled\1.5.2.0` |
 | COM без регистрации (`RegFreeCom`) | ✅ работает | `list` из пустой папки: «rtCOMLite: встроенная копия, без регистрации в системе» → `Acquire()` → `EnumReaders()` |
 | Портативная сборка (single-file win-x86) | ✅ работает | `build\publish.ps1` → один exe 47,1 МБ; запуск из пустой папки, `--selftest` и `list` OK |
 | CLI (`deps`/`list`/`extractcert`/…) | ✅ работает | `list`, `extractcert` на реальных данных |
