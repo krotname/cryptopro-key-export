@@ -340,7 +340,7 @@ namespace CryptoProExport.App
                         if (info.Ok)
                         {
                             Out(Strings.Format("license.installed", LicenseGate.LicensePath));
-                            Out(LicenseGate.StatusText());
+                            Out(LicenseGate.Describe(info));
                             return 0;
                         }
                         Err(Strings.Get("license.status.invalid"));

@@ -181,20 +181,23 @@ namespace CryptoProExport
         /// <summary>Действительна ли установленная лицензия.</summary>
         public static bool IsLicensed() => Check().Ok;
 
-        /// <summary>Локализованная строка статуса лицензии для лога/строки состояния.</summary>
-        public static string StatusText()
+        /// <summary>Локализованная строка статуса установленной лицензии (для лога/строки состояния).</summary>
+        public static string StatusText() => Describe(Check());
+
+        /// <summary>
+        /// Локализованный статус конкретного результата проверки — <b>без повторного чтения файла</b>.
+        /// Нужно, чтобы показать итог именно попытки установки, а не перечитать прежнюю лицензию: иначе
+        /// отклонение выбранного файла при уже установленной валидной выглядело бы как успех.
+        /// </summary>
+        public static string Describe(LicenseInfo info) => info.State switch
         {
-            LicenseInfo info = Check();
-            return info.State switch
-            {
-                LicenseState.Valid => Strings.Format("license.status.valid", TermText(info.Payload!)),
-                // Причина отказа (Reason) — из вендоренного верификатора и всегда на русском: это
-                // диагностика, а не локализуемый текст. Пользователю показываем локализованный общий
-                // статус, а конкретную причину оставляем для лога/stderr (см. Cli.license).
-                LicenseState.Invalid => Strings.Get("license.status.invalid"),
-                _ => Strings.Get("license.status.none"),
-            };
-        }
+            LicenseState.Valid => Strings.Format("license.status.valid", TermText(info.Payload!)),
+            // Причина отказа (Reason) — из вендоренного верификатора и всегда на русском: это
+            // диагностика, а не локализуемый текст. Пользователю — общий локализованный статус,
+            // конкретная причина остаётся для лога/stderr (см. Cli.license, MainForm.DoLicense).
+            LicenseState.Invalid => Strings.Get("license.status.invalid"),
+            _ => Strings.Get("license.status.none"),
+        };
 
         /// <summary>Локализованная строка с отпечатком этой машины (для получения лицензии).</summary>
         public static string FingerprintText() => Strings.Format("license.fp", Fingerprint());

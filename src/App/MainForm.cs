@@ -89,6 +89,8 @@ namespace CryptoProExport.App
                     Log("  " + line);
                 Log(Strings.Format("log.session", SessionLog.FilePath));
                 Log(LicenseGate.StatusText());
+                // Отпечаток нужен, чтобы получить лицензию, — обещан в подсказке и README, показываем сразу.
+                Log(LicenseGate.FingerprintText());
                 Log("");
             });
         }
@@ -530,7 +532,9 @@ namespace CryptoProExport.App
             {
                 var info = LicenseGate.Install(dlg.FileName);
                 if (info.Ok) Log(Strings.Format("license.installed", LicenseGate.LicensePath));
-                Log(LicenseGate.StatusText());
+                // Показываем итог именно этой попытки (info), а не перечитанную прежнюю лицензию:
+                // иначе отклонение выбранного файла выглядело бы как успех при уже установленной.
+                Log(LicenseGate.Describe(info));
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
