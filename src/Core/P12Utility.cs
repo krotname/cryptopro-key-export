@@ -123,8 +123,7 @@ namespace CryptoProExport
             if (!hasExchange && !hasSignature)
                 throw new ArgumentException(Strings.Get("err.cert.required"));
 
-            // Бэкап header.key (как CertFix: header.key.backup)
-            File.Copy(header, header + ".backup", overwrite: true);
+            BackupHeader(header);
 
             // Копируем сертификаты в папку контейнера с ожидаемыми именами
             if (hasExchange)
@@ -134,6 +133,19 @@ namespace CryptoProExport
 
             string args = BuildRepairArguments(hasExchange, hasSignature, containerPassword, normalHeader);
             return Execute(args, containerFolder, timeoutMs);
+        }
+
+        /// <summary>
+        /// Бэкап header.key (как CertFix: header.key.backup). Существующий бэкап не
+        /// перезаписывается: копия исходного заголовка — единственный путь назад
+        /// (<c>ExportPipeline.RestoreOriginalHeader</c>), а при перезаписи после второго
+        /// прогона по той же папке «оригиналом» стал бы результат первого.
+        /// </summary>
+        internal static void BackupHeader(string headerPath)
+        {
+            string backup = headerPath + ".backup";
+            if (!File.Exists(backup))
+                File.Copy(headerPath, backup);
         }
 
         /// <summary>Показать открытый ключ контейнера (--cppublic). Быстрая проверка, что папка — валидный контейнер.</summary>

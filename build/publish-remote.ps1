@@ -9,9 +9,10 @@
 
     Зачем: сборка занимает ~20 секунд на 12-ядерном сервере и не отнимает ресурсы у ноутбука.
 
-    Дерево исходников передаётся tar-потоком по SSH (rsync на Windows обычно нет),
-    без .git, bin, obj и publish. Результат — один exe — забирается обратно, для него
-    считается SHA-256.
+    Дерево исходников уезжает tar-архивом по SSH (rsync на Windows обычно нет),
+    без .git, bin, obj и publish. И архив, и готовый exe передаются файлами, а не через
+    конвейер PowerShell: он декодирует вывод нативных команд как текст и портит двоичные
+    данные. Результат — один exe — забирается обратно, для него считается SHA-256.
 
 .PARAMETER SshHost
     Алиас или адрес сборщика. По умолчанию ubuntu-xeon (домашний Ubuntu-сервер).
@@ -47,12 +48,32 @@ try {
     }
     Write-Host "  .NET SDK $sdk" -ForegroundColor DarkGray
 
-    # 2. Исходники: tar-потоком, без мусора и без .git
+    # 2. Исходники: tar-архивом, без мусора и без .git.
+    # Гнать `tar -czf -` в ssh через конвейер PowerShell нельзя по той же причине, что и
+    # в шаге 4: вывод нативной команды PowerShell декодирует как текст и перекодирует
+    # в OutputEncoding, поэтому gzip-поток доезжает битым («gzip: invalid compressed data»).
+    # Архив пишется во временный файл и передаётся на уровне процесса — scp, а если его
+    # нет, перенаправлением stdin у ssh.
     Write-Host "Передаём исходники…" -ForegroundColor DarkGray
-    $remoteUnpack = "rm -rf '$RemoteDir' && mkdir -p '$RemoteDir' && tar -xzf - -C '$RemoteDir'"
-    & tar -czf - --exclude=.git --exclude=bin --exclude=obj --exclude=publish --exclude=publish-remote --exclude=.claude . |
-        & ssh -o BatchMode=yes $SshHost $remoteUnpack
-    if ($LASTEXITCODE -ne 0) { throw "Не удалось передать исходники на $SshHost" }
+    $localTar = Join-Path ([IO.Path]::GetTempPath()) ("cpx-src-" + [guid]::NewGuid().ToString('N') + ".tar.gz")
+    $remoteTar = "/tmp/" + (Split-Path -Leaf $localTar)
+    & tar -czf $localTar --exclude=.git --exclude=bin --exclude=obj --exclude=publish --exclude=publish-remote --exclude=.claude .
+    if ($LASTEXITCODE -ne 0) { throw "Не удалось упаковать исходники в $localTar" }
+
+    if (Get-Command scp -ErrorAction SilentlyContinue) {
+        & scp -q -o BatchMode=yes $localTar "${SshHost}:$remoteTar"
+        if ($LASTEXITCODE -ne 0) { throw "Не удалось передать исходники на $SshHost" }
+    }
+    else {
+        $up = Start-Process ssh -Wait -PassThru -NoNewWindow -RedirectStandardInput $localTar `
+                            -ArgumentList '-o', 'BatchMode=yes', $SshHost, "cat > '$remoteTar'"
+        if ($up.ExitCode -ne 0) { throw "Не удалось передать исходники на $SshHost (ssh cat вернул $($up.ExitCode))" }
+    }
+
+    $remoteUnpack = "rm -rf '$RemoteDir' && mkdir -p '$RemoteDir' && " +
+                    "tar -xzf '$remoteTar' -C '$RemoteDir'; rc=`$?; rm -f '$remoteTar'; exit `$rc"
+    & ssh -o BatchMode=yes $SshHost $remoteUnpack
+    if ($LASTEXITCODE -ne 0) { throw "Не удалось распаковать исходники на $SshHost" }
 
     # 3. Сборка
     Write-Host "Собираем на $SshHost…" -ForegroundColor DarkGray
@@ -92,5 +113,6 @@ try {
     Write-Host "Проверить его можно только на Windows: .\$OutDir\CryptoProExport.exe --selftest" -ForegroundColor DarkGray
 }
 finally {
+    if ($localTar -and (Test-Path $localTar)) { Remove-Item $localTar -Force -ErrorAction SilentlyContinue }
     Pop-Location
 }

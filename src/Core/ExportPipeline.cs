@@ -64,8 +64,11 @@ namespace CryptoProExport
             Exporter.UserPin = userPin;
             // Смарт-карточные Рутокены (ЭЦП, Lite) из обхода исключаются: файлов контейнера там нет,
             // а ReadBinary на ЭЦП 3.0 рушит процесс (см. RutokenExporter.ShouldWalk).
+            // Лог PKCS#11 пробрасывается по той же причине, что в list и deps: без него сбой
+            // драйвера выглядит как «смарт-карточных токенов нет», и обход молча уходит на них.
             Exporter.SkipReaders = Pkcs11Token.SmartCardReaders(
-                Pkcs11Token.Enumerate(readContainers: false, cancel: Cancel));
+                Pkcs11Token.Enumerate(readContainers: false,
+                    log: m => Log("[PKCS#11] " + m), cancel: Cancel));
             var saved = new List<(RutokenContainer, string)>();
             foreach (var c in Exporter.ReadAllContainers())
             {
@@ -278,7 +281,7 @@ namespace CryptoProExport
                     {
                         DeleteIfExists(Path.Combine(folder, "primary2.key"));
                         DeleteIfExists(Path.Combine(folder, "masks2.key"));
-                        WriteContainerName(folder, container.ContainerName + " [exchange]");
+                        WriteContainerName(folder, NameWithSuffix(container.ContainerName, " [exchange]"));
                     }
                     Log(Strings.Format("pipe.lite.normalized", folder));
                 }
@@ -298,7 +301,7 @@ namespace CryptoProExport
                     {
                         DeleteIfExists(Path.Combine(target, "primary.key"));
                         DeleteIfExists(Path.Combine(target, "masks.key"));
-                        WriteContainerName(target, container.ContainerName + " [signature]");
+                        WriteContainerName(target, NameWithSuffix(container.ContainerName, " [signature]"));
                     }
                     Log(Strings.Format("pipe.lite.normalized", target));
                 }
@@ -373,6 +376,20 @@ namespace CryptoProExport
         private static void WriteContainerName(string folder, string name)
         {
             File.WriteAllBytes(Path.Combine(folder, "name.key"), NameKey.Build(name));
+        }
+
+        /// <summary>
+        /// Имя контейнера с пометкой ключа, укладывающееся в 125 байт name.key. Длина имени
+        /// задана УЦ, и на длинном имени «… [signature]» перестаёт помещаться: NameKey.Build
+        /// бросал бы «имя слишком длинное», а весь двухключевой экспорт возвращал бы неудачу
+        /// из-за подписи. В cp1251 символ = байт, поэтому режется по символам.
+        /// </summary>
+        internal static string NameWithSuffix(string name, string suffix)
+        {
+            name ??= string.Empty;
+            int room = NameKey.MaxNameLength - suffix.Length;
+            if (name.Length > room) name = name.Substring(0, room);
+            return name + suffix;
         }
 
         private bool MakeSavedContainerExportable(

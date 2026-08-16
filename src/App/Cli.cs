@@ -168,7 +168,10 @@ namespace CryptoProExport.App
                         if (args.Length < 2) { Usage(); return 1; }
                         var installed = ContainerStore.Install(args[1], args.Length > 2 ? args[2] : null);
                         Out(Strings.Format("log.install.done", installed));
-                        if (args.Length > 2 && !installed.Renamed)
+                        // Сравниваем с итоговым именем, а не с флагом Renamed: когда
+                        // запрошенное имя совпадает с нынешним, переименовывать нечего,
+                        // и Renamed = false означал бы «КриптоПро не принял копию».
+                        if (args.Length > 2 && !string.Equals(installed.Name, args[2], StringComparison.Ordinal))
                             Out(Strings.Format("cli.install.norename", args[2]));
                         if (installed.Verified && !installed.VisibleToCsp)
                         {
