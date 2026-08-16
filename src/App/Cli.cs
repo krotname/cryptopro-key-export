@@ -343,7 +343,9 @@ namespace CryptoProExport.App
                             Out(LicenseGate.StatusText());
                             return 0;
                         }
-                        Err(Strings.Format("license.status.invalid", info.Reason ?? ""));
+                        Err(Strings.Get("license.status.invalid"));
+                        // Конкретная причина — диагностика от верификатора (на русском), не локализуется.
+                        if (!string.IsNullOrEmpty(info.Reason)) Err(info.Reason);
                         return 2;
                     }
                     default:

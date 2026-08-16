@@ -328,7 +328,7 @@ pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAG
 
 # --- лицензирование ---
 license.status.valid = الترخيص صالح ({0})
-license.status.invalid = الترخيص غير صالح: {0}
+license.status.invalid = الترخيص غير صالح
 license.status.none = لا يوجد ترخيص مثبَّت
 license.required = تتطلب هذه العملية ترخيصًا صالحًا. ثبِّت ملف ترخيص (زر «الترخيص…» أو الأمر license <ملف>)؛ يعرض الأمر fingerprint بصمة هذا الجهاز.
 license.installed = تم تثبيت الترخيص والتحقق منه: {0}

@@ -328,7 +328,7 @@ pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAG
 
 # --- лицензирование ---
 license.status.valid = लाइसेंस मान्य है ({0})
-license.status.invalid = लाइसेंस मान्य नहीं है: {0}
+license.status.invalid = लाइसेंस मान्य नहीं है
 license.status.none = कोई लाइसेंस स्थापित नहीं है
 license.required = इस कार्य के लिए मान्य लाइसेंस आवश्यक है। लाइसेंस फ़ाइल स्थापित करें («लाइसेंस…» बटन या license <फ़ाइल> कमांड); इस मशीन का फ़िंगरप्रिंट fingerprint कमांड दिखाता है।
 license.installed = लाइसेंस स्थापित और सत्यापित: {0}

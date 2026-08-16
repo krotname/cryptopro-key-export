@@ -328,7 +328,7 @@ pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAG
 
 # --- лицензирование ---
 license.status.valid = 라이선스가 유효합니다 ({0})
-license.status.invalid = 라이선스가 유효하지 않습니다: {0}
+license.status.invalid = 라이선스가 유효하지 않습니다
 license.status.none = 설치된 라이선스가 없습니다
 license.required = 이 작업에는 유효한 라이선스가 필요합니다. 라이선스 파일을 설치하세요(「라이선스…」 버튼 또는 license <파일> 명령). 이 컴퓨터의 지문은 fingerprint 명령으로 표시됩니다.
 license.installed = 라이선스가 설치되고 확인되었습니다: {0}

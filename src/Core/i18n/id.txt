@@ -328,7 +328,7 @@ pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAG
 
 # --- лицензирование ---
 license.status.valid = Lisensi valid ({0})
-license.status.invalid = Lisensi tidak valid: {0}
+license.status.invalid = Lisensi tidak valid
 license.status.none = Tidak ada lisensi terpasang
 license.required = Operasi ini memerlukan lisensi yang valid. Pasang berkas lisensi (tombol «Lisensi…» atau perintah license <berkas>); sidik mesin ini ditampilkan oleh perintah fingerprint.
 license.installed = Lisensi terpasang dan terverifikasi: {0}

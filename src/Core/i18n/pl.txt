@@ -328,7 +328,7 @@ pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAG
 
 # --- лицензирование ---
 license.status.valid = Licencja jest ważna ({0})
-license.status.invalid = Licencja jest nieważna: {0}
+license.status.invalid = Licencja jest nieważna
 license.status.none = Brak zainstalowanej licencji
 license.required = Ta operacja wymaga ważnej licencji. Zainstaluj plik licencji (przycisk „Licencja…” lub polecenie license <plik>); odcisk tej maszyny pokazuje polecenie fingerprint.
 license.installed = Licencja zainstalowana i zweryfikowana: {0}

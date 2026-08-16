@@ -328,7 +328,7 @@ pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAG
 
 # --- лицензирование ---
 license.status.valid = مجوز معتبر است ({0})
-license.status.invalid = مجوز نامعتبر است: {0}
+license.status.invalid = مجوز نامعتبر است
 license.status.none = هیچ مجوزی نصب نشده است
 license.required = این عملیات به مجوز معتبر نیاز دارد. یک فایل مجوز نصب کنید (دکمه «مجوز…» یا فرمان license <فایل>)؛ اثر انگشت این دستگاه را فرمان fingerprint نشان می‌دهد.
 license.installed = مجوز نصب و تأیید شد: {0}

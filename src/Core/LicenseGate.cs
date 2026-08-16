@@ -169,7 +169,12 @@ namespace CryptoProExport
 
             string dir = Path.GetDirectoryName(LicensePath)!;
             Directory.CreateDirectory(dir);
-            File.WriteAllText(LicensePath, jws, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            // Атомарная замена: пишем во временный файл рядом и подменяем им целевой. Прямой
+            // WriteAllText усёк бы прежнюю рабочую лицензию до записи новой — при сбое диска остался
+            // бы пустой/битый файл, и все gated-операции стали бы недоступны без причины.
+            string tmp = LicensePath + ".tmp";
+            File.WriteAllText(tmp, jws, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            File.Move(tmp, LicensePath, overwrite: true);
             return info;
         }
 
@@ -183,7 +188,10 @@ namespace CryptoProExport
             return info.State switch
             {
                 LicenseState.Valid => Strings.Format("license.status.valid", TermText(info.Payload!)),
-                LicenseState.Invalid => Strings.Format("license.status.invalid", info.Reason ?? ""),
+                // Причина отказа (Reason) — из вендоренного верификатора и всегда на русском: это
+                // диагностика, а не локализуемый текст. Пользователю показываем локализованный общий
+                // статус, а конкретную причину оставляем для лога/stderr (см. Cli.license).
+                LicenseState.Invalid => Strings.Get("license.status.invalid"),
                 _ => Strings.Get("license.status.none"),
             };
         }

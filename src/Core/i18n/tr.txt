@@ -328,7 +328,7 @@ pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAG
 
 # --- лицензирование ---
 license.status.valid = Lisans geçerli ({0})
-license.status.invalid = Lisans geçersiz: {0}
+license.status.invalid = Lisans geçersiz
 license.status.none = Yüklü lisans yok
 license.required = Bu işlem geçerli bir lisans gerektirir. Bir lisans dosyası yükleyin («Lisans…» düğmesi veya license <dosya> komutu); bu makinenin parmak izini fingerprint komutu gösterir.
 license.installed = Lisans yüklendi ve doğrulandı: {0}

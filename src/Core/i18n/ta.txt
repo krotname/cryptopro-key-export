@@ -328,7 +328,7 @@ pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAG
 
 # --- лицензирование ---
 license.status.valid = உரிமம் செல்லுபடியாகும் ({0})
-license.status.invalid = உரிமம் செல்லுபடியாகாது: {0}
+license.status.invalid = உரிமம் செல்லுபடியாகாது
 license.status.none = உரிமம் எதுவும் நிறுவப்படவில்லை
 license.required = இந்தச் செயலுக்குச் செல்லுபடியாகும் உரிமம் தேவை. உரிமக் கோப்பை நிறுவவும் («உரிமம்…» பொத்தான் அல்லது license <கோப்பு> கட்டளை); இந்த இயந்திரத்தின் கைரேகையை fingerprint கட்டளை காட்டும்.
 license.installed = உரிமம் நிறுவப்பட்டு சரிபார்க்கப்பட்டது: {0}

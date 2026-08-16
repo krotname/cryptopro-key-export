@@ -328,7 +328,7 @@ pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAG
 
 # --- лицензирование ---
 license.status.valid = 许可证有效（{0}）
-license.status.invalid = 许可证无效：{0}
+license.status.invalid = 许可证无效
 license.status.none = 未安装许可证
 license.required = 此操作需要有效的许可证。请安装许可证文件（“许可证…”按钮或 license <文件> 命令）；本机指纹可用 fingerprint 命令查看。
 license.installed = 许可证已安装并验证：{0}

@@ -328,7 +328,7 @@ pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAG
 
 # --- лицензирование ---
 license.status.valid = Giấy phép hợp lệ ({0})
-license.status.invalid = Giấy phép không hợp lệ: {0}
+license.status.invalid = Giấy phép không hợp lệ
 license.status.none = Chưa cài đặt giấy phép
 license.required = Thao tác này cần giấy phép hợp lệ. Hãy cài đặt tệp giấy phép (nút «Giấy phép…» hoặc lệnh license <tệp>); dấu vân của máy này được hiển thị bằng lệnh fingerprint.
 license.installed = Đã cài đặt và xác minh giấy phép: {0}
