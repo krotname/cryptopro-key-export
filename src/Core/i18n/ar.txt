@@ -325,3 +325,19 @@ log.export.directonly = The selected row does not expose a readable private-key 
 dlg.confirm.full.selected = Only the selected hardware container will be copied, its certificates extracted, and the key export ban lifted.\n\nContinue?
 pipe.lite.normalized = Lite container «{0}» converted to the HDIMAGE file format
 pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAGE format: {1}
+
+# --- лицензирование ---
+license.status.valid = الترخيص صالح ({0})
+license.status.invalid = الترخيص غير صالح
+license.status.none = لا يوجد ترخيص مثبَّت
+license.required = تتطلب هذه العملية ترخيصًا صالحًا. ثبِّت ملف ترخيص (زر «الترخيص…» أو الأمر license <ملف>)؛ يعرض الأمر fingerprint بصمة هذا الجهاز.
+license.installed = تم تثبيت الترخيص والتحقق منه: {0}
+license.fp = بصمة هذا الجهاز: {0}
+license.perpetual = دائم
+license.until = حتى {0}
+license.filter = ملف ترخيص (*.jws)
+cli.usage.fingerprint = عرض بصمة هذا الجهاز (للحصول على ترخيص)
+cli.usage.license = تثبيت ملف ترخيص أو عرض حالته
+btn.license = الترخيص…
+tip.license = ثبِّت ملف ترخيص (.jws) وتحقق منه لهذا الجهاز.\nبدون ترخيص صالح، تكون عمليات تصدير المفتاح الخاص غير متاحة.\nبصمة هذا الجهاز (للحصول على ترخيص) يعرضها الأمر fingerprint وعند بدء التشغيل.
+dlg.license.title = اختيار ملف الترخيص

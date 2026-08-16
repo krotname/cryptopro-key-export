@@ -325,3 +325,19 @@ log.export.directonly = The selected row does not expose a readable private-key 
 dlg.confirm.full.selected = Only the selected hardware container will be copied, its certificates extracted, and the key export ban lifted.\n\nContinue?
 pipe.lite.normalized = Lite container «{0}» converted to the HDIMAGE file format
 pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAGE format: {1}
+
+# --- лицензирование ---
+license.status.valid = Lizenz ist gültig ({0})
+license.status.invalid = Lizenz ist ungültig
+license.status.none = Keine Lizenz installiert
+license.required = Dieser Vorgang erfordert eine gültige Lizenz. Installieren Sie eine Lizenzdatei (Schaltfläche „Lizenz…“ oder Befehl license <Datei>); den Fingerabdruck dieses Rechners zeigt der Befehl fingerprint.
+license.installed = Lizenz installiert und geprüft: {0}
+license.fp = Fingerabdruck dieses Rechners: {0}
+license.perpetual = unbefristet
+license.until = bis {0}
+license.filter = Lizenzdatei (*.jws)
+cli.usage.fingerprint = Fingerabdruck dieses Rechners anzeigen (zum Erhalt einer Lizenz)
+cli.usage.license = Lizenzdatei installieren oder Status anzeigen
+btn.license = Lizenz…
+tip.license = Lizenzdatei (.jws) installieren und für diesen Rechner prüfen.\nOhne gültige Lizenz sind Vorgänge zum Export des privaten Schlüssels nicht verfügbar.\nDen Fingerabdruck dieses Rechners (für den Lizenzbezug) zeigt der Befehl fingerprint und der Programmstart.
+dlg.license.title = Lizenzdatei auswählen

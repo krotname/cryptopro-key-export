@@ -325,3 +325,19 @@ log.export.directonly = The selected row does not expose a readable private-key 
 dlg.confirm.full.selected = Only the selected hardware container will be copied, its certificates extracted, and the key export ban lifted.\n\nContinue?
 pipe.lite.normalized = Lite container «{0}» converted to the HDIMAGE file format
 pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAGE format: {1}
+
+# --- лицензирование ---
+license.status.valid = Lisensi valid ({0})
+license.status.invalid = Lisensi tidak valid
+license.status.none = Tidak ada lisensi terpasang
+license.required = Operasi ini memerlukan lisensi yang valid. Pasang berkas lisensi (tombol «Lisensi…» atau perintah license <berkas>); sidik mesin ini ditampilkan oleh perintah fingerprint.
+license.installed = Lisensi terpasang dan terverifikasi: {0}
+license.fp = Sidik mesin ini: {0}
+license.perpetual = permanen
+license.until = hingga {0}
+license.filter = Berkas lisensi (*.jws)
+cli.usage.fingerprint = tampilkan sidik mesin ini (untuk memperoleh lisensi)
+cli.usage.license = pasang berkas lisensi atau tampilkan statusnya
+btn.license = Lisensi…
+tip.license = Pasang berkas lisensi (.jws) dan verifikasi untuk mesin ini.\nTanpa lisensi yang valid, operasi ekspor kunci privat tidak tersedia.\nSidik mesin ini (untuk memperoleh lisensi) ditampilkan oleh perintah fingerprint dan saat mulai.
+dlg.license.title = Pilih berkas lisensi

@@ -29,7 +29,7 @@ namespace CryptoProExport.App
         private ColumnHeader _colWhere, _colName, _colDetails;
         private Label _lblP12, _lblDest, _lblPin, _lblPinHint, _lblLang;
         private Button _btnP12, _btnDest;
-        private Button _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnInstall, _btnCheck, _btnPfx, _btnExtractKey, _btnExtractPfx, _btnLogs, _btnHelp;
+        private Button _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnInstall, _btnCheck, _btnPfx, _btnExtractKey, _btnExtractPfx, _btnLicense, _btnLogs, _btnHelp;
         private Button _btnCancel;
         private Button[] _actionButtons;
         private ComboBox _cmbLang;
@@ -88,6 +88,9 @@ namespace CryptoProExport.App
                 foreach (var line in CryptoProExport.Diagnostics.Report())
                     Log("  " + line);
                 Log(Strings.Format("log.session", SessionLog.FilePath));
+                Log(LicenseGate.StatusText());
+                // Отпечаток нужен, чтобы получить лицензию, — обещан в подсказке и README, показываем сразу.
+                Log(LicenseGate.FingerprintText());
                 Log("");
             });
         }
@@ -174,6 +177,7 @@ namespace CryptoProExport.App
             _btnPfx = MakeButton((_, __) => Run("status.pfx", DoExportPfx));
             _btnExtractKey = MakeButton((_, __) => Run("status.extractkey", DoExtractKey));
             _btnExtractPfx = MakeButton((_, __) => Run("status.extractpfx", DoExtractPfx));
+            _btnLicense = MakeButton((_, __) => DoLicense());
             _btnLogs = MakeButton((_, __) => OpenLogFolder());
             _btnHelp = MakeButton((_, __) => Guide.Show(this));
             _btnCancel = MakeButton((_, __) => CancelCurrent());
@@ -181,7 +185,7 @@ namespace CryptoProExport.App
             _actionButtons = new[]
             {
                 _btnRefresh, _btnExport, _btnExtract, _btnFull,
-                _btnCheck, _btnInstall, _btnPfx, _btnExtractKey, _btnExtractPfx, _btnLogs, _btnHelp,
+                _btnCheck, _btnInstall, _btnPfx, _btnExtractKey, _btnExtractPfx, _btnLicense, _btnLogs, _btnHelp,
             };
             buttons.Controls.AddRange(_actionButtons);
             buttons.Controls.Add(_btnCancel);
@@ -262,6 +266,7 @@ namespace CryptoProExport.App
             SetButton(_btnPfx, "btn.pfx", "tip.pfx");
             SetButton(_btnExtractKey, "btn.extractkey", "tip.extractkey");
             SetButton(_btnExtractPfx, "btn.extractpfx", "tip.extractpfx");
+            SetButton(_btnLicense, "btn.license", "tip.license");
             SetButton(_btnLogs, "btn.logs", "tip.logs");
             SetButton(_btnHelp, "btn.help", "tip.help");
             SetButton(_btnCancel, "btn.cancel", "tip.cancel");
@@ -498,8 +503,48 @@ namespace CryptoProExport.App
             Log(Strings.Get("log.done"));
         }
 
+        /// <summary>
+        /// Гейт лицензии для операций экспорта закрытого ключа. Без действительной лицензии
+        /// операция не выполняется; в журнал идут статус и отпечаток этой машины, чтобы было
+        /// понятно, как получить лицензию (активация обменивает код на подписанный файл лицензии).
+        /// </summary>
+        private bool RequireLicense()
+        {
+            if (LicenseGate.IsLicensed()) return true;
+            Log(Strings.Get("license.required"));
+            Log(LicenseGate.StatusText());
+            Log(LicenseGate.FingerprintText());
+            return false;
+        }
+
+        /// <summary>Выбрать файл лицензии (.jws), проверить его для этой машины и установить.</summary>
+        private void DoLicense()
+        {
+            using var dlg = new OpenFileDialog
+            {
+                Title = Strings.Get("dlg.license.title"),
+                Filter = Strings.Get("license.filter") + "|*.jws;*.lic;*.txt|"
+                         + Strings.Get("files.all") + "|*.*",
+                CheckFileExists = true,
+            };
+            if (dlg.ShowDialog(this) != DialogResult.OK) { Log(Strings.Get("log.cancelled")); return; }
+            try
+            {
+                var info = LicenseGate.Install(dlg.FileName);
+                if (info.Ok) Log(Strings.Format("license.installed", LicenseGate.LicensePath));
+                // Показываем итог именно этой попытки (info), а не перечитанную прежнюю лицензию:
+                // иначе отклонение выбранного файла выглядело бы как успех при уже установленной.
+                Log(LicenseGate.Describe(info));
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                Log(Strings.Format("log.error", e.Message));
+            }
+        }
+
         private void DoExport(CancellationToken cancel)
         {
+            if (!RequireLicense()) return;
             string dest = TextOf(_txtDest).Trim();
             if (string.IsNullOrEmpty(dest)) { Log(Strings.Get("log.need.dest")); return; }
             ContainerSelection selected = SelectedContainer();
@@ -565,6 +610,7 @@ namespace CryptoProExport.App
 
         private void DoFull(CancellationToken cancel)
         {
+            if (!RequireLicense()) return;
             string dest = TextOf(_txtDest).Trim();
             if (string.IsNullOrEmpty(dest)) { Log(Strings.Get("log.need.dest")); return; }
             ContainerSelection selected = SelectedContainer();
@@ -633,6 +679,7 @@ namespace CryptoProExport.App
 
         private void DoExportPfx(CancellationToken cancel)
         {
+            if (!RequireLicense()) return;
             string container = SelectedContainerName();
             if (container == null) { Log(Strings.Get("log.need.container")); return; }
 
@@ -659,6 +706,7 @@ namespace CryptoProExport.App
         /// </summary>
         private void DoExtractKey()
         {
+            if (!RequireLicense()) return;
             string folder = AskFolder(Strings.Get("dlg.folder.container"), TextOf(_txtDest).Trim());
             if (folder == null) { Log(Strings.Get("log.cancelled")); return; }
             if (!ContainerStore.LooksLikeContainer(folder))
@@ -695,6 +743,7 @@ namespace CryptoProExport.App
         /// </summary>
         private void DoExtractPfx()
         {
+            if (!RequireLicense()) return;
             string folder = AskFolder(Strings.Get("dlg.folder.container"), TextOf(_txtDest).Trim());
             if (folder == null) { Log(Strings.Get("log.cancelled")); return; }
             if (!ContainerStore.LooksLikeContainer(folder))

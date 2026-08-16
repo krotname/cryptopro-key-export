@@ -325,3 +325,19 @@ log.export.directonly = The selected row does not expose a readable private-key 
 dlg.confirm.full.selected = Only the selected hardware container will be copied, its certificates extracted, and the key export ban lifted.\n\nContinue?
 pipe.lite.normalized = Lite container «{0}» converted to the HDIMAGE file format
 pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAGE format: {1}
+
+# --- лицензирование ---
+license.status.valid = 许可证有效（{0}）
+license.status.invalid = 许可证无效
+license.status.none = 未安装许可证
+license.required = 此操作需要有效的许可证。请安装许可证文件（“许可证…”按钮或 license <文件> 命令）；本机指纹可用 fingerprint 命令查看。
+license.installed = 许可证已安装并验证：{0}
+license.fp = 本机指纹：{0}
+license.perpetual = 永久
+license.until = 至 {0}
+license.filter = 许可证文件 (*.jws)
+cli.usage.fingerprint = 显示本机指纹（用于获取许可证）
+cli.usage.license = 安装许可证文件或显示其状态
+btn.license = 许可证…
+tip.license = 安装许可证文件 (.jws) 并针对本机验证。\n没有有效许可证时，私钥导出操作不可用。\n本机指纹（用于获取许可证）可用 fingerprint 命令并在启动时显示。
+dlg.license.title = 选择许可证文件

@@ -325,3 +325,19 @@ err.lite.pin = the card rejected the PIN ({0}); check the PIN, guessing is not a
 log.export.directonly = The selected row does not expose a readable private-key container. Select an APDU/rtCOMLite row, or clear the selection to scan all Rutoken S devices.
 pipe.lite.normalized = Lite container «{0}» converted to the HDIMAGE file format
 pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAGE format: {1}
+
+# --- лицензирование ---
+license.status.valid = License is valid ({0})
+license.status.invalid = License is not valid
+license.status.none = No license installed
+license.required = This operation requires a valid license. Install a license file (the “License…” button or the license <file> command); the fingerprint command shows this machine’s fingerprint.
+license.installed = License installed and verified: {0}
+license.fp = This machine’s fingerprint: {0}
+license.perpetual = perpetual
+license.until = until {0}
+license.filter = License file (*.jws)
+cli.usage.fingerprint = show this machine’s fingerprint (to obtain a license)
+cli.usage.license = install a license file or show its status
+btn.license = License…
+tip.license = Install a license file (.jws) and verify it for this machine.\nWithout a valid license, private-key export operations are unavailable.\nThis machine’s fingerprint (to obtain a license) is shown by the fingerprint command and at startup.
+dlg.license.title = Choose license file

@@ -35,15 +35,38 @@ namespace CryptoProExport.App
             ("extractpfx <folder> <out.pfx> <pfx-pass> [pass] [cert.cer]", "cli.usage.extractpfx"),
             ("liteexport <reader> <outDir> [pin]",   "cli.usage.liteexport"),
             ("full <destDir> [cert.cer] [pin]",      "cli.usage.full"),
+            ("fingerprint",                          "cli.usage.fingerprint"),
+            ("license [file|status]",                "cli.usage.license"),
             ("help",                                 "cli.usage.help"),
             ("--lang <xx>",                          "cli.usage.lang"),
         };
+
+        /// <summary>
+        /// Операции, дающие сам экспорт закрытого ключа. Без действительной лицензии они закрыты
+        /// (жёсткий гейт). Диагностика (deps/list/checkexport/installed/token/extractcert),
+        /// установка лицензии и справка остаются доступными — иначе нельзя было бы узнать отпечаток
+        /// и ввести лицензию.
+        /// </summary>
+        private static readonly string[] LicensedCommands =
+            { "export", "full", "keyexport", "extractkey", "extractpfx", "liteexport", "topfx" };
 
         public static int Run(string[] args)
         {
             try
             {
-                switch (args[0].ToLowerInvariant())
+                string cmd = args[0].ToLowerInvariant();
+
+                // Жёсткий гейт: операции экспорта закрытого ключа требуют действительной лицензии
+                // (офлайн-проверка вшитым ключом). Диагностика, установка лицензии и справка — свободны.
+                if (Array.IndexOf(LicensedCommands, cmd) >= 0 && !LicenseGate.IsLicensed())
+                {
+                    Err(Strings.Get("license.required"));
+                    Out(LicenseGate.StatusText());
+                    Out(LicenseGate.FingerprintText());
+                    return 4;
+                }
+
+                switch (cmd)
                 {
                     case "help":
                     case "--help":
@@ -299,6 +322,31 @@ namespace CryptoProExport.App
                             userPin: args.Length > 3 ? args[3] : null);
                         Out(Strings.Format("log.exported", result.Exported));
                         return result.AllSucceeded ? 0 : result.Exported == 0 ? 2 : 3;
+                    }
+                    case "fingerprint":
+                        Out(LicenseGate.FingerprintText());
+                        return 0;
+                    case "license":
+                    {
+                        // Без аргумента или `license status` — показать статус и отпечаток;
+                        // `license <файл>` — проверить файл и, если он для этой машины, установить.
+                        if (args.Length < 2 || string.Equals(args[1], "status", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Out(LicenseGate.StatusText());
+                            Out(LicenseGate.FingerprintText());
+                            return LicenseGate.IsLicensed() ? 0 : 2;
+                        }
+                        var info = LicenseGate.Install(args[1]);
+                        if (info.Ok)
+                        {
+                            Out(Strings.Format("license.installed", LicenseGate.LicensePath));
+                            Out(LicenseGate.Describe(info));
+                            return 0;
+                        }
+                        Err(Strings.Get("license.status.invalid"));
+                        // Конкретная причина — диагностика от верификатора (на русском), не локализуется.
+                        if (!string.IsNullOrEmpty(info.Reason)) Err(info.Reason);
+                        return 2;
                     }
                     default:
                         Usage();

@@ -325,3 +325,19 @@ log.export.directonly = The selected row does not expose a readable private-key 
 dlg.confirm.full.selected = Only the selected hardware container will be copied, its certificates extracted, and the key export ban lifted.\n\nContinue?
 pipe.lite.normalized = Lite container «{0}» converted to the HDIMAGE file format
 pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAGE format: {1}
+
+# --- лицензирование ---
+license.status.valid = உரிமம் செல்லுபடியாகும் ({0})
+license.status.invalid = உரிமம் செல்லுபடியாகாது
+license.status.none = உரிமம் எதுவும் நிறுவப்படவில்லை
+license.required = இந்தச் செயலுக்குச் செல்லுபடியாகும் உரிமம் தேவை. உரிமக் கோப்பை நிறுவவும் («உரிமம்…» பொத்தான் அல்லது license <கோப்பு> கட்டளை); இந்த இயந்திரத்தின் கைரேகையை fingerprint கட்டளை காட்டும்.
+license.installed = உரிமம் நிறுவப்பட்டு சரிபார்க்கப்பட்டது: {0}
+license.fp = இந்த இயந்திரத்தின் கைரேகை: {0}
+license.perpetual = நிரந்தரம்
+license.until = {0} வரை
+license.filter = உரிமக் கோப்பு (*.jws)
+cli.usage.fingerprint = இந்த இயந்திரத்தின் கைரேகையைக் காட்டு (உரிமம் பெற)
+cli.usage.license = உரிமக் கோப்பை நிறுவு அல்லது நிலையைக் காட்டு
+btn.license = உரிமம்…
+tip.license = உரிமக் கோப்பை (.jws) நிறுவி இந்த இயந்திரத்திற்குச் சரிபார்க்கவும்.\nசெல்லுபடியாகும் உரிமம் இல்லாமல், தனிப்பட்ட விசை ஏற்றுமதிச் செயல்கள் கிடைக்காது.\nஇந்த இயந்திரத்தின் கைரேகையை (உரிமம் பெற) fingerprint கட்டளையும் தொடக்கத்திலும் காட்டும்.
+dlg.license.title = உரிமக் கோப்பைத் தேர்ந்தெடுக்கவும்

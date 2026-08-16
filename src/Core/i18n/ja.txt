@@ -325,3 +325,19 @@ log.export.directonly = The selected row does not expose a readable private-key 
 dlg.confirm.full.selected = Only the selected hardware container will be copied, its certificates extracted, and the key export ban lifted.\n\nContinue?
 pipe.lite.normalized = Lite container «{0}» converted to the HDIMAGE file format
 pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAGE format: {1}
+
+# --- лицензирование ---
+license.status.valid = ライセンスは有効です（{0}）
+license.status.invalid = ライセンスは無効です
+license.status.none = ライセンスがインストールされていません
+license.required = この操作には有効なライセンスが必要です。ライセンスファイルをインストールしてください（「ライセンス…」ボタンまたは license <ファイル> コマンド）。このマシンのフィンガープリントは fingerprint コマンドで表示されます。
+license.installed = ライセンスをインストールし検証しました: {0}
+license.fp = このマシンのフィンガープリント: {0}
+license.perpetual = 無期限
+license.until = {0} まで
+license.filter = ライセンスファイル (*.jws)
+cli.usage.fingerprint = このマシンのフィンガープリントを表示（ライセンス取得用）
+cli.usage.license = ライセンスファイルをインストール、または状態を表示
+btn.license = ライセンス…
+tip.license = ライセンスファイル (.jws) をインストールし、このマシン用に検証します。\n有効なライセンスがないと、秘密鍵のエクスポート操作は利用できません。\nこのマシンのフィンガープリント（ライセンス取得用）は fingerprint コマンドと起動時に表示されます。
+dlg.license.title = ライセンスファイルを選択

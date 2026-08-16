@@ -153,6 +153,33 @@ pwsh token-session\make-token-container.ps1 -ContainerPath '\\.\<считыва�
 CryptoProExport.exe deps
 ```
 
+## Лицензирование
+
+Операции экспорта закрытого ключа (`export`, `full`, `keyexport`, `extractkey`, `extractpfx`,
+`liteexport`, `topfx`) требуют **действительной лицензии** — без неё они не выполняются
+(жёсткий гейт). Диагностика (`deps`, `list`, `checkexport`, `token`, `installed`, `extractcert`),
+установка лицензии и справка доступны всегда.
+
+Продукт лицензируется сервером активации **license-server** (продукт `cryptoexport`). Модель
+двухслойная: короткий **код активации** обменивается онлайн на подписанный **файл лицензии**
+(compact JWS, ES256), который затем проверяется **офлайн** вшитым в программу публичным ключом
+(`kid = cryptoexport-2026`). Сеть при проверке не нужна, домен не важен — доверие в ключе, а не в TLS.
+
+Лицензия привязана к **этой машине**: её отпечаток (`sha256:<hex>` от стабильного идентификатора
+установки; сырой идентификатор не передаётся и не логируется) показывает команда `fingerprint`
+и строка статуса при запуске.
+
+```
+CryptoProExport.exe fingerprint            # сообщите этот отпечаток при выдаче лицензии
+CryptoProExport.exe license мой.jws        # проверить для этой машины и установить
+CryptoProExport.exe license status         # текущий статус
+```
+
+В GUI то же делает кнопка **«Лицензия…»**. Установленная лицензия хранится в
+`%LOCALAPPDATA%\CryptoProExport\license.jws`. Пока REST-эндпоинт активации не развёрнут, файл
+лицензии выпускается офлайн тем же сервером (`keytool issue-license --pid cryptoexport
+--kid cryptoexport-2026 --key <ключ> --fp sha256:<hex> --seats 1`).
+
 ## Языки интерфейса
 
 Интерфейс, подсказки и сообщения переведены на 20 языков:
@@ -280,6 +307,8 @@ CryptoProExport.exe extractkey <folder> <out.pem> [password]  # закрытый
 CryptoProExport.exe extractpfx <folder> <out.pfx> <pfxPass> [password] [cert.cer]  # .pfx без CSP, для OpenSSL
 CryptoProExport.exe liteexport <reader> <outDir> [pin]  # снять Lite по APDU; extractkey/extractpfx понимают неэкспортируемую форму primary.key
 CryptoProExport.exe full <destDir> [cert.cer] [pin]
+CryptoProExport.exe fingerprint           # отпечаток этой машины (для получения лицензии)
+CryptoProExport.exe license [file|status] # установить файл лицензии (.jws) или показать статус
 CryptoProExport.exe --lang <код>          # язык вывода; можно совмещать с любой командой
 ```
 
