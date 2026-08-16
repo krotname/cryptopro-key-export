@@ -18,6 +18,8 @@ interface languages fall back to the English text.
 1. WHAT YOU NEED ON THE MACHINE
 ------------------------------------------------------------------
   * Windows with CryptoPro CSP installed (tested on 5.0 R2).
+  * Private-key operations need a license (.jws). This machine's
+    fingerprint for obtaining one is shown by the fingerprint command.
   * To read from a token — a Rutoken S / Lite. A Rutoken ECP 2.0 with
     a hardware non-extractable key cannot be exported this way: the
     key never physically leaves the chip.
@@ -74,6 +76,7 @@ interface languages fall back to the English text.
   Export to PFX         write the container out as .pfx
   Extract key (PEM)     the private key as PKCS#8/PEM, no CSP
   Build PFX (no CSP)    a .pfx from the container folder, for OpenSSL
+  License               install a license (.jws) and verify it
   Log                   open the folder with the program logs
   Help                  this window
 
@@ -105,6 +108,8 @@ interface languages fall back to the English text.
                                       then [container-pw] [cert.cer]
   liteexport <reader> <dir> [pin]     read a Lite container by APDU + recover
   full <folder> [cert.cer] [pin]      off the token + all the rest
+  fingerprint                         this machine's fingerprint
+  license [file|status]               install a license or show status
   help                                this manual
   --lang <code>                       interface language
 

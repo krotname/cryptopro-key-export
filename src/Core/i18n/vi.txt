@@ -325,3 +325,19 @@ log.export.directonly = The selected row does not expose a readable private-key 
 dlg.confirm.full.selected = Only the selected hardware container will be copied, its certificates extracted, and the key export ban lifted.\n\nContinue?
 pipe.lite.normalized = Lite container «{0}» converted to the HDIMAGE file format
 pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAGE format: {1}
+
+# --- лицензирование ---
+license.status.valid = Giấy phép hợp lệ ({0})
+license.status.invalid = Giấy phép không hợp lệ: {0}
+license.status.none = Chưa cài đặt giấy phép
+license.required = Thao tác này cần giấy phép hợp lệ. Hãy cài đặt tệp giấy phép (nút «Giấy phép…» hoặc lệnh license <tệp>); dấu vân của máy này được hiển thị bằng lệnh fingerprint.
+license.installed = Đã cài đặt và xác minh giấy phép: {0}
+license.fp = Dấu vân của máy này: {0}
+license.perpetual = vĩnh viễn
+license.until = đến {0}
+license.filter = Tệp giấy phép (*.jws)
+cli.usage.fingerprint = hiển thị dấu vân của máy này (để nhận giấy phép)
+cli.usage.license = cài đặt tệp giấy phép hoặc hiển thị trạng thái
+btn.license = Giấy phép…
+tip.license = Cài đặt tệp giấy phép (.jws) và xác minh cho máy này.\nKhông có giấy phép hợp lệ, các thao tác xuất khóa riêng sẽ không khả dụng.\nDấu vân của máy này (để nhận giấy phép) được hiển thị bằng lệnh fingerprint và khi khởi động.
+dlg.license.title = Chọn tệp giấy phép

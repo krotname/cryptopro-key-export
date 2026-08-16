@@ -325,3 +325,19 @@ log.export.directonly = The selected row does not expose a readable private-key 
 dlg.confirm.full.selected = Only the selected hardware container will be copied, its certificates extracted, and the key export ban lifted.\n\nContinue?
 pipe.lite.normalized = Lite container «{0}» converted to the HDIMAGE file format
 pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAGE format: {1}
+
+# --- лицензирование ---
+license.status.valid = A licença é válida ({0})
+license.status.invalid = A licença não é válida: {0}
+license.status.none = Nenhuma licença instalada
+license.required = Esta operação requer uma licença válida. Instale um arquivo de licença (botão «Licença…» ou comando license <arquivo>); a impressão digital desta máquina é mostrada pelo comando fingerprint.
+license.installed = Licença instalada e verificada: {0}
+license.fp = Impressão digital desta máquina: {0}
+license.perpetual = perpétua
+license.until = até {0}
+license.filter = Arquivo de licença (*.jws)
+cli.usage.fingerprint = mostrar a impressão digital desta máquina (para obter uma licença)
+cli.usage.license = instalar um arquivo de licença ou mostrar seu status
+btn.license = Licença…
+tip.license = Instalar um arquivo de licença (.jws) e verificá-lo para esta máquina.\nSem uma licença válida, as operações de exportação da chave privada ficam indisponíveis.\nA impressão digital desta máquina (para obter uma licença) é mostrada pelo comando fingerprint e na inicialização.
+dlg.license.title = Escolher arquivo de licença

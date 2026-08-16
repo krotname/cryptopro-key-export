@@ -325,3 +325,19 @@ log.export.directonly = The selected row does not expose a readable private-key 
 dlg.confirm.full.selected = Only the selected hardware container will be copied, its certificates extracted, and the key export ban lifted.\n\nContinue?
 pipe.lite.normalized = Lite container «{0}» converted to the HDIMAGE file format
 pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAGE format: {1}
+
+# --- лицензирование ---
+license.status.valid = লাইসেন্স বৈধ ({0})
+license.status.invalid = লাইসেন্স বৈধ নয়: {0}
+license.status.none = কোনো লাইসেন্স ইনস্টল করা নেই
+license.required = এই কাজের জন্য একটি বৈধ লাইসেন্স প্রয়োজন। একটি লাইসেন্স ফাইল ইনস্টল করুন («লাইসেন্স…» বোতাম বা license <ফাইল> কমান্ড); এই মেশিনের ফিঙ্গারপ্রিন্ট fingerprint কমান্ড দেখায়।
+license.installed = লাইসেন্স ইনস্টল ও যাচাই করা হয়েছে: {0}
+license.fp = এই মেশিনের ফিঙ্গারপ্রিন্ট: {0}
+license.perpetual = স্থায়ী
+license.until = {0} পর্যন্ত
+license.filter = লাইসেন্স ফাইল (*.jws)
+cli.usage.fingerprint = এই মেশিনের ফিঙ্গারপ্রিন্ট দেখান (লাইসেন্স পেতে)
+cli.usage.license = একটি লাইসেন্স ফাইল ইনস্টল করুন বা এর অবস্থা দেখান
+btn.license = লাইসেন্স…
+tip.license = একটি লাইসেন্স ফাইল (.jws) ইনস্টল করুন এবং এই মেশিনের জন্য যাচাই করুন।\nবৈধ লাইসেন্স ছাড়া, প্রাইভেট কী রপ্তানির কাজ উপলব্ধ নয়।\nএই মেশিনের ফিঙ্গারপ্রিন্ট (লাইসেন্স পেতে) fingerprint কমান্ড এবং শুরুতে দেখা যায়।
+dlg.license.title = লাইসেন্স ফাইল নির্বাচন করুন

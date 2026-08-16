@@ -325,3 +325,19 @@ log.export.directonly = The selected row does not expose a readable private-key 
 dlg.confirm.full.selected = Only the selected hardware container will be copied, its certificates extracted, and the key export ban lifted.\n\nContinue?
 pipe.lite.normalized = Lite container «{0}» converted to the HDIMAGE file format
 pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAGE format: {1}
+
+# --- лицензирование ---
+license.status.valid = Lisans geçerli ({0})
+license.status.invalid = Lisans geçersiz: {0}
+license.status.none = Yüklü lisans yok
+license.required = Bu işlem geçerli bir lisans gerektirir. Bir lisans dosyası yükleyin («Lisans…» düğmesi veya license <dosya> komutu); bu makinenin parmak izini fingerprint komutu gösterir.
+license.installed = Lisans yüklendi ve doğrulandı: {0}
+license.fp = Bu makinenin parmak izi: {0}
+license.perpetual = süresiz
+license.until = {0} tarihine kadar
+license.filter = Lisans dosyası (*.jws)
+cli.usage.fingerprint = bu makinenin parmak izini göster (lisans almak için)
+cli.usage.license = lisans dosyası yükle veya durumunu göster
+btn.license = Lisans…
+tip.license = Bir lisans dosyası (.jws) yükleyin ve bu makine için doğrulayın.\nGeçerli bir lisans olmadan özel anahtar dışa aktarma işlemleri kullanılamaz.\nBu makinenin parmak izini (lisans almak için) fingerprint komutu ve başlangıç gösterir.
+dlg.license.title = Lisans dosyası seç

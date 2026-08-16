@@ -10,7 +10,7 @@
     <LangVersion>latest</LangVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>app.ico</ApplicationIcon>
-    <Version>1.5.2</Version>
+    <Version>1.6.0</Version>
     <Product>CryptoPro Key Export</Product>
     <AssemblyTitle>Экспорт ключей КриптоПро с Рутокена</AssemblyTitle>
     <!--

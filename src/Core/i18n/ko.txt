@@ -325,3 +325,19 @@ log.export.directonly = The selected row does not expose a readable private-key 
 dlg.confirm.full.selected = Only the selected hardware container will be copied, its certificates extracted, and the key export ban lifted.\n\nContinue?
 pipe.lite.normalized = Lite container «{0}» converted to the HDIMAGE file format
 pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAGE format: {1}
+
+# --- лицензирование ---
+license.status.valid = 라이선스가 유효합니다 ({0})
+license.status.invalid = 라이선스가 유효하지 않습니다: {0}
+license.status.none = 설치된 라이선스가 없습니다
+license.required = 이 작업에는 유효한 라이선스가 필요합니다. 라이선스 파일을 설치하세요(「라이선스…」 버튼 또는 license <파일> 명령). 이 컴퓨터의 지문은 fingerprint 명령으로 표시됩니다.
+license.installed = 라이선스가 설치되고 확인되었습니다: {0}
+license.fp = 이 컴퓨터의 지문: {0}
+license.perpetual = 영구
+license.until = {0}까지
+license.filter = 라이선스 파일 (*.jws)
+cli.usage.fingerprint = 이 컴퓨터의 지문 표시(라이선스 취득용)
+cli.usage.license = 라이선스 파일 설치 또는 상태 표시
+btn.license = 라이선스…
+tip.license = 라이선스 파일(.jws)을 설치하고 이 컴퓨터에 대해 확인합니다.\n유효한 라이선스가 없으면 개인 키 내보내기 작업을 사용할 수 없습니다.\n이 컴퓨터의 지문(라이선스 취득용)은 fingerprint 명령과 시작 시 표시됩니다.
+dlg.license.title = 라이선스 파일 선택

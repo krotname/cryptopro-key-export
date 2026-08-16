@@ -325,3 +325,19 @@ log.export.directonly = The selected row does not expose a readable private-key 
 dlg.confirm.full.selected = Only the selected hardware container will be copied, its certificates extracted, and the key export ban lifted.\n\nContinue?
 pipe.lite.normalized = Lite container «{0}» converted to the HDIMAGE file format
 pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAGE format: {1}
+
+# --- лицензирование ---
+license.status.valid = लाइसेंस मान्य है ({0})
+license.status.invalid = लाइसेंस मान्य नहीं है: {0}
+license.status.none = कोई लाइसेंस स्थापित नहीं है
+license.required = इस कार्य के लिए मान्य लाइसेंस आवश्यक है। लाइसेंस फ़ाइल स्थापित करें («लाइसेंस…» बटन या license <फ़ाइल> कमांड); इस मशीन का फ़िंगरप्रिंट fingerprint कमांड दिखाता है।
+license.installed = लाइसेंस स्थापित और सत्यापित: {0}
+license.fp = इस मशीन का फ़िंगरप्रिंट: {0}
+license.perpetual = स्थायी
+license.until = {0} तक
+license.filter = लाइसेंस फ़ाइल (*.jws)
+cli.usage.fingerprint = इस मशीन का फ़िंगरप्रिंट दिखाएँ (लाइसेंस प्राप्त करने के लिए)
+cli.usage.license = लाइसेंस फ़ाइल स्थापित करें या उसकी स्थिति दिखाएँ
+btn.license = लाइसेंस…
+tip.license = लाइसेंस फ़ाइल (.jws) स्थापित करें और इस मशीन के लिए सत्यापित करें।\nमान्य लाइसेंस के बिना, निजी कुंजी निर्यात कार्य उपलब्ध नहीं हैं।\nइस मशीन का फ़िंगरप्रिंट (लाइसेंस प्राप्त करने के लिए) fingerprint कमांड और शुरू होने पर दिखता है।
+dlg.license.title = लाइसेंस फ़ाइल चुनें
