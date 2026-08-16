@@ -178,7 +178,7 @@ CryptoProExport.exe license status         # текущий статус
 В GUI то же делает кнопка **«Лицензия…»**. Установленная лицензия хранится в
 `%LOCALAPPDATA%\CryptoProExport\license.jws`. Пока REST-эндпоинт активации не развёрнут, файл
 лицензии выпускается офлайн тем же сервером (`keytool issue-license --pid cryptoexport
---fp sha256:<hex> --seats 1`).
+--kid cryptoexport-2026 --key <ключ> --fp sha256:<hex> --seats 1`).
 
 ## Языки интерфейса
 
