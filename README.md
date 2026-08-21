@@ -136,8 +136,12 @@ pwsh token-session\make-token-container.ps1 -ContainerPath '\\.\<считыва�
   и [docs/apdu/rutoken-lite-fw9.md](docs/apdu/rutoken-lite-fw9.md).
 - **PKCS#11 берётся из системы, и библиотек может быть несколько.** Каждая показывает только
   носители своего вендора, поэтому программа ищет и загружает все известные — `rtPKCS11ECP.dll`
-  (драйверы Рутокен) и `jcPKCS11-2.dll` (JaCarta Unified Client) — и объединяет слоты. Нет ни
-  одной или нет части из них — соответствующие носители просто не показываются, ошибки нет.
+  (драйверы Рутокен), `jcPKCS11-2.dll` (JaCarta Unified Client) и `isbc_pkcs11_main.dll`
+  (ESMART PKI Client) — и объединяет слоты. Нет ни одной или нет части из них — соответствующие
+  носители просто не показываются, ошибки нет. Для ESMART entry module считается доступным только
+  вместе с `isbc_esmart_token_mod.dll` той же разрядности в том же каталоге. Read-only разбор
+  ESMART Token USB 64K и границы проверки без PIN — в
+  [docs/hardware/esmart-usb64k.md](docs/hardware/esmart-usb64k.md).
 - **Рутокен ЭЦП при этом полноценно распознаётся** через PKCS#11 (`rtPKCS11ECP.dll` из драйверов
   Рутокена): программа показывает тип токена, серийный номер, состояние PIN (не тратя попыток) и
   контейнеры КриптоПро, а **сертификат извлекает прямо с токена без КриптоПро CSP** — командой
@@ -219,7 +223,7 @@ CryptoProExport.exe license status         # текущий статус
 ```
 src/Core/           библиотека (net10.0-windows)
   RutokenExporter.cs   экспорт контейнера с токена (rtCOMLite, late-binding COM) — Рутокен S
-  Pkcs11Token.cs       токены по PKCS#11 (Рутокен + JaCarta): тип, PIN, контейнеры, .cer без CSP
+  Pkcs11Token.cs       токены по PKCS#11 (Рутокен + JaCarta + ESMART): тип, PIN, контейнеры, .cer без CSP
   CertFromContainer.cs извлечение .cer и проверка прав ключа (CryptoAPI P/Invoke)
   ContainerKeyExtractor.cs закрытый ключ и сертификат из файлов контейнера, без CSP
   GostKeyExport.cs     закрытый ключ ГОСТ в PKCS#8/PEM

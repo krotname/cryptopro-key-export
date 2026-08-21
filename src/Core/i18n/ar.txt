@@ -250,7 +250,7 @@ cli.lang.missing = يحتاج ‎--lang‎ إلى رمز لغة. اللغات ا
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = موجود
 common.certonly = شهادة فقط
-pkcs11.nolib = لم يُعثر على أي مكتبة PKCS#11‏ (rtPKCS11ECP.dll، jcPKCS11-2.dll) — ثبّت تعريفات Rutoken أو JaCarta Unified Client
+pkcs11.nolib = لم يُعثر على أي مكتبة PKCS#11‏ (rtPKCS11ECP.dll، jcPKCS11-2.dll، isbc_pkcs11_main.dll) — ثبّت تعريفات Rutoken أو JaCarta Unified Client أو ESMART PKI Client
 pkcs11.loadfail = تعذّر تحميل مكتبة PKCS#11: {0}
 pkcs11.enumfail = تعذّر تعداد فتحات PKCS#11: {0}
 pkcs11.tokenfail = الرمز «{0}»: {1}

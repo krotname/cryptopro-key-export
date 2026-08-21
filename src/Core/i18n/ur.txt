@@ -250,7 +250,7 @@ cli.lang.missing = --lang کے بعد زبان کا کوڈ درکار ہے۔ د�
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = موجود
 common.certonly = صرف سرٹیفکیٹ
-pkcs11.nolib = کوئی PKCS#11 لائبریری نہیں ملی (rtPKCS11ECP.dll، jcPKCS11-2.dll) — Rutoken ڈرائیور یا JaCarta Unified Client نصب کریں
+pkcs11.nolib = کوئی PKCS#11 لائبریری نہیں ملی (rtPKCS11ECP.dll، jcPKCS11-2.dll، isbc_pkcs11_main.dll) — Rutoken ڈرائیور، JaCarta Unified Client یا ESMART PKI Client نصب کریں
 pkcs11.loadfail = PKCS#11 لائبریری لوڈ نہیں ہو سکی: {0}
 pkcs11.enumfail = PKCS#11 سلاٹس کی فہرست نہیں بن سکی: {0}
 pkcs11.tokenfail = ٹوکن «{0}»: {1}

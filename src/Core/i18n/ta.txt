@@ -250,7 +250,7 @@ cli.lang.missing = --lang-க்குப் பிறகு மொழிக் 
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = உள்ளது
 common.certonly = சான்றிதழ் மட்டும்
-pkcs11.nolib = PKCS#11 நூலகம் எதுவும் கிடைக்கவில்லை (rtPKCS11ECP.dll, jcPKCS11-2.dll) — Rutoken இயக்கிகளையோ JaCarta Unified Client-ஐயோ நிறுவவும்
+pkcs11.nolib = PKCS#11 நூலகம் எதுவும் கிடைக்கவில்லை (rtPKCS11ECP.dll, jcPKCS11-2.dll, isbc_pkcs11_main.dll) — Rutoken இயக்கிகள், JaCarta Unified Client அல்லது ESMART PKI Client-ஐ நிறுவவும்
 pkcs11.loadfail = PKCS#11 நூலகத்தை ஏற்ற முடியவில்லை: {0}
 pkcs11.enumfail = PKCS#11 ஸ்லாட்டுகளை பட்டியலிட முடியவில்லை: {0}
 pkcs11.tokenfail = டோக்கன் «{0}»: {1}

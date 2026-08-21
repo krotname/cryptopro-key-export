@@ -2,13 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Xunit;
 
 namespace CryptoProExport.Tests
 {
     /// <summary>
-    /// Чистая логика поддержки Рутокен ЭЦП/Lite через PKCS#11: классификация модели,
-    /// локализованные названия семейств и состояний PIN, поиск библиотеки.
+    /// Чистая логика поддержки токенов через PKCS#11: классификация модели,
+    /// локализованные названия семейств и состояний PIN, поиск vendor libraries.
     /// Обращения к железу тут нет — оно проверяется e2e на живом токене.
     /// </summary>
     public class Pkcs11TokenTests
@@ -23,6 +24,7 @@ namespace CryptoProExport.Tests
         [InlineData("Рутокен ЭЦП", RutokenKind.RutokenEcp)]      // кириллическая метка тоже опознаётся
         [InlineData("JaCarta GOST", RutokenKind.Other)]
         [InlineData("eToken PRO", RutokenKind.Other)]
+        [InlineData("ESMART Token USB 64K", RutokenKind.Other)]
         [InlineData("", RutokenKind.Unknown)]
         [InlineData(null, RutokenKind.Unknown)]
         [InlineData("SomeCard 42", RutokenKind.Unknown)]
@@ -45,6 +47,7 @@ namespace CryptoProExport.Tests
             // По одной модели носитель попадал бы в «не опознан».
             Assert.Equal(RutokenKind.Unknown, Pkcs11Token.Classify("PRO"));
             Assert.Equal(RutokenKind.Other, Pkcs11Token.Classify("PRO", "Aladdin R.D."));
+            Assert.Equal(RutokenKind.Other, Pkcs11Token.Classify("USB 64K", "ISBC"));
         }
 
         [Fact]
@@ -268,14 +271,92 @@ namespace CryptoProExport.Tests
                 Assert.Contains(candidates, c => c.EndsWith(lib.Dll, StringComparison.OrdinalIgnoreCase));
             });
             Assert.Contains(candidates, c => c.EndsWith("jcPKCS11-2.dll", StringComparison.OrdinalIgnoreCase));
+            Assert.Contains(candidates, c => c.EndsWith("isbc_pkcs11_main.dll", StringComparison.OrdinalIgnoreCase));
+        }
+
+        [Theory]
+        [InlineData("jcPKCS11-2.dll")]
+        [InlineData("isbc_pkcs11_main.dll")]
+        public void LibraryCandidates_ForSingleDllMentionOnlyThatDll(string dll)
+        {
+            var candidates = Pkcs11Token.LibraryCandidates(dll).ToArray();
+            Assert.NotEmpty(candidates);
+            Assert.All(candidates, c => Assert.EndsWith(dll, c, StringComparison.OrdinalIgnoreCase));
         }
 
         [Fact]
-        public void LibraryCandidates_ForSingleDllMentionOnlyThatDll()
+        public void KnownLibraries_ContainsThreeUniqueConfirmedVendorModules()
         {
-            var jc = Pkcs11Token.LibraryCandidates("jcPKCS11-2.dll").ToArray();
-            Assert.NotEmpty(jc);
-            Assert.All(jc, c => Assert.EndsWith("jcPKCS11-2.dll", c, StringComparison.OrdinalIgnoreCase));
+            Assert.Collection(Pkcs11Token.KnownLibraries,
+                lib => Assert.Equal(("Rutoken", "rtPKCS11ECP.dll"), lib),
+                lib => Assert.Equal(("JaCarta", "jcPKCS11-2.dll"), lib),
+                lib => Assert.Equal(("ESMART", "isbc_pkcs11_main.dll"), lib));
+            Assert.Equal(Pkcs11Token.KnownLibraries.Count,
+                Pkcs11Token.KnownLibraries.Select(lib => lib.Dll)
+                    .Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        }
+
+        [Fact]
+        public void LibraryCandidates_EsmartHasNoUnverifiedProgramFilesFallback()
+        {
+            var candidates = Pkcs11Token.LibraryCandidates("isbc_pkcs11_main.dll").ToArray();
+            string windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows)
+                .TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+
+            Assert.NotEmpty(candidates);
+            Assert.All(candidates, candidate => Assert.True(
+                candidate.StartsWith(windows, StringComparison.OrdinalIgnoreCase), candidate));
+        }
+
+        [Fact]
+        public void IsLibraryComplete_EsmartRequiresMainAndCompanionTogether()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "cpx-esmart-libs-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            string main = Path.Combine(dir, "isbc_pkcs11_main.dll");
+            string companion = Path.Combine(dir, "isbc_esmart_token_mod.dll");
+            try
+            {
+                WritePeStub(main, RuntimeInformation.ProcessArchitecture);
+                Assert.False(Pkcs11Token.IsLibraryComplete("isbc_pkcs11_main.dll", main));
+
+                File.Delete(main);
+                WritePeStub(companion, RuntimeInformation.ProcessArchitecture);
+                Assert.False(Pkcs11Token.IsLibraryComplete("isbc_pkcs11_main.dll", main));
+
+                WritePeStub(main, RuntimeInformation.ProcessArchitecture);
+                Assert.True(Pkcs11Token.IsLibraryComplete("isbc_pkcs11_main.dll", main));
+
+                Architecture otherArchitecture = RuntimeInformation.ProcessArchitecture == Architecture.X86
+                    ? Architecture.X64
+                    : Architecture.X86;
+                WritePeStub(companion, otherArchitecture);
+                Assert.False(Pkcs11Token.IsLibraryComplete("isbc_pkcs11_main.dll", main));
+            }
+            finally
+            {
+                Directory.Delete(dir, recursive: true);
+            }
+        }
+
+        [Theory]
+        [InlineData("rtPKCS11ECP.dll")]
+        [InlineData("jcPKCS11-2.dll")]
+        public void IsLibraryComplete_StandaloneVendorsRequireOnlyMain(string dll)
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "cpx-standalone-lib-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            string main = Path.Combine(dir, dll);
+            try
+            {
+                Assert.False(Pkcs11Token.IsLibraryComplete(dll, main));
+                File.WriteAllBytes(main, Array.Empty<byte>());
+                Assert.True(Pkcs11Token.IsLibraryComplete(dll, main));
+            }
+            finally
+            {
+                Directory.Delete(dir, recursive: true);
+            }
         }
 
         [Fact]
@@ -399,6 +480,24 @@ namespace CryptoProExport.Tests
         {
             var candidates = Pkcs11Token.LibraryCandidates().ToArray();
             Assert.Equal(candidates.Length, candidates.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        }
+
+        private static void WritePeStub(string path, Architecture architecture)
+        {
+            ushort machine = architecture switch
+            {
+                Architecture.X86 => 0x014c,
+                Architecture.X64 => 0x8664,
+                Architecture.Arm64 => 0xAA64,
+                _ => throw new ArgumentOutOfRangeException(nameof(architecture)),
+            };
+            var bytes = new byte[0x86];
+            bytes[0x3c] = 0x80;
+            bytes[0x80] = (byte)'P';
+            bytes[0x81] = (byte)'E';
+            bytes[0x84] = (byte)(machine & 0xff);
+            bytes[0x85] = (byte)(machine >> 8);
+            File.WriteAllBytes(path, bytes);
         }
     }
 }

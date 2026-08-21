@@ -250,7 +250,7 @@ cli.lang.missing = --lang cần một mã ngôn ngữ. Các ngôn ngữ hiện c
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = có
 common.certonly = chỉ chứng chỉ
-pkcs11.nolib = Không tìm thấy thư viện PKCS#11 (rtPKCS11ECP.dll, jcPKCS11-2.dll) — hãy cài trình điều khiển Rutoken hoặc JaCarta Unified Client
+pkcs11.nolib = Không tìm thấy thư viện PKCS#11 (rtPKCS11ECP.dll, jcPKCS11-2.dll, isbc_pkcs11_main.dll) — hãy cài trình điều khiển Rutoken, JaCarta Unified Client hoặc ESMART PKI Client
 pkcs11.loadfail = Không tải được thư viện PKCS#11: {0}
 pkcs11.enumfail = Không liệt kê được các khe PKCS#11: {0}
 pkcs11.tokenfail = Token «{0}»: {1}
