@@ -362,3 +362,7 @@ carrier.etoken = eToken / SafeNet
 carrier.unknown = supporto sconosciuto
 pcsc.contextfail = PC/SC: impossibile connettersi al servizio smart card ({0})
 pcsc.statusfail = PC/SC: impossibile leggere lo stato dei lettori ({0})
+diag.pnp.none = Lettori di smart card (PnP): nessun dispositivo collegato fisicamente
+diag.pnp.ok = Lettori di smart card (PnP): {0} collegati, tutti i driver sono avviati
+diag.pnp.failed = Lettore di smart card {0} ({1}): collegato fisicamente, ma il driver non si è avviato — codice {2}, stato {3}
+diag.pnp.unavailable = Lettori di smart card (PnP): verifica non disponibile ({0})

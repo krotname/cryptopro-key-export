@@ -362,3 +362,7 @@ carrier.etoken = eToken / SafeNet
 carrier.unknown = 알 수 없는 매체
 pcsc.contextfail = PC/SC: 스마트 카드 서비스에 연결할 수 없습니다 ({0})
 pcsc.statusfail = PC/SC: 리더 상태를 읽을 수 없습니다 ({0})
+diag.pnp.none = 스마트카드 리더(PnP): 물리적으로 연결된 장치가 없습니다
+diag.pnp.ok = 스마트카드 리더(PnP): {0}개 연결됨, 모든 드라이버가 시작됨
+diag.pnp.failed = 스마트카드 리더 {0} ({1}): 물리적으로 연결되어 있지만 드라이버가 시작되지 않았습니다 — 코드 {2}, 상태 {3}
+diag.pnp.unavailable = 스마트카드 리더(PnP): 확인할 수 없음 ({0})
