@@ -43,7 +43,8 @@ namespace CryptoProExport.Tests
             });
 
             string line = Assert.Single(lines);
-            Assert.Contains("физически подключён", line, StringComparison.Ordinal);
+            Assert.Contains("присутствует как PnP-устройство", line, StringComparison.Ordinal);
+            Assert.DoesNotContain("физически", line, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("драйвер не запустился", line, StringComparison.Ordinal);
             Assert.Contains(@"USB\VID_2CE4&PID_7479", line, StringComparison.Ordinal);
             Assert.Contains("10", line, StringComparison.Ordinal);
@@ -81,7 +82,7 @@ namespace CryptoProExport.Tests
                 new SmartCardReaderStatus(),
             });
 
-            Assert.Equal("Smart-card readers (PnP): 2 connected, all drivers started", Assert.Single(lines));
+            Assert.Equal("Smart-card readers (PnP): 2 PnP-present, all drivers started", Assert.Single(lines));
         }
 
         [Fact]
@@ -100,6 +101,7 @@ namespace CryptoProExport.Tests
             });
 
             string line = Assert.Single(lines);
+            Assert.Contains("PnP-present", line, StringComparison.Ordinal);
             Assert.Contains("Windows reports a PnP problem", line, StringComparison.Ordinal);
             Assert.DoesNotContain("driver did not start", line, StringComparison.Ordinal);
             Assert.Contains("Code 14", line, StringComparison.Ordinal);
@@ -109,7 +111,7 @@ namespace CryptoProExport.Tests
         public void Describe_ReportsNoPresentReaders()
         {
             using var language = Strings.Scope("en");
-            Assert.Contains("no devices", Assert.Single(
+            Assert.Contains("no PnP-present devices", Assert.Single(
                 SmartCardReaderHealth.Describe(Array.Empty<SmartCardReaderStatus>())),
                 StringComparison.Ordinal);
         }
@@ -131,7 +133,33 @@ namespace CryptoProExport.Tests
             });
 
             Assert.Single(lines);
-            Assert.Contains("physically connected", lines[0], StringComparison.Ordinal);
+            Assert.Contains("PnP-present", lines[0], StringComparison.Ordinal);
+            Assert.DoesNotContain("physically connected", lines[0], StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public void Describe_DoesNotCallVirtualNonUsbReaderPhysicallyConnected()
+        {
+            using var language = Strings.Scope("en");
+            var lines = SmartCardReaderHealth.Describe(new[]
+            {
+                new SmartCardReaderStatus
+                {
+                    DisplayName = "private-serial-must-not-leak",
+                    BusDescription = "private-serial-must-not-leak",
+                    HardwareId = @"ROOT\SMARTCARDREADER",
+                    ProblemCode = 10,
+                    ProblemStatus = 0xC0000001,
+                },
+            });
+
+            string line = Assert.Single(lines);
+            Assert.Contains("Smart-card reader ?: PnP-present", line, StringComparison.Ordinal);
+            Assert.Contains("Code 10", line, StringComparison.Ordinal);
+            Assert.Contains("0xC0000001", line, StringComparison.Ordinal);
+            Assert.DoesNotContain("physically", line, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("ROOT", line, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("private-serial-must-not-leak", line, StringComparison.Ordinal);
         }
     }
 }

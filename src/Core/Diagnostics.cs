@@ -33,7 +33,7 @@ namespace CryptoProExport
                 lines.Add("  " + Strings.Get("diag.rtcom.warn"));
             if (detailed) lines.AddRange(RutokenExporter.DescribeSource());
 
-            // 2a. PnP — failed-start reader исчезает из PC/SC и PKCS#11, хотя физически подключён.
+            // 2a. PnP — failed-start reader исчезает из PC/SC и PKCS#11, хотя остаётся PnP-present.
             //     Показываем безопасные VID/PID без полного Instance ID (его хвост бывает серийником).
             lines.AddRange(SmartCardReaderHealth.Report());
 

@@ -254,7 +254,7 @@ src/Core/           библиотека (net10.0-windows)
   SessionLog.cs        журнал сеанса в %LOCALAPPDATA%
   Cp1251.cs / Cp866.cs кодеки для имён контейнеров и вывода утилит
   Diagnostics.cs       отчёт о зависимостях (команда deps, лог GUI)
-  SmartCardReaderHealth.cs PnP-диагностика физически подключённых reader'ов до PC/SC
+  SmartCardReaderHealth.cs диагностика PnP-present reader'ов до PC/SC
   Strings.cs           строки интерфейса: выбор языка, ключи, откат на английский
   i18n/<код>.txt       по файлу на язык (ключ = значение), вшиваются ресурсами
   GuideText.cs         встроенное руководство (ресурсы guide/ru.txt и guide/en.txt)
@@ -306,9 +306,11 @@ pwsh build\publish.ps1
 9. *Справка* — встроенное руководство: сценарии, кнопки, команды, разбор ошибок.
 
 В лог при запуске выводится, откуда берутся зависимости и виден ли КриптоПро CSP.
-`deps` также проверяет present-устройства PnP class `SmartCardReader`: физически
-подключённый reader с не запустившимся драйвером (например, Code 10) больше не выглядит
-как отсутствующий токен. Полный PnP Instance ID не выводится — только безопасные VID/PID.
+`deps` также проверяет PnP-present устройства class `SmartCardReader`: reader с не
+запустившимся драйвером (например, Code 10) больше не теряется из диагностики вслед за
+PC/SC. PnP-present не доказывает физическое подключение: так же учитывается виртуальный или
+non-USB reader. Полный PnP Instance ID, описания и имена не выводятся — для USB остаются
+только безопасные VID/PID, PnP problem code и status.
 Проверенный случай ESMART описан в
 [docs/hardware/esmart-token-code10.md](docs/hardware/esmart-token-code10.md).
 
