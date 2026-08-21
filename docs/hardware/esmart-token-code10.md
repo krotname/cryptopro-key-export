@@ -83,15 +83,15 @@ pnputil /restart-device $device.InstanceId
 
 ## Диагностика в приложении
 
-`deps` теперь опрашивает present-устройства PnP class `SmartCardReader` через SetupAPI до
-PKCS#11. Если reader физически подключён, но имеет ненулевой Problem Code, отчёт показывает:
+`deps` теперь опрашивает PnP-present устройства class `SmartCardReader` через SetupAPI до
+PKCS#11. Если такое устройство имеет ненулевой Problem Code, отчёт показывает:
 
 - только USB VID/PID без полного Instance ID, описаний устройства и friendly name;
 - PnP Code и `ProblemStatus` в hex.
 
 Это закрывает прежний слепой участок: failed-start reader отсутствует и в PC/SC, и в PKCS#11,
-поэтому раньше `deps` не мог отличить неподключённый токен от подключённого устройства с
-не запустившимся драйвером.
+но остаётся PnP-present. Этот статус сам по себе не доказывает физическое подключение:
+виртуальный или non-USB reader класса `SmartCardReader` учитывается тем же способом.
 
 ## Первичные источники
 

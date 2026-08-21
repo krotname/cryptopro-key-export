@@ -9,7 +9,7 @@ using System.Text.RegularExpressions;
 
 namespace CryptoProExport
 {
-    /// <summary>Безопасное для вывода состояние одного физически подключённого PnP-считывателя.</summary>
+    /// <summary>Безопасное для вывода состояние одного PnP-present считывателя.</summary>
     internal sealed class SmartCardReaderStatus
     {
         public string DisplayName { get; set; }
@@ -27,6 +27,7 @@ namespace CryptoProExport
     [SupportedOSPlatform("windows")]
     internal static class SmartCardReaderHealth
     {
+        // PnP-present не означает физическое подключение: сюда входят и виртуальные устройства.
         private const uint DigcfPresent = 0x00000002;
         private const uint CmProbFailedStart = 10;
         private const int ErrorNoMoreItems = 259;
@@ -68,13 +69,13 @@ namespace CryptoProExport
 
         internal static List<string> Describe(IEnumerable<SmartCardReaderStatus> statuses)
         {
-            var present = (statuses ?? Enumerable.Empty<SmartCardReaderStatus>()).ToList();
-            if (present.Count == 0)
+            var pnpPresent = (statuses ?? Enumerable.Empty<SmartCardReaderStatus>()).ToList();
+            if (pnpPresent.Count == 0)
                 return new List<string> { Strings.Get("diag.pnp.none") };
 
-            var problems = present.Where(status => status.ProblemCode != 0).ToList();
+            var problems = pnpPresent.Where(status => status.ProblemCode != 0).ToList();
             if (problems.Count == 0)
-                return new List<string> { Strings.Format("diag.pnp.ok", present.Count) };
+                return new List<string> { Strings.Format("diag.pnp.ok", pnpPresent.Count) };
 
             return problems.Select(status => Strings.Format(
                 status.ProblemCode == CmProbFailedStart ? "diag.pnp.failed" : "diag.pnp.problem",
