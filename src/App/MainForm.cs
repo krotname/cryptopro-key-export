@@ -13,7 +13,7 @@ namespace CryptoProExport.App
     /// <summary>
     /// Главное окно. Три действия одного конвейера:
     ///   • Обновить — показать контейнеры (видимые CSP + на подключённых Рутокенах);
-    ///   • Экспорт с токена — снять 6 .key на диск (rtCOMLite, обход CSP);
+    ///   • Экспорт с токена — снять файловый контейнер S/Lite (не аппаратный ключ ЭЦП);
     ///   • Извлечь .cer — вытащить сертификат из контейнера (CryptoAPI);
     ///   • Сделать экспортируемым — полный цикл: снять + авто-.cer + p12utility --keyexport.
     ///
@@ -271,6 +271,12 @@ namespace CryptoProExport.App
             SetButton(_btnHelp, "btn.help", "tip.help");
             SetButton(_btnCancel, "btn.cancel", "tip.cancel");
 
+            // Общие названия кнопок исторически говорят «с токена». Явно добавляем границу
+            // аппаратного ЭЦП прямо в обе подсказки на каждом из 20 языков.
+            string ecpBoundary = "\n\n" + Strings.Get("token.boundary.ecp");
+            _tips.SetToolTip(_btnExport, _tips.GetToolTip(_btnExport) + ecpBoundary);
+            _tips.SetToolTip(_btnFull, _tips.GetToolTip(_btnFull) + ecpBoundary);
+
             _colWhere.Text = Strings.Get("col.location");
             _colName.Text = Strings.Get("col.container");
             _colDetails.Text = Strings.Get("col.details");
@@ -427,7 +433,8 @@ namespace CryptoProExport.App
             foreach (var c in CertFromContainer.EnumContainers())
                 AddRow(Strings.Get("log.container.csp"), c.Name, Strings.Format("log.container.provider", c.ProvType));
 
-            // Токены по PKCS#11 (Рутокен ЭЦП/Lite): контейнеры и наличие сертификата видны без PIN.
+            // Токены по PKCS#11: метаданные и профиль механизмов видны без PIN;
+            // публичные сертификаты показываются только когда реально присутствуют.
             cancel.ThrowIfCancellationRequested();
             var tokens = Pkcs11Token.Enumerate(readContainers: true, log: Log, cancel: cancel);
             Log("[PKCS#11] " + Strings.Format("token.found", tokens.Count));
@@ -437,6 +444,9 @@ namespace CryptoProExport.App
                     t.Reader ?? "?", t.Label ?? "?", Pkcs11Token.KindName(t.Kind),
                     t.Serial ?? "?", t.Firmware ?? "?"));
                 Log("    " + Strings.Format("cli.token.pin", Pkcs11Token.PinState(t)));
+                Log("    " + Pkcs11Token.CapabilitySummary(t));
+                if (t.Kind == RutokenKind.RutokenEcp)
+                    Log("    " + Strings.Get("token.boundary.ecp"));
 
                 bool hasDirectRow = false;
                 foreach (var c in t.Containers)
@@ -481,7 +491,7 @@ namespace CryptoProExport.App
                 if (!hasDirectRow)
                     AddRow($"[PKCS#11] {t.Reader} [{Pkcs11Token.KindName(t.Kind)}]",
                            Strings.Get("common.none"),
-                           "PKCS#11 · " + Strings.Format("cli.token.pin", Pkcs11Token.PinState(t)),
+                           "PKCS#11 · " + Pkcs11Token.CapabilityProfileName(t.CapabilityProfile),
                            new TokenDeviceSelection());
             }
 

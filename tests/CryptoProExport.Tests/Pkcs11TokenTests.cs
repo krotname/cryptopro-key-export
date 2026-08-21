@@ -92,6 +92,64 @@ namespace CryptoProExport.Tests
             Assert.Equal(Strings.Get("pin.state.ok"), ok);
         }
 
+        [Theory]
+        [InlineData(false, 2048, false, false, true, RutokenCapabilityProfile.Unknown)]
+        [InlineData(true, 2048, false, false, true, RutokenCapabilityProfile.Ecp2Capabilities)]
+        [InlineData(true, 4096, false, false, true, RutokenCapabilityProfile.Ecp3Capable)]
+        [InlineData(true, 2048, true, true, true, RutokenCapabilityProfile.Ecp3Capable)]
+        [InlineData(true, 0, false, false, true, RutokenCapabilityProfile.Unknown)]
+        [InlineData(true, 2048, false, false, false, RutokenCapabilityProfile.Unknown)]
+        public void ClassifyCapabilities_UsesMechanismsNotNames(bool known, int rsa, bool ecdsa,
+            bool ecMechanismPresent, bool gost, RutokenCapabilityProfile expected)
+        {
+            Assert.Equal(expected,
+                Pkcs11Token.ClassifyCapabilities(known, rsa, ecdsa, ecMechanismPresent, gost));
+        }
+
+        [Fact]
+        public void ClassifyCapabilities_SoftwareEcdsaPresent_IsUnknown()
+        {
+            Assert.Equal(RutokenCapabilityProfile.Unknown,
+                Pkcs11Token.ClassifyCapabilities(capabilitiesKnown: true,
+                    hardwareRsaMaxBits: 2048, hardwareEcdsa: false,
+                    ecMechanismPresent: true, hardwareGost: true));
+        }
+
+        [Fact]
+        public void CapabilitySummary_ReportsReadOnlyHardwareProfile()
+        {
+            var info = new Pkcs11TokenInfo
+            {
+                Hardware = "20.05",
+                MechanismCount = 45,
+                HardwareRsaMaxBits = 2048,
+                HardwareEcdsa = false,
+                HardwareGost = true,
+                CapabilitiesKnown = true,
+                CapabilityProfile = RutokenCapabilityProfile.Ecp2Capabilities,
+            };
+
+            string summary = Pkcs11Token.CapabilitySummary(info);
+
+            Assert.Contains("20.05", summary, StringComparison.Ordinal);
+            Assert.Contains("45", summary, StringComparison.Ordinal);
+            Assert.Contains("2048", summary, StringComparison.Ordinal);
+            Assert.Contains(Pkcs11Token.CapabilityProfileName(
+                RutokenCapabilityProfile.Ecp2Capabilities), summary, StringComparison.Ordinal);
+            Assert.DoesNotContain(Strings.MissingMarkerStart, summary, StringComparison.Ordinal);
+        }
+
+        [Theory]
+        [InlineData(RutokenCapabilityProfile.Unknown)]
+        [InlineData(RutokenCapabilityProfile.Ecp2Capabilities)]
+        [InlineData(RutokenCapabilityProfile.Ecp3Capable)]
+        public void CapabilityProfileName_IsLocalized(RutokenCapabilityProfile profile)
+        {
+            string name = Pkcs11Token.CapabilityProfileName(profile);
+            Assert.False(string.IsNullOrWhiteSpace(name));
+            Assert.DoesNotContain(Strings.MissingMarkerStart, name, StringComparison.Ordinal);
+        }
+
         [Fact]
         public void Combine_KeepsContainersAndTheirCerts()
         {
@@ -173,6 +231,28 @@ namespace CryptoProExport.Tests
 
             Assert.Contains("ACS ACR38U 0", set);
             Assert.False(RutokenExporter.ShouldWalk("ACS ACR38U 0", set));
+        }
+
+        [Fact]
+        public void SmartCardReaders_MixedInventoryProtectsEcpAndForeignReaders()
+        {
+            // Регрессия для одновременного присутствия разных носителей: exact ECP и чужие
+            // смарт-карты никогда не уходят в нативный rtCOMLite-обход. Rutoken S остаётся
+            // рабочим — это отдельный файловый профиль и единственная цель обхода.
+            var tokens = new List<Pkcs11TokenInfo>
+            {
+                new Pkcs11TokenInfo { Reader = "Aktiv Rutoken ECP 0", Kind = RutokenKind.RutokenEcp },
+                new Pkcs11TokenInfo { Reader = "Aladdin Token JC 0", Kind = RutokenKind.Other },
+                new Pkcs11TokenInfo { Reader = "ESMART USB64K 0", Kind = RutokenKind.Other },
+                new Pkcs11TokenInfo { Reader = "Aktiv ruToken 0", Kind = RutokenKind.RutokenS },
+            };
+
+            var skip = Pkcs11Token.SmartCardReaders(tokens);
+
+            Assert.False(RutokenExporter.ShouldWalk("Aktiv Rutoken ECP 0", skip));
+            Assert.False(RutokenExporter.ShouldWalk("Aladdin Token JC 0", skip));
+            Assert.False(RutokenExporter.ShouldWalk("ESMART USB64K 0", skip));
+            Assert.True(RutokenExporter.ShouldWalk("Aktiv ruToken 0", skip));
         }
 
         // ---------- дедупликация считывателей между библиотеками разных вендоров ----------

@@ -91,7 +91,8 @@ namespace CryptoProExport.App
                         foreach (var c in CertFromContainer.EnumContainers())
                             Out($"  {c.Name}  " + Strings.Format("cli.list.provider", c.ProvType));
 
-                        // Токены по PKCS#11 (Рутокен ЭЦП/Lite): контейнеры видны без ввода PIN.
+                        // Токены по PKCS#11: метаданные и профиль механизмов видны без PIN;
+                        // публичные сертификаты показываются только когда реально присутствуют.
                         // Лог обязателен: без него сбой драйвера выглядел бы как «токенов нет».
                         var tokens = Pkcs11Token.Enumerate(readContainers: true, log: Out);
                         Out("[PKCS#11] " + Strings.Format("token.found", tokens.Count));
@@ -102,6 +103,9 @@ namespace CryptoProExport.App
                         foreach (var t in tokens)
                         {
                             Out($"  {t.Reader} [{Pkcs11Token.KindName(t.Kind)}]");
+                            Out("    " + Pkcs11Token.CapabilitySummary(t));
+                            if (t.Kind == RutokenKind.RutokenEcp)
+                                Out("    " + Strings.Get("token.boundary.ecp"));
                             foreach (var c in t.Containers)
                                 Out("    " + DescribeTokenEntry(c));
                         }
@@ -133,6 +137,9 @@ namespace CryptoProExport.App
                             Out(Strings.Format("cli.token.line", t.Reader ?? "?", t.Label ?? "?",
                                 Pkcs11Token.KindName(t.Kind), t.Serial ?? "?", t.Firmware ?? "?"));
                             Out("  " + Strings.Format("cli.token.pin", Pkcs11Token.PinState(t)));
+                            Out("  " + Pkcs11Token.CapabilitySummary(t));
+                            if (t.Kind == RutokenKind.RutokenEcp)
+                                Out("  " + Strings.Get("token.boundary.ecp"));
                             foreach (var c in t.Containers)
                             {
                                 Out("  " + DescribeTokenEntry(c));
@@ -404,6 +411,7 @@ namespace CryptoProExport.App
             foreach (var (syntax, key) in Commands)
                 Out("  " + syntax.PadRight(width, ' ') + Strings.Get(key));
             Out("  " + Strings.Get("cli.usage.gui"));
+            Out("  " + Strings.Get("token.boundary.ecp"));
         }
     }
 }

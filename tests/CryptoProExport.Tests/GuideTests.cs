@@ -131,6 +131,17 @@ namespace CryptoProExport.Tests
         }
 
         [Theory]
+        [InlineData("ru", "Рутокен ЭЦП", "аппаратный ключ не копируется")]
+        [InlineData("en", "Rutoken ECP", "hardware key is not")]
+        public void Guide_StatesRutokenEcpHardwareBoundary(string language, string tokenName,
+            string phrase)
+        {
+            string guide = GuideText.For(language);
+            Assert.Contains(tokenName, guide, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains(phrase, guide, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Theory]
         [InlineData("ru")]
         [InlineData("en")]
         public void Guide_FitsConsoleWidth(string language)

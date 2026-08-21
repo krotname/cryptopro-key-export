@@ -51,6 +51,9 @@ namespace CryptoProExport
                     lines.Add("  " + Strings.Format("diag.pkcs11.token",
                         t.Reader ?? "?", Pkcs11Token.KindName(t.Kind),
                         t.Serial ?? "?", Pkcs11Token.PinState(t)));
+                    lines.Add("    " + Pkcs11Token.CapabilitySummary(t));
+                    if (t.Kind == RutokenKind.RutokenEcp)
+                        lines.Add("    " + Strings.Get("token.boundary.ecp"));
                     foreach (var c in t.Containers)
                         // Сертификат без парного CKO_DATA контейнером не является — у него своя
                         // формулировка, как в list и token (замечание Codex на PR #24).

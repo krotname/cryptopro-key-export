@@ -15,12 +15,26 @@ namespace CryptoProExport
         RutokenS,
         /// <summary>Рутокен Lite: смарт-карточный профиль, файлы через rtCOMLite не видны.</summary>
         RutokenLite,
-        /// <summary>Рутокен ЭЦП / ЭЦП 2.0: смарт-карточный профиль; контейнер виден как PKCS#11 CKO_DATA.</summary>
+        /// <summary>
+        /// Рутокен ЭЦП: смарт-карточный профиль. Публичные PKCS#11-объекты могут быть доступны,
+        /// но аппаратный закрытый ключ приложение не копирует.
+        /// </summary>
         RutokenEcp,
         /// <summary>Токен другого вендора (JaCarta, eToken…) — распознан, но путь не проверялся.</summary>
         Other,
         /// <summary>Модель не опознана.</summary>
         Unknown,
+    }
+
+    /// <summary>
+    /// Профиль поколения по фактически объявленным механизмам PKCS#11. Это не идентификатор
+    /// модели: PID, ATR, строка модели и версия прошивки сами по себе поколение не доказывают.
+    /// </summary>
+    public enum RutokenCapabilityProfile
+    {
+        Unknown,
+        Ecp2Capabilities,
+        Ecp3Capable,
     }
 
     /// <summary>Контейнер КриптоПро, увиденный на токене через PKCS#11 (без обращения к CSP).</summary>
@@ -51,8 +65,23 @@ namespace CryptoProExport
         public string Model;         // модель, напр. «Rutoken ECP»
         public string Manufacturer;  // производитель, напр. «Aktiv Co.», «Aladdin R.D.»
         public string Serial;        // серийный номер
+        public string Hardware;      // версия аппаратной платформы из CK_TOKEN_INFO
         public string Firmware;      // версия прошивки
         public RutokenKind Kind;
+
+        /// <summary>Число механизмов PKCS#11; -1 — список получить не удалось.</summary>
+        public int MechanismCount = -1;
+        /// <summary>Максимум аппаратной генерации RSA в битах; 0 — не объявлена/не прочитана.</summary>
+        public int HardwareRsaMaxBits;
+        /// <summary>Объявлены ли аппаратные EC keygen/ECDSA.</summary>
+        public bool HardwareEcdsa;
+        /// <summary>Объявлен ли любой EC/ECDSA/ECDH-механизм, включая software.</summary>
+        public bool EcMechanismPresent;
+        /// <summary>Объявлены ли аппаратные ГОСТ keygen/sign.</summary>
+        public bool HardwareGost;
+        /// <summary>Все относящиеся к профилю механизмы прочитаны без ошибки.</summary>
+        public bool CapabilitiesKnown;
+        public RutokenCapabilityProfile CapabilityProfile;
 
         /// <summary>PIN пользователя заводской (флаг CKF_USER_PIN_TO_BE_CHANGED) — узнаётся без попытки входа.</summary>
         public bool PinDefault;
@@ -75,8 +104,9 @@ namespace CryptoProExport
     /// сертификат как CKO_CERTIFICATE — оба публичные и читаются <b>без ввода PIN</b>. Это даёт:
     ///   • надёжную диагностику токена (модель, серийник, семейство, состояние PIN без траты попыток);
     ///   • извлечение сертификата с токена без КриптоПро CSP.
-    /// Закрытый ключ через PKCS#11 не извлекается (CKA_EXTRACTABLE=false, аппаратно) — это ограничение
-    /// железа, а не кода.
+    /// Закрытый аппаратный ключ Рутокен ЭЦП приложение не читает и не экспортирует. Атрибуты
+    /// конкретного ключа можно утверждать только когда такой объект действительно найден;
+    /// модель токена и набор механизмов не заменяют проверку объекта.
     ///
     /// Библиотеки берутся из системы (ставятся с драйвером носителя), а не вшиваются: они большие
     /// и обновляются вместе с драйвером. Если ни одной нет — класс молча сообщает о недоступности.
@@ -286,6 +316,47 @@ namespace CryptoProExport
             _ => "kind.unknown",
         });
 
+        /// <summary>
+        /// Классифицировать поколение только по возможностям, а не по PID/model/ATR/firmware.
+        /// Профиль ЭЦП 2.x требует аппаратные ГОСТ и RSA не выше 2048 при полном отсутствии EC/ECDSA;
+        /// RSA выше 2048 или аппаратный ECDSA означают ECP3-capable профиль.
+        /// </summary>
+        public static RutokenCapabilityProfile ClassifyCapabilities(bool capabilitiesKnown,
+            int hardwareRsaMaxBits, bool hardwareEcdsa, bool ecMechanismPresent, bool hardwareGost)
+        {
+            if (!capabilitiesKnown) return RutokenCapabilityProfile.Unknown;
+            if (hardwareEcdsa || hardwareRsaMaxBits > 2048)
+                return RutokenCapabilityProfile.Ecp3Capable;
+            if (ecMechanismPresent)
+                return RutokenCapabilityProfile.Unknown;
+            if (hardwareGost && hardwareRsaMaxBits > 0 && hardwareRsaMaxBits <= 2048)
+                return RutokenCapabilityProfile.Ecp2Capabilities;
+            return RutokenCapabilityProfile.Unknown;
+        }
+
+        /// <summary>Локализованное имя профиля возможностей.</summary>
+        public static string CapabilityProfileName(RutokenCapabilityProfile profile) => Strings.Get(profile switch
+        {
+            RutokenCapabilityProfile.Ecp2Capabilities => "cap.profile.ecp2",
+            RutokenCapabilityProfile.Ecp3Capable => "cap.profile.ecp3",
+            _ => "cap.profile.unknown",
+        });
+
+        /// <summary>Одна безопасная строка диагностики возможностей без PIN и серийного номера.</summary>
+        public static string CapabilitySummary(Pkcs11TokenInfo info)
+        {
+            if (info == null) throw new ArgumentNullException(nameof(info));
+            string count = info.MechanismCount >= 0
+                ? info.MechanismCount.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                : "?";
+            string rsa = info.HardwareRsaMaxBits > 0
+                ? info.HardwareRsaMaxBits.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                : "—";
+            return Strings.Format("cli.token.capabilities", info.Hardware ?? "?", count,
+                CapabilityProfileName(info.CapabilityProfile), rsa,
+                info.HardwareEcdsa ? "+" : "−", info.HardwareGost ? "+" : "−");
+        }
+
         /// <summary>Локализованное состояние PIN (без траты попыток входа).</summary>
         public static string PinState(Pkcs11TokenInfo info) => Strings.Get(
             info.PinLocked ? "pin.state.locked"
@@ -414,6 +485,7 @@ namespace CryptoProExport
                         info.Model = ti.Model?.Trim();
                         info.Manufacturer = ti.ManufacturerId?.Trim();
                         info.Serial = ti.SerialNumber?.Trim();
+                        info.Hardware = ti.HardwareVersion;
                         info.Firmware = ti.FirmwareVersion;
                         info.Kind = Classify(info.Model, info.Manufacturer);
 
@@ -422,6 +494,10 @@ namespace CryptoProExport
                         info.PinCountLow = f.UserPinCountLow;
                         info.PinFinalTry = f.UserPinFinalTry;
                         info.PinLocked = f.UserPinLocked;
+
+                        // C_GetMechanismList/C_GetMechanismInfo не требуют PIN и не читают объекты.
+                        // Профиль поколения строится только по этим возможностям.
+                        ReadCapabilities(slot, info, log);
 
                         // Сбой чтения объектов — тоже неполное чтение: ReadContainers гасит
                         // исключение сам (список объектов не должен ронять перечисление токенов),
@@ -442,6 +518,82 @@ namespace CryptoProExport
                 try { p11.Dispose(); } catch { }
             }
         }
+
+        /// <summary>
+        /// Прочитать профиль механизмов без открытия сессии и без C_Login. При сбое оставляет
+        /// профиль неизвестным: версия прошивки или строка модели не используются как догадка.
+        /// </summary>
+        private static void ReadCapabilities(ISlot slot, Pkcs11TokenInfo info, Action<string> log)
+        {
+            try
+            {
+                List<CKM> mechanisms = slot.GetMechanismList();
+                info.MechanismCount = mechanisms.Count;
+
+                foreach (CKM mechanism in mechanisms)
+                {
+                    if (!IsCapabilityMechanism(mechanism)) continue;
+                    IMechanismInfo mi = slot.GetMechanismInfo(mechanism);
+
+                    // Наличие software EC/ECDSA тоже существенно: такой список нельзя честно
+                    // называть профилем ЭЦП 2.x только потому, что у механизма нет CKF_HW.
+                    if (IsEcMechanism(mechanism)) info.EcMechanismPresent = true;
+                    if (!mi.MechanismFlags.Hw) continue;
+
+                    if (mechanism == CKM.CKM_RSA_PKCS_KEY_PAIR_GEN)
+                    {
+                        int max = mi.MaxKeySize > int.MaxValue ? int.MaxValue : (int)mi.MaxKeySize;
+                        info.HardwareRsaMaxBits = Math.Max(info.HardwareRsaMaxBits, max);
+                    }
+                    if (IsEcdsaMechanism(mechanism)) info.HardwareEcdsa = true;
+                    if (IsGostMechanism(mechanism)) info.HardwareGost = true;
+                }
+
+                info.CapabilitiesKnown = true;
+                info.CapabilityProfile = info.Kind == RutokenKind.RutokenEcp
+                    ? ClassifyCapabilities(true, info.HardwareRsaMaxBits,
+                        info.HardwareEcdsa, info.EcMechanismPresent, info.HardwareGost)
+                    : RutokenCapabilityProfile.Unknown;
+            }
+            catch (Exception e)
+            {
+                // Частичные флаги не выдаём за полный профиль.
+                info.HardwareRsaMaxBits = 0;
+                info.HardwareEcdsa = false;
+                info.EcMechanismPresent = false;
+                info.HardwareGost = false;
+                info.CapabilitiesKnown = false;
+                info.CapabilityProfile = RutokenCapabilityProfile.Unknown;
+                log(Strings.Format("pkcs11.capfail", e.Message));
+            }
+        }
+
+        private static bool IsCapabilityMechanism(CKM mechanism) =>
+            mechanism == CKM.CKM_RSA_PKCS_KEY_PAIR_GEN
+            || IsEcMechanism(mechanism)
+            || IsGostMechanism(mechanism);
+
+        private static bool IsEcMechanism(CKM mechanism) =>
+            IsEcdsaMechanism(mechanism)
+            || mechanism == CKM.CKM_ECDH1_DERIVE
+            || mechanism == CKM.CKM_ECDH1_COFACTOR_DERIVE
+            || mechanism == CKM.CKM_ECMQV_DERIVE
+            || mechanism == CKM.CKM_ECDH_AES_KEY_WRAP;
+
+        private static bool IsEcdsaMechanism(CKM mechanism) =>
+            mechanism == CKM.CKM_EC_KEY_PAIR_GEN
+            || mechanism == CKM.CKM_ECDSA_KEY_PAIR_GEN
+            || mechanism == CKM.CKM_ECDSA
+            || mechanism == CKM.CKM_ECDSA_SHA1
+            || mechanism == CKM.CKM_ECDSA_SHA224
+            || mechanism == CKM.CKM_ECDSA_SHA256
+            || mechanism == CKM.CKM_ECDSA_SHA384
+            || mechanism == CKM.CKM_ECDSA_SHA512;
+
+        private static bool IsGostMechanism(CKM mechanism) =>
+            mechanism == CKM.CKM_GOSTR3410_KEY_PAIR_GEN
+            || mechanism == CKM.CKM_GOSTR3410
+            || mechanism == CKM.CKM_GOSTR3410_WITH_GOSTR3411;
 
         /// <summary>
         /// Прочитать публичные контейнеры КриптоПро (CKO_DATA с приложением «CryptoPro CSP») и
