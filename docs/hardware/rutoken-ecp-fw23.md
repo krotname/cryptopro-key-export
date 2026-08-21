@@ -77,6 +77,7 @@ read-only session; после него также найдено 0 объект�
 
 ## Первичные источники производителя
 
+- [Официальный пакет драйверов и PKCS#11](https://www.rutoken.ru/support/download/pkcs/)
 - [Матрица механизмов PKCS#11 для ЭЦП 2.0/3.0](https://dev.rutoken.ru/pages/viewpage.action?pageId=3178538)
 - [Сценарии RSA/ECDSA для ЭЦП 2.0/3.0](https://dev.rutoken.ru/pages/viewpage.action?pageId=180715764)
 - [PID 0030 используется ЭЦП 2.0 и 3.0](https://dev.rutoken.ru/display/KB/RU1013)
