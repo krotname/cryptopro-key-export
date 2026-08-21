@@ -300,6 +300,44 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void IncompleteCapabilities_LetLaterLibraryRetryWhenContainersAreSkipped()
+        {
+            // Первая библиотека знает считыватель, но не дочитала механизмы. Даже в режиме без
+            // объектов это не должно ставить AlreadyRead и блокировать полную вторую библиотеку.
+            var result = new List<Pkcs11TokenInfo>();
+            var seen = new Dictionary<string, (int Index, bool Ok)>(StringComparer.OrdinalIgnoreCase);
+            var incomplete = new Pkcs11TokenInfo
+            {
+                Reader = "Shared reader 0",
+                CapabilitiesKnown = false,
+                CapabilityProfile = RutokenCapabilityProfile.Unknown,
+            };
+
+            bool firstOk = Pkcs11Token.IsCompleteRead(
+                capabilitiesRead: false, readContainers: false, containersRead: false);
+            Assert.False(firstOk);
+            Assert.True(Pkcs11Token.Place(result, seen, incomplete, firstOk));
+            Assert.False(Pkcs11Token.AlreadyRead(seen, incomplete.Reader));
+
+            var complete = new Pkcs11TokenInfo
+            {
+                Reader = incomplete.Reader,
+                CapabilitiesKnown = true,
+                CapabilityProfile = RutokenCapabilityProfile.Ecp2Capabilities,
+            };
+            bool secondOk = Pkcs11Token.IsCompleteRead(
+                capabilitiesRead: true, readContainers: false, containersRead: false);
+
+            Assert.True(secondOk);
+            Assert.True(Pkcs11Token.Place(result, seen, complete, secondOk));
+            Assert.Single(result);
+            Assert.Same(complete, result[0]);
+            Assert.True(result[0].CapabilitiesKnown);
+            Assert.Equal(RutokenCapabilityProfile.Ecp2Capabilities, result[0].CapabilityProfile);
+            Assert.True(Pkcs11Token.AlreadyRead(seen, complete.Reader));
+        }
+
+        [Fact]
         public void Place_KeepsOneRowPerReader()
         {
             var result = new List<Pkcs11TokenInfo>();

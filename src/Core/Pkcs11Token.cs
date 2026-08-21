@@ -412,6 +412,13 @@ namespace CryptoProExport
             => !string.IsNullOrEmpty(reader) && seen.TryGetValue(reader, out var prev) && prev.Ok;
 
         /// <summary>
+        /// Чтение токена считается полным только при полном профиле механизмов и, когда они
+        /// запрошены, полном чтении объектов. Пропуск объектов не скрывает сбой возможностей.
+        /// </summary>
+        internal static bool IsCompleteRead(bool capabilitiesRead, bool readContainers, bool containersRead)
+            => capabilitiesRead && (!readContainers || containersRead);
+
+        /// <summary>
         /// Положить прочитанный токен в список с дедупликацией по имени считывателя.
         /// Удачное чтение заменяет прежнюю неудачную запись того же считывателя — на его месте,
         /// чтобы порядок не прыгал; неудачное поверх неудачной не кладётся, иначе один носитель
@@ -500,12 +507,14 @@ namespace CryptoProExport
 
                         // C_GetMechanismList/C_GetMechanismInfo не требуют PIN и не читают объекты.
                         // Профиль поколения строится только по этим возможностям.
-                        ReadCapabilities(slot, info, log);
+                        bool capabilitiesRead = ReadCapabilities(slot, info, log);
 
-                        // Сбой чтения объектов — тоже неполное чтение: ReadContainers гасит
-                        // исключение сам (список объектов не должен ронять перечисление токенов),
-                        // поэтому об успехе он сообщает возвращаемым значением.
-                        ok = !readContainers || ReadContainers(slot, factories, info, log, cancel);
+                        // Сбой чтения возможностей или объектов — неполное чтение. Оба метода
+                        // гасят ошибки сами, чтобы одна библиотека не останавливала остальные,
+                        // и сообщают полноту возвращаемым значением.
+                        bool containersRead = readContainers
+                            && ReadContainers(slot, factories, info, log, cancel);
+                        ok = IsCompleteRead(capabilitiesRead, readContainers, containersRead);
                     }
                     catch (OperationCanceledException) { throw; }   // отмена — не ошибка токена
                     catch (Exception e)
@@ -525,8 +534,9 @@ namespace CryptoProExport
         /// <summary>
         /// Прочитать профиль механизмов без открытия сессии и без C_Login. При сбое оставляет
         /// профиль неизвестным: версия прошивки или строка модели не используются как догадка.
+        /// Возвращает <c>true</c> только после полного чтения списка и информации о механизмах.
         /// </summary>
-        private static void ReadCapabilities(ISlot slot, Pkcs11TokenInfo info, Action<string> log)
+        private static bool ReadCapabilities(ISlot slot, Pkcs11TokenInfo info, Action<string> log)
         {
             try
             {
@@ -557,6 +567,7 @@ namespace CryptoProExport
                     ? ClassifyCapabilities(true, info.HardwareRsaMaxBits,
                         info.HardwareEcdsa, info.EcMechanismPresent, info.HardwareGost)
                     : RutokenCapabilityProfile.Unknown;
+                return true;
             }
             catch (Exception e)
             {
@@ -568,6 +579,7 @@ namespace CryptoProExport
                 info.CapabilitiesKnown = false;
                 info.CapabilityProfile = RutokenCapabilityProfile.Unknown;
                 log(Strings.Format("pkcs11.capfail", e.Message));
+                return false;
             }
         }
 
