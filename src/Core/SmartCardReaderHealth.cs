@@ -78,8 +78,7 @@ namespace CryptoProExport
 
             return problems.Select(status => Strings.Format(
                 status.ProblemCode == CmProbFailedStart ? "diag.pnp.failed" : "diag.pnp.problem",
-                FirstNonEmpty(status.BusDescription, status.DisplayName, "?"),
-                string.IsNullOrWhiteSpace(status.HardwareId) ? "?" : status.HardwareId,
+                SafeHardwareId(new[] { status.HardwareId }) ?? "?",
                 status.ProblemCode,
                 "0x" + status.ProblemStatus.ToString("X8", System.Globalization.CultureInfo.InvariantCulture)))
                 .ToList();
