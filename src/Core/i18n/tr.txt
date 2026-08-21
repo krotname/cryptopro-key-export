@@ -341,3 +341,7 @@ cli.usage.license = lisans dosyası yükle veya durumunu göster
 btn.license = Lisans…
 tip.license = Bir lisans dosyası (.jws) yükleyin ve bu makine için doğrulayın.\nGeçerli bir lisans olmadan özel anahtar dışa aktarma işlemleri kullanılamaz.\nBu makinenin parmak izini (lisans almak için) fingerprint komutu ve başlangıç gösterir.
 dlg.license.title = Lisans dosyası seç
+diag.pnp.none = Akıllı kart okuyucuları (PnP): fiziksel olarak bağlı cihaz yok
+diag.pnp.ok = Akıllı kart okuyucuları (PnP): {0} bağlı, tüm sürücüler başlatıldı
+diag.pnp.failed = Akıllı kart okuyucusu {0} ({1}): fiziksel olarak bağlı, ancak sürücüsü başlatılamadı — kod {2}, durum {3}
+diag.pnp.unavailable = Akıllı kart okuyucuları (PnP): denetim kullanılamıyor ({0})

@@ -341,3 +341,7 @@ cli.usage.license = zainstaluj plik licencji lub pokaż jej status
 btn.license = Licencja…
 tip.license = Zainstaluj plik licencji (.jws) i zweryfikuj go dla tej maszyny.\nBez ważnej licencji operacje eksportu klucza prywatnego są niedostępne.\nOdcisk tej maszyny (do uzyskania licencji) pokazuje polecenie fingerprint oraz uruchomienie.
 dlg.license.title = Wybierz plik licencji
+diag.pnp.none = Czytniki kart inteligentnych (PnP): brak fizycznie podłączonych urządzeń
+diag.pnp.ok = Czytniki kart inteligentnych (PnP): podłączono {0}, wszystkie sterowniki uruchomione
+diag.pnp.failed = Czytnik kart inteligentnych {0} ({1}): jest fizycznie podłączony, ale sterownik nie został uruchomiony — kod {2}, stan {3}
+diag.pnp.unavailable = Czytniki kart inteligentnych (PnP): sprawdzenie niedostępne ({0})

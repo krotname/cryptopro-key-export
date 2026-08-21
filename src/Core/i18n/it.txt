@@ -341,3 +341,7 @@ cli.usage.license = installa un file di licenza o mostra il suo stato
 btn.license = Licenza…
 tip.license = Installa un file di licenza (.jws) e verificalo per questa macchina.\nSenza una licenza valida, le operazioni di esportazione della chiave privata non sono disponibili.\nL’impronta di questa macchina (per ottenere una licenza) è mostrata dal comando fingerprint e all’avvio.
 dlg.license.title = Scegli il file di licenza
+diag.pnp.none = Lettori di smart card (PnP): nessun dispositivo collegato fisicamente
+diag.pnp.ok = Lettori di smart card (PnP): {0} collegati, tutti i driver sono avviati
+diag.pnp.failed = Lettore di smart card {0} ({1}): collegato fisicamente, ma il driver non si è avviato — codice {2}, stato {3}
+diag.pnp.unavailable = Lettori di smart card (PnP): verifica non disponibile ({0})

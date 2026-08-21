@@ -162,6 +162,8 @@ namespace CryptoProExport.Tests
             Assert.Contains(report, l => l.StartsWith("Процесс:", StringComparison.Ordinal));
             Assert.Contains(report, l => l.StartsWith("p12utility:", StringComparison.Ordinal));
             Assert.Contains(report, l => l.StartsWith("rtCOMLite:", StringComparison.Ordinal));
+            Assert.Contains(report, l => l.StartsWith("Считыватели смарт-карт (PnP):", StringComparison.Ordinal) ||
+                                         l.StartsWith("Считыватель смарт-карт ", StringComparison.Ordinal));
             Assert.Contains(report, l => l.StartsWith("КриптоПро CSP:", StringComparison.Ordinal));
         }
 

@@ -341,3 +341,7 @@ cli.usage.license = instalar um arquivo de licença ou mostrar seu status
 btn.license = Licença…
 tip.license = Instalar um arquivo de licença (.jws) e verificá-lo para esta máquina.\nSem uma licença válida, as operações de exportação da chave privada ficam indisponíveis.\nA impressão digital desta máquina (para obter uma licença) é mostrada pelo comando fingerprint e na inicialização.
 dlg.license.title = Escolher arquivo de licença
+diag.pnp.none = Leitores de cartões inteligentes (PnP): nenhum dispositivo conectado fisicamente
+diag.pnp.ok = Leitores de cartões inteligentes (PnP): {0} conectado(s), todos os drivers iniciados
+diag.pnp.failed = Leitor de cartões inteligentes {0} ({1}): conectado fisicamente, mas o driver não iniciou — código {2}, estado {3}
+diag.pnp.unavailable = Leitores de cartões inteligentes (PnP): verificação indisponível ({0})

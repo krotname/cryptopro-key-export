@@ -341,3 +341,7 @@ cli.usage.license = Lizenzdatei installieren oder Status anzeigen
 btn.license = Lizenz…
 tip.license = Lizenzdatei (.jws) installieren und für diesen Rechner prüfen.\nOhne gültige Lizenz sind Vorgänge zum Export des privaten Schlüssels nicht verfügbar.\nDen Fingerabdruck dieses Rechners (für den Lizenzbezug) zeigt der Befehl fingerprint und der Programmstart.
 dlg.license.title = Lizenzdatei auswählen
+diag.pnp.none = Smartcard-Leser (PnP): keine Geräte physisch angeschlossen
+diag.pnp.ok = Smartcard-Leser (PnP): {0} angeschlossen, alle Treiber gestartet
+diag.pnp.failed = Smartcard-Leser {0} ({1}): physisch angeschlossen, aber der Treiber wurde nicht gestartet — Code {2}, Status {3}
+diag.pnp.unavailable = Smartcard-Leser (PnP): Prüfung nicht verfügbar ({0})
