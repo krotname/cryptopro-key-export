@@ -237,6 +237,11 @@ namespace CryptoProExport
             // эвристики Rutoken Lite. Короткое 'DS' намеренно недостаточно.
             if (IsJaCartaLt(model, manufacturer)) return RutokenKind.JaCartaLt;
 
+            // Маркер LT/Datastore без независимого свидетельства вендора недостаточен:
+            // не понижаем безопасный Unknown до общего Other только из-за слова JaCarta
+            // внутри самой модели.
+            if (IsJaCartaLtCandidate(model)) return RutokenKind.Unknown;
+
             RutokenKind byModel = ClassifyText(model);
             if (byModel != RutokenKind.Unknown) return byModel;
 
@@ -262,9 +267,7 @@ namespace CryptoProExport
         private static bool IsJaCartaLt(string model, string manufacturer)
         {
             string m = (model ?? string.Empty).Trim().ToLowerInvariant();
-            bool ltModel = m.Contains("jacarta ds") || m.Contains("jacarta lt")
-                || m.Contains("datastore");
-            if (!ltModel) return false;
+            if (!IsJaCartaLtCandidate(m)) return false;
 
             string vendor = (manufacturer ?? string.Empty).Trim().ToLowerInvariant();
             bool vendorMetadata = vendor.Contains("aladdin") || vendor.Contains("jacarta");
@@ -274,6 +277,13 @@ namespace CryptoProExport
             // «Aladdin R.D.» (например, «Aladdin R.D. JaCarta LT 0»).
             bool vendorInReaderName = m.Contains("aladdin");
             return vendorMetadata || vendorInReaderName;
+        }
+
+        private static bool IsJaCartaLtCandidate(string model)
+        {
+            string m = (model ?? string.Empty).Trim().ToLowerInvariant();
+            return m.Contains("jacarta ds") || m.Contains("jacarta lt")
+                || m.Contains("datastore");
         }
 
         private static RutokenKind ClassifyText(string text)

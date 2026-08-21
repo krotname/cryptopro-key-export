@@ -21,8 +21,8 @@ namespace CryptoProExport.Tests
         [InlineData("Rutoken S", RutokenKind.RutokenS)]
         [InlineData("Rutoken", RutokenKind.RutokenS)]            // без уточнения — файловый профиль
         [InlineData("Рутокен ЭЦП", RutokenKind.RutokenEcp)]      // кириллическая метка тоже опознаётся
-        [InlineData("JaCarta DS", RutokenKind.Other)]           // без отдельного свидетельства вендора
-        [InlineData("JaCarta LT", RutokenKind.Other)]
+        [InlineData("JaCarta DS", RutokenKind.Unknown)]        // без отдельного свидетельства вендора
+        [InlineData("JaCarta LT", RutokenKind.Unknown)]
         [InlineData("Datastore", RutokenKind.Unknown)]
         [InlineData("JaCarta GOST", RutokenKind.Other)]
         [InlineData("eToken PRO", RutokenKind.Other)]
@@ -67,13 +67,13 @@ namespace CryptoProExport.Tests
         public void Classify_DoesNotUseJaCartaModelNameAsVendorEvidence()
         {
             // Название модели без независимого производителя не доказывает, что перед нами LT.
-            Assert.Equal(RutokenKind.Other, Pkcs11Token.Classify("JaCarta DS"));
-            Assert.Equal(RutokenKind.Other, Pkcs11Token.Classify("JaCarta LT"));
+            Assert.Equal(RutokenKind.Unknown, Pkcs11Token.Classify("JaCarta DS"));
+            Assert.Equal(RutokenKind.Unknown, Pkcs11Token.Classify("JaCarta LT"));
             Assert.Equal(RutokenKind.Unknown, Pkcs11Token.Classify("Datastore"));
 
-            // Чужой производитель сохраняет безопасную общую классификацию модели.
-            Assert.Equal(RutokenKind.Other, Pkcs11Token.Classify("JaCarta DS", "Contoso"));
-            Assert.Equal(RutokenKind.Other, Pkcs11Token.Classify("JaCarta LT", "Contoso"));
+            // Чужой производитель не является достаточным свидетельством LT-вендора.
+            Assert.Equal(RutokenKind.Unknown, Pkcs11Token.Classify("JaCarta DS", "Contoso"));
+            Assert.Equal(RutokenKind.Unknown, Pkcs11Token.Classify("JaCarta LT", "Contoso"));
             Assert.Equal(RutokenKind.Unknown, Pkcs11Token.Classify("Datastore", "Contoso"));
 
             // 'DS' слишком коротко и встречается у несвязанных устройств. Производитель
