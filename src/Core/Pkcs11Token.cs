@@ -54,7 +54,7 @@ namespace CryptoProExport
         public string Manufacturer;  // производитель, напр. «Aktiv Co.», «Aladdin R.D.»
         public string Serial;        // серийный номер
         public string Firmware;      // версия прошивки
-        public RutokenKind Kind;
+        public RutokenKind Kind = RutokenKind.Unknown;
 
         /// <summary>PIN пользователя заводской (флаг CKF_USER_PIN_TO_BE_CHANGED) — узнаётся без попытки входа.</summary>
         public bool PinDefault;
@@ -246,14 +246,34 @@ namespace CryptoProExport
             return ClassifyText(manufacturer) == RutokenKind.Other ? RutokenKind.Other : RutokenKind.Unknown;
         }
 
+        /// <summary>
+        /// Определить семейство считывателя для выбора протокола: достоверная PKCS#11-
+        /// классификация имеет приоритет, а отсутствующие или неполные метаданные дополняются
+        /// безопасной классификацией по имени считывателя. В частности, известный <see cref="RutokenKind.Other"/>
+        /// нельзя превратить в Рутокен Lite вводящим в заблуждение именем reader.
+        /// </summary>
+        public static RutokenKind ResolveReaderKind(string readerName, Pkcs11TokenInfo metadata)
+        {
+            if (metadata != null && metadata.Kind != RutokenKind.Unknown)
+                return metadata.Kind;
+            return Classify(readerName, metadata?.Manufacturer);
+        }
+
         private static bool IsJaCartaLt(string model, string manufacturer)
         {
             string m = (model ?? string.Empty).Trim().ToLowerInvariant();
-            if (m.Contains("jacarta ds") || m.Contains("jacarta lt")) return true;
-            if (!m.Contains("datastore")) return false;
+            bool ltModel = m.Contains("jacarta ds") || m.Contains("jacarta lt")
+                || m.Contains("datastore");
+            if (!ltModel) return false;
 
             string vendor = (manufacturer ?? string.Empty).Trim().ToLowerInvariant();
-            return vendor.Contains("aladdin") || vendor.Contains("jacarta");
+            bool vendorMetadata = vendor.Contains("aladdin") || vendor.Contains("jacarta");
+
+            // Слово JaCarta входит в названия моделей DS/LT и само по себе ничего не
+            // доказывает. В полной строке штатного reader независимое свидетельство вендора —
+            // «Aladdin R.D.» (например, «Aladdin R.D. JaCarta LT 0»).
+            bool vendorInReaderName = m.Contains("aladdin");
+            return vendorMetadata || vendorInReaderName;
         }
 
         private static RutokenKind ClassifyText(string text)

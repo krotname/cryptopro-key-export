@@ -271,7 +271,7 @@ namespace CryptoProExport.App
                         // имя штатного reader классифицируется и без PKCS#11-драйвера.
                         var tok = Pkcs11Token.Enumerate(readContainers: false, log: Out)
                             .Find(t => string.Equals(t.Reader, reader, StringComparison.OrdinalIgnoreCase));
-                        RutokenKind readerKind = tok?.Kind ?? Pkcs11Token.Classify(reader);
+                        RutokenKind readerKind = Pkcs11Token.ResolveReaderKind(reader, tok);
                         if (readerKind != RutokenKind.RutokenLite)
                             throw new ArgumentException(Pkcs11Token.KindName(readerKind), nameof(reader));
 

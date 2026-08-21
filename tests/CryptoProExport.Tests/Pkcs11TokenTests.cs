@@ -21,7 +21,9 @@ namespace CryptoProExport.Tests
         [InlineData("Rutoken S", RutokenKind.RutokenS)]
         [InlineData("Rutoken", RutokenKind.RutokenS)]            // без уточнения — файловый профиль
         [InlineData("Рутокен ЭЦП", RutokenKind.RutokenEcp)]      // кириллическая метка тоже опознаётся
-        [InlineData("JaCarta DS", RutokenKind.JaCartaLt)]        // модель апплета Datastore у JaCarta LT
+        [InlineData("JaCarta DS", RutokenKind.Other)]           // без отдельного свидетельства вендора
+        [InlineData("JaCarta LT", RutokenKind.Other)]
+        [InlineData("Datastore", RutokenKind.Unknown)]
         [InlineData("JaCarta GOST", RutokenKind.Other)]
         [InlineData("eToken PRO", RutokenKind.Other)]
         [InlineData("", RutokenKind.Unknown)]
@@ -49,20 +51,70 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
-        public void Classify_RecognizesJaCartaLtDatastoreWithoutGuessingFromDs()
+        public void Classify_RecognizesJaCartaLtOnlyWithVendorEvidence()
         {
             Assert.Equal(RutokenKind.JaCartaLt,
                 Pkcs11Token.Classify("JaCarta DS", "Aladdin R.D."));
             Assert.Equal(RutokenKind.JaCartaLt,
                 Pkcs11Token.Classify("Datastore", "Aladdin R.D."));
             Assert.Equal(RutokenKind.JaCartaLt,
+                Pkcs11Token.Classify("JaCarta LT", "JaCarta"));
+            Assert.Equal(RutokenKind.JaCartaLt,
                 Pkcs11Token.Classify("Aladdin R.D. JaCarta LT 0"));
+        }
+
+        [Fact]
+        public void Classify_DoesNotUseJaCartaModelNameAsVendorEvidence()
+        {
+            // Название модели без независимого производителя не доказывает, что перед нами LT.
+            Assert.Equal(RutokenKind.Other, Pkcs11Token.Classify("JaCarta DS"));
+            Assert.Equal(RutokenKind.Other, Pkcs11Token.Classify("JaCarta LT"));
+            Assert.Equal(RutokenKind.Unknown, Pkcs11Token.Classify("Datastore"));
+
+            // Чужой производитель сохраняет безопасную общую классификацию модели.
+            Assert.Equal(RutokenKind.Other, Pkcs11Token.Classify("JaCarta DS", "Contoso"));
+            Assert.Equal(RutokenKind.Other, Pkcs11Token.Classify("JaCarta LT", "Contoso"));
+            Assert.Equal(RutokenKind.Unknown, Pkcs11Token.Classify("Datastore", "Contoso"));
 
             // 'DS' слишком коротко и встречается у несвязанных устройств. Производитель
             // позволяет определить чужого вендора, но не конкретную модель LT.
             Assert.Equal(RutokenKind.Unknown, Pkcs11Token.Classify("DS"));
             Assert.Equal(RutokenKind.Other, Pkcs11Token.Classify("DS", "Aladdin R.D."));
-            Assert.Equal(RutokenKind.Unknown, Pkcs11Token.Classify("Datastore", "Other Vendor"));
+        }
+
+        [Fact]
+        public void TokenInfo_DefaultKindIsUnknown()
+        {
+            Assert.Equal(RutokenKind.Unknown, new Pkcs11TokenInfo().Kind);
+        }
+
+        [Fact]
+        public void ResolveReaderKind_FallsBackForMissingOrIncompleteMetadata()
+        {
+            const string reader = "Aktiv Rutoken lite 0";
+
+            Assert.Equal(RutokenKind.RutokenLite,
+                Pkcs11Token.ResolveReaderKind(reader, metadata: null));
+
+            var incomplete = new Pkcs11TokenInfo { Reader = reader };
+            Assert.Equal(RutokenKind.Unknown, incomplete.Kind);
+            Assert.Equal(RutokenKind.RutokenLite,
+                Pkcs11Token.ResolveReaderKind(reader, incomplete));
+        }
+
+        [Fact]
+        public void ResolveReaderKind_PrefersKnownMetadataOverMisleadingReaderName()
+        {
+            var metadata = new Pkcs11TokenInfo
+            {
+                Reader = "Aktiv Rutoken lite 0",
+                Model = "JaCarta GOST",
+                Manufacturer = "Aladdin R.D.",
+                Kind = RutokenKind.Other,
+            };
+
+            Assert.Equal(RutokenKind.Other,
+                Pkcs11Token.ResolveReaderKind(metadata.Reader, metadata));
         }
 
         [Fact]
