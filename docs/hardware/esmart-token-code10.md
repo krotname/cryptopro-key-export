@@ -76,18 +76,17 @@ pnputil /restart-device $device.InstanceId
 - ESMART/ISBC product, каталог Program Files и vendor driver package по-прежнему отсутствуют.
 
 Поэтому установка PKI Client не выполнялась: она уже не была оправдана для ремонта Code 10.
-Подтверждённая первопричина на доступной глубине — временный failed-start состояния CCID
-у конкретного устройства, восстановимый повторным PnP start на том же драйвере. Более узкая
-формулировка «гонка питания/готовности firmware» согласуется с изменившимся после restart
-CCID descriptor, но остаётся гипотезой без vendor firmware trace.
+Подтверждённое наблюдение на доступной глубине — временное failed-start состояние CCID
+у конкретного устройства и восстановление работоспособности после повторного PnP start на
+том же драйвере. Возможная «гонка питания/готовности firmware» согласуется с изменившимся
+после restart CCID descriptor, но остаётся гипотезой без vendor firmware trace.
 
 ## Диагностика в приложении
 
 `deps` теперь опрашивает present-устройства PnP class `SmartCardReader` через SetupAPI до
 PKCS#11. Если reader физически подключён, но имеет ненулевой Problem Code, отчёт показывает:
 
-- безопасное имя (`BusReportedDeviceDesc`/friendly name);
-- только USB VID/PID без полного Instance ID;
+- только USB VID/PID без полного Instance ID, описаний устройства и friendly name;
 - PnP Code и `ProblemStatus` в hex.
 
 Это закрывает прежний слепой участок: failed-start reader отсутствует и в PC/SC, и в PKCS#11,

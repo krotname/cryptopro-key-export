@@ -45,10 +45,30 @@ namespace CryptoProExport.Tests
             string line = Assert.Single(lines);
             Assert.Contains("физически подключён", line, StringComparison.Ordinal);
             Assert.Contains("драйвер не запустился", line, StringComparison.Ordinal);
-            Assert.Contains("ESMART Token", line, StringComparison.Ordinal);
             Assert.Contains(@"USB\VID_2CE4&PID_7479", line, StringComparison.Ordinal);
             Assert.Contains("10", line, StringComparison.Ordinal);
             Assert.Contains("0xC0000001", line, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void Describe_DoesNotExposeReaderNamesOrHardwareSuffix()
+        {
+            using var language = Strings.Scope("en");
+            var lines = SmartCardReaderHealth.Describe(new[]
+            {
+                new SmartCardReaderStatus
+                {
+                    DisplayName = "private-serial-must-not-leak",
+                    BusDescription = "private-serial-must-not-leak",
+                    HardwareId = @"USB\VID_2CE4&PID_7479\private-serial-must-not-leak",
+                    ProblemCode = 10,
+                    ProblemStatus = 0xC0000001,
+                },
+            });
+
+            string line = Assert.Single(lines);
+            Assert.Contains(@"USB\VID_2CE4&PID_7479", line, StringComparison.Ordinal);
+            Assert.DoesNotContain("private-serial-must-not-leak", line, StringComparison.Ordinal);
         }
 
         [Fact]
