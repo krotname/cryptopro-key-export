@@ -250,7 +250,7 @@ cli.lang.missing = --lang bir dil kodu ister. Kullanılabilir diller: {0}
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = mevcut
 common.certonly = yalnızca sertifika
-pkcs11.nolib = PKCS#11 kitaplığı bulunamadı (rtPKCS11ECP.dll, jcPKCS11-2.dll) — Rutoken sürücülerini veya JaCarta Unified Client uygulamasını kurun
+pkcs11.nolib = PKCS#11 kitaplığı bulunamadı (rtPKCS11ECP.dll, jcPKCS11-2.dll, isbc_pkcs11_main.dll) — Rutoken sürücülerini, JaCarta Unified Client veya ESMART PKI Client uygulamasını kurun
 pkcs11.loadfail = PKCS#11 kitaplığı yüklenemedi: {0}
 pkcs11.enumfail = PKCS#11 yuvaları listelenemedi: {0}
 pkcs11.tokenfail = Token «{0}»: {1}

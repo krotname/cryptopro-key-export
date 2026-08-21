@@ -250,7 +250,7 @@ cli.lang.missing = --lang には言語コードが必要です。利用できる
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = あり
 common.certonly = 証明書のみ
-pkcs11.nolib = PKCS#11 ライブラリが見つかりません (rtPKCS11ECP.dll, jcPKCS11-2.dll) — Rutoken ドライバーまたは JaCarta Unified Client を導入してください
+pkcs11.nolib = PKCS#11 ライブラリが見つかりません (rtPKCS11ECP.dll, jcPKCS11-2.dll, isbc_pkcs11_main.dll) — Rutoken ドライバー、JaCarta Unified Client、または ESMART PKI Client を導入してください
 pkcs11.loadfail = PKCS#11 ライブラリを読み込めませんでした: {0}
 pkcs11.enumfail = PKCS#11 スロットを列挙できませんでした: {0}
 pkcs11.tokenfail = トークン「{0}」: {1}

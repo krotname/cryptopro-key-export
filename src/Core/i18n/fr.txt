@@ -250,7 +250,7 @@ cli.lang.missing = --lang attend un code de langue. Langues disponibles : {0}
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = présent
 common.certonly = certificat seul
-pkcs11.nolib = Aucune bibliothèque PKCS#11 trouvée (rtPKCS11ECP.dll, jcPKCS11-2.dll) — installez les pilotes Rutoken ou JaCarta Unified Client
+pkcs11.nolib = Aucune bibliothèque PKCS#11 trouvée (rtPKCS11ECP.dll, jcPKCS11-2.dll, isbc_pkcs11_main.dll) — installez les pilotes Rutoken, JaCarta Unified Client ou ESMART PKI Client
 pkcs11.loadfail = Échec du chargement de la bibliothèque PKCS#11 : {0}
 pkcs11.enumfail = Échec de l’énumération des slots PKCS#11 : {0}
 pkcs11.tokenfail = Jeton « {0} » : {1}

@@ -250,7 +250,7 @@ cli.lang.missing = --lang memerlukan kode bahasa. Bahasa yang tersedia: {0}
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = ada
 common.certonly = hanya sertifikat
-pkcs11.nolib = Pustaka PKCS#11 tidak ditemukan (rtPKCS11ECP.dll, jcPKCS11-2.dll) — pasang driver Rutoken atau JaCarta Unified Client
+pkcs11.nolib = Pustaka PKCS#11 tidak ditemukan (rtPKCS11ECP.dll, jcPKCS11-2.dll, isbc_pkcs11_main.dll) — pasang driver Rutoken, JaCarta Unified Client, atau ESMART PKI Client
 pkcs11.loadfail = Gagal memuat pustaka PKCS#11: {0}
 pkcs11.enumfail = Gagal mencacah slot PKCS#11: {0}
 pkcs11.tokenfail = Token «{0}»: {1}

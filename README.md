@@ -144,9 +144,12 @@ APDU-вопрос закрыт положительно: production-код чи�
   а также в [docs/apdu/rutoken-lite-fw9.md](docs/apdu/rutoken-lite-fw9.md) и
   [docs/hardware/jacarta-lt.md](docs/hardware/jacarta-lt.md).
 - **PKCS#11 берётся из системы, и библиотек может быть несколько.** Каждая показывает только
-  носители своего вендора, поэтому программа ищет и загружает все известные — `rtPKCS11ECP.dll`,
-  legacy `rtPKCS11.dll` для Рутокен S и `jcPKCS11-2.dll` для JaCarta — и объединяет слоты. Нет ни
-  одной или нет части из них — соответствующие носители просто не показываются, ошибки нет.
+  носители своего вендора, поэтому программа ищет и загружает все известные —
+  `rtPKCS11ECP.dll`, legacy `rtPKCS11.dll` для Рутокен S, `jcPKCS11-2.dll` для JaCarta и
+  `isbc_pkcs11_main.dll` для ESMART — и объединяет слоты. Для ESMART entry module считается
+  доступным только вместе с `isbc_esmart_token_mod.dll` той же разрядности в том же каталоге.
+  Нет одной или части библиотек — соответствующие носители просто не показываются, ошибки нет.
+  Проверка ESMART — в [docs/hardware/esmart-usb64k.md](docs/hardware/esmart-usb64k.md).
 - **Рутокен ЭЦП при этом диагностируется** через PKCS#11 (`rtPKCS11ECP.dll` из драйверов
   Рутокена): программа показывает тип, серийный номер, состояние PIN без траты попыток,
   аппаратную версию и профиль фактически объявленных механизмов. **Публичный сертификат** можно
@@ -234,7 +237,7 @@ src/Core/           библиотека (net10.0-windows)
   RutokenLiteApdu.cs   чтение и нормализация контейнеров Рутокен Lite
   JaCartaLtApdu.cs     чтение контейнеров JaCarta LT / Datastore
   RutokenExporter.cs   совместимый legacy-путь rtCOMLite для прочих файловых Рутокенов
-  Pkcs11Token.cs       токены по PKCS#11 (Рутокен + JaCarta): тип, PIN, контейнеры, .cer без CSP
+  Pkcs11Token.cs       токены по PKCS#11 (Рутокен + JaCarta + ESMART): тип, PIN, контейнеры, .cer без CSP
   CertFromContainer.cs извлечение .cer и проверка прав ключа (CryptoAPI P/Invoke)
   ContainerKeyExtractor.cs закрытый ключ и сертификат из файлов контейнера, без CSP
   GostKeyExport.cs     закрытый ключ ГОСТ в PKCS#8/PEM

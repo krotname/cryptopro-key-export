@@ -137,14 +137,19 @@ namespace CryptoProExport
         private const string RutokenDll = "rtPKCS11ECP.dll";
         private const string RutokenLegacyDll = "rtPKCS11.dll";
         private const string JaCartaDll = "jcPKCS11-2.dll";
+        private const string EsmartDll = "isbc_pkcs11_main.dll";
+        private const string EsmartCompanionDll = "isbc_esmart_token_mod.dll";
         private const string CryptoProApp = "CryptoPro CSP";
 
         /// <summary>
         /// Известные библиотеки PKCS#11 и вендор каждой. Библиотека показывает <b>только свои</b>
         /// носители: проверено 13.08.2026 на машине с четырьмя считывателями — rtPKCS11ECP.dll
         /// отдала три слота (все Рутокены) и не увидела JaCarta, jcPKCS11-2.dll отдала один слот
-        /// (только JaCarta). Поэтому увидеть носители разных вендоров можно лишь загрузив
-        /// несколько библиотек и объединив слоты (см. <see cref="Enumerate"/>).
+        /// (только JaCarta). 21.08.2026 подтверждено, что isbc_pkcs11_main.dll с модулем
+        /// isbc_esmart_token_mod.dll перечисляет считыватели ESMART; модули трёх вендоров
+        /// одновременно загружаются в одном x86-процессе. Поэтому увидеть носители разных
+        /// вендоров можно лишь загрузив несколько библиотек и объединив слоты
+        /// (см. <see cref="Enumerate"/>).
         /// Имена вендоров — торговые марки и не переводятся.
         /// </summary>
         public static readonly IReadOnlyList<(string Vendor, string Dll)> KnownLibraries =
@@ -156,6 +161,7 @@ namespace CryptoProExport
                 // даст двум Rutoken-библиотекам показать один носитель дважды.
                 ("Rutoken S", RutokenLegacyDll),
                 ("JaCarta", JaCartaDll),
+                ("ESMART", EsmartDll),
             };
 
         /// <summary>Кандидаты расположения всех известных библиотек — в порядке <see cref="KnownLibraries"/>.</summary>
@@ -186,11 +192,14 @@ namespace CryptoProExport
                 if (!string.IsNullOrEmpty(win))
                     yield return Path.Combine(win, Environment.Is64BitProcess ? "System32" : "SysWOW64", dll);
 
-                // Каталог установки перечисляется только для Рутокена: JaCarta Unified Client
-                // кладёт jcPKCS11-2.dll исключительно в системный каталог (проверено на машине,
-                // где клиент установлен, — в Program Files библиотеки нет).
+                // Program Files проверяется только для обеих библиотек Рутокена. JaCarta
+                // Unified Client кладёт jcPKCS11-2.dll в системный каталог, а руководство
+                // ESMART требует системную пару isbc_pkcs11_main.dll вместе с
+                // isbc_esmart_token_mod.dll той же разрядности. Случайные прикладные копии
+                // этих модулей кандидатами не считаются.
                 if (!string.Equals(dll, RutokenDll, StringComparison.OrdinalIgnoreCase)
-                    && !string.Equals(dll, RutokenLegacyDll, StringComparison.OrdinalIgnoreCase)) yield break;
+                    && !string.Equals(dll, RutokenLegacyDll, StringComparison.OrdinalIgnoreCase))
+                    yield break;
 
                 foreach (var pf in new[]
                 {
@@ -216,15 +225,44 @@ namespace CryptoProExport
             {
                 foreach (var candidate in LibraryCandidates(lib.Dll))
                 {
-                    bool exists;
-                    try { exists = File.Exists(candidate); }
-                    catch { continue; }   // недоступный путь — пропускаем
-                    if (!exists) continue;
+                    if (!IsLibraryComplete(lib.Dll, candidate)) continue;
                     found.Add((lib.Vendor, candidate));
                     break;
                 }
             }
             return found;
+        }
+
+        /// <summary>
+        /// Полон ли набор файлов для одной PKCS#11 library. Rutoken и JaCarta состоят из
+        /// самостоятельного entry module. ESMART требует рядом backend
+        /// isbc_esmart_token_mod.dll: один isbc_pkcs11_main.dll инициализируется, но не даёт
+        /// рабочей диагностики токена, поэтому такой путь доступным не считается. Оба ESMART
+        /// файла должны совпадать по разрядности с текущим процессом.
+        /// </summary>
+        internal static bool IsLibraryComplete(string dll, string mainPath)
+        {
+            try
+            {
+                if (!File.Exists(mainPath)) return false;
+                if (!string.Equals(dll, EsmartDll, StringComparison.OrdinalIgnoreCase)) return true;
+
+                string dir = Path.GetDirectoryName(mainPath);
+                if (string.IsNullOrEmpty(dir)) return false;
+
+                string companion = Path.Combine(dir, EsmartCompanionDll);
+                if (!File.Exists(companion)) return false;
+
+                // Оба файла должны быть PE текущего процесса: соседняя x64 DLL не делает
+                // x86 entry module полным набором (и наоборот).
+                return RegFreeCom.MatchesProcess(mainPath, out _)
+                    && RegFreeCom.MatchesProcess(companion, out _);
+            }
+            catch
+            {
+                // Недоступный/некорректный путь — это отсутствующая library, а не авария deps/list.
+                return false;
+            }
         }
 
         /// <summary>
@@ -384,7 +422,7 @@ namespace CryptoProExport
             // «Rutoken S», «Rutoken» без уточнения, «Рутокен S» — файловая память.
             if (m.Contains("rutoken") || m.Contains("рутокен")) return RutokenKind.RutokenS;
             if (m.Contains("jacarta") || m.Contains("aladdin") || m.Contains("etoken")
-                || m.Contains("esmart")) return RutokenKind.Other;
+                || m.Contains("esmart") || m.Contains("isbc")) return RutokenKind.Other;
             return RutokenKind.Unknown;
         }
 
