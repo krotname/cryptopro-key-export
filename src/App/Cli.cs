@@ -263,14 +263,24 @@ namespace CryptoProExport.App
                         if (args.Length < 3) { Usage(); return 1; }
                         string reader = args[1], outDir = args[2];
                         string pin = args.Length > 3 ? args[3] : null;
+
+                        // Явная CLI-команда раньше шла к reader по Rutoken Lite APDU до
+                        // классификации. Для известного носителя другого типа это опасная
+                        // подмена протокола (в частности, JaCarta LT использует Datastore).
+                        // Без положительного распознавания Rutoken Lite APDU не запускаем:
+                        // имя штатного reader классифицируется и без PKCS#11-драйвера.
+                        var tok = Pkcs11Token.Enumerate(readContainers: false, log: Out)
+                            .Find(t => string.Equals(t.Reader, reader, StringComparison.OrdinalIgnoreCase));
+                        RutokenKind readerKind = tok?.Kind ?? Pkcs11Token.Classify(reader);
+                        if (readerKind != RutokenKind.RutokenLite)
+                            throw new ArgumentException(Pkcs11Token.KindName(readerKind), nameof(reader));
+
                         var lite = new RutokenLiteApdu { Log = Out };
                         var containers = lite.ListContainers(reader);
                         if (containers.Count == 0) { Err(Strings.Format("err.lite.none", reader)); return 2; }
                         foreach (var c in containers) Out($"  [{c.DfIndex:X2}] {c.Name}");
                         if (string.IsNullOrEmpty(pin))
                         {
-                            var tok = Pkcs11Token.Enumerate(readContainers: false, log: Out)
-                                .Find(t => string.Equals(t.Reader, reader, StringComparison.OrdinalIgnoreCase));
                             // Авто-PIN только при заводском PIN И полностью чистом счётчике:
                             // при подъеденном счётчике даже верный ввод рискует, а промах — блокирует.
                             if (tok != null && tok.PinDefault &&

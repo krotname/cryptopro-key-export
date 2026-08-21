@@ -34,6 +34,7 @@ namespace CryptoProExport.Tests
         // Носитель чужого вендора: файловая память rtCOMLite — API Рутокен S, к нему неприменима.
         [InlineData("Aladdin Token JC 0", false)]
         [InlineData("JaCarta 0", false)]
+        [InlineData("Aladdin R.D. JaCarta LT 0", false)]
         [InlineData("", false)]
         [InlineData(null, false)]
         public void ShouldWalk_SkipsSmartCardRutokensByReaderName(string reader, bool expected)

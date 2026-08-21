@@ -21,6 +21,7 @@ namespace CryptoProExport.Tests
         [InlineData("Rutoken S", RutokenKind.RutokenS)]
         [InlineData("Rutoken", RutokenKind.RutokenS)]            // без уточнения — файловый профиль
         [InlineData("Рутокен ЭЦП", RutokenKind.RutokenEcp)]      // кириллическая метка тоже опознаётся
+        [InlineData("JaCarta DS", RutokenKind.JaCartaLt)]        // модель апплета Datastore у JaCarta LT
         [InlineData("JaCarta GOST", RutokenKind.Other)]
         [InlineData("eToken PRO", RutokenKind.Other)]
         [InlineData("", RutokenKind.Unknown)]
@@ -48,6 +49,23 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void Classify_RecognizesJaCartaLtDatastoreWithoutGuessingFromDs()
+        {
+            Assert.Equal(RutokenKind.JaCartaLt,
+                Pkcs11Token.Classify("JaCarta DS", "Aladdin R.D."));
+            Assert.Equal(RutokenKind.JaCartaLt,
+                Pkcs11Token.Classify("Datastore", "Aladdin R.D."));
+            Assert.Equal(RutokenKind.JaCartaLt,
+                Pkcs11Token.Classify("Aladdin R.D. JaCarta LT 0"));
+
+            // 'DS' слишком коротко и встречается у несвязанных устройств. Производитель
+            // позволяет определить чужого вендора, но не конкретную модель LT.
+            Assert.Equal(RutokenKind.Unknown, Pkcs11Token.Classify("DS"));
+            Assert.Equal(RutokenKind.Other, Pkcs11Token.Classify("DS", "Aladdin R.D."));
+            Assert.Equal(RutokenKind.Unknown, Pkcs11Token.Classify("Datastore", "Other Vendor"));
+        }
+
+        [Fact]
         public void Classify_PrefersModelOverManufacturer()
         {
             // Модель говорит внятно — производителя не спрашиваем.
@@ -66,6 +84,7 @@ namespace CryptoProExport.Tests
         [InlineData(RutokenKind.RutokenS)]
         [InlineData(RutokenKind.RutokenLite)]
         [InlineData(RutokenKind.RutokenEcp)]
+        [InlineData(RutokenKind.JaCartaLt)]
         [InlineData(RutokenKind.Other)]
         [InlineData(RutokenKind.Unknown)]
         public void KindName_IsLocalizedForEveryFamily(RutokenKind kind)
@@ -73,6 +92,12 @@ namespace CryptoProExport.Tests
             string name = Pkcs11Token.KindName(kind);
             Assert.False(string.IsNullOrWhiteSpace(name));
             Assert.DoesNotContain(Strings.MissingMarkerStart, name, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void KindName_UsesProductNameForJaCartaLt()
+        {
+            Assert.Equal("JaCarta LT", Pkcs11Token.KindName(RutokenKind.JaCartaLt));
         }
 
         [Fact]
@@ -145,6 +170,7 @@ namespace CryptoProExport.Tests
             {
                 new Pkcs11TokenInfo { Reader = "Aktiv Rutoken ECP 0", Kind = RutokenKind.RutokenEcp },
                 new Pkcs11TokenInfo { Reader = "Aktiv Rutoken lite 0", Kind = RutokenKind.RutokenLite },
+                new Pkcs11TokenInfo { Reader = "Aladdin R.D. JaCarta LT 0", Kind = RutokenKind.JaCartaLt },
                 new Pkcs11TokenInfo { Reader = "Aktiv ruToken 0", Kind = RutokenKind.RutokenS },
                 new Pkcs11TokenInfo { Reader = null, Kind = RutokenKind.RutokenEcp },
                 null,
@@ -152,9 +178,10 @@ namespace CryptoProExport.Tests
 
             var set = Pkcs11Token.SmartCardReaders(tokens);
 
-            Assert.Equal(2, set.Count);
+            Assert.Equal(3, set.Count);
             Assert.Contains("Aktiv Rutoken ECP 0", set);
             Assert.Contains("Aktiv Rutoken lite 0", set);
+            Assert.Contains("Aladdin R.D. JaCarta LT 0", set);
             Assert.DoesNotContain("Aktiv ruToken 0", set);
         }
 

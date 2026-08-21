@@ -17,7 +17,9 @@ namespace CryptoProExport
         RutokenLite,
         /// <summary>Рутокен ЭЦП / ЭЦП 2.0: смарт-карточный профиль; контейнер виден как PKCS#11 CKO_DATA.</summary>
         RutokenEcp,
-        /// <summary>Токен другого вендора (JaCarta, eToken…) — распознан, но путь не проверялся.</summary>
+        /// <summary>JaCarta LT: пассивный носитель с апплетом Datastore; экспортный путь пока не доказан.</summary>
+        JaCartaLt,
+        /// <summary>Токен другого вендора (JaCarta PRO, eToken…) — распознан, но отдельного безопасного пути нет.</summary>
         Other,
         /// <summary>Модель не опознана.</summary>
         Unknown,
@@ -229,6 +231,12 @@ namespace CryptoProExport
         /// </summary>
         public static RutokenKind Classify(string model, string manufacturer = null)
         {
+            // У JaCarta LT маркетинговое имя и модель апплета различаются: живой носитель
+            // сообщает model='JaCarta DS', а официальная документация называет апплет
+            // Datastore. Проверяем эту пару до общей классификации JaCarta как Other и до
+            // эвристики Rutoken Lite. Короткое 'DS' намеренно недостаточно.
+            if (IsJaCartaLt(model, manufacturer)) return RutokenKind.JaCartaLt;
+
             RutokenKind byModel = ClassifyText(model);
             if (byModel != RutokenKind.Unknown) return byModel;
 
@@ -236,6 +244,16 @@ namespace CryptoProExport
             // оставляем неопознанным намеренно — иначе носитель попал бы в файловый обход
             // rtCOMLite как Рутокен S (см. RutokenExporter.ShouldWalk).
             return ClassifyText(manufacturer) == RutokenKind.Other ? RutokenKind.Other : RutokenKind.Unknown;
+        }
+
+        private static bool IsJaCartaLt(string model, string manufacturer)
+        {
+            string m = (model ?? string.Empty).Trim().ToLowerInvariant();
+            if (m.Contains("jacarta ds") || m.Contains("jacarta lt")) return true;
+            if (!m.Contains("datastore")) return false;
+
+            string vendor = (manufacturer ?? string.Empty).Trim().ToLowerInvariant();
+            return vendor.Contains("aladdin") || vendor.Contains("jacarta");
         }
 
         private static RutokenKind ClassifyText(string text)
@@ -270,6 +288,7 @@ namespace CryptoProExport
             {
                 if (t == null || string.IsNullOrEmpty(t.Reader)) continue;
                 if (t.Kind == RutokenKind.RutokenEcp || t.Kind == RutokenKind.RutokenLite
+                    || t.Kind == RutokenKind.JaCartaLt
                     || t.Kind == RutokenKind.Other)
                     set.Add(t.Reader);
             }
@@ -277,14 +296,19 @@ namespace CryptoProExport
         }
 
         /// <summary>Локализованное название семейства токена.</summary>
-        public static string KindName(RutokenKind kind) => Strings.Get(kind switch
+        public static string KindName(RutokenKind kind)
         {
-            RutokenKind.RutokenS => "kind.rutoken.s",
-            RutokenKind.RutokenLite => "kind.rutoken.lite",
-            RutokenKind.RutokenEcp => "kind.rutoken.ecp",
-            RutokenKind.Other => "kind.other",
-            _ => "kind.unknown",
-        });
+            // Название продукта — торговая марка и во всех языках остаётся одинаковым.
+            if (kind == RutokenKind.JaCartaLt) return "JaCarta LT";
+            return Strings.Get(kind switch
+            {
+                RutokenKind.RutokenS => "kind.rutoken.s",
+                RutokenKind.RutokenLite => "kind.rutoken.lite",
+                RutokenKind.RutokenEcp => "kind.rutoken.ecp",
+                RutokenKind.Other => "kind.other",
+                _ => "kind.unknown",
+            });
+        }
 
         /// <summary>Локализованное состояние PIN (без траты попыток входа).</summary>
         public static string PinState(Pkcs11TokenInfo info) => Strings.Get(

@@ -170,6 +170,7 @@ namespace CryptoProExport
             if (skipReaders != null && skipReaders.Contains(readerName)) return false;
             RutokenKind kind = Pkcs11Token.Classify(readerName);
             return kind != RutokenKind.RutokenEcp && kind != RutokenKind.RutokenLite
+                && kind != RutokenKind.JaCartaLt
                 && kind != RutokenKind.Other;
         }
 
