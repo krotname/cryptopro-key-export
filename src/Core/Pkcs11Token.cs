@@ -255,13 +255,39 @@ namespace CryptoProExport
         /// Определить семейство считывателя для выбора протокола: достоверная PKCS#11-
         /// классификация имеет приоритет, а отсутствующие или неполные метаданные дополняются
         /// безопасной классификацией по имени считывателя. В частности, известный <see cref="RutokenKind.Other"/>
-        /// нельзя превратить в Рутокен Lite вводящим в заблуждение именем reader.
+        /// нельзя превратить в Рутокен Lite вводящим в заблуждение именем reader, а одной
+        /// подстроки <c>lite</c> без независимого свидетельства Rutoken/Aktiv недостаточно.
         /// </summary>
         public static RutokenKind ResolveReaderKind(string readerName, Pkcs11TokenInfo metadata)
         {
             if (metadata != null && metadata.Kind != RutokenKind.Unknown)
                 return metadata.Kind;
-            return Classify(readerName, metadata?.Manufacturer);
+
+            RutokenKind fallback = Classify(readerName, metadata?.Manufacturer);
+            if (fallback != RutokenKind.RutokenLite) return fallback;
+
+            // Явный чужой вендор сильнее совпавшей подстроки lite — смешивать протоколы
+            // смарт-карт опасно. Для неопознанного Foo Lite безопасный результат Unknown.
+            if (HasForeignVendorEvidence(readerName) || HasForeignVendorEvidence(metadata?.Manufacturer))
+                return RutokenKind.Other;
+
+            return HasRutokenVendorEvidence(readerName) || HasRutokenVendorEvidence(metadata?.Manufacturer)
+                ? RutokenKind.RutokenLite
+                : RutokenKind.Unknown;
+        }
+
+        private static bool HasRutokenVendorEvidence(string text)
+        {
+            string value = (text ?? string.Empty).Trim().ToLowerInvariant();
+            return value.Contains("rutoken") || value.Contains("рутокен")
+                || value.Contains("aktiv") || value.Contains("актив");
+        }
+
+        private static bool HasForeignVendorEvidence(string text)
+        {
+            string value = (text ?? string.Empty).Trim().ToLowerInvariant();
+            return value.Contains("jacarta") || value.Contains("aladdin")
+                || value.Contains("etoken") || value.Contains("esmart");
         }
 
         private static bool IsJaCartaLt(string model, string manufacturer)

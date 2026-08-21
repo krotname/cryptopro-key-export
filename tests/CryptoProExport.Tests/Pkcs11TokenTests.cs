@@ -102,6 +102,47 @@ namespace CryptoProExport.Tests
                 Pkcs11Token.ResolveReaderKind(reader, incomplete));
         }
 
+        [Theory]
+        [InlineData("Aktiv Rutoken lite 0", null)]
+        [InlineData("Rutoken Lite 0", null)]
+        [InlineData("Foo Lite 0", "Aktiv Co.")]
+        public void ResolveReaderKind_AllowsLiteFallbackWithRutokenVendorEvidence(
+            string reader, string manufacturer)
+        {
+            var metadata = manufacturer == null
+                ? null
+                : new Pkcs11TokenInfo { Reader = reader, Manufacturer = manufacturer };
+
+            Assert.Equal(RutokenKind.RutokenLite,
+                Pkcs11Token.ResolveReaderKind(reader, metadata));
+        }
+
+        [Theory]
+        [InlineData("Foo Lite 0", RutokenKind.Unknown)]
+        [InlineData("JaCarta Lite 0", RutokenKind.Other)]
+        [InlineData("ESMART Lite 0", RutokenKind.Other)]
+        [InlineData("Aktiv ESMART Lite 0", RutokenKind.Other)]
+        public void ResolveReaderKind_BlocksGenericAndForeignLiteReaders(
+            string reader, RutokenKind expected)
+        {
+            Assert.Equal(expected, Pkcs11Token.ResolveReaderKind(reader, metadata: null));
+            Assert.NotEqual(RutokenKind.RutokenLite,
+                Pkcs11Token.ResolveReaderKind(reader, metadata: null));
+        }
+
+        [Fact]
+        public void ResolveReaderKind_ForeignManufacturerBlocksConflictingRutokenReader()
+        {
+            var incomplete = new Pkcs11TokenInfo
+            {
+                Reader = "Aktiv Rutoken lite 0",
+                Manufacturer = "Aladdin R.D.",
+            };
+
+            Assert.Equal(RutokenKind.Other,
+                Pkcs11Token.ResolveReaderKind(incomplete.Reader, incomplete));
+        }
+
         [Fact]
         public void ResolveReaderKind_PrefersKnownMetadataOverMisleadingReaderName()
         {
