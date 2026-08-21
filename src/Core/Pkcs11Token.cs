@@ -349,12 +349,15 @@ namespace CryptoProExport
             string count = info.MechanismCount >= 0
                 ? info.MechanismCount.ToString(System.Globalization.CultureInfo.InvariantCulture)
                 : "?";
-            string rsa = info.HardwareRsaMaxBits > 0
-                ? info.HardwareRsaMaxBits.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                : "—";
+            string rsa = info.CapabilitiesKnown
+                ? info.HardwareRsaMaxBits > 0
+                    ? info.HardwareRsaMaxBits.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    : "—"
+                : "?";
+            string ecdsa = info.CapabilitiesKnown ? (info.HardwareEcdsa ? "+" : "−") : "?";
+            string gost = info.CapabilitiesKnown ? (info.HardwareGost ? "+" : "−") : "?";
             return Strings.Format("cli.token.capabilities", info.Hardware ?? "?", count,
-                CapabilityProfileName(info.CapabilityProfile), rsa,
-                info.HardwareEcdsa ? "+" : "−", info.HardwareGost ? "+" : "−");
+                CapabilityProfileName(info.CapabilityProfile), rsa, ecdsa, gost);
         }
 
         /// <summary>Локализованное состояние PIN (без траты попыток входа).</summary>

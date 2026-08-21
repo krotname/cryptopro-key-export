@@ -118,6 +118,7 @@ namespace CryptoProExport.Tests
         [Fact]
         public void CapabilitySummary_ReportsReadOnlyHardwareProfile()
         {
+            using var scope = Strings.Scope("en");
             var info = new Pkcs11TokenInfo
             {
                 Hardware = "20.05",
@@ -137,6 +138,27 @@ namespace CryptoProExport.Tests
             Assert.Contains(Pkcs11Token.CapabilityProfileName(
                 RutokenCapabilityProfile.Ecp2Capabilities), summary, StringComparison.Ordinal);
             Assert.DoesNotContain(Strings.MissingMarkerStart, summary, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void CapabilitySummary_UnreadCapabilitiesUseUnknownMarkers()
+        {
+            using var scope = Strings.Scope("en");
+            var info = new Pkcs11TokenInfo
+            {
+                Hardware = "20.05",
+                MechanismCount = 45,
+                CapabilitiesKnown = false,
+                CapabilityProfile = RutokenCapabilityProfile.Unknown,
+            };
+
+            string summary = Pkcs11Token.CapabilitySummary(info);
+
+            Assert.Contains("RSA HW keygen up to ? bit", summary, StringComparison.Ordinal);
+            Assert.Contains("ECDSA HW ?", summary, StringComparison.Ordinal);
+            Assert.Contains("GOST HW ?", summary, StringComparison.Ordinal);
+            Assert.DoesNotContain("ECDSA HW −", summary, StringComparison.Ordinal);
+            Assert.DoesNotContain("GOST HW −", summary, StringComparison.Ordinal);
         }
 
         [Theory]
