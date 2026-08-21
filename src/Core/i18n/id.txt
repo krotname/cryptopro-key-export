@@ -365,4 +365,5 @@ pcsc.statusfail = PC/SC: tidak dapat membaca status pembaca ({0})
 diag.pnp.none = Pembaca kartu pintar (PnP): tidak ada perangkat yang terhubung secara fisik
 diag.pnp.ok = Pembaca kartu pintar (PnP): {0} terhubung, semua driver telah dimulai
 diag.pnp.failed = Pembaca kartu pintar {0} ({1}): terhubung secara fisik, tetapi drivernya tidak dimulai — kode {2}, status {3}
+diag.pnp.problem = Pembaca kartu pintar {0} ({1}): terhubung secara fisik, tetapi Windows melaporkan masalah PnP — kode {2}, status {3}
 diag.pnp.unavailable = Pembaca kartu pintar (PnP): pemeriksaan tidak tersedia ({0})

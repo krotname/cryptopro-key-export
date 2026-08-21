@@ -365,4 +365,5 @@ pcsc.statusfail = PC/SC: okuyucu durumu okunamadı ({0})
 diag.pnp.none = Akıllı kart okuyucuları (PnP): fiziksel olarak bağlı cihaz yok
 diag.pnp.ok = Akıllı kart okuyucuları (PnP): {0} bağlı, tüm sürücüler başlatıldı
 diag.pnp.failed = Akıllı kart okuyucusu {0} ({1}): fiziksel olarak bağlı, ancak sürücüsü başlatılamadı — kod {2}, durum {3}
+diag.pnp.problem = Akıllı kart okuyucusu {0} ({1}): fiziksel olarak bağlı, ancak Windows bir PnP sorunu bildiriyor — kod {2}, durum {3}
 diag.pnp.unavailable = Akıllı kart okuyucuları (PnP): denetim kullanılamıyor ({0})

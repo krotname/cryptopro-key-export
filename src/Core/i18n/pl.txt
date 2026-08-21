@@ -365,4 +365,5 @@ pcsc.statusfail = PC/SC: nie można odczytać stanu czytników ({0})
 diag.pnp.none = Czytniki kart inteligentnych (PnP): brak fizycznie podłączonych urządzeń
 diag.pnp.ok = Czytniki kart inteligentnych (PnP): podłączono {0}, wszystkie sterowniki uruchomione
 diag.pnp.failed = Czytnik kart inteligentnych {0} ({1}): jest fizycznie podłączony, ale sterownik nie został uruchomiony — kod {2}, stan {3}
+diag.pnp.problem = Czytnik kart inteligentnych {0} ({1}): jest fizycznie podłączony, ale system Windows zgłasza problem PnP — kod {2}, stan {3}
 diag.pnp.unavailable = Czytniki kart inteligentnych (PnP): sprawdzenie niedostępne ({0})
