@@ -344,4 +344,5 @@ dlg.license.title = Choose license file
 diag.pnp.none = Smart-card readers (PnP): no devices are physically connected
 diag.pnp.ok = Smart-card readers (PnP): {0} connected, all drivers started
 diag.pnp.failed = Smart-card reader {0} ({1}): physically connected, but its driver did not start — Code {2}, status {3}
+diag.pnp.problem = Smart-card reader {0} ({1}): physically connected, but Windows reports a PnP problem — Code {2}, status {3}
 diag.pnp.unavailable = Smart-card readers (PnP): check unavailable ({0})

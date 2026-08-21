@@ -28,6 +28,7 @@ namespace CryptoProExport
     internal static class SmartCardReaderHealth
     {
         private const uint DigcfPresent = 0x00000002;
+        private const uint CmProbFailedStart = 10;
         private const int ErrorNoMoreItems = 259;
         private static readonly IntPtr InvalidHandleValue = new IntPtr(-1);
 
@@ -71,12 +72,12 @@ namespace CryptoProExport
             if (present.Count == 0)
                 return new List<string> { Strings.Get("diag.pnp.none") };
 
-            var failed = present.Where(status => status.ProblemCode != 0).ToList();
-            if (failed.Count == 0)
+            var problems = present.Where(status => status.ProblemCode != 0).ToList();
+            if (problems.Count == 0)
                 return new List<string> { Strings.Format("diag.pnp.ok", present.Count) };
 
-            return failed.Select(status => Strings.Format(
-                "diag.pnp.failed",
+            return problems.Select(status => Strings.Format(
+                status.ProblemCode == CmProbFailedStart ? "diag.pnp.failed" : "diag.pnp.problem",
                 FirstNonEmpty(status.BusDescription, status.DisplayName, "?"),
                 string.IsNullOrWhiteSpace(status.HardwareId) ? "?" : status.HardwareId,
                 status.ProblemCode,

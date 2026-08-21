@@ -344,4 +344,5 @@ dlg.license.title = 选择许可证文件
 diag.pnp.none = 智能卡读卡器 (PnP)：没有物理连接的设备
 diag.pnp.ok = 智能卡读卡器 (PnP)：已连接 {0} 个，所有驱动程序均已启动
 diag.pnp.failed = 智能卡读卡器 {0} ({1})：已物理连接，但驱动程序未能启动 — 代码 {2}，状态 {3}
+diag.pnp.problem = 智能卡读卡器 {0} ({1})：已物理连接，但 Windows 报告了 PnP 问题 — 代码 {2}，状态 {3}
 diag.pnp.unavailable = 智能卡读卡器 (PnP)：无法检查 ({0})

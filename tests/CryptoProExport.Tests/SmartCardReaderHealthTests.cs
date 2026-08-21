@@ -65,6 +65,27 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void Describe_UsesGenericWordingForNonCode10Problem()
+        {
+            using var language = Strings.Scope("en");
+            var lines = SmartCardReaderHealth.Describe(new[]
+            {
+                new SmartCardReaderStatus
+                {
+                    BusDescription = "Reader awaiting restart",
+                    HardwareId = @"USB\VID_1234&PID_5678",
+                    ProblemCode = 14,
+                    ProblemStatus = 0xC0000001,
+                },
+            });
+
+            string line = Assert.Single(lines);
+            Assert.Contains("Windows reports a PnP problem", line, StringComparison.Ordinal);
+            Assert.DoesNotContain("driver did not start", line, StringComparison.Ordinal);
+            Assert.Contains("Code 14", line, StringComparison.Ordinal);
+        }
+
+        [Fact]
         public void Describe_ReportsNoPresentReaders()
         {
             using var language = Strings.Scope("en");
