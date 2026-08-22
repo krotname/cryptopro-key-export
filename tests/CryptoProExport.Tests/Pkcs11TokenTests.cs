@@ -295,6 +295,56 @@ namespace CryptoProExport.Tests
             Assert.False(RutokenExporter.ShouldWalk("ACS ACR38U 0", set));
         }
 
+        [Theory]
+        [InlineData("JaCarta DS", null)]
+        [InlineData("JaCarta LT", "Contoso")]
+        [InlineData("Datastore", "")]
+        public void SmartCardReaders_FailClosedForUnverifiedLtModelUnderFacelessReader(
+            string model, string manufacturer)
+        {
+            const string reader = "ACS ACR38U 0";
+            RutokenKind kind = Pkcs11Token.Classify(model, manufacturer);
+            Assert.Equal(RutokenKind.Unknown, kind); // без vendor evidence не называем JaCarta LT
+
+            var tokens = new List<Pkcs11TokenInfo>
+            {
+                new Pkcs11TokenInfo
+                {
+                    Reader = reader,
+                    Model = model,
+                    Manufacturer = manufacturer,
+                    Kind = kind,
+                },
+            };
+
+            var set = Pkcs11Token.SmartCardReaders(tokens);
+
+            Assert.Contains(reader, set);
+            Assert.False(RutokenExporter.ShouldWalk(reader, set));
+        }
+
+        [Fact]
+        public void SmartCardReaders_KeepsRutokenSFileWalk()
+        {
+            const string reader = "Aktiv ruToken 0";
+            RutokenKind kind = Pkcs11Token.Classify("Rutoken S", "Aktiv Co.");
+            Assert.Equal(RutokenKind.RutokenS, kind);
+
+            var set = Pkcs11Token.SmartCardReaders(new[]
+            {
+                new Pkcs11TokenInfo
+                {
+                    Reader = reader,
+                    Model = "Rutoken S",
+                    Manufacturer = "Aktiv Co.",
+                    Kind = kind,
+                },
+            });
+
+            Assert.DoesNotContain(reader, set);
+            Assert.True(RutokenExporter.ShouldWalk(reader, set));
+        }
+
         // ---------- дедупликация считывателей между библиотеками разных вендоров ----------
 
         [Fact]

@@ -334,6 +334,9 @@ namespace CryptoProExport
         /// имя считывателя, а оно бывает безликим (<c>ACS ACR38U 0</c>), и тогда классификация по
         /// имени даёт <c>Unknown</c>. PKCS#11 в этот момент уже знает производителя — этот список
         /// и есть способ донести знание до файлового обхода (замечание Codex на PR #25).
+        /// Неподтверждённая LT/Datastore-модель намеренно остаётся <c>Unknown</c> и не получает
+        /// имя JaCarta LT, но всё равно исключается отсюда по принципу fail-closed: таких данных
+        /// уже достаточно, чтобы не применять к безликому считывателю файловый API Рутокен S.
         ///
         /// Чистая функция: покрыта тестами без обращения к железу.
         /// </summary>
@@ -345,7 +348,8 @@ namespace CryptoProExport
                 if (t == null || string.IsNullOrEmpty(t.Reader)) continue;
                 if (t.Kind == RutokenKind.RutokenEcp || t.Kind == RutokenKind.RutokenLite
                     || t.Kind == RutokenKind.JaCartaLt
-                    || t.Kind == RutokenKind.Other)
+                    || t.Kind == RutokenKind.Other
+                    || IsJaCartaLtCandidate(t.Model))
                     set.Add(t.Reader);
             }
             return set;
