@@ -312,6 +312,14 @@ namespace CryptoProExport
                 || m.Contains("datastore");
         }
 
+        /// <summary>
+        /// Fail-closed признак только для маршрутизации файлового обхода. Он намеренно шире
+        /// точной идентификации: bare LT/Datastore остаётся <see cref="RutokenKind.Unknown"/>,
+        /// но к такому считывателю нельзя применять файловый API Рутокен S.
+        /// </summary>
+        internal static bool HasUnsafeForeignFileWalkEvidence(string text)
+            => HasForeignVendorEvidence(text) || IsJaCartaLtCandidate(text);
+
         private static RutokenKind ClassifyText(string text)
         {
             if (string.IsNullOrWhiteSpace(text)) return RutokenKind.Unknown;
@@ -349,7 +357,7 @@ namespace CryptoProExport
                 if (t.Kind == RutokenKind.RutokenEcp || t.Kind == RutokenKind.RutokenLite
                     || t.Kind == RutokenKind.JaCartaLt
                     || t.Kind == RutokenKind.Other
-                    || IsJaCartaLtCandidate(t.Model))
+                    || HasUnsafeForeignFileWalkEvidence(t.Model))
                     set.Add(t.Reader);
             }
             return set;
