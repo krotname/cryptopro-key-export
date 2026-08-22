@@ -96,6 +96,24 @@ namespace CryptoProExport
         public List<Pkcs11Container> Containers = new List<Pkcs11Container>();
     }
 
+    /// <summary>Успешно прочитанные стадии одного считывателя между PKCS#11-библиотеками.</summary>
+    internal readonly struct Pkcs11ReadState
+    {
+        internal Pkcs11ReadState(int index, bool capabilitiesRead, bool containersRead)
+        {
+            Index = index;
+            CapabilitiesRead = capabilitiesRead;
+            ContainersRead = containersRead;
+        }
+
+        internal int Index { get; }
+        internal bool CapabilitiesRead { get; }
+        internal bool ContainersRead { get; }
+
+        internal bool IsComplete(bool readContainers)
+            => CapabilitiesRead && (!readContainers || ContainersRead);
+    }
+
     /// <summary>
     /// Работа с токеном по PKCS#11 — параллельно rtCOMLite.
     ///
@@ -391,10 +409,10 @@ namespace CryptoProExport
             // двум установленным библиотекам, и дважды перечисленный токен запутал бы и вывод,
             // и SkipReaders. Но «уже видели» — не то же самое, что «уже прочитали»: если первая
             // библиотека на этом считывателе сорвалась, второй дают попробовать, и удачное
-            // чтение заменяет неудачную запись (замечание Codex на PR #25).
+            // успешные стадии разных библиотек объединяются, пока не собран полный результат.
             // Сбой одной библиотеки не скрывает носители остальных вендоров: EnumerateLibrary
             // сообщает о нём в лог и возвращает управление, цикл продолжается.
-            var seen = new Dictionary<string, (int Index, bool Ok)>(StringComparer.OrdinalIgnoreCase);
+            var seen = new Dictionary<string, Pkcs11ReadState>(StringComparer.OrdinalIgnoreCase);
             foreach (var (_, path) in libs)
             {
                 cancel.ThrowIfCancellationRequested();
@@ -404,31 +422,27 @@ namespace CryptoProExport
         }
 
         /// <summary>
-        /// Этот считыватель уже прочитан удачно другой библиотекой — второй раз к нему не идём.
-        /// Неудачная попытка «прочитанным» не считается: сбой драйвера одного вендора не должен
-        /// прятать данные, которые отдаёт другой (замечание Codex на PR #25).
+        /// Все запрошенные стадии этого считывателя уже прочитаны другой библиотекой — второй
+        /// раз к нему не идём. Частичный результат оставляет недостающей стадии возможность
+        /// дочитаться через другую установленную библиотеку.
         /// </summary>
-        internal static bool AlreadyRead(IReadOnlyDictionary<string, (int Index, bool Ok)> seen, string reader)
-            => !string.IsNullOrEmpty(reader) && seen.TryGetValue(reader, out var prev) && prev.Ok;
-
-        /// <summary>
-        /// Чтение токена считается полным только при полном профиле механизмов и, когда они
-        /// запрошены, полном чтении объектов. Пропуск объектов не скрывает сбой возможностей.
-        /// </summary>
-        internal static bool IsCompleteRead(bool capabilitiesRead, bool readContainers, bool containersRead)
-            => capabilitiesRead && (!readContainers || containersRead);
+        internal static bool AlreadyRead(IReadOnlyDictionary<string, Pkcs11ReadState> seen, string reader,
+                                         bool readContainers)
+            => !string.IsNullOrEmpty(reader)
+            && seen.TryGetValue(reader, out var prev)
+            && prev.IsComplete(readContainers);
 
         /// <summary>
         /// Положить прочитанный токен в список с дедупликацией по имени считывателя.
-        /// Удачное чтение заменяет прежнюю неудачную запись того же считывателя — на его месте,
-        /// чтобы порядок не прыгал; неудачное поверх неудачной не кладётся, иначе один носитель
-        /// занял бы в списке две строки. Считыватель без имени дедуплицировать нечем — такой
+        /// Успешные стадии чтения возможностей и объектов объединяются независимо. Уже успешно
+        /// прочитанная стадия не заменяется более поздней ошибкой, а запись остаётся на прежнем
+        /// месте, чтобы порядок не прыгал. Считыватель без имени дедуплицировать нечем — такой
         /// токен просто добавляется.
         ///
-        /// Возвращает <c>false</c>, если запись отброшена. Чистая функция: покрыта тестами.
+        /// Возвращает <c>false</c>, если новая успешная стадия не добавлена. Покрыта тестами.
         /// </summary>
-        internal static bool Place(List<Pkcs11TokenInfo> result, Dictionary<string, (int Index, bool Ok)> seen,
-                                   Pkcs11TokenInfo info, bool ok)
+        internal static bool Place(List<Pkcs11TokenInfo> result, Dictionary<string, Pkcs11ReadState> seen,
+                                   Pkcs11TokenInfo info, bool capabilitiesRead, bool containersRead)
         {
             if (string.IsNullOrEmpty(info.Reader))
             {
@@ -438,20 +452,48 @@ namespace CryptoProExport
 
             if (seen.TryGetValue(info.Reader, out var prev))
             {
-                if (prev.Ok || !ok) return false;
-                result[prev.Index] = info;
-                seen[info.Reader] = (prev.Index, true);
+                bool addCapabilities = capabilitiesRead && !prev.CapabilitiesRead;
+                bool addContainers = containersRead && !prev.ContainersRead;
+                if (!addCapabilities && !addContainers) return false;
+
+                if (!prev.CapabilitiesRead && !prev.ContainersRead)
+                {
+                    // Прежняя попытка дала только метаданные: первый успешный этап становится
+                    // основой записи, как прежняя полная замена неудачного чтения.
+                    result[prev.Index] = info;
+                }
+                else
+                {
+                    Pkcs11TokenInfo current = result[prev.Index];
+                    if (addCapabilities) CopyCapabilities(info, current);
+                    if (addContainers) current.Containers = info.Containers;
+                }
+
+                seen[info.Reader] = new Pkcs11ReadState(prev.Index,
+                    prev.CapabilitiesRead || capabilitiesRead,
+                    prev.ContainersRead || containersRead);
                 return true;
             }
 
-            seen[info.Reader] = (result.Count, ok);
+            seen[info.Reader] = new Pkcs11ReadState(result.Count, capabilitiesRead, containersRead);
             result.Add(info);
             return true;
         }
 
+        private static void CopyCapabilities(Pkcs11TokenInfo source, Pkcs11TokenInfo target)
+        {
+            target.MechanismCount = source.MechanismCount;
+            target.HardwareRsaMaxBits = source.HardwareRsaMaxBits;
+            target.HardwareEcdsa = source.HardwareEcdsa;
+            target.EcMechanismPresent = source.EcMechanismPresent;
+            target.HardwareGost = source.HardwareGost;
+            target.CapabilitiesKnown = source.CapabilitiesKnown;
+            target.CapabilityProfile = source.CapabilityProfile;
+        }
+
         /// <summary>Перечислить токены одной библиотеки PKCS#11, добавляя их в <paramref name="result"/>.</summary>
         private static void EnumerateLibrary(string lib, bool readContainers, List<Pkcs11TokenInfo> result,
-                                             Dictionary<string, (int Index, bool Ok)> seen,
+                                             Dictionary<string, Pkcs11ReadState> seen,
                                              Action<string> log, CancellationToken cancel)
         {
             Pkcs11InteropFactories factories;
@@ -485,9 +527,10 @@ namespace CryptoProExport
 
                     // Считыватель, уже прочитанный удачно, второй библиотеке не отдаём: незачем
                     // дёргать драйвер и незачем показывать один носитель дважды.
-                    if (AlreadyRead(seen, info.Reader)) continue;
+                    if (AlreadyRead(seen, info.Reader, readContainers)) continue;
 
-                    bool ok = false;
+                    bool capabilitiesRead = false;
+                    bool containersRead = false;
                     try
                     {
                         ITokenInfo ti = slot.GetTokenInfo();
@@ -507,14 +550,13 @@ namespace CryptoProExport
 
                         // C_GetMechanismList/C_GetMechanismInfo не требуют PIN и не читают объекты.
                         // Профиль поколения строится только по этим возможностям.
-                        bool capabilitiesRead = ReadCapabilities(slot, info, log);
+                        capabilitiesRead = ReadCapabilities(slot, info, log);
 
                         // Сбой чтения возможностей или объектов — неполное чтение. Оба метода
                         // гасят ошибки сами, чтобы одна библиотека не останавливала остальные,
                         // и сообщают полноту возвращаемым значением.
-                        bool containersRead = readContainers
+                        containersRead = readContainers
                             && ReadContainers(slot, factories, info, log, cancel);
-                        ok = IsCompleteRead(capabilitiesRead, readContainers, containersRead);
                     }
                     catch (OperationCanceledException) { throw; }   // отмена — не ошибка токена
                     catch (Exception e)
@@ -522,7 +564,7 @@ namespace CryptoProExport
                         log(Strings.Format("pkcs11.tokenfail", info.Reader ?? "?", e.Message));
                     }
 
-                    Place(result, seen, info, ok);
+                    Place(result, seen, info, capabilitiesRead, containersRead);
                 }
             }
             finally
