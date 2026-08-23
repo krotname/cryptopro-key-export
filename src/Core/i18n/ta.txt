@@ -341,3 +341,15 @@ cli.usage.license = உரிமக் கோப்பை நிறுவு அ
 btn.license = உரிமம்…
 tip.license = உரிமக் கோப்பை (.jws) நிறுவி இந்த இயந்திரத்திற்குச் சரிபார்க்கவும்.\nசெல்லுபடியாகும் உரிமம் இல்லாமல், தனிப்பட்ட விசை ஏற்றுமதிச் செயல்கள் கிடைக்காது.\nஇந்த இயந்திரத்தின் கைரேகையை (உரிமம் பெற) fingerprint கட்டளையும் தொடக்கத்திலும் காட்டும்.
 dlg.license.title = உரிமக் கோப்பைத் தேர்ந்தெடுக்கவும்
+
+# --- диагностика PC/SC ---
+cli.pcsc.uncovered = PC/SC ரீடர்களில் உள்ள ஆனால் PKCS#11 டோக்கனாக காட்டப்படாத அட்டைகள்:
+cli.pcsc.line = {0} [{1}] — அட்டை உள்ளது, ATR {2}
+cli.pcsc.hint = இத்தகைய அட்டை PKCS#11 டோக்கன் அல்ல; இது CryptoPro ஊடகமும் இல்லையெனில், ஏற்றுமதி செய்ய எதுவும் இல்லை.
+carrier.jacarta = JaCarta / Aladdin
+carrier.rutoken = Rutoken
+carrier.esmart = ESMART
+carrier.etoken = eToken / SafeNet
+carrier.unknown = அறியப்படாத ஊடகம்
+pcsc.contextfail = PC/SC: ஸ்மார்ட் கார்டு சேவையுடன் இணைக்க முடியவில்லை ({0})
+pcsc.statusfail = PC/SC: ரீடர் நிலையைப் படிக்க முடியவில்லை ({0})

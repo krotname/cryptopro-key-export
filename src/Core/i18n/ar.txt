@@ -341,3 +341,15 @@ cli.usage.license = تثبيت ملف ترخيص أو عرض حالته
 btn.license = الترخيص…
 tip.license = ثبِّت ملف ترخيص (.jws) وتحقق منه لهذا الجهاز.\nبدون ترخيص صالح، تكون عمليات تصدير المفتاح الخاص غير متاحة.\nبصمة هذا الجهاز (للحصول على ترخيص) يعرضها الأمر fingerprint وعند بدء التشغيل.
 dlg.license.title = اختيار ملف الترخيص
+
+# --- диагностика PC/SC ---
+cli.pcsc.uncovered = بطاقات موجودة في قارئات PC/SC لكنها لا تظهر كرمز PKCS#11:
+cli.pcsc.line = {0} [{1}] — البطاقة موجودة، ATR {2}
+cli.pcsc.hint = هذه البطاقة ليست رمز PKCS#11؛ وإذا لم تكن أيضًا وسيط CryptoPro، فلا يوجد ما يمكن تصديره.
+carrier.jacarta = JaCarta / Aladdin
+carrier.rutoken = Rutoken
+carrier.esmart = ESMART
+carrier.etoken = eToken / SafeNet
+carrier.unknown = وسيط غير معروف
+pcsc.contextfail = PC/SC: تعذّر الاتصال بخدمة البطاقة الذكية ({0})
+pcsc.statusfail = PC/SC: تعذّرت قراءة حالة القارئات ({0})

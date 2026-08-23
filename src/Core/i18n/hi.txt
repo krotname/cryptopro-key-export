@@ -341,3 +341,15 @@ cli.usage.license = लाइसेंस फ़ाइल स्थापित 
 btn.license = लाइसेंस…
 tip.license = लाइसेंस फ़ाइल (.jws) स्थापित करें और इस मशीन के लिए सत्यापित करें।\nमान्य लाइसेंस के बिना, निजी कुंजी निर्यात कार्य उपलब्ध नहीं हैं।\nइस मशीन का फ़िंगरप्रिंट (लाइसेंस प्राप्त करने के लिए) fingerprint कमांड और शुरू होने पर दिखता है।
 dlg.license.title = लाइसेंस फ़ाइल चुनें
+
+# --- диагностика PC/SC ---
+cli.pcsc.uncovered = PC/SC रीडर में मौजूद कार्ड जो PKCS#11 टोकन के रूप में नहीं दिखाए गए:
+cli.pcsc.line = {0} [{1}] — कार्ड मौजूद, ATR {2}
+cli.pcsc.hint = ऐसा कार्ड PKCS#11 टोकन नहीं है; यदि यह CryptoPro वाहक भी नहीं है, तो निर्यात करने के लिए कुछ नहीं है।
+carrier.jacarta = JaCarta / Aladdin
+carrier.rutoken = Rutoken
+carrier.esmart = ESMART
+carrier.etoken = eToken / SafeNet
+carrier.unknown = अज्ञात वाहक
+pcsc.contextfail = PC/SC: स्मार्ट कार्ड सेवा से कनेक्ट नहीं हो सका ({0})
+pcsc.statusfail = PC/SC: रीडर की स्थिति नहीं पढ़ी जा सकी ({0})

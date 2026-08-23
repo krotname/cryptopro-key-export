@@ -341,3 +341,15 @@ cli.usage.license = نصب فایل مجوز یا نمایش وضعیت آن
 btn.license = مجوز…
 tip.license = یک فایل مجوز (.jws) نصب کنید و برای این دستگاه تأیید کنید.\nبدون مجوز معتبر، عملیات صدور کلید خصوصی در دسترس نیست.\nاثر انگشت این دستگاه (برای دریافت مجوز) را فرمان fingerprint و هنگام شروع نشان می‌دهد.
 dlg.license.title = انتخاب فایل مجوز
+
+# --- диагностика PC/SC ---
+cli.pcsc.uncovered = کارت‌های موجود در کارت‌خوان‌های PC/SC که به‌عنوان توکن PKCS#11 نمایش داده نمی‌شوند:
+cli.pcsc.line = {0} [{1}] — کارت موجود است، ATR {2}
+cli.pcsc.hint = چنین کارتی توکن PKCS#11 نیست؛ اگر حامل CryptoPro هم نباشد، چیزی برای خروجی‌گرفتن وجود ندارد.
+carrier.jacarta = JaCarta / Aladdin
+carrier.rutoken = Rutoken
+carrier.esmart = ESMART
+carrier.etoken = eToken / SafeNet
+carrier.unknown = حامل ناشناخته
+pcsc.contextfail = PC/SC: اتصال به سرویس کارت هوشمند ممکن نشد ({0})
+pcsc.statusfail = PC/SC: خواندن وضعیت کارت‌خوان‌ها ممکن نشد ({0})
