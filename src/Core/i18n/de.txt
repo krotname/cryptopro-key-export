@@ -341,3 +341,15 @@ cli.usage.license = Lizenzdatei installieren oder Status anzeigen
 btn.license = Lizenz…
 tip.license = Lizenzdatei (.jws) installieren und für diesen Rechner prüfen.\nOhne gültige Lizenz sind Vorgänge zum Export des privaten Schlüssels nicht verfügbar.\nDen Fingerabdruck dieses Rechners (für den Lizenzbezug) zeigt der Befehl fingerprint und der Programmstart.
 dlg.license.title = Lizenzdatei auswählen
+
+# --- диагностика PC/SC ---
+cli.pcsc.uncovered = Karten in PC/SC-Lesern ohne PKCS#11-Token:
+cli.pcsc.line = {0} [{1}] — Karte vorhanden, ATR {2}
+cli.pcsc.hint = Eine solche Karte ist kein PKCS#11-Token; wenn sie auch kein CryptoPro-Träger ist, gibt es nichts zu exportieren.
+carrier.jacarta = JaCarta / Aladdin
+carrier.rutoken = Rutoken
+carrier.esmart = ESMART
+carrier.etoken = eToken / SafeNet
+carrier.unknown = unbekannter Träger
+pcsc.contextfail = PC/SC: Verbindung zum Smartcard-Dienst fehlgeschlagen ({0})
+pcsc.statusfail = PC/SC: Leserstatus konnte nicht gelesen werden ({0})

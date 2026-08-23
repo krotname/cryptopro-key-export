@@ -341,3 +341,15 @@ cli.usage.license = cài đặt tệp giấy phép hoặc hiển thị trạng t
 btn.license = Giấy phép…
 tip.license = Cài đặt tệp giấy phép (.jws) và xác minh cho máy này.\nKhông có giấy phép hợp lệ, các thao tác xuất khóa riêng sẽ không khả dụng.\nDấu vân của máy này (để nhận giấy phép) được hiển thị bằng lệnh fingerprint và khi khởi động.
 dlg.license.title = Chọn tệp giấy phép
+
+# --- диагностика PC/SC ---
+cli.pcsc.uncovered = Thẻ có trong đầu đọc PC/SC nhưng không hiển thị dưới dạng token PKCS#11:
+cli.pcsc.line = {0} [{1}] — thẻ hiện diện, ATR {2}
+cli.pcsc.hint = Thẻ như vậy không phải là token PKCS#11; nếu cũng không phải là vật mang CryptoPro thì không có gì để xuất.
+carrier.jacarta = JaCarta / Aladdin
+carrier.rutoken = Rutoken
+carrier.esmart = ESMART
+carrier.etoken = eToken / SafeNet
+carrier.unknown = vật mang không xác định
+pcsc.contextfail = PC/SC: không thể kết nối tới dịch vụ thẻ thông minh ({0})
+pcsc.statusfail = PC/SC: không thể đọc trạng thái đầu đọc ({0})

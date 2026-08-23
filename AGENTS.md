@@ -609,6 +609,24 @@ GitHub Actions **работает** (`.github/workflows/ci.yml`). Прежнее
     Практический вывод: наш `.pfx` — для мира OpenSSL/gost-engine; для КриптоПро остаётся `topfx`
     через `certmgr`.
 
+40. **JaCarta на платформе Athena IDProtect — минидрайверный носитель, не PKCS#11-токен и не
+    контейнер КриптоПро (23.08.2026).** Пятый вид JaCarta и новый класс проблемы: карта физически
+    стоит в PC/SC (`Aladdin R.D. JaCarta 0`, USB `24DC:0402`, модель `IDProtect (X)`, ATR
+    `3B DC 18 FF 81 91 FE 1F C3 80 73 C8 21 13 66 01 06 11 59 00 01 28`, JavaCard/GP — CPLC читается),
+    но **ни одна установленная библиотека PKCS#11 не показывает на ней токен** (`asepkcs` 0 слотов,
+    `jcPKCS11-2` 32 фантомных слота `tokenPresent=False`, `jcPKCS11ds` 0, `isbc` видит считыватель, но
+    `tokenPresent=False`). Обслуживается только минидрайвером Microsoft Base Smart Card Crypto Provider.
+    - **CryptoPro на ней контейнер не создаёт:** `csptest -newkeyset -silent` падает на `AcquireContext`
+      с `0x80090016 NTE_KEYSET_NOT_DEF` (на HDIMAGE тот же `-silent` проходит AcquireContext и падает
+      позже, на GenKey, с `0x80090022` — разница кодов доказывает отказ на уровне носителя). Контейнеров
+      КриптоПро на карте нет (`enum_cont -fqcn` — только HDIMAGE).
+    - **Граница доказана построением:** экспортировать нечего — ни ключа КриптоПро, ни PKCS#11-объекта.
+    - **Сделано:** новый Core-класс `PcscReaders` (пассивный `SCardGetStatusChange`, без подключения к
+      карте) + `Uncovered`/`CarrierHintKey`; `deps`/`list`/`token` теперь показывают такую карту с
+      именем, вендором и ATR вместо «токенов нет (драйверы Рутокен)». `token` fail-closed (код 2).
+      Обезличенная документация — [docs/hardware/jacarta-idprotect.md](docs/hardware/jacarta-idprotect.md).
+      Не путать с JaCarta PRO (ГОСТ, ключ по APDU) и JaCarta LT (PR #44, `24DC:0102`, модель `JaCarta DS`).
+
 ## Git-процесс
 - Приватный репозиторий `krotname/cryptopro-key-export`, ветка `main`.
 - Перед завершением: `dotnet build -warnaserror` + `dotnet test` + `--selftest` OK + `git status` чистый + зелёный CI на PR.

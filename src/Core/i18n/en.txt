@@ -341,3 +341,15 @@ cli.usage.license = install a license file or show its status
 btn.license = License…
 tip.license = Install a license file (.jws) and verify it for this machine.\nWithout a valid license, private-key export operations are unavailable.\nThis machine’s fingerprint (to obtain a license) is shown by the fingerprint command and at startup.
 dlg.license.title = Choose license file
+
+# --- диагностика PC/SC ---
+cli.pcsc.uncovered = Cards present in PC/SC readers but not shown as a PKCS#11 token:
+cli.pcsc.line = {0} [{1}] — card present, ATR {2}
+cli.pcsc.hint = Such a card is not a PKCS#11 token; if it is not a CryptoPro carrier either, there is nothing to export.
+carrier.jacarta = JaCarta / Aladdin
+carrier.rutoken = Rutoken
+carrier.esmart = ESMART
+carrier.etoken = eToken / SafeNet
+carrier.unknown = unknown carrier
+pcsc.contextfail = PC/SC: could not connect to the smart card service ({0})
+pcsc.statusfail = PC/SC: could not read reader status ({0})

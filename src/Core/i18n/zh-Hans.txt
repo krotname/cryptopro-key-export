@@ -341,3 +341,15 @@ cli.usage.license = 安装许可证文件或显示其状态
 btn.license = 许可证…
 tip.license = 安装许可证文件 (.jws) 并针对本机验证。\n没有有效许可证时，私钥导出操作不可用。\n本机指纹（用于获取许可证）可用 fingerprint 命令并在启动时显示。
 dlg.license.title = 选择许可证文件
+
+# --- диагностика PC/SC ---
+cli.pcsc.uncovered = 存在于 PC/SC 读卡器中但未显示为 PKCS#11 令牌的卡：
+cli.pcsc.line = {0} [{1}] — 卡已插入，ATR {2}
+cli.pcsc.hint = 此类卡不是 PKCS#11 令牌；若也不是 CryptoPro 载体，则无可导出内容。
+carrier.jacarta = JaCarta / Aladdin
+carrier.rutoken = Rutoken
+carrier.esmart = ESMART
+carrier.etoken = eToken / SafeNet
+carrier.unknown = 未知载体
+pcsc.contextfail = PC/SC：无法连接到智能卡服务 ({0})
+pcsc.statusfail = PC/SC：无法读取读卡器状态 ({0})
