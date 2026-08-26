@@ -25,7 +25,7 @@
 ## Сборка и тесты
 ```bash
 dotnet build CryptoProExport.slnx -c Release -warnaserror   # 0 ошибок, 0 предупреждений
-dotnet test  CryptoProExport.slnx -c Release --no-build     # 438 тестов xunit
+dotnet test  CryptoProExport.slnx -c Release --no-build     # 480 тестов xunit
 ```
 Тесты покрывают чистую логику: кодеки cp1251/cp866, `name.key`, аргументы p12utility,
 разбор разрядности PE, наличие вшитых зависимостей, `ContainerStore` (во временной папке —
@@ -629,7 +629,8 @@ GitHub Actions **работает** (`.github/workflows/ci.yml`). Прежнее
 
 41. **Рутокен S и JaCarta LT получили production APDU и физический E2E 26.08.2026.**
     - Точные носители: S `VID_0A89/PID_0020`, reader `Aktiv Co. ruToken 0`, model
-      `Rutoken S`, fw 36.0; LT `VID_24DC/PID_0102`, reader `ARDS ZAO JaCarta LT 0`,
+      `Rutoken S`, fw 36.0; LT `VID_24DC/PID_0102`, reader `ARDS ZAO JaCarta LT 0`
+      (в Unified Client 3.3 — `Aladdin R.D. JaCarta LT 0`),
       model `JaCarta DS`/Datastore. Подключённый Рутокен ЭЦП `VID_0A89/PID_0030`
       был исключён из всех записывающих команд.
     - Для S `rtCOMLite` не использовать: поштучный файловый API отвечает
@@ -647,6 +648,33 @@ GitHub Actions **работает** (`.github/workflows/ci.yml`). Прежнее
       HDIMAGE-установки: `0x0013089C`/`0x0012289C`. Обменный PFX создан `certmgr` и
       принят `certutil -dump`. Подробности: `docs/apdu/rutoken-s.md` и
       `docs/hardware/jacarta-lt.md`.
+
+42. **Два ESMART получили production APDU и полный физический E2E 27.08.2026.**
+    - Точные расходные носители: ESMART Token USB 64K `VID_072F/PID_90DE`, reader
+      `ESMART Token USB 64K 0`; ESMART Token `VID_2CE4/PID_7479`, reader
+      `ISBC ESMART Token 0`. Оба T=0. Полные серийные номера и PIN не сохранять.
+    - Системный ESMART PKI Client 4.17.4 предоставляет архитектурные пары
+      `isbc_pkcs11_main.dll` + `isbc_esmart_token_mod.dll`. Main без companion считать
+      нерабочим; случайные копии из каталогов сторонних программ не загружать.
+    - PKCS#11 на обоих прошёл CRUD объектов и RSA-2048 sign/verify. Созданный private key
+      `CKA_EXTRACTABLE=false`, `CKA_NEVER_EXTRACTABLE=true`; GOST keygen через общий
+      PKCS#11 отвечает `CKR_MECHANISM_INVALID`. Это не противоречит извлечению файлового
+      контейнера CSP: это разные виды ключевого хранения.
+    - Рабочий пассивный путь — `EsmartApdu`: `SELECT MF` → `7F01`, слоты F100…F900,
+      FID suffix `06/03/02/01/12/11`, FCP size big-endian, VERIFY reference 81,
+      READ BINARY. EF имеет маркер `01` перед DER и нулевой хвост; маркер снимается
+      только при точном `01 30`. Backend не содержит команд записи.
+    - На каждом носителе создан собственный синтетический двухключевой CSP-контейнер.
+      `csptest -keycopy` дал `0x8009000B`; production `tokenfull` прочитал все 6 файлов,
+      `p12utility` поднял обе пары до `0x0013089C`/`0x0012289C`, HDIMAGE виден CSP,
+      PFX содержит keybag и certificate bag по OpenSSL.
+    - Маршрутизация fail-closed: одного похожего reader недостаточно — нужны одновременно
+      `Kind=Esmart`, производитель ISBC/ESMART из PKCS#11 и согласованная model/reader.
+      Подробности: `docs/hardware/esmart-usb64k.md`.
+    - На JaCarta LT в том же сеансе Unified Client 3.3 установил admin PIN форматированием;
+      `C_InitPIN` в общем и STORAGE-модулях не поддержан, а `C_SetPIN(admin,newUser)`
+      штатно установил пользовательский PIN. После подтверждённого `CKU_USER`-login LT
+      повторно прошёл полный `tokenfull → HDIMAGE → PFX`.
 
 ## Git-процесс
 - Приватный репозиторий `krotname/cryptopro-key-export`, ветка `main`.
@@ -684,10 +712,12 @@ GitHub Actions **работает** (`.github/workflows/ci.yml`). Прежнее
 
 ## Первый шаг для следующего агента
 
-Пассивные production-пути закрыты: Рутокен S, Рутокен Lite и JaCarta LT снимаются
-по отдельным APDU-бэкендам. S и LT 26.08.2026 прошли строгий физический E2E на
-синтетических неэкспортируемых двухключевых контейнерах до HDIMAGE и PFX (п. 41).
-Не возвращай S к `rtCOMLite` и не маршрутизируй LT через PRO/Lite-протокол.
+Пассивные production-пути закрыты: Рутокен S, Рутокен Lite, JaCarta LT и ESMART
+снимаются по отдельным APDU-бэкендам. S/LT 26–27.08.2026 и оба ESMART 27.08.2026
+прошли строгий физический E2E на синтетических неэкспортируемых двухключевых
+контейнерах до HDIMAGE и PFX (пп. 41–42). Не возвращай S к `rtCOMLite`, не
+маршрутизируй LT через PRO/Lite-протокол и не отправляй ESMART APDU без строгих
+PKCS#11-свидетельств ISBC.
 
 **Рутокен ЭЦП** (п. 22–23, 25) остаётся отдельной отрицательной границей:
 PKCS#11 отдаёт публичный сертификат без PIN, но закрытый ключ аппаратно неизвлекаем.
@@ -713,9 +743,9 @@ PKCS#11 отдаёт публичный сертификат без PIN, но з
 ключ). Метод и разбор — `docs/apdu/jacarta-pro.md`. Заодно там же рецепт, как не обмануться:
 контейнер с уже снятым запретом копируется с любого носителя, и на нём проверять бессмысленно.
 
-Незакрытое по токенам: отдельные production-бэкенды для исследованной JaCarta PRO,
-JaCarta-2 ГОСТ, eToken и ESMART — только при появлении точного живого носителя.
+Незакрытое по токенам: отдельный production-бэкенд для исследованной JaCarta PRO;
+JaCarta-2 ГОСТ и eToken — только при появлении точного живого носителя.
 
-Для будущей регрессии на S/LT не копируй готовый экспортируемый ключ: создавай контейнер
+Для будущей регрессии на S/LT/ESMART не копируй готовый экспортируемый ключ: создавай контейнер
 прямо на точном reader, сначала доказывай отсутствие `CRYPT_EXPORT`, а после E2E удаляй
 только своё синтетическое имя. Рутокен ЭЦП и пользовательские контейнеры не трогать.

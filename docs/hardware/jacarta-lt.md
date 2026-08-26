@@ -1,9 +1,9 @@
 # JaCarta LT (VID_24DC/PID_0102): прямой APDU-экспорт
 
 Этот документ относится только к JaCarta LT с USB `VID_24DC/PID_0102`, проверенной
-26.08.2026. Серийный номер и постоянные пользовательские данные здесь не сохраняются.
-Проверенный PC/SC reader в текущем драйвере — `ARDS ZAO JaCarta LT 0`; в других
-версиях драйвера производитель в имени может отображаться как `Aladdin R.D.`.
+26.08.2026 и повторно 27.08.2026. Серийный номер и постоянные пользовательские данные
+здесь не сохраняются. Проверенный PC/SC reader в Unified Client 3.3 —
+`Aladdin R.D. JaCarta LT 0`; прежний драйвер показывал `ARDS ZAO JaCarta LT 0`.
 
 ## Итог
 
@@ -29,7 +29,7 @@ JaCarta PRO для LT не используется.
 | Уровень | Проверенное значение |
 |---|---|
 | USB | `VID_24DC`, `PID_0102`, CCID |
-| PC/SC | `ARDS ZAO JaCarta LT 0`, T=1 |
+| PC/SC | `Aladdin R.D. JaCarta LT 0` (`ARDS ZAO…` в прежнем драйвере), T=1 |
 | PKCS#11 | `jcPKCS11-2.dll`, model `JaCarta DS` |
 | Апплет | Datastore, AID `A000000448000301` |
 | Назначение | пассивный носитель контейнеров программного СКЗИ |
@@ -66,7 +66,7 @@ JaCarta LT не является JaCarta PRO: у PRO другой PKCS#11 model 
 полную пару `primary*.key` + `masks*.key`; половина пары считается повреждением и
 блокирует результат.
 
-## Физический E2E 26.08.2026
+## Физический E2E 26–27.08.2026
 
 На точном LT был создан отдельный синтетический двухключевой контейнер КриптоПро.
 До чтения оба ключа были неэкспортируемыми:
@@ -92,6 +92,26 @@ CSP. Новый APDU-бэкенд прочитал полный набор: `nam
 Другие носители, включая подключённый Рутокен ЭЦП, в записывающих командах не
 используются.
 
+### Независимый повтор 27.08.2026
+
+Расходный LT был заново отформатирован в Unified Client 3.3.5.3866. Общий и отдельный
+STORAGE PKCS#11-модули честно возвращают `CKR_FUNCTION_NOT_SUPPORTED` на `C_InitPIN`;
+штатный для Datastore вызов `C_SetPIN` с действующим административным PIN установил
+новый пользовательский PIN, после чего реальный `CKU_USER`-login прошёл с чистыми
+счётчиками. Случайные значения PIN после этого не проверялись.
+
+На свежем двухключевом контейнере production `tokenfull` прочитал `name.key` 13 байт,
+`header.key` 1257 байт, обе `primary` по 70 байт и обе `masks` по 56 байт. Затем:
+
+- `p12utility --cprepair --keyexport --keyexport_sg` — код 0;
+- HDIMAGE-копия видна CSP;
+- обмен `0x0013089C`, подпись `0x0012289C`;
+- `topfx` подтвердил ссылку сертификата на контейнер и создал PFX;
+- OpenSSL увидел MAC, `Shrouded Keybag` и `Certificate bag`.
+
+Это свежий полный прогон на текущем драйвере, а не повторное использование артефактов
+проверки 26.08.
+
 ## Безопасность PIN
 
 PIN не подбирается. Явно введённое значение используется один раз. Заводское значение
@@ -102,6 +122,7 @@ PIN не подбирается. Явно введённое значение и
 ## Первичные источники
 
 - [Карточка JaCarta LT](https://www.aladdin-rd.ru/catalog/jacarta/jacarta-lt/)
+- [Единый Клиент JaCarta 3.3 — руководство администратора](https://www.aladdin-rd.ru/upload/downloads/JaCarta_UC/jacarta-3.3/windows/documentation/JaCarta_UC_3.3_Admin_Guide_Windows.pdf)
 - [PKCS#11: Datastore входит в JaCarta LT](https://developer.aladdin-rd.ru/pkcs11/2.4.1/guide/applets.html)
 - [Описание JaCarta File System](https://developer.aladdin-rd.ru/jcfs/1.1.0.57/description.html)
 - [jcFS: reader и апплет](https://developer.aladdin-rd.ru/jcfs/1.1.0.57/api/readers.html)
