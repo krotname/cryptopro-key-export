@@ -341,3 +341,15 @@ cli.usage.license = ライセンスファイルをインストール、または
 btn.license = ライセンス…
 tip.license = ライセンスファイル (.jws) をインストールし、このマシン用に検証します。\n有効なライセンスがないと、秘密鍵のエクスポート操作は利用できません。\nこのマシンのフィンガープリント（ライセンス取得用）は fingerprint コマンドと起動時に表示されます。
 dlg.license.title = ライセンスファイルを選択
+
+# --- диагностика PC/SC ---
+cli.pcsc.uncovered = PC/SCリーダーに存在するがPKCS#11トークンとして表示されないカード:
+cli.pcsc.line = {0} [{1}] — カードあり、ATR {2}
+cli.pcsc.hint = このようなカードはPKCS#11トークンではありません。CryptoProの媒体でもない場合、エクスポートするものはありません。
+carrier.jacarta = JaCarta / Aladdin
+carrier.rutoken = Rutoken
+carrier.esmart = ESMART
+carrier.etoken = eToken / SafeNet
+carrier.unknown = 不明な媒体
+pcsc.contextfail = PC/SC: スマートカードサービスに接続できませんでした ({0})
+pcsc.statusfail = PC/SC: リーダーの状態を読み取れませんでした ({0})

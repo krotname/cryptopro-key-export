@@ -341,3 +341,15 @@ cli.usage.license = installa un file di licenza o mostra il suo stato
 btn.license = Licenza…
 tip.license = Installa un file di licenza (.jws) e verificalo per questa macchina.\nSenza una licenza valida, le operazioni di esportazione della chiave privata non sono disponibili.\nL’impronta di questa macchina (per ottenere una licenza) è mostrata dal comando fingerprint e all’avvio.
 dlg.license.title = Scegli il file di licenza
+
+# --- диагностика PC/SC ---
+cli.pcsc.uncovered = Carte presenti nei lettori PC/SC ma non mostrate come token PKCS#11:
+cli.pcsc.line = {0} [{1}] — carta presente, ATR {2}
+cli.pcsc.hint = Una carta simile non è un token PKCS#11; se non è nemmeno un supporto CryptoPro, non c'è nulla da esportare.
+carrier.jacarta = JaCarta / Aladdin
+carrier.rutoken = Rutoken
+carrier.esmart = ESMART
+carrier.etoken = eToken / SafeNet
+carrier.unknown = supporto sconosciuto
+pcsc.contextfail = PC/SC: impossibile connettersi al servizio smart card ({0})
+pcsc.statusfail = PC/SC: impossibile leggere lo stato dei lettori ({0})

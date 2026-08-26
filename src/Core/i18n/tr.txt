@@ -341,3 +341,15 @@ cli.usage.license = lisans dosyası yükle veya durumunu göster
 btn.license = Lisans…
 tip.license = Bir lisans dosyası (.jws) yükleyin ve bu makine için doğrulayın.\nGeçerli bir lisans olmadan özel anahtar dışa aktarma işlemleri kullanılamaz.\nBu makinenin parmak izini (lisans almak için) fingerprint komutu ve başlangıç gösterir.
 dlg.license.title = Lisans dosyası seç
+
+# --- диагностика PC/SC ---
+cli.pcsc.uncovered = PC/SC okuyucularında bulunan ancak PKCS#11 belirteci olarak gösterilmeyen kartlar:
+cli.pcsc.line = {0} [{1}] — kart mevcut, ATR {2}
+cli.pcsc.hint = Böyle bir kart PKCS#11 belirteci değildir; CryptoPro taşıyıcısı da değilse dışa aktarılacak bir şey yoktur.
+carrier.jacarta = JaCarta / Aladdin
+carrier.rutoken = Rutoken
+carrier.esmart = ESMART
+carrier.etoken = eToken / SafeNet
+carrier.unknown = bilinmeyen taşıyıcı
+pcsc.contextfail = PC/SC: akıllı kart hizmetine bağlanılamadı ({0})
+pcsc.statusfail = PC/SC: okuyucu durumu okunamadı ({0})

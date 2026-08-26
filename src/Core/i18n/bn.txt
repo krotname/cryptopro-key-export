@@ -341,3 +341,15 @@ cli.usage.license = একটি লাইসেন্স ফাইল ইনস
 btn.license = লাইসেন্স…
 tip.license = একটি লাইসেন্স ফাইল (.jws) ইনস্টল করুন এবং এই মেশিনের জন্য যাচাই করুন।\nবৈধ লাইসেন্স ছাড়া, প্রাইভেট কী রপ্তানির কাজ উপলব্ধ নয়।\nএই মেশিনের ফিঙ্গারপ্রিন্ট (লাইসেন্স পেতে) fingerprint কমান্ড এবং শুরুতে দেখা যায়।
 dlg.license.title = লাইসেন্স ফাইল নির্বাচন করুন
+
+# --- диагностика PC/SC ---
+cli.pcsc.uncovered = PC/SC রিডারে উপস্থিত কিন্তু PKCS#11 টোকেন হিসেবে দেখানো হয়নি এমন কার্ড:
+cli.pcsc.line = {0} [{1}] — কার্ড উপস্থিত, ATR {2}
+cli.pcsc.hint = এমন কার্ড PKCS#11 টোকেন নয়; যদি এটি CryptoPro বাহকও না হয়, তবে রপ্তানি করার কিছু নেই।
+carrier.jacarta = JaCarta / Aladdin
+carrier.rutoken = Rutoken
+carrier.esmart = ESMART
+carrier.etoken = eToken / SafeNet
+carrier.unknown = অজানা বাহক
+pcsc.contextfail = PC/SC: স্মার্ট কার্ড পরিষেবায় সংযোগ করা যায়নি ({0})
+pcsc.statusfail = PC/SC: রিডারের অবস্থা পড়া যায়নি ({0})

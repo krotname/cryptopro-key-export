@@ -106,6 +106,10 @@ namespace CryptoProExport.App
                                 Out("    " + DescribeTokenEntry(c));
                         }
 
+                        // Карты, стоящие в PC/SC, но не показанные PKCS#11 — иначе «токенов нет»
+                        // читается как «носитель не вставлен», хотя карта физически стоит.
+                        ReportUncoveredCards(tokens);
+
                         Out(Strings.Get("cli.list.tokens"));
                         var exp = new RutokenExporter
                         {
@@ -123,7 +127,14 @@ namespace CryptoProExport.App
                     case "token":
                     {
                         var tokens = Pkcs11Token.Enumerate(readContainers: true, log: Out);
-                        if (tokens.Count == 0) { Out(Strings.Get("cli.token.none")); return 2; }
+                        if (tokens.Count == 0)
+                        {
+                            Out(Strings.Get("cli.token.none"));
+                            // Не молчим о карте, которую PKCS#11 не показал: возможно, носитель
+                            // стоит, но обслуживается минидрайвером и токеном не является.
+                            ReportUncoveredCards(tokens);
+                            return 2;
+                        }
                         string outDir = args.Length > 1 ? args[1] : null;
                         bool anySaveFailed = false;
                         bool anyCertificate = false;
@@ -368,6 +379,28 @@ namespace CryptoProExport.App
                 Err(Strings.Format("cli.failure", ex.Message));
                 return 3;
             }
+        }
+
+        /// <summary>
+        /// Показать карты, которые физически стоят в считывателях PC/SC, но которых нет среди
+        /// перечисленных PKCS#11-токенов. Это честно отличает «носитель не вставлен» от «носитель
+        /// есть, но не является поддерживаемым контейнером» (например, JaCarta на платформе Athena
+        /// IDProtect: она работает через минидрайвер Microsoft, и ни одна vendor-библиотека PKCS#11
+        /// её как токен не показывает). Только диагностика: путь снятия ключа отсюда не выбирается.
+        /// </summary>
+        private static void ReportUncoveredCards(List<Pkcs11TokenInfo> tokens)
+        {
+            var pcsc = PcscReaders.List(m => Out("[PC/SC] " + m));
+            var readers = new List<string>();
+            foreach (var t in tokens) if (t?.Reader != null) readers.Add(t.Reader);
+            var uncovered = PcscReaders.Uncovered(pcsc, readers);
+            if (uncovered.Count == 0) return;
+
+            Out(Strings.Get("cli.pcsc.uncovered"));
+            foreach (var r in uncovered)
+                Out("  " + Strings.Format("cli.pcsc.line",
+                    r.Name, Strings.Get(PcscReaders.CarrierHintKey(r.Name)), r.Atr ?? "?"));
+            Out("  " + Strings.Get("cli.pcsc.hint"));
         }
 
         /// <summary>

@@ -341,3 +341,15 @@ cli.usage.license = pasang berkas lisensi atau tampilkan statusnya
 btn.license = Lisensi…
 tip.license = Pasang berkas lisensi (.jws) dan verifikasi untuk mesin ini.\nTanpa lisensi yang valid, operasi ekspor kunci privat tidak tersedia.\nSidik mesin ini (untuk memperoleh lisensi) ditampilkan oleh perintah fingerprint dan saat mulai.
 dlg.license.title = Pilih berkas lisensi
+
+# --- диагностика PC/SC ---
+cli.pcsc.uncovered = Kartu ada di pembaca PC/SC tetapi tidak ditampilkan sebagai token PKCS#11:
+cli.pcsc.line = {0} [{1}] — kartu ada, ATR {2}
+cli.pcsc.hint = Kartu seperti itu bukan token PKCS#11; jika juga bukan pembawa CryptoPro, tidak ada yang bisa diekspor.
+carrier.jacarta = JaCarta / Aladdin
+carrier.rutoken = Rutoken
+carrier.esmart = ESMART
+carrier.etoken = eToken / SafeNet
+carrier.unknown = pembawa tidak dikenal
+pcsc.contextfail = PC/SC: tidak dapat terhubung ke layanan kartu pintar ({0})
+pcsc.statusfail = PC/SC: tidak dapat membaca status pembaca ({0})

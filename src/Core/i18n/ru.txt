@@ -343,3 +343,15 @@ cli.usage.license = установить файл лицензии или пок
 btn.license = Лицензия…
 tip.license = Установить файл лицензии (.jws) и проверить его для этой машины.\nБез действительной лицензии операции экспорта закрытого ключа недоступны.\nОтпечаток этой машины для получения лицензии — команда fingerprint или статус при запуске.
 dlg.license.title = Выбор файла лицензии
+
+# --- диагностика PC/SC ---
+cli.pcsc.uncovered = Карты в считывателях PC/SC без PKCS#11-токена:
+cli.pcsc.line = {0} [{1}] — карта вставлена, ATR {2}
+cli.pcsc.hint = Такая карта не является PKCS#11-токеном; если это и не носитель КриптоПро, экспортировать нечего.
+carrier.jacarta = JaCarta / Aladdin
+carrier.rutoken = Рутокен
+carrier.esmart = ESMART
+carrier.etoken = eToken / SafeNet
+carrier.unknown = неизвестный носитель
+pcsc.contextfail = PC/SC: не удалось подключиться к службе смарт-карт ({0})
+pcsc.statusfail = PC/SC: не удалось прочитать состояние считывателей ({0})

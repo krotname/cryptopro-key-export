@@ -341,3 +341,15 @@ cli.usage.license = 라이선스 파일 설치 또는 상태 표시
 btn.license = 라이선스…
 tip.license = 라이선스 파일(.jws)을 설치하고 이 컴퓨터에 대해 확인합니다.\n유효한 라이선스가 없으면 개인 키 내보내기 작업을 사용할 수 없습니다.\n이 컴퓨터의 지문(라이선스 취득용)은 fingerprint 명령과 시작 시 표시됩니다.
 dlg.license.title = 라이선스 파일 선택
+
+# --- диагностика PC/SC ---
+cli.pcsc.uncovered = PC/SC 리더에 있지만 PKCS#11 토큰으로 표시되지 않는 카드:
+cli.pcsc.line = {0} [{1}] — 카드 있음, ATR {2}
+cli.pcsc.hint = 이러한 카드는 PKCS#11 토큰이 아닙니다. CryptoPro 매체도 아니라면 내보낼 것이 없습니다.
+carrier.jacarta = JaCarta / Aladdin
+carrier.rutoken = Rutoken
+carrier.esmart = ESMART
+carrier.etoken = eToken / SafeNet
+carrier.unknown = 알 수 없는 매체
+pcsc.contextfail = PC/SC: 스마트 카드 서비스에 연결할 수 없습니다 ({0})
+pcsc.statusfail = PC/SC: 리더 상태를 읽을 수 없습니다 ({0})
