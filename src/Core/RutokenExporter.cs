@@ -147,8 +147,9 @@ namespace CryptoProExport
         /// <summary>
         /// Нужно ли обходить файловую память этого считывателя.
         ///
-        /// Обход смарт-карточных Рутокенов не просто бесполезен (файлов контейнера там нет,
-        /// AGENTS пп. 20, 22) — он <b>убивает процесс</b>. На Рутокен ЭЦП 3.0 (прошивка 30.02)
+        /// Обход подтверждённых Рутокенов не просто бесполезен (для S есть прямой APDU,
+        /// у смарт-карточных моделей файлов контейнера этим API нет) — он может
+        /// <b>убить процесс</b>. На Рутокен ЭЦП 3.0 (прошивка 30.02)
         /// в каталоге <c>/4096/4097/</c> лежит файл 256 байт, и <c>rtISCard::ReadBinary</c> на нём
         /// рушит кучу процесса (0xC0000374) прямо внутри нативного вызова — как SAFEARRAY-методы
         /// из п. 19, и так же не ловится <c>catch</c>. На прежних ЭЦП 2.0 и Lite файлов было ноль,
@@ -170,7 +171,8 @@ namespace CryptoProExport
             if (skipReaders != null && skipReaders.Contains(readerName)) return false;
             if (Pkcs11Token.HasUnsafeForeignFileWalkEvidence(readerName)) return false;
             RutokenKind kind = Pkcs11Token.Classify(readerName);
-            return kind != RutokenKind.RutokenEcp && kind != RutokenKind.RutokenLite
+            return kind != RutokenKind.RutokenS
+                && kind != RutokenKind.RutokenEcp && kind != RutokenKind.RutokenLite
                 && kind != RutokenKind.JaCartaLt
                 && kind != RutokenKind.Other;
         }

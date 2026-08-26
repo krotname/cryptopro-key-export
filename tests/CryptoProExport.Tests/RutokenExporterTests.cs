@@ -29,7 +29,7 @@ namespace CryptoProExport.Tests
         // (0xC0000374), а контейнеров в файловой памяти у них всё равно нет.
         [InlineData("Aktiv Rutoken ECP 0", false)]
         [InlineData("Aktiv Rutoken lite 0", false)]
-        [InlineData("Aktiv ruToken 0", true)]      // Рутокен S — ровно тот случай, ради которого обход и нужен
+        [InlineData("Aktiv ruToken 0", false)]     // Рутокен S читает прямой APDU; rtCOMLite на нём аварийный
         [InlineData("Generic Smart Card Reader 0", true)]
         // Носитель чужого вендора: файловая память rtCOMLite — API Рутокен S, к нему неприменима.
         [InlineData("Aladdin Token JC 0", false)]

@@ -11,13 +11,13 @@ namespace CryptoProExport
     /// <summary>Семейство подключённого токена — по нему выбирается путь снятия контейнера.</summary>
     public enum RutokenKind
     {
-        /// <summary>Рутокен S / старые: файловая память доступна через rtCOMLite.</summary>
+        /// <summary>Рутокен S: файловая память читается прямым PC/SC APDU.</summary>
         RutokenS,
         /// <summary>Рутокен Lite: смарт-карточный профиль, файлы через rtCOMLite не видны.</summary>
         RutokenLite,
         /// <summary>Рутокен ЭЦП / ЭЦП 2.0: смарт-карточный профиль; контейнер виден как PKCS#11 CKO_DATA.</summary>
         RutokenEcp,
-        /// <summary>JaCarta LT: пассивный носитель с апплетом Datastore; экспортный путь пока не доказан.</summary>
+        /// <summary>JaCarta LT: пассивный носитель; файлы контейнера читаются прямым APDU.</summary>
         JaCartaLt,
         /// <summary>Токен другого вендора (JaCarta PRO, eToken…) — распознан, но отдельного безопасного пути нет.</summary>
         Other,
@@ -87,6 +87,7 @@ namespace CryptoProExport
     public static class Pkcs11Token
     {
         private const string RutokenDll = "rtPKCS11ECP.dll";
+        private const string RutokenLegacyDll = "rtPKCS11.dll";
         private const string JaCartaDll = "jcPKCS11-2.dll";
         private const string CryptoProApp = "CryptoPro CSP";
 
@@ -102,6 +103,10 @@ namespace CryptoProExport
             new (string Vendor, string Dll)[]
             {
                 ("Rutoken", RutokenDll),
+                // Старый Rutoken S не показывается ECP-библиотеке, но штатный драйвер
+                // устанавливает отдельный rtPKCS11.dll. Дедупликация по reader ниже не
+                // даст двум Rutoken-библиотекам показать один носитель дважды.
+                ("Rutoken S", RutokenLegacyDll),
                 ("JaCarta", JaCartaDll),
             };
 
@@ -136,7 +141,8 @@ namespace CryptoProExport
                 // Каталог установки перечисляется только для Рутокена: JaCarta Unified Client
                 // кладёт jcPKCS11-2.dll исключительно в системный каталог (проверено на машине,
                 // где клиент установлен, — в Program Files библиотеки нет).
-                if (!string.Equals(dll, RutokenDll, StringComparison.OrdinalIgnoreCase)) yield break;
+                if (!string.Equals(dll, RutokenDll, StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(dll, RutokenLegacyDll, StringComparison.OrdinalIgnoreCase)) yield break;
 
                 foreach (var pf in new[]
                 {
@@ -335,8 +341,10 @@ namespace CryptoProExport
         }
 
         /// <summary>
-        /// Имена считывателей, чью файловую память обходить нельзя: смарт-карточные Рутокены
-        /// (ЭЦП, Lite) и носители чужих вендоров — см. <see cref="RutokenExporter.ShouldWalk"/>.
+        /// Имена считывателей, которые нельзя отдавать rtCOMLite: смарт-карточные Рутокены,
+        /// чужие вендоры и Rutoken S, уже подтверждённый PKCS#11. Для S теперь используется
+        /// прямой APDU: rtCOMLite на непустом токене либо отвечает Unsupported function,
+        /// либо рушит кучу процесса.
         ///
         /// Чужие вендоры обязаны попадать сюда именно из PKCS#11: <c>ShouldWalk</c> получает только
         /// имя считывателя, а оно бывает безликим (<c>ACS ACR38U 0</c>), и тогда классификация по
@@ -354,7 +362,8 @@ namespace CryptoProExport
             foreach (var t in tokens ?? new List<Pkcs11TokenInfo>())
             {
                 if (t == null || string.IsNullOrEmpty(t.Reader)) continue;
-                if (t.Kind == RutokenKind.RutokenEcp || t.Kind == RutokenKind.RutokenLite
+                if (t.Kind == RutokenKind.RutokenS
+                    || t.Kind == RutokenKind.RutokenEcp || t.Kind == RutokenKind.RutokenLite
                     || t.Kind == RutokenKind.JaCartaLt
                     || t.Kind == RutokenKind.Other
                     || HasUnsafeForeignFileWalkEvidence(t.Model))

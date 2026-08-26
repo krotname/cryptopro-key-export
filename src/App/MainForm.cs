@@ -46,10 +46,10 @@ namespace CryptoProExport.App
             public byte[] Certificate;
         }
 
-        private sealed class LiteContainerSelection
+        private sealed class ApduContainerSelection
         {
             public Pkcs11TokenInfo Token;
-            public LiteContainerRef Container;
+            public DirectTokenContainerRef Container;
         }
 
         private sealed class TokenDeviceSelection { }
@@ -58,7 +58,7 @@ namespace CryptoProExport.App
         {
             public string Name;
             public TokenCertificateSelection Token;
-            public LiteContainerSelection Lite;
+            public ApduContainerSelection Apdu;
             public RutokenContainer Direct;
         }
 
@@ -454,19 +454,21 @@ namespace CryptoProExport.App
                     hasDirectRow = true;
                 }
 
-                // Lite хранит шесть файлов контейнера в файловой памяти карты. PKCS#11 их
-                // обычно не показывает, поэтому GUI перечисляет имена без PIN напрямую по APDU.
-                if (t.Kind == RutokenKind.RutokenLite)
+                // Пассивные Rutoken S/Lite и JaCarta LT хранят шесть файлов контейнера,
+                // которые PKCS#11 обычно не показывает. Имена перечисляем без PIN
+                // только проверенным APDU конкретного семейства.
+                if (DirectTokenApdu.Supports(t.Kind))
                 {
                     try
                     {
-                        var lite = new RutokenLiteApdu { Log = m => Log("[APDU] " + m) };
-                        foreach (var c in lite.ListContainers(t.Reader))
+                        var direct = new DirectTokenApdu
+                            { Log = m => Log("[APDU] " + m), Cancel = cancel };
+                        foreach (var c in direct.ListContainers(t))
                         {
                             AddRow($"[APDU] {t.Reader} [{Pkcs11Token.KindName(t.Kind)}]",
                                    c.Name ?? Strings.Get("log.container.unnamed"),
                                    $"APDU · {Strings.Format("cli.token.pin", Pkcs11Token.PinState(t))}",
-                                   new LiteContainerSelection { Token = t, Container = c });
+                                   new ApduContainerSelection { Token = t, Container = c });
                             hasDirectRow = true;
                         }
                     }
@@ -548,16 +550,16 @@ namespace CryptoProExport.App
             string dest = TextOf(_txtDest).Trim();
             if (string.IsNullOrEmpty(dest)) { Log(Strings.Get("log.need.dest")); return; }
             ContainerSelection selected = SelectedContainer();
-            if (selected != null && selected.Lite == null && selected.Direct == null)
+            if (selected != null && selected.Apdu == null && selected.Direct == null)
             {
                 Log(Strings.Get("log.export.directonly"));
                 return;
             }
             var pipe = new ExportPipeline(NullIfEmpty(TextOf(_txtP12))) { Log = Log, Cancel = cancel };
             int saved;
-            if (selected?.Lite != null)
+            if (selected?.Apdu != null)
             {
-                pipe.ExportLiteContainer(selected.Lite.Token, selected.Lite.Container,
+                pipe.ExportDirectContainer(selected.Apdu.Token, selected.Apdu.Container,
                     dest, NullIfEmpty(TextOf(_txtPin)));
                 saved = 1;
             }
@@ -614,7 +616,7 @@ namespace CryptoProExport.App
             string dest = TextOf(_txtDest).Trim();
             if (string.IsNullOrEmpty(dest)) { Log(Strings.Get("log.need.dest")); return; }
             ContainerSelection selected = SelectedContainer();
-            if (selected != null && selected.Lite == null && selected.Direct == null)
+            if (selected != null && selected.Apdu == null && selected.Direct == null)
             {
                 Log(Strings.Get("log.export.directonly"));
                 return;
@@ -626,9 +628,9 @@ namespace CryptoProExport.App
 
             var pipe = new ExportPipeline(NullIfEmpty(TextOf(_txtP12))) { Log = Log, Cancel = cancel };
             ExportPipelineResult result;
-            if (selected?.Lite != null)
-                result = pipe.ExportLiteAndMakeExportable(
-                    selected.Lite.Token, selected.Lite.Container, dest,
+            if (selected?.Apdu != null)
+                result = pipe.ExportDirectAndMakeExportable(
+                    selected.Apdu.Token, selected.Apdu.Container, dest,
                     userPin: NullIfEmpty(TextOf(_txtPin)));
             else if (selected?.Direct != null)
                 result = pipe.ExportAndMakeExportable(selected.Direct, dest);
@@ -939,7 +941,7 @@ namespace CryptoProExport.App
             {
                 Name = deviceOnly ? null : item.SubItems[1].Text,
                 Token = item.Tag as TokenCertificateSelection,
-                Lite = item.Tag as LiteContainerSelection,
+                Apdu = item.Tag as ApduContainerSelection,
                 Direct = item.Tag as RutokenContainer,
             };
         }

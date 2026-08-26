@@ -17,8 +17,9 @@
 **Не путать** с уже описанными носителями:
 - JaCarta PRO (`docs/apdu/jacarta-pro.md`) — считыватель `Aladdin Token JC 0`, модель `PRO`, ГОСТ,
   закрытый ключ снимается по APDU. Другая карта и другой апплет.
-- JaCarta LT (PR #44) — USB `24DC:0102`, PKCS#11-модель `JaCarta DS` / Datastore. Другой USB ID и
-  другой протокол; здесь модель по семейству **не угадывается**.
+- [JaCarta LT](jacarta-lt.md) — USB `24DC:0102`, PKCS#11-модель `JaCarta DS` /
+  Datastore, отдельный поддерживаемый APDU-бэкенд. Другой USB ID и другой протокол;
+  здесь модель по семейству **не угадывается**.
 
 Exact-target закреплён по совокупности `reader + VID/PID + ATR + модель`, а не по slot index.
 

@@ -271,11 +271,11 @@ namespace CryptoProExport.Tests
 
             var set = Pkcs11Token.SmartCardReaders(tokens);
 
-            Assert.Equal(3, set.Count);
+            Assert.Equal(4, set.Count);
             Assert.Contains("Aktiv Rutoken ECP 0", set);
             Assert.Contains("Aktiv Rutoken lite 0", set);
             Assert.Contains("Aladdin R.D. JaCarta LT 0", set);
-            Assert.DoesNotContain("Aktiv ruToken 0", set);
+            Assert.Contains("Aktiv ruToken 0", set);
         }
 
         [Fact]
@@ -324,7 +324,7 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
-        public void SmartCardReaders_KeepsRutokenSFileWalk()
+        public void SmartCardReaders_RoutesConfirmedRutokenSAwayFromCrashingRtComWalk()
         {
             const string reader = "Aktiv ruToken 0";
             RutokenKind kind = Pkcs11Token.Classify("Rutoken S", "Aktiv Co.");
@@ -341,8 +341,8 @@ namespace CryptoProExport.Tests
                 },
             });
 
-            Assert.DoesNotContain(reader, set);
-            Assert.True(RutokenExporter.ShouldWalk(reader, set));
+            Assert.Contains(reader, set);
+            Assert.False(RutokenExporter.ShouldWalk(reader, set));
         }
 
         // ---------- дедупликация считывателей между библиотеками разных вендоров ----------
@@ -423,6 +423,7 @@ namespace CryptoProExport.Tests
             Assert.NotEmpty(candidates);
             Assert.All(candidates, c => Assert.True(System.IO.Path.IsPathRooted(c), c));
             Assert.Contains(candidates, c => c.EndsWith("rtPKCS11ECP.dll", StringComparison.OrdinalIgnoreCase));
+            Assert.Contains(candidates, c => c.EndsWith("rtPKCS11.dll", StringComparison.OrdinalIgnoreCase));
         }
 
         [Fact]

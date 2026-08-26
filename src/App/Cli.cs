@@ -26,6 +26,8 @@ namespace CryptoProExport.App
             ("extractcert <container> <outDir>",     "cli.usage.extractcert"),
             ("checkexport <container>",              "cli.usage.checkexport"),
             ("export <destDir> [pin]",               "cli.usage.export"),
+            ("tokenexport <reader> <outDir> [pin]", "cli.usage.tokenexport"),
+            ("tokenfull <reader> <outDir> [pin]",   "cli.usage.tokenfull"),
             ("keyexport <folder> <cert.cer> [pass]", "cli.usage.keyexport"),
             ("install <folder> [name]",              "cli.usage.install"),
             ("installed",                            "cli.usage.installed"),
@@ -48,7 +50,7 @@ namespace CryptoProExport.App
         /// и ввести лицензию.
         /// </summary>
         private static readonly string[] LicensedCommands =
-            { "export", "full", "keyexport", "extractkey", "extractpfx", "liteexport", "topfx" };
+            { "export", "tokenexport", "tokenfull", "full", "keyexport", "extractkey", "extractpfx", "liteexport", "topfx" };
 
         public static int Run(string[] args)
         {
@@ -104,6 +106,19 @@ namespace CryptoProExport.App
                             Out($"  {t.Reader} [{Pkcs11Token.KindName(t.Kind)}]");
                             foreach (var c in t.Containers)
                                 Out("    " + DescribeTokenEntry(c));
+                            if (DirectTokenApdu.Supports(t.Kind))
+                            {
+                                try
+                                {
+                                    var direct = new DirectTokenApdu { Log = m => Out("[APDU] " + m) };
+                                    foreach (var c in direct.ListContainers(t))
+                                        Out($"    [APDU {c.OutputName}] {c.Name ?? Strings.Get("log.container.unnamed")}");
+                                }
+                                catch (Exception e)
+                                {
+                                    Out("    [APDU] " + Strings.Format("log.tokens.unavailable", e.Message));
+                                }
+                            }
                         }
 
                         // Карты, стоящие в PC/SC, но не показанные PKCS#11 — иначе «токенов нет»
@@ -188,6 +203,74 @@ namespace CryptoProExport.App
                         // Ноль снятых контейнеров — не успех: скрипт иначе решил бы, что
                         // файлы на месте (тот же разбор, что у команды token в v1.4.1).
                         return saved.Count > 0 ? 0 : 2;
+                    }
+                    case "tokenexport":
+                    {
+                        if (args.Length < 3) { Usage(); return 1; }
+                        string reader = args[1];
+                        string outDir = args[2];
+                        string pin = args.Length > 3 ? args[3] : null;
+                        Pkcs11TokenInfo token = Pkcs11Token.Enumerate(readContainers: false, log: Out)
+                            .Find(candidate => string.Equals(candidate.Reader, reader,
+                                StringComparison.OrdinalIgnoreCase));
+                        if (token == null)
+                        {
+                            Err(Strings.Format("err.lite.none", reader));
+                            return 2;
+                        }
+                        if (!DirectTokenApdu.Supports(token.Kind))
+                            throw new ArgumentException(Pkcs11Token.KindName(token.Kind), nameof(reader));
+
+                        var pipeline = new ExportPipeline { Log = Out };
+                        List<DirectTokenContainerRef> containers = pipeline.Direct.ListContainers(token);
+                        if (containers.Count == 0)
+                        {
+                            Err(Strings.Format("err.lite.none", reader));
+                            return 2;
+                        }
+                        int done = 0;
+                        foreach (DirectTokenContainerRef selected in containers)
+                        {
+                            var saved = pipeline.ExportDirectContainer(token, selected, outDir, pin);
+                            Out(Strings.Format("cli.done", saved.folder));
+                            done++;
+                        }
+                        return done > 0 ? 0 : 2;
+                    }
+                    case "tokenfull":
+                    {
+                        if (args.Length < 3) { Usage(); return 1; }
+                        string reader = args[1];
+                        string outDir = args[2];
+                        string pin = args.Length > 3 ? args[3] : null;
+                        Pkcs11TokenInfo token = Pkcs11Token.Enumerate(readContainers: false, log: Out)
+                            .Find(candidate => string.Equals(candidate.Reader, reader,
+                                StringComparison.OrdinalIgnoreCase));
+                        if (token == null)
+                        {
+                            Err(Strings.Format("err.lite.none", reader));
+                            return 2;
+                        }
+                        if (!DirectTokenApdu.Supports(token.Kind))
+                            throw new ArgumentException(Pkcs11Token.KindName(token.Kind), nameof(reader));
+
+                        var pipeline = new ExportPipeline { Log = Out };
+                        List<DirectTokenContainerRef> containers = pipeline.Direct.ListContainers(token);
+                        if (containers.Count == 0)
+                        {
+                            Err(Strings.Format("err.lite.none", reader));
+                            return 2;
+                        }
+                        int exported = 0, completed = 0;
+                        foreach (DirectTokenContainerRef selected in containers)
+                        {
+                            ExportPipelineResult result = pipeline.ExportDirectAndMakeExportable(
+                                token, selected, outDir, pin);
+                            exported += result.Exported;
+                            completed += result.Completed;
+                        }
+                        Out(Strings.Format("log.exported", exported));
+                        return exported == 0 ? 2 : completed == exported ? 0 : 3;
                     }
                     case "keyexport":
                     {
