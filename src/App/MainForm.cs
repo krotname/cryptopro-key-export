@@ -464,7 +464,7 @@ namespace CryptoProExport.App
                     hasDirectRow = true;
                 }
 
-                // Пассивные Rutoken S/Lite и JaCarta LT хранят шесть файлов контейнера,
+                // Пассивные Rutoken S/Lite, JaCarta LT и ESMART хранят шесть файлов контейнера,
                 // которые PKCS#11 обычно не показывает. Имена перечисляем без PIN
                 // только проверенным APDU конкретного семейства.
                 if (DirectTokenApdu.Supports(t.Kind))

@@ -22,8 +22,8 @@ namespace CryptoProExport
     }
 
     /// <summary>
-    /// Единая маршрутизация трёх доказанных пассивных носителей: Rutoken S, Rutoken Lite
-    /// и JaCarta LT. Тип сначала подтверждается метаданными токена; APDU чужого семейства
+    /// Единая маршрутизация доказанных пассивных носителей: Rutoken S, Rutoken Lite,
+    /// JaCarta LT и ESMART. Тип сначала подтверждается метаданными токена; APDU чужого семейства
     /// к reader никогда не отправляется.
     /// </summary>
     public sealed class DirectTokenApdu
@@ -34,7 +34,8 @@ namespace CryptoProExport
         private void Say(string message) => Log?.Invoke(message);
 
         public static bool Supports(RutokenKind kind) => kind == RutokenKind.RutokenS
-            || kind == RutokenKind.RutokenLite || kind == RutokenKind.JaCartaLt;
+            || kind == RutokenKind.RutokenLite || kind == RutokenKind.JaCartaLt
+            || kind == RutokenKind.Esmart;
 
         public List<DirectTokenContainerRef> ListContainers(Pkcs11TokenInfo token)
         {
@@ -61,6 +62,8 @@ namespace CryptoProExport
             }
             if (token.Kind == RutokenKind.RutokenS)
                 return new RutokenSApdu { Log = Say, Cancel = Cancel }.ListContainers(token.Reader);
+            if (token.Kind == RutokenKind.Esmart)
+                return new EsmartApdu { Log = Say, Cancel = Cancel }.ListContainers(token.Reader);
             return new JaCartaLtApdu { Log = Say, Cancel = Cancel }.ListContainers(token.Reader);
         }
 
@@ -109,6 +112,9 @@ namespace CryptoProExport
             if (token.Kind == RutokenKind.RutokenS)
                 return new RutokenSApdu { Log = Say, Cancel = Cancel }
                     .ReadContainer(token.Reader, selected, pin);
+            if (token.Kind == RutokenKind.Esmart)
+                return new EsmartApdu { Log = Say, Cancel = Cancel }
+                    .ReadContainer(token.Reader, selected, pin);
             return new JaCartaLtApdu { Log = Say, Cancel = Cancel }
                 .ReadContainer(token.Reader, selected, pin);
         }
@@ -120,7 +126,8 @@ namespace CryptoProExport
                 !token.PinFinalTry && !token.PinLocked)
             {
                 if (token.Kind == RutokenKind.JaCartaLt) return "1234567890";
-                if (token.Kind == RutokenKind.RutokenS || token.Kind == RutokenKind.RutokenLite)
+                if (token.Kind == RutokenKind.RutokenS || token.Kind == RutokenKind.RutokenLite
+                    || token.Kind == RutokenKind.Esmart)
                     return "12345678";
             }
             throw new LiteApduException(Strings.Format("err.lite.pin", "—"));
@@ -150,6 +157,8 @@ namespace CryptoProExport
         {
             if (token == null) throw new ArgumentNullException(nameof(token));
             if (!Supports(token.Kind))
+                throw new ArgumentException(Pkcs11Token.KindName(token.Kind), nameof(token));
+            if (token.Kind == RutokenKind.Esmart && !Pkcs11Token.IsConfirmedEsmart(token))
                 throw new ArgumentException(Pkcs11Token.KindName(token.Kind), nameof(token));
             RutokenKind resolved = Pkcs11Token.ResolveReaderKind(token.Reader, token);
             if (resolved != token.Kind)

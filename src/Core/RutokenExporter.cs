@@ -173,7 +173,7 @@ namespace CryptoProExport
             RutokenKind kind = Pkcs11Token.Classify(readerName);
             return kind != RutokenKind.RutokenS
                 && kind != RutokenKind.RutokenEcp && kind != RutokenKind.RutokenLite
-                && kind != RutokenKind.JaCartaLt
+                && kind != RutokenKind.JaCartaLt && kind != RutokenKind.Esmart
                 && kind != RutokenKind.Other;
         }
 

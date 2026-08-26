@@ -34,8 +34,6 @@ namespace CryptoProExport.Tests
             {
                 new SmartCardReaderStatus
                 {
-                    DisplayName = "Microsoft Usbccid (WUDF)",
-                    BusDescription = "ESMART Token",
                     HardwareId = @"USB\VID_2CE4&PID_7479",
                     ProblemCode = 10,
                     ProblemStatus = 0xC0000001,
@@ -59,8 +57,6 @@ namespace CryptoProExport.Tests
             {
                 new SmartCardReaderStatus
                 {
-                    DisplayName = "private-serial-must-not-leak",
-                    BusDescription = "private-serial-must-not-leak",
                     HardwareId = @"USB\VID_2CE4&PID_7479\private-serial-must-not-leak",
                     ProblemCode = 10,
                     ProblemStatus = 0xC0000001,
@@ -93,7 +89,6 @@ namespace CryptoProExport.Tests
             {
                 new SmartCardReaderStatus
                 {
-                    BusDescription = "Reader awaiting restart",
                     HardwareId = @"USB\VID_1234&PID_5678",
                     ProblemCode = 14,
                     ProblemStatus = 0xC0000001,
@@ -125,7 +120,6 @@ namespace CryptoProExport.Tests
                 new SmartCardReaderStatus(),
                 new SmartCardReaderStatus
                 {
-                    BusDescription = "ESMART Token",
                     HardwareId = @"USB\VID_2CE4&PID_7479",
                     ProblemCode = 10,
                     ProblemStatus = 0xC0000001,
@@ -145,8 +139,6 @@ namespace CryptoProExport.Tests
             {
                 new SmartCardReaderStatus
                 {
-                    DisplayName = "private-serial-must-not-leak",
-                    BusDescription = "private-serial-must-not-leak",
                     HardwareId = @"ROOT\SMARTCARDREADER",
                     ProblemCode = 10,
                     ProblemStatus = 0xC0000001,

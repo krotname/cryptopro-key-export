@@ -12,8 +12,6 @@ namespace CryptoProExport
     /// <summary>Безопасное для вывода состояние одного PnP-present считывателя.</summary>
     internal sealed class SmartCardReaderStatus
     {
-        public string DisplayName { get; set; }
-        public string BusDescription { get; set; }
         public string HardwareId { get; set; }
         public uint ProblemCode { get; set; }
         public uint ProblemStatus { get; set; }
@@ -36,18 +34,12 @@ namespace CryptoProExport
         // GUID_DEVCLASS_SMARTCARDREADER
         private static readonly Guid ReaderClass = new Guid("50DD5230-BA8A-11D1-BF5D-0000F805F530");
 
-        private static readonly DevPropKey DeviceDescription = new DevPropKey(
-            new Guid("A45C254E-DF1C-4EFD-8020-67D146A850E0"), 2);
         private static readonly DevPropKey HardwareIds = new DevPropKey(
             new Guid("A45C254E-DF1C-4EFD-8020-67D146A850E0"), 3);
-        private static readonly DevPropKey FriendlyName = new DevPropKey(
-            new Guid("A45C254E-DF1C-4EFD-8020-67D146A850E0"), 14);
         private static readonly DevPropKey ProblemCode = new DevPropKey(
             new Guid("4340A6C5-93FA-4706-972C-7B648008A5A7"), 3);
         private static readonly DevPropKey ProblemStatus = new DevPropKey(
             new Guid("4340A6C5-93FA-4706-972C-7B648008A5A7"), 12);
-        private static readonly DevPropKey BusReportedDescription = new DevPropKey(
-            new Guid("540B947E-8B40-45BC-A8A2-6A0B894CBDA2"), 4);
 
         private static readonly Regex VidPid = new Regex(
             @"VID_[0-9A-F]{4}&PID_[0-9A-F]{4}",
@@ -117,10 +109,6 @@ namespace CryptoProExport
 
                     result.Add(new SmartCardReaderStatus
                     {
-                        DisplayName = FirstNonEmpty(
-                            GetString(infoSet, ref device, FriendlyName),
-                            GetString(infoSet, ref device, DeviceDescription)),
-                        BusDescription = GetString(infoSet, ref device, BusReportedDescription),
                         HardwareId = SafeHardwareId(GetStringList(infoSet, ref device, HardwareIds)),
                         ProblemCode = GetRequiredUInt32(infoSet, ref device, ProblemCode),
                         ProblemStatus = GetUInt32(infoSet, ref device, ProblemStatus),
@@ -132,13 +120,6 @@ namespace CryptoProExport
             {
                 SetupDiDestroyDeviceInfoList(infoSet);
             }
-        }
-
-        private static string GetString(IntPtr infoSet, ref SpDevInfoData device, DevPropKey key)
-        {
-            byte[] bytes = GetProperty(infoSet, ref device, key);
-            if (bytes == null || bytes.Length < 2) return null;
-            return Encoding.Unicode.GetString(bytes).TrimEnd('\0');
         }
 
         private static IReadOnlyList<string> GetStringList(
@@ -180,9 +161,6 @@ namespace CryptoProExport
                 ? buffer
                 : null;
         }
-
-        private static string FirstNonEmpty(params string[] values) =>
-            values?.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 
         [StructLayout(LayoutKind.Sequential)]
         private struct DevPropKey

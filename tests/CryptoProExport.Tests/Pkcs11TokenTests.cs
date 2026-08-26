@@ -27,7 +27,7 @@ namespace CryptoProExport.Tests
         [InlineData("Datastore", RutokenKind.Unknown)]
         [InlineData("JaCarta GOST", RutokenKind.Other)]
         [InlineData("eToken PRO", RutokenKind.Other)]
-        [InlineData("ESMART Token USB 64K", RutokenKind.Other)]
+        [InlineData("ESMART Token USB 64K", RutokenKind.Esmart)]
         [InlineData("", RutokenKind.Unknown)]
         [InlineData(null, RutokenKind.Unknown)]
         [InlineData("SomeCard 42", RutokenKind.Unknown)]
@@ -50,7 +50,7 @@ namespace CryptoProExport.Tests
             // По одной модели носитель попадал бы в «не опознан».
             Assert.Equal(RutokenKind.Unknown, Pkcs11Token.Classify("PRO"));
             Assert.Equal(RutokenKind.Other, Pkcs11Token.Classify("PRO", "Aladdin R.D."));
-            Assert.Equal(RutokenKind.Other, Pkcs11Token.Classify("USB 64K", "ISBC"));
+            Assert.Equal(RutokenKind.Esmart, Pkcs11Token.Classify("USB 64K", "ISBC"));
         }
 
         [Fact]
@@ -123,8 +123,8 @@ namespace CryptoProExport.Tests
         [Theory]
         [InlineData("Foo Lite 0", RutokenKind.Unknown)]
         [InlineData("JaCarta Lite 0", RutokenKind.Other)]
-        [InlineData("ESMART Lite 0", RutokenKind.Other)]
-        [InlineData("Aktiv ESMART Lite 0", RutokenKind.Other)]
+        [InlineData("ESMART Lite 0", RutokenKind.Esmart)]
+        [InlineData("Aktiv ESMART Lite 0", RutokenKind.Esmart)]
         public void ResolveReaderKind_BlocksGenericAndForeignLiteReaders(
             string reader, RutokenKind expected)
         {
@@ -181,6 +181,7 @@ namespace CryptoProExport.Tests
         [InlineData(RutokenKind.RutokenLite)]
         [InlineData(RutokenKind.RutokenEcp)]
         [InlineData(RutokenKind.JaCartaLt)]
+        [InlineData(RutokenKind.Esmart)]
         [InlineData(RutokenKind.Other)]
         [InlineData(RutokenKind.Unknown)]
         public void KindName_IsLocalizedForEveryFamily(RutokenKind kind)
@@ -191,9 +192,41 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
-        public void KindName_UsesProductNameForJaCartaLt()
+        public void KindName_UsesProductNamesForDirectForeignBackends()
         {
             Assert.Equal("JaCarta LT", Pkcs11Token.KindName(RutokenKind.JaCartaLt));
+            Assert.Equal("ESMART", Pkcs11Token.KindName(RutokenKind.Esmart));
+        }
+
+        [Fact]
+        public void IsConfirmedEsmart_RequiresVendorAndFamilyEvidenceTogether()
+        {
+            Assert.True(Pkcs11Token.IsConfirmedEsmart(new Pkcs11TokenInfo
+            {
+                Kind = RutokenKind.Esmart,
+                Reader = "ESMART Token USB 64K 0",
+                Model = "USB 64K",
+                Manufacturer = "ISBC",
+            }));
+            Assert.True(Pkcs11Token.IsConfirmedEsmart(new Pkcs11TokenInfo
+            {
+                Kind = RutokenKind.Esmart,
+                Reader = "ISBC ESMART Token 0",
+                Model = "ESMART Token",
+                Manufacturer = "ISBC CORP.",
+            }));
+            Assert.False(Pkcs11Token.IsConfirmedEsmart(new Pkcs11TokenInfo
+            {
+                Kind = RutokenKind.Esmart,
+                Reader = "ESMART-looking reader",
+                Manufacturer = "Contoso",
+            }));
+            Assert.False(Pkcs11Token.IsConfirmedEsmart(new Pkcs11TokenInfo
+            {
+                Kind = RutokenKind.Other,
+                Reader = "ESMART Token USB 64K 0",
+                Manufacturer = "ISBC",
+            }));
         }
 
         [Fact]
@@ -347,6 +380,7 @@ namespace CryptoProExport.Tests
                 new Pkcs11TokenInfo { Reader = "Aktiv Rutoken ECP 0", Kind = RutokenKind.RutokenEcp },
                 new Pkcs11TokenInfo { Reader = "Aktiv Rutoken lite 0", Kind = RutokenKind.RutokenLite },
                 new Pkcs11TokenInfo { Reader = "Aladdin R.D. JaCarta LT 0", Kind = RutokenKind.JaCartaLt },
+                new Pkcs11TokenInfo { Reader = "ESMART Token USB 64K 0", Kind = RutokenKind.Esmart },
                 new Pkcs11TokenInfo { Reader = "Aktiv ruToken 0", Kind = RutokenKind.RutokenS },
                 new Pkcs11TokenInfo { Reader = null, Kind = RutokenKind.RutokenEcp },
                 null,
@@ -354,10 +388,11 @@ namespace CryptoProExport.Tests
 
             var set = Pkcs11Token.SmartCardReaders(tokens);
 
-            Assert.Equal(4, set.Count);
+            Assert.Equal(5, set.Count);
             Assert.Contains("Aktiv Rutoken ECP 0", set);
             Assert.Contains("Aktiv Rutoken lite 0", set);
             Assert.Contains("Aladdin R.D. JaCarta LT 0", set);
+            Assert.Contains("ESMART Token USB 64K 0", set);
             Assert.Contains("Aktiv ruToken 0", set);
         }
 
@@ -388,7 +423,7 @@ namespace CryptoProExport.Tests
             {
                 new Pkcs11TokenInfo { Reader = "Aktiv Rutoken ECP 0", Kind = RutokenKind.RutokenEcp },
                 new Pkcs11TokenInfo { Reader = "Aladdin Token JC 0", Kind = RutokenKind.Other },
-                new Pkcs11TokenInfo { Reader = "ESMART USB64K 0", Kind = RutokenKind.Other },
+                new Pkcs11TokenInfo { Reader = "ESMART USB64K 0", Kind = RutokenKind.Esmart },
                 new Pkcs11TokenInfo { Reader = "Aktiv ruToken 0", Kind = RutokenKind.RutokenS },
             };
 

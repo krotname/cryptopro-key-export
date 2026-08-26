@@ -22,6 +22,8 @@ namespace CryptoProExport
         RutokenEcp,
         /// <summary>JaCarta LT: пассивный носитель; файлы контейнера читаются прямым APDU.</summary>
         JaCartaLt,
+        /// <summary>ESMART Token: пассивный CSP-раздел читается прямым APDU.</summary>
+        Esmart,
         /// <summary>Токен другого вендора (JaCarta PRO, eToken…) — распознан, но отдельного безопасного пути нет.</summary>
         Other,
         /// <summary>Модель не опознана.</summary>
@@ -323,6 +325,12 @@ namespace CryptoProExport
         /// </summary>
         public static RutokenKind Classify(string model, string manufacturer = null)
         {
+            // Штатный PKCS#11-модуль ESMART сообщает ISBC/ESMART в модели или производителе.
+            // Отдельная строгая проверка перед APDU дополнительно требует согласованные
+            // метаданные и точный reader; здесь достаточно корректно назвать семейство.
+            if (HasEsmartEvidence(model))
+                return RutokenKind.Esmart;
+
             // У JaCarta LT маркетинговое имя и модель апплета различаются: живой носитель
             // сообщает model='JaCarta DS', а официальная документация называет апплет
             // Datastore. Проверяем эту пару до общей классификации JaCarta как Other и до
@@ -340,7 +348,9 @@ namespace CryptoProExport
             // По производителю опознаём только чужих вендоров: «Aktiv Co.» без внятной модели
             // оставляем неопознанным намеренно — иначе носитель попал бы в файловый обход
             // rtCOMLite как Рутокен S (см. RutokenExporter.ShouldWalk).
-            return ClassifyText(manufacturer) == RutokenKind.Other ? RutokenKind.Other : RutokenKind.Unknown;
+            RutokenKind byManufacturer = ClassifyText(manufacturer);
+            return byManufacturer == RutokenKind.Esmart || byManufacturer == RutokenKind.Other
+                ? byManufacturer : RutokenKind.Unknown;
         }
 
         /// <summary>
@@ -382,6 +392,24 @@ namespace CryptoProExport
                 || value.Contains("etoken") || value.Contains("esmart");
         }
 
+        private static bool HasEsmartEvidence(string text)
+        {
+            string value = (text ?? string.Empty).Trim().ToLowerInvariant();
+            return value.Contains("esmart") || value.Contains("isbc");
+        }
+
+        /// <summary>
+        /// Достаточны ли метаданные именно для отправки ESMART APDU. Одного похожего имени
+        /// reader недостаточно: семейство должен подтвердить штатный PKCS#11-модуль ISBC.
+        /// </summary>
+        internal static bool IsConfirmedEsmart(Pkcs11TokenInfo token)
+        {
+            if (token == null || token.Kind != RutokenKind.Esmart) return false;
+            bool vendor = HasEsmartEvidence(token.Manufacturer);
+            bool identity = HasEsmartEvidence(token.Model) || HasEsmartEvidence(token.Reader);
+            return vendor && identity;
+        }
+
         private static bool IsJaCartaLt(string model, string manufacturer)
         {
             string m = (model ?? string.Empty).Trim().ToLowerInvariant();
@@ -417,12 +445,13 @@ namespace CryptoProExport
             if (string.IsNullOrWhiteSpace(text)) return RutokenKind.Unknown;
             string m = text.Trim().ToLowerInvariant();
 
+            if (m.Contains("esmart") || m.Contains("isbc")) return RutokenKind.Esmart;
             if (m.Contains("ecp") || m.Contains("эцп")) return RutokenKind.RutokenEcp;
             if (m.Contains("lite")) return RutokenKind.RutokenLite;
             // «Rutoken S», «Rutoken» без уточнения, «Рутокен S» — файловая память.
             if (m.Contains("rutoken") || m.Contains("рутокен")) return RutokenKind.RutokenS;
-            if (m.Contains("jacarta") || m.Contains("aladdin") || m.Contains("etoken")
-                || m.Contains("esmart") || m.Contains("isbc")) return RutokenKind.Other;
+            if (m.Contains("jacarta") || m.Contains("aladdin") || m.Contains("etoken"))
+                return RutokenKind.Other;
             return RutokenKind.Unknown;
         }
 
@@ -450,7 +479,7 @@ namespace CryptoProExport
                 if (t == null || string.IsNullOrEmpty(t.Reader)) continue;
                 if (t.Kind == RutokenKind.RutokenS
                     || t.Kind == RutokenKind.RutokenEcp || t.Kind == RutokenKind.RutokenLite
-                    || t.Kind == RutokenKind.JaCartaLt
+                    || t.Kind == RutokenKind.JaCartaLt || t.Kind == RutokenKind.Esmart
                     || t.Kind == RutokenKind.Other
                     || HasUnsafeForeignFileWalkEvidence(t.Model))
                     set.Add(t.Reader);
@@ -463,6 +492,7 @@ namespace CryptoProExport
         {
             // Название продукта — торговая марка и во всех языках остаётся одинаковым.
             if (kind == RutokenKind.JaCartaLt) return "JaCarta LT";
+            if (kind == RutokenKind.Esmart) return "ESMART";
             return Strings.Get(kind switch
             {
                 RutokenKind.RutokenS => "kind.rutoken.s",
