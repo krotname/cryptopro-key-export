@@ -40,7 +40,7 @@ btn.help = Help
 btn.cancel = Cancel
 
 tip.refresh = Step 1. Show the list of key containers:\n  • those visible to CryptoPro CSP (including the inserted token);\n  • those found directly on connected supported tokens.\nChanges nothing — it only reads. A good place to start.
-tip.export = Step 2. Copy containers from Rutoken S / Lite and JaCarta LT into the destination folder\n(6 *.key files per container). Reads token memory directly, bypassing the CSP,\nso it works even when export is banned. The token and its data are not modified.\nThe key in the copy stays non-exportable — that is what «Make exportable» is for.
+tip.export = Step 2. Copy containers from Rutoken S / Lite, JaCarta LT and ESMART into the destination folder\n(6 *.key files per container). Reads token memory directly, bypassing the CSP,\nso it works even when export is banned. The token and its data are not modified.\nThe key in the copy stays non-exportable — that is what «Make exportable» is for.
 tip.extract = Step 3. Save the certificate of the container selected in the list into a .cer file\n(public data, extracted normally through CryptoAPI).\nRequires a selected container, an inserted token and the container being visible to the CSP.\np12utility needs that certificate in order to lift the export ban.
 tip.full = Everything in one click: copy the containers off the token → extract the certificates →\nlift the ban on exporting the private key (p12utility --cprepair --keyexport).\nResult: the destination folder holds a copy of the container with an exportable key\n(good for a backup, for moving to another machine and for conversion to PFX).\nThe original token is not modified; the original header.key of the copy is kept as header.key.backup.
 tip.check = Check the container selected in the list: has the private key export ban been lifted.\nThe program reads the key permissions (KP_PERMISSIONS) — the key itself is never exported.\nThis is how you confirm that «Make exportable» really worked.
@@ -251,7 +251,7 @@ cli.lang.missing = --lang needs a language code. Available languages: {0}
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = present
 common.certonly = certificate only
-pkcs11.nolib = No PKCS#11 library found (rtPKCS11ECP.dll, jcPKCS11-2.dll) — install the Rutoken drivers or JaCarta Unified Client
+pkcs11.nolib = No PKCS#11 library found (rtPKCS11ECP.dll, jcPKCS11-2.dll, isbc_pkcs11_main.dll) — install the Rutoken drivers, JaCarta Unified Client, or ESMART PKI Client
 pkcs11.loadfail = Failed to load the PKCS#11 library: {0}
 pkcs11.enumfail = Failed to enumerate PKCS#11 slots: {0}
 pkcs11.tokenfail = Token "{0}": {1}
@@ -362,3 +362,8 @@ carrier.etoken = eToken / SafeNet
 carrier.unknown = unknown carrier
 pcsc.contextfail = PC/SC: could not connect to the smart card service ({0})
 pcsc.statusfail = PC/SC: could not read reader status ({0})
+diag.pnp.none = Smart-card readers (PnP): no PnP-present devices
+diag.pnp.ok = Smart-card readers (PnP): {0} PnP-present, all drivers started
+diag.pnp.failed = Smart-card reader {0}: PnP-present, but its driver did not start — Code {1}, status {2}
+diag.pnp.problem = Smart-card reader {0}: PnP-present, but Windows reports a PnP problem — Code {1}, status {2}
+diag.pnp.unavailable = Smart-card readers (PnP): check unavailable ({0})

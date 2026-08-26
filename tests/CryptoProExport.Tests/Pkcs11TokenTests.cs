@@ -2,13 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Xunit;
 
 namespace CryptoProExport.Tests
 {
     /// <summary>
-    /// Чистая логика поддержки Рутокен ЭЦП/Lite через PKCS#11: классификация модели,
-    /// локализованные названия семейств и состояний PIN, поиск библиотеки.
+    /// Чистая логика поддержки токенов через PKCS#11: классификация модели,
+    /// локализованные названия семейств и состояний PIN, поиск vendor libraries.
     /// Обращения к железу тут нет — оно проверяется e2e на живом токене.
     /// </summary>
     public class Pkcs11TokenTests
@@ -26,6 +27,7 @@ namespace CryptoProExport.Tests
         [InlineData("Datastore", RutokenKind.Unknown)]
         [InlineData("JaCarta GOST", RutokenKind.Other)]
         [InlineData("eToken PRO", RutokenKind.Other)]
+        [InlineData("ESMART Token USB 64K", RutokenKind.Esmart)]
         [InlineData("", RutokenKind.Unknown)]
         [InlineData(null, RutokenKind.Unknown)]
         [InlineData("SomeCard 42", RutokenKind.Unknown)]
@@ -48,6 +50,7 @@ namespace CryptoProExport.Tests
             // По одной модели носитель попадал бы в «не опознан».
             Assert.Equal(RutokenKind.Unknown, Pkcs11Token.Classify("PRO"));
             Assert.Equal(RutokenKind.Other, Pkcs11Token.Classify("PRO", "Aladdin R.D."));
+            Assert.Equal(RutokenKind.Esmart, Pkcs11Token.Classify("USB 64K", "ISBC"));
         }
 
         [Fact]
@@ -120,8 +123,8 @@ namespace CryptoProExport.Tests
         [Theory]
         [InlineData("Foo Lite 0", RutokenKind.Unknown)]
         [InlineData("JaCarta Lite 0", RutokenKind.Other)]
-        [InlineData("ESMART Lite 0", RutokenKind.Other)]
-        [InlineData("Aktiv ESMART Lite 0", RutokenKind.Other)]
+        [InlineData("ESMART Lite 0", RutokenKind.Esmart)]
+        [InlineData("Aktiv ESMART Lite 0", RutokenKind.Esmart)]
         public void ResolveReaderKind_BlocksGenericAndForeignLiteReaders(
             string reader, RutokenKind expected)
         {
@@ -178,6 +181,7 @@ namespace CryptoProExport.Tests
         [InlineData(RutokenKind.RutokenLite)]
         [InlineData(RutokenKind.RutokenEcp)]
         [InlineData(RutokenKind.JaCartaLt)]
+        [InlineData(RutokenKind.Esmart)]
         [InlineData(RutokenKind.Other)]
         [InlineData(RutokenKind.Unknown)]
         public void KindName_IsLocalizedForEveryFamily(RutokenKind kind)
@@ -188,9 +192,52 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
-        public void KindName_UsesProductNameForJaCartaLt()
+        public void KindName_UsesProductNamesForDirectForeignBackends()
         {
             Assert.Equal("JaCarta LT", Pkcs11Token.KindName(RutokenKind.JaCartaLt));
+            Assert.Equal("ESMART", Pkcs11Token.KindName(RutokenKind.Esmart));
+        }
+
+        [Fact]
+        public void IsConfirmedEsmart_RequiresVendorAndValidatedReaderTogether()
+        {
+            Assert.True(Pkcs11Token.IsConfirmedEsmart(new Pkcs11TokenInfo
+            {
+                Kind = RutokenKind.Esmart,
+                Reader = "ESMART Token USB 64K 0",
+                Manufacturer = "ISBC",
+            }));
+            Assert.True(Pkcs11Token.IsConfirmedEsmart(new Pkcs11TokenInfo
+            {
+                Kind = RutokenKind.Esmart,
+                Reader = "ISBC ESMART Token 3",
+                Manufacturer = "ISBC CORP.",
+            }));
+            Assert.False(Pkcs11Token.IsConfirmedEsmart(new Pkcs11TokenInfo
+            {
+                Kind = RutokenKind.Esmart,
+                Reader = "ESMART-looking reader",
+                Manufacturer = "ISBC",
+            }));
+            Assert.False(Pkcs11Token.IsConfirmedEsmart(new Pkcs11TokenInfo
+            {
+                Kind = RutokenKind.Esmart,
+                Reader = "ISBC ESMART Token Pro 0",
+                Model = "ESMART Token Pro",
+                Manufacturer = "ISBC",
+            }));
+            Assert.False(Pkcs11Token.IsConfirmedEsmart(new Pkcs11TokenInfo
+            {
+                Kind = RutokenKind.Esmart,
+                Reader = "ESMART Token USB 64K 0",
+                Manufacturer = "Contoso",
+            }));
+            Assert.False(Pkcs11Token.IsConfirmedEsmart(new Pkcs11TokenInfo
+            {
+                Kind = RutokenKind.Other,
+                Reader = "ESMART Token USB 64K 0",
+                Manufacturer = "ISBC",
+            }));
         }
 
         [Fact]
@@ -344,6 +391,7 @@ namespace CryptoProExport.Tests
                 new Pkcs11TokenInfo { Reader = "Aktiv Rutoken ECP 0", Kind = RutokenKind.RutokenEcp },
                 new Pkcs11TokenInfo { Reader = "Aktiv Rutoken lite 0", Kind = RutokenKind.RutokenLite },
                 new Pkcs11TokenInfo { Reader = "Aladdin R.D. JaCarta LT 0", Kind = RutokenKind.JaCartaLt },
+                new Pkcs11TokenInfo { Reader = "ESMART Token USB 64K 0", Kind = RutokenKind.Esmart },
                 new Pkcs11TokenInfo { Reader = "Aktiv ruToken 0", Kind = RutokenKind.RutokenS },
                 new Pkcs11TokenInfo { Reader = null, Kind = RutokenKind.RutokenEcp },
                 null,
@@ -351,10 +399,11 @@ namespace CryptoProExport.Tests
 
             var set = Pkcs11Token.SmartCardReaders(tokens);
 
-            Assert.Equal(4, set.Count);
+            Assert.Equal(5, set.Count);
             Assert.Contains("Aktiv Rutoken ECP 0", set);
             Assert.Contains("Aktiv Rutoken lite 0", set);
             Assert.Contains("Aladdin R.D. JaCarta LT 0", set);
+            Assert.Contains("ESMART Token USB 64K 0", set);
             Assert.Contains("Aktiv ruToken 0", set);
         }
 
@@ -385,7 +434,7 @@ namespace CryptoProExport.Tests
             {
                 new Pkcs11TokenInfo { Reader = "Aktiv Rutoken ECP 0", Kind = RutokenKind.RutokenEcp },
                 new Pkcs11TokenInfo { Reader = "Aladdin Token JC 0", Kind = RutokenKind.Other },
-                new Pkcs11TokenInfo { Reader = "ESMART USB64K 0", Kind = RutokenKind.Other },
+                new Pkcs11TokenInfo { Reader = "ESMART USB64K 0", Kind = RutokenKind.Esmart },
                 new Pkcs11TokenInfo { Reader = "Aktiv ruToken 0", Kind = RutokenKind.RutokenS },
             };
 
@@ -663,14 +712,94 @@ namespace CryptoProExport.Tests
                 Assert.Contains(candidates, c => c.EndsWith(lib.Dll, StringComparison.OrdinalIgnoreCase));
             });
             Assert.Contains(candidates, c => c.EndsWith("jcPKCS11-2.dll", StringComparison.OrdinalIgnoreCase));
+            Assert.Contains(candidates, c => c.EndsWith("isbc_pkcs11_main.dll", StringComparison.OrdinalIgnoreCase));
+        }
+
+        [Theory]
+        [InlineData("jcPKCS11-2.dll")]
+        [InlineData("isbc_pkcs11_main.dll")]
+        public void LibraryCandidates_ForSingleDllMentionOnlyThatDll(string dll)
+        {
+            var candidates = Pkcs11Token.LibraryCandidates(dll).ToArray();
+            Assert.NotEmpty(candidates);
+            Assert.All(candidates, c => Assert.EndsWith(dll, c, StringComparison.OrdinalIgnoreCase));
         }
 
         [Fact]
-        public void LibraryCandidates_ForSingleDllMentionOnlyThatDll()
+        public void KnownLibraries_ContainsFourUniqueConfirmedVendorModules()
         {
-            var jc = Pkcs11Token.LibraryCandidates("jcPKCS11-2.dll").ToArray();
-            Assert.NotEmpty(jc);
-            Assert.All(jc, c => Assert.EndsWith("jcPKCS11-2.dll", c, StringComparison.OrdinalIgnoreCase));
+            Assert.Collection(Pkcs11Token.KnownLibraries,
+                lib => Assert.Equal(("Rutoken", "rtPKCS11ECP.dll"), lib),
+                lib => Assert.Equal(("Rutoken S", "rtPKCS11.dll"), lib),
+                lib => Assert.Equal(("JaCarta", "jcPKCS11-2.dll"), lib),
+                lib => Assert.Equal(("ESMART", "isbc_pkcs11_main.dll"), lib));
+            Assert.Equal(Pkcs11Token.KnownLibraries.Count,
+                Pkcs11Token.KnownLibraries.Select(lib => lib.Dll)
+                    .Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        }
+
+        [Fact]
+        public void LibraryCandidates_EsmartHasNoUnverifiedProgramFilesFallback()
+        {
+            var candidates = Pkcs11Token.LibraryCandidates("isbc_pkcs11_main.dll").ToArray();
+            string windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows)
+                .TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+
+            Assert.NotEmpty(candidates);
+            Assert.All(candidates, candidate => Assert.True(
+                candidate.StartsWith(windows, StringComparison.OrdinalIgnoreCase), candidate));
+        }
+
+        [Fact]
+        public void IsLibraryComplete_EsmartRequiresMainAndCompanionTogether()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "cpx-esmart-libs-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            string main = Path.Combine(dir, "isbc_pkcs11_main.dll");
+            string companion = Path.Combine(dir, "isbc_esmart_token_mod.dll");
+            try
+            {
+                WritePeStub(main, RuntimeInformation.ProcessArchitecture);
+                Assert.False(Pkcs11Token.IsLibraryComplete("isbc_pkcs11_main.dll", main));
+
+                File.Delete(main);
+                WritePeStub(companion, RuntimeInformation.ProcessArchitecture);
+                Assert.False(Pkcs11Token.IsLibraryComplete("isbc_pkcs11_main.dll", main));
+
+                WritePeStub(main, RuntimeInformation.ProcessArchitecture);
+                Assert.True(Pkcs11Token.IsLibraryComplete("isbc_pkcs11_main.dll", main));
+
+                Architecture otherArchitecture = RuntimeInformation.ProcessArchitecture == Architecture.X86
+                    ? Architecture.X64
+                    : Architecture.X86;
+                WritePeStub(companion, otherArchitecture);
+                Assert.False(Pkcs11Token.IsLibraryComplete("isbc_pkcs11_main.dll", main));
+            }
+            finally
+            {
+                Directory.Delete(dir, recursive: true);
+            }
+        }
+
+        [Theory]
+        [InlineData("rtPKCS11ECP.dll")]
+        [InlineData("rtPKCS11.dll")]
+        [InlineData("jcPKCS11-2.dll")]
+        public void IsLibraryComplete_StandaloneVendorsRequireOnlyMain(string dll)
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "cpx-standalone-lib-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            string main = Path.Combine(dir, dll);
+            try
+            {
+                Assert.False(Pkcs11Token.IsLibraryComplete(dll, main));
+                File.WriteAllBytes(main, Array.Empty<byte>());
+                Assert.True(Pkcs11Token.IsLibraryComplete(dll, main));
+            }
+            finally
+            {
+                Directory.Delete(dir, recursive: true);
+            }
         }
 
         [Fact]
@@ -794,6 +923,24 @@ namespace CryptoProExport.Tests
         {
             var candidates = Pkcs11Token.LibraryCandidates().ToArray();
             Assert.Equal(candidates.Length, candidates.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        }
+
+        private static void WritePeStub(string path, Architecture architecture)
+        {
+            ushort machine = architecture switch
+            {
+                Architecture.X86 => 0x014c,
+                Architecture.X64 => 0x8664,
+                Architecture.Arm64 => 0xAA64,
+                _ => throw new ArgumentOutOfRangeException(nameof(architecture)),
+            };
+            var bytes = new byte[0x86];
+            bytes[0x3c] = 0x80;
+            bytes[0x80] = (byte)'P';
+            bytes[0x81] = (byte)'E';
+            bytes[0x84] = (byte)(machine & 0xff);
+            bytes[0x85] = (byte)(machine >> 8);
+            File.WriteAllBytes(path, bytes);
         }
     }
 }

@@ -40,7 +40,7 @@ btn.help = Ayuda
 btn.cancel = Cancelar
 
 tip.refresh = Paso 1. Mostrar la lista de contenedores de claves:\n  • los visibles para CryptoPro CSP (incluido el token insertado);\n  • los encontrados directamente en los Rutoken conectados.\nNo modifica nada, solo lee. Es un buen punto de partida.
-tip.export = Paso 2. Extraer los contenedores de todos los Rutoken conectados a la carpeta de destino\n(6 archivos *.key por contenedor). Lee la memoria del token directamente, sin pasar por el CSP,\npor eso funciona incluso con la exportación prohibida. Ni el token ni sus datos se modifican.\nLa clave de la copia sigue sin ser exportable: de eso se encarga «Hacer exportable».
+tip.export = Paso 2. Extraer los contenedores de Rutoken S / Lite, JaCarta LT y ESMART a la carpeta de destino\n(6 archivos *.key por contenedor). Lee la memoria del token directamente, sin pasar por el CSP,\npor eso funciona incluso con la exportación prohibida. Ni el token ni sus datos se modifican.\nLa clave de la copia sigue sin ser exportable: de eso se encarga «Hacer exportable».
 tip.extract = Paso 3. Guardar el certificado del contenedor seleccionado en un archivo .cer\n(datos públicos, se extraen de forma normal mediante CryptoAPI).\nHace falta un contenedor seleccionado, el token insertado y que el CSP vea el contenedor.\np12utility necesita ese certificado para levantar la prohibición de exportar.
 tip.full = Todo en un clic: extraer los contenedores del token → extraer los certificados →\nlevantar la prohibición de exportar la clave privada (p12utility --cprepair --keyexport).\nResultado: en la carpeta de destino queda una copia del contenedor con la clave exportable\n(sirve para copia de seguridad, traslado y conversión a PFX).\nEl token original no se modifica; el header.key original de la copia se guarda como header.key.backup.
 tip.check = Comprobar el contenedor seleccionado: si se ha levantado la prohibición de exportar la clave privada.\nEl programa lee los permisos de la clave (KP_PERMISSIONS); la clave nunca se exporta.\nAsí se confirma que «Hacer exportable» realmente ha funcionado.
@@ -250,7 +250,7 @@ cli.lang.missing = --lang necesita un código de idioma. Idiomas disponibles: {0
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = presente
 common.certonly = solo certificado
-pkcs11.nolib = No se encontró ninguna biblioteca PKCS#11 (rtPKCS11ECP.dll, jcPKCS11-2.dll): instale los controladores de Rutoken o JaCarta Unified Client
+pkcs11.nolib = No se encontró ninguna biblioteca PKCS#11 (rtPKCS11ECP.dll, jcPKCS11-2.dll, isbc_pkcs11_main.dll): instale los controladores de Rutoken, JaCarta Unified Client o ESMART PKI Client
 pkcs11.loadfail = No se pudo cargar la biblioteca PKCS#11: {0}
 pkcs11.enumfail = No se pudieron enumerar las ranuras PKCS#11: {0}
 pkcs11.tokenfail = Token «{0}»: {1}
@@ -362,3 +362,8 @@ carrier.etoken = eToken / SafeNet
 carrier.unknown = portador desconocido
 pcsc.contextfail = PC/SC: no se pudo conectar con el servicio de tarjetas inteligentes ({0})
 pcsc.statusfail = PC/SC: no se pudo leer el estado de los lectores ({0})
+diag.pnp.none = Lectores de tarjetas inteligentes (PnP): no hay dispositivos PnP-present
+diag.pnp.ok = Lectores de tarjetas inteligentes (PnP): {0} PnP-present, todos los controladores iniciados
+diag.pnp.failed = Lector de tarjetas inteligentes {0}: está PnP-present, pero el controlador no se inició — código {1}, estado {2}
+diag.pnp.problem = Lector de tarjetas inteligentes {0}: está PnP-present, pero Windows informa de un problema de PnP — código {1}, estado {2}
+diag.pnp.unavailable = Lectores de tarjetas inteligentes (PnP): comprobación no disponible ({0})

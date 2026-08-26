@@ -73,7 +73,7 @@ namespace CryptoProExport
             Exporter.UserPin = userPin;
             var tokens = Pkcs11Token.Enumerate(readContainers: false, cancel: Cancel);
             DirectTokenApdu.EnsureSingleReaderForExplicitPin(tokens, userPin);
-            // Все подтверждённые модели исключаются из rtCOMLite: для S/Lite/LT есть прямой
+            // Все подтверждённые модели исключаются из rtCOMLite: для S/Lite/LT/ESMART есть прямой
             // APDU, а на ECP/чужом носителе файловый обход либо бессмыслен, либо опасен.
             Exporter.SkipReaders = Pkcs11Token.SmartCardReaders(tokens);
             var saved = new List<(RutokenContainer, string)>();
@@ -219,7 +219,7 @@ namespace CryptoProExport
                 certExchange, certSignature, containerPassword, normalizeLite: true);
         }
 
-        /// <summary>Полный цикл для выбранного Rutoken S/Lite или JaCarta LT.</summary>
+        /// <summary>Полный цикл для выбранного Rutoken S/Lite, JaCarta LT или ESMART.</summary>
         public ExportPipelineResult ExportDirectAndMakeExportable(
             Pkcs11TokenInfo token, DirectTokenContainerRef selected, string destParent,
             string userPin = null, string certExchange = null, string certSignature = null,

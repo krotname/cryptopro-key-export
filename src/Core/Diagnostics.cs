@@ -33,6 +33,10 @@ namespace CryptoProExport
                 lines.Add("  " + Strings.Get("diag.rtcom.warn"));
             if (detailed) lines.AddRange(RutokenExporter.DescribeSource());
 
+            // 2a. PnP — failed-start reader исчезает из PC/SC и PKCS#11, хотя остаётся PnP-present.
+            //     Показываем безопасные VID/PID без полного Instance ID (его хвост бывает серийником).
+            lines.AddRange(SmartCardReaderHealth.Report());
+
             // 2b. PKCS#11 — путь для смарт-карточных носителей (где rtCOMLite файлы не отдаёт).
             //     Библиотеки берутся из системы (драйверы носителей), не вшиваются. Их может быть
             //     несколько: каждая показывает только своего вендора. В detailed — перечень токенов.

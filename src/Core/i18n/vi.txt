@@ -40,7 +40,7 @@ btn.help = Trợ giúp
 btn.cancel = Huỷ
 
 tip.refresh = Bước 1. Hiển thị danh sách container khoá:\n  • những cái CryptoPro CSP nhìn thấy (kể cả trên token đã cắm);\n  • những cái tìm thấy trực tiếp trên các Rutoken đang kết nối.\nKhông thay đổi gì — chỉ đọc. Bắt đầu từ nút này là tiện nhất.
-tip.export = Bước 2. Lấy các container từ mọi Rutoken đang kết nối vào thư mục đích\n(mỗi container 6 tệp *.key). Đọc thẳng bộ nhớ token, bỏ qua CSP,\nnên vẫn chạy được khi có lệnh cấm xuất. Token và dữ liệu trên đó không bị thay đổi.\nKhoá trong bản sao vẫn chưa xuất được — việc đó do nút «Làm cho xuất được» đảm nhiệm.
+tip.export = Bước 2. Lấy các container từ Rutoken S / Lite, JaCarta LT và ESMART vào thư mục đích\n(mỗi container 6 tệp *.key). Đọc thẳng bộ nhớ token, bỏ qua CSP,\nnên vẫn chạy được khi có lệnh cấm xuất. Token và dữ liệu trên đó không bị thay đổi.\nKhoá trong bản sao vẫn chưa xuất được — việc đó do nút «Làm cho xuất được» đảm nhiệm.
 tip.extract = Bước 3. Lưu chứng thư của container được chọn trong danh sách ra tệp .cer\n(dữ liệu công khai, được lấy ra bình thường qua CryptoAPI).\nCần có container được chọn, token đã cắm và CSP nhìn thấy container.\np12utility cần đúng chứng thư này để gỡ lệnh cấm xuất.
 tip.full = Tất cả trong một cú nhấp: lấy container từ token → lấy chứng thư →\ngỡ lệnh cấm xuất khoá riêng (p12utility --cprepair --keyexport).\nKết quả: trong thư mục đích có bản sao container với khoá xuất được\n(dùng để sao lưu, chuyển máy và chuyển đổi sang PFX).\nToken gốc không bị thay đổi; tệp header.key ban đầu của bản sao được giữ lại là header.key.backup.
 tip.check = Kiểm tra container được chọn: lệnh cấm xuất khoá riêng đã được gỡ hay chưa.\nChương trình đọc quyền của khoá (KP_PERMISSIONS) — bản thân khoá không bao giờ bị xuất.\nĐó là cách xác nhận «Làm cho xuất được» thực sự có tác dụng.
@@ -250,7 +250,7 @@ cli.lang.missing = --lang cần một mã ngôn ngữ. Các ngôn ngữ hiện c
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = có
 common.certonly = chỉ chứng chỉ
-pkcs11.nolib = Không tìm thấy thư viện PKCS#11 (rtPKCS11ECP.dll, jcPKCS11-2.dll) — hãy cài trình điều khiển Rutoken hoặc JaCarta Unified Client
+pkcs11.nolib = Không tìm thấy thư viện PKCS#11 (rtPKCS11ECP.dll, jcPKCS11-2.dll, isbc_pkcs11_main.dll) — hãy cài trình điều khiển Rutoken, JaCarta Unified Client hoặc ESMART PKI Client
 pkcs11.loadfail = Không tải được thư viện PKCS#11: {0}
 pkcs11.enumfail = Không liệt kê được các khe PKCS#11: {0}
 pkcs11.tokenfail = Token «{0}»: {1}
@@ -362,3 +362,8 @@ carrier.etoken = eToken / SafeNet
 carrier.unknown = vật mang không xác định
 pcsc.contextfail = PC/SC: không thể kết nối tới dịch vụ thẻ thông minh ({0})
 pcsc.statusfail = PC/SC: không thể đọc trạng thái đầu đọc ({0})
+diag.pnp.none = Đầu đọc thẻ thông minh (PnP): không có thiết bị PnP-present
+diag.pnp.ok = Đầu đọc thẻ thông minh (PnP): {0} thiết bị PnP-present, mọi trình điều khiển đã khởi động
+diag.pnp.failed = Đầu đọc thẻ thông minh {0}: ở trạng thái PnP-present nhưng trình điều khiển không khởi động — mã {1}, trạng thái {2}
+diag.pnp.problem = Đầu đọc thẻ thông minh {0}: ở trạng thái PnP-present nhưng Windows báo cáo sự cố PnP — mã {1}, trạng thái {2}
+diag.pnp.unavailable = Đầu đọc thẻ thông minh (PnP): không thể kiểm tra ({0})

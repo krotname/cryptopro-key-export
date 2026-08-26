@@ -21,7 +21,7 @@ interface languages fall back to the English text.
   * Windows with CryptoPro CSP installed (tested on 5.0 R2).
   * Private-key operations need a license (.jws). This machine's
     fingerprint for obtaining one is shown by the fingerprint command.
-  * To read from a token — Rutoken S / Lite or JaCarta LT. A Rutoken
+  * To read from a token — Rutoken S / Lite, JaCarta LT or ESMART. A Rutoken
     ECP 2.0 with a hardware non-extractable key cannot be exported
     this way: the key never physically leaves the chip.
   * Install the vendor driver/client for the exact token. It supplies
@@ -50,7 +50,7 @@ interface languages fall back to the English text.
 
   PIN: enter the PIN of the selected token. The program uses a factory
   PIN automatically only when the driver confirms that state:
-  12345678 for Rutoken, 1234567890 for JaCarta LT.
+  12345678 for Rutoken and ESMART, 1234567890 for JaCarta LT.
   One entered PIN is never sent to several readers: select an APDU row
   or use tokenexport/tokenfull with the exact reader name.
 

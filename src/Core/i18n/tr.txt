@@ -40,7 +40,7 @@ btn.help = Yardım
 btn.cancel = İptal
 
 tip.refresh = 1. adım. Anahtar kapsayıcılarının listesini göster:\n  • CryptoPro CSP’nin gördükleri (takılı belirteçtekiler dâhil);\n  • bağlı Rutoken’larda doğrudan bulunanlar.\nHiçbir şeyi değiştirmez — yalnızca okur. Başlamak için uygun düğme.
-tip.export = 2. adım. Bağlı tüm Rutoken’lardan kapsayıcıları hedef klasöre çıkar\n(kapsayıcı başına 6 *.key dosyası). Belirtecin belleğini CSP’yi atlayarak doğrudan okur,\nbu yüzden dışa aktarım yasağı varken de çalışır. Belirteç ve verileri değişmez.\nÇıkarılan kopyadaki anahtar hâlâ dışa aktarılamaz — onu «Dışa aktarılabilir yap» düğmesi halleder.
+tip.export = 2. adım. Rutoken S / Lite, JaCarta LT ve ESMART’tan kapsayıcıları hedef klasöre çıkar\n(kapsayıcı başına 6 *.key dosyası). Belirtecin belleğini CSP’yi atlayarak doğrudan okur,\nbu yüzden dışa aktarım yasağı varken de çalışır. Belirteç ve verileri değişmez.\nÇıkarılan kopyadaki anahtar hâlâ dışa aktarılamaz — onu «Dışa aktarılabilir yap» düğmesi halleder.
 tip.extract = 3. adım. Listede seçili kapsayıcının sertifikasını bir .cer dosyasına kaydet\n(açık veri, CryptoAPI üzerinden olağan biçimde çıkarılır).\nListede seçili bir kapsayıcı, takılı belirteç ve kapsayıcının CSP’ye görünür olması gerekir.\nDışa aktarım yasağını kaldırmak için p12utility’ye bu sertifika gerekir.
 tip.full = Tek tıkla her şey: kapsayıcıları belirteçten çıkar → sertifikaları çıkar →\nözel anahtarın dışa aktarım yasağını kaldır (p12utility --cprepair --keyexport).\nSonuç: hedef klasörde dışa aktarılabilir anahtara sahip bir kapsayıcı kopyası\n(yedek, taşıma ve PFX’e dönüştürme için uygundur).\nÖzgün belirteç değişmez; kopyanın asıl header.key dosyası header.key.backup olarak kalır.
 tip.check = Listede seçili kapsayıcıyı denetle: özel anahtarın dışa aktarım yasağı kalktı mı?\nProgram anahtarın izinlerini (KP_PERMISSIONS) okur — anahtarın kendisi hiç dışa aktarılmaz.\n«Dışa aktarılabilir yap» gerçekten işe yaradı mı, böyle doğrulanır.
@@ -250,7 +250,7 @@ cli.lang.missing = --lang bir dil kodu ister. Kullanılabilir diller: {0}
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = mevcut
 common.certonly = yalnızca sertifika
-pkcs11.nolib = PKCS#11 kitaplığı bulunamadı (rtPKCS11ECP.dll, jcPKCS11-2.dll) — Rutoken sürücülerini veya JaCarta Unified Client uygulamasını kurun
+pkcs11.nolib = PKCS#11 kitaplığı bulunamadı (rtPKCS11ECP.dll, jcPKCS11-2.dll, isbc_pkcs11_main.dll) — Rutoken sürücülerini, JaCarta Unified Client veya ESMART PKI Client uygulamasını kurun
 pkcs11.loadfail = PKCS#11 kitaplığı yüklenemedi: {0}
 pkcs11.enumfail = PKCS#11 yuvaları listelenemedi: {0}
 pkcs11.tokenfail = Token «{0}»: {1}
@@ -362,3 +362,8 @@ carrier.etoken = eToken / SafeNet
 carrier.unknown = bilinmeyen taşıyıcı
 pcsc.contextfail = PC/SC: akıllı kart hizmetine bağlanılamadı ({0})
 pcsc.statusfail = PC/SC: okuyucu durumu okunamadı ({0})
+diag.pnp.none = Akıllı kart okuyucuları (PnP): PnP-present cihaz yok
+diag.pnp.ok = Akıllı kart okuyucuları (PnP): {0} PnP-present, tüm sürücüler başlatıldı
+diag.pnp.failed = Akıllı kart okuyucusu {0}: PnP-present durumunda, ancak sürücüsü başlatılamadı — kod {1}, durum {2}
+diag.pnp.problem = Akıllı kart okuyucusu {0}: PnP-present durumunda, ancak Windows bir PnP sorunu bildiriyor — kod {1}, durum {2}
+diag.pnp.unavailable = Akıllı kart okuyucuları (PnP): denetim kullanılamıyor ({0})

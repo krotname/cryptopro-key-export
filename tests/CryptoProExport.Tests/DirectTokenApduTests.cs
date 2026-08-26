@@ -10,6 +10,7 @@ namespace CryptoProExport.Tests
         [InlineData(RutokenKind.RutokenS, "12345678")]
         [InlineData(RutokenKind.RutokenLite, "12345678")]
         [InlineData(RutokenKind.JaCartaLt, "1234567890")]
+        [InlineData(RutokenKind.Esmart, "12345678")]
         public void ResolvePin_UsesFamilySpecificFactoryPinOnlyWhenDriverConfirmsIt(
             RutokenKind kind, string expected)
         {
@@ -117,10 +118,40 @@ namespace CryptoProExport.Tests
             Assert.Equal(new byte[] { 0x2C, 0x01 }, RutokenSApdu.FindTag(fcp, 0x80));
         }
 
+        [Fact]
+        public void EsmartFcp_UsesBigEndianSizeInsideFciTemplate()
+        {
+            byte[] fcp = { 0x6F, 0x08, 0x83, 0x02, 0xF1, 0x06, 0x80, 0x02, 0x01, 0x00 };
+
+            Assert.Equal(256, EsmartApdu.FcpSize(fcp));
+            Assert.Equal(new byte[] { 0x01, 0x00 }, EsmartApdu.FindTag(fcp, 0x80));
+        }
+
+        [Fact]
+        public void EsmartFileIds_FollowObservedNineSlotLayout()
+        {
+            Assert.Equal(0xF106, EsmartApdu.FileId(1, 0x06));
+            Assert.Equal(0xF103, EsmartApdu.FileId(1, 0x03));
+            Assert.Equal(0xF112, EsmartApdu.FileId(1, 0x12));
+            Assert.Equal(0xF906, EsmartApdu.FileId(9, 0x06));
+            Assert.Throws<ArgumentOutOfRangeException>(() => EsmartApdu.FileId(0, 0x06));
+            Assert.Throws<ArgumentOutOfRangeException>(() => EsmartApdu.FileId(10, 0x06));
+        }
+
+        [Fact]
+        public void EsmartPayload_StripsObservedMarkerAndFixedFilePadding()
+        {
+            byte[] raw = { 0x01, 0x30, 0x03, 0x16, 0x01, 0x41, 0x00, 0x00, 0x00 };
+
+            Assert.Equal(new byte[] { 0x30, 0x03, 0x16, 0x01, 0x41 },
+                EsmartApdu.NormalizePayload(raw));
+        }
+
         [Theory]
         [InlineData(RutokenKind.RutokenS, true)]
         [InlineData(RutokenKind.RutokenLite, true)]
         [InlineData(RutokenKind.JaCartaLt, true)]
+        [InlineData(RutokenKind.Esmart, true)]
         [InlineData(RutokenKind.RutokenEcp, false)]
         [InlineData(RutokenKind.Other, false)]
         public void Supports_ListsOnlyProvenPassiveBackends(RutokenKind kind, bool expected)

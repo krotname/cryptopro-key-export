@@ -21,13 +21,14 @@
 | **Рутокен ЭЦП 2.0** | активный чип | **нет** | 🔬🧩 fw 23.02: `CKA_EXTRACTABLE=false`, `csptest -keycopy` → `0x8009000b` | покрыт |
 | **Рутокен ЭЦП 3.0** | активный чип / ФКН | **нет** | 🔬🧩 fw 30.02: контейнер CSP объектом PKCS#11 не становится; отдельная ключевая пара имеет `CKA_NEVER_EXTRACTABLE=true`; `C_WrapKey` → `CKR_KEY_NOT_WRAPPABLE` | покрыт |
 | **JaCarta PRO** | пассивный носитель | исследовательски да, production ещё нет | 🔬 fw 1.01: штатные пути отказали, APDU-исследование прочитало ключевые файлы и подтвердило `d·G==Q`; отдельный production-бэкенд не включён | исследование закрыто |
-| **JaCarta LT** (`JaCarta DS`) | пассивный Datastore | **да, APDU** | 🔬 `VID_24DC/PID_0102`, 26.08.2026: при 0 PKCS#11-объектов прямой Datastore APDU прочитал 6 файлов; обе пары `…98 → …9C`; HDIMAGE и PFX успешны | покрыт |
+| **JaCarta LT** (`JaCarta DS`) | пассивный Datastore | **да, APDU** | 🔬 `VID_24DC/PID_0102`, 26–27.08.2026: два полных прогона; прямой Datastore APDU прочитал 6 файлов; обе пары `…98 → …9C`; HDIMAGE и PFX успешны | покрыт |
 | JaCarta-2 ГОСТ | активный чип | не проверялось | 📋 общая PKCS#11-диагностика готова, живого экземпляра не было | по возможности |
-| ESMART Token ГОСТ | активный чип | не проверялось | 📋 нужен свой PKCS#11 и живой носитель | по возможности |
+| **ESMART Token USB 64K** | пассивный CSP-раздел + аппаратные PKCS#11-объекты | **файловый CSP-контейнер — да, APDU** | 🔬 `VID_072F/PID_90DE`, 27.08.2026: полный E2E, обе пары `…98 → …9C`, HDIMAGE и PFX; отдельный RSA private object аппаратно неизвлекаем | покрыт |
+| **ESMART Token** | пассивный CSP-раздел + аппаратные PKCS#11-объекты | **файловый CSP-контейнер — да, APDU** | 🔬 `VID_2CE4/PID_7479`, 27.08.2026: Code 10 закрыт, полный E2E идентичен USB 64K; обе пары, HDIMAGE и PFX успешны | покрыт |
 
 ## Что доказано физически
 
-На Рутокен S и JaCarta LT использован одинаково строгий сценарий:
+На Рутокен S, JaCarta LT и обоих ESMART использован одинаково строгий сценарий:
 
 1. точная идентификация USB и PC/SC reader;
 2. создание отдельного синтетического двухключевого контейнера прямо на носителе;
@@ -46,6 +47,7 @@
 - [Рутокен S](apdu/rutoken-s.md);
 - [Рутокен Lite fw 9](apdu/rutoken-lite-fw9.md);
 - [JaCarta LT](hardware/jacarta-lt.md);
+- [ESMART Token USB 64K и ESMART Token](hardware/esmart-usb64k.md);
 - [JaCarta PRO](apdu/jacarta-pro.md);
 - [Рутокен ЭЦП 3.0](hardware/rutoken-ecp3.md).
 
@@ -54,7 +56,7 @@
 Пассивный носитель хранит файловый контейнер, а криптооперации выполняет CSP на
 компьютере. Флаг «неэкспортируемости» в таком случае является политикой CSP и может
 быть обойдён чтением файловой памяти владельцем. Конкретные команды APDU различаются
-у S, Lite, JaCarta LT и JaCarta PRO, поэтому маршрутизация всегда fail-closed по типу.
+у S, Lite, JaCarta LT, JaCarta PRO и ESMART, поэтому маршрутизация всегда fail-closed по типу.
 
 Активный Рутокен ЭЦП вычисляет подпись внутри чипа; закрытый ключ не представлен
 шестью файлами и аппаратно не покидает носитель. Для него утилита предоставляет
@@ -72,3 +74,5 @@
 - [Драйверы Рутокен для Windows](https://www.rutoken.ru/support/download/windows/)
 - [JaCarta LT](https://www.aladdin-rd.ru/catalog/jacarta/jacarta-lt/)
 - [JaCarta Datastore в PKCS#11](https://developer.aladdin-rd.ru/pkcs11/2.4.1/guide/applets.html)
+- [Поддержка ESMART Token](https://token.esmart.ru/support)
+- [ESMART Token — PKCS#11](https://cdn.esmart.ru/token/docs/manuals/ESMART%20-%20PKCS11.pdf)

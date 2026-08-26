@@ -40,7 +40,7 @@ btn.help = Hilfe
 btn.cancel = Abbrechen
 
 tip.refresh = Schritt 1. Die Liste der Schlüsselcontainer anzeigen:\n  • die für CryptoPro CSP sichtbaren (auch auf dem eingesteckten Token);\n  • die direkt auf angeschlossenen Rutoken gefundenen.\nÄndert nichts — liest nur. Ein guter Startpunkt.
-tip.export = Schritt 2. Die Container von allen angeschlossenen Rutoken in den Zielordner auslesen\n(je 6 *.key-Dateien pro Container). Liest den Tokenspeicher direkt am CSP vorbei,\ndarum funktioniert es auch bei bestehendem Exportverbot. Token und Daten bleiben unverändert.\nDer Schlüssel in der Kopie bleibt nicht exportierbar — dafür ist «Exportierbar machen» da.
+tip.export = Schritt 2. Die Container von Rutoken S / Lite, JaCarta LT und ESMART in den Zielordner auslesen\n(je 6 *.key-Dateien pro Container). Liest den Tokenspeicher direkt am CSP vorbei,\ndarum funktioniert es auch bei bestehendem Exportverbot. Token und Daten bleiben unverändert.\nDer Schlüssel in der Kopie bleibt nicht exportierbar — dafür ist «Exportierbar machen» da.
 tip.extract = Schritt 3. Das Zertifikat des in der Liste gewählten Containers in eine .cer-Datei speichern\n(öffentliche Daten, werden regulär über CryptoAPI entnommen).\nNötig sind ein gewählter Container, ein eingesteckter Token und Sichtbarkeit im CSP.\np12utility braucht dieses Zertifikat, um das Exportverbot aufzuheben.
 tip.full = Alles mit einem Klick: Container vom Token auslesen → Zertifikate entnehmen →\nExportverbot des privaten Schlüssels aufheben (p12utility --cprepair --keyexport).\nErgebnis: im Zielordner liegt eine Containerkopie mit exportierbarem Schlüssel\n(taugt für Sicherung, Umzug und Umwandlung nach PFX).\nDer ursprüngliche Token bleibt unverändert; die ursprüngliche header.key der Kopie bleibt als header.key.backup erhalten.
 tip.check = Den gewählten Container prüfen: Ist das Exportverbot des privaten Schlüssels aufgehoben?\nDas Programm liest die Schlüsselrechte (KP_PERMISSIONS) — der Schlüssel selbst wird nie exportiert.\nSo wird bestätigt, dass «Exportierbar machen» wirklich gewirkt hat.
@@ -250,7 +250,7 @@ cli.lang.missing = --lang braucht einen Sprachcode. Verfügbare Sprachen: {0}
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = vorhanden
 common.certonly = nur Zertifikat
-pkcs11.nolib = Keine PKCS#11-Bibliothek gefunden (rtPKCS11ECP.dll, jcPKCS11-2.dll) — installieren Sie die Rutoken-Treiber oder JaCarta Unified Client
+pkcs11.nolib = Keine PKCS#11-Bibliothek gefunden (rtPKCS11ECP.dll, jcPKCS11-2.dll, isbc_pkcs11_main.dll) — installieren Sie die Rutoken-Treiber, JaCarta Unified Client oder ESMART PKI Client
 pkcs11.loadfail = PKCS#11-Bibliothek konnte nicht geladen werden: {0}
 pkcs11.enumfail = PKCS#11-Slots konnten nicht aufgelistet werden: {0}
 pkcs11.tokenfail = Token „{0}“: {1}
@@ -362,3 +362,8 @@ carrier.etoken = eToken / SafeNet
 carrier.unknown = unbekannter Träger
 pcsc.contextfail = PC/SC: Verbindung zum Smartcard-Dienst fehlgeschlagen ({0})
 pcsc.statusfail = PC/SC: Leserstatus konnte nicht gelesen werden ({0})
+diag.pnp.none = Smartcard-Leser (PnP): keine PnP-present-Geräte
+diag.pnp.ok = Smartcard-Leser (PnP): {0} PnP-present, alle Treiber gestartet
+diag.pnp.failed = Smartcard-Leser {0}: ist PnP-present, aber der Treiber wurde nicht gestartet — Code {1}, Status {2}
+diag.pnp.problem = Smartcard-Leser {0}: ist PnP-present, aber Windows meldet ein PnP-Problem — Code {1}, Status {2}
+diag.pnp.unavailable = Smartcard-Leser (PnP): Prüfung nicht verfügbar ({0})
