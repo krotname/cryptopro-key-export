@@ -41,11 +41,13 @@ namespace CryptoProExport
                 ? Strings.Get("diag.pkcs11.missing")
                 : Strings.Format("diag.pkcs11.found",
                     string.Join("; ", p11.Select(l => l.Vendor + " — " + l.Path)))));
+            List<Pkcs11TokenInfo> pkcs11Tokens = null;
             if (detailed && p11.Count > 0)
             {
                 // Сообщения об ошибках PKCS#11 идут в сам отчёт: deps — диагностическая команда,
                 // и «токенов не видно» без причины здесь бесполезно.
                 var tokens = Pkcs11Token.Enumerate(readContainers: true, log: m => lines.Add("  " + m));
+                pkcs11Tokens = tokens;
                 foreach (var t in tokens)
                 {
                     lines.Add("  " + Strings.Format("diag.pkcs11.token",
@@ -63,6 +65,27 @@ namespace CryptoProExport
                             : Strings.Format("diag.pkcs11.container",
                                 c.Name ?? Strings.Get("log.container.unnamed"),
                                 Strings.Get(c.Certificate != null ? "common.present" : "common.none"))));
+                }
+            }
+
+            // 2c. PC/SC — карты, физически стоящие в считывателях, но не показанные ни одной
+            //     библиотекой PKCS#11. Пассивный опрос (без подключения к карте) честно отличает
+            //     «носитель не вставлен» от «носитель есть, но токеном не является» — например,
+            //     JaCarta на платформе Athena IDProtect работает через минидрайвер Microsoft, и
+            //     vendor-библиотеки PKCS#11 её как токен не видят.
+            if (detailed)
+            {
+                var pcsc = PcscReaders.List(m => lines.Add("  " + m));
+                var readers = new List<string>();
+                foreach (var t in pkcs11Tokens ?? new List<Pkcs11TokenInfo>())
+                    if (t?.Reader != null) readers.Add(t.Reader);
+                var uncovered = PcscReaders.Uncovered(pcsc, readers);
+                if (uncovered.Count > 0)
+                {
+                    lines.Add(Strings.Get("cli.pcsc.uncovered"));
+                    foreach (var r in uncovered)
+                        lines.Add("  " + Strings.Format("cli.pcsc.line",
+                            r.Name, Strings.Get(PcscReaders.CarrierHintKey(r.Name)), r.Atr ?? "?"));
                 }
             }
 

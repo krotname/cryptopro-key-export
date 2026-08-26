@@ -1,11 +1,11 @@
 CryptoPro Key Export — manual
 ==================================================================
 
-The program copies a file-backed CryptoPro container off a Rutoken S
-or Lite, lifts the private-key export ban and writes PKCS#12 (.pfx).
-It does not copy a Rutoken ECP hardware private key: only diagnostics
-and public certificates, when present, are available for ECP. It is
-meant for the owner of the keys.
+The program copies a file-backed CryptoPro container off a supported
+token, lifts the private-key export ban and writes PKCS#12 (.pfx). A
+Rutoken ECP hardware key is not copied: only diagnostics and public
+certificates, when present, are available for ECP. It is meant for the
+owner of the keys: backup, migration or conversion.
 
 Everything needed lives inside the exe. The only separate requirement
 is CryptoPro CSP — a licensed product that cannot be embedded.
@@ -21,11 +21,13 @@ interface languages fall back to the English text.
   * Windows with CryptoPro CSP installed (tested on 5.0 R2).
   * Private-key operations need a license (.jws). This machine's
     fingerprint for obtaining one is shown by the fingerprint command.
-  * To read from a token — a Rutoken S / Lite. A Rutoken ECP 2.0 with
-    a hardware non-extractable key cannot be exported this way: the
-    key never physically leaves the chip.
-  * Nothing to download: p12utility and rtCOMLite are embedded in the
-    program and unpack themselves on first use.
+  * To read from a token — Rutoken S / Lite or JaCarta LT. A Rutoken
+    ECP 2.0 with a hardware non-extractable key cannot be exported
+    this way: the key never physically leaves the chip.
+  * Install the vendor driver/client for the exact token. It supplies
+    the PC/SC reader and PKCS#11 metadata used for safe routing.
+  * No helper utilities to download: p12utility and rtCOMLite are
+    embedded and unpack themselves on first use.
 
   Check readiness: the «Refresh list» button or the command
   CryptoProExport.exe deps
@@ -33,22 +35,24 @@ interface languages fall back to the English text.
 
 2. HOW TO WORK: THE KEY IS STILL ON THE TOKEN
 ------------------------------------------------------------------
-  1) Insert the Rutoken.
-  2) «Refresh list» shows the token type and capabilities, CryptoPro
-     containers and public certificates found on the token.
-     For Rutoken ECP this is the boundary: its hardware key is not
-     copied.
-  3) For S/Lite, fill in «Destination folder» for the copied files.
-  4) On an APDU/rtCOMLite row, «Make exportable» does this:
-       copies the file container (6 *.key files),
+  1) Insert a supported token.
+  2) «Refresh list» shows its type, capabilities, CryptoPro containers
+     and public certificates. For Rutoken ECP this is the boundary:
+     its hardware private key is not copied.
+  3) For a file-backed token row, fill in «Destination folder».
+  4) «Make exportable» then does everything in one click:
+       copies the container off the token (6 *.key files),
        extracts the certificates through CryptoAPI,
        lifts the ban on exporting the private key.
      The original token is not modified.
   5) «Check key» — confirm that the ban is really gone.
   6) «Export to PFX» — get a .pfx with the private key.
 
-  PIN: leave the field empty and the system window will ask for it.
-  If the token still has the factory PIN, 12345678 is used.
+  PIN: enter the PIN of the selected token. The program uses a factory
+  PIN automatically only when the driver confirms that state:
+  12345678 for Rutoken, 1234567890 for JaCarta LT.
+  One entered PIN is never sent to several readers: select an APDU row
+  or use tokenexport/tokenfull with the exact reader name.
 
 
 3. HOW TO WORK: THE CONTAINER IS ALREADY IN A FOLDER
@@ -100,7 +104,9 @@ interface languages fall back to the English text.
   token [folder]                      type/capabilities/certificates
   extractcert <container> <folder>    extract the .cer
   checkexport <container>             check the export ban
-  export <folder> [pin]               copy containers off Rutoken S
+  export <folder> [pin]               copy containers off tokens
+  tokenexport <reader> <dir> [pin]    copy from one selected token
+  tokenfull <reader> <dir> [pin]      selected token + all remaining steps
   keyexport <folder> <cert.cer> [pw]  lift the export ban
   install <folder> [name]             install a container into CSP
   installed                           show installed containers
@@ -127,8 +133,8 @@ interface languages fall back to the English text.
   2 — no key was found in the container, 3 — at least one found key
   is still locked or its permissions could not be read.
 
-  For export and full, code 2 means "no container was taken off".
-  A partially completed full returns 3. For token, code 2 means that
+  For export, full and tokenfull, code 2 means "no container was taken off".
+  A partially completed full or tokenfull returns 3. For token, code 2 means
   no token was found or no certificate was available for the requested
   output folder. A script should treat only 0 as success.
 

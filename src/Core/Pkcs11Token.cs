@@ -11,7 +11,7 @@ namespace CryptoProExport
     /// <summary>Семейство подключённого токена — по нему выбирается путь снятия контейнера.</summary>
     public enum RutokenKind
     {
-        /// <summary>Рутокен S / старые: файловая память доступна через rtCOMLite.</summary>
+        /// <summary>Рутокен S: файловая память читается прямым PC/SC APDU.</summary>
         RutokenS,
         /// <summary>Рутокен Lite: смарт-карточный профиль, файлы через rtCOMLite не видны.</summary>
         RutokenLite,
@@ -20,7 +20,9 @@ namespace CryptoProExport
         /// но аппаратный закрытый ключ приложение не копирует.
         /// </summary>
         RutokenEcp,
-        /// <summary>Токен другого вендора (JaCarta, eToken…) — распознан, но путь не проверялся.</summary>
+        /// <summary>JaCarta LT: пассивный носитель; файлы контейнера читаются прямым APDU.</summary>
+        JaCartaLt,
+        /// <summary>Токен другого вендора (JaCarta PRO, eToken…) — распознан, но отдельного безопасного пути нет.</summary>
         Other,
         /// <summary>Модель не опознана.</summary>
         Unknown,
@@ -67,7 +69,7 @@ namespace CryptoProExport
         public string Serial;        // серийный номер
         public string Hardware;      // версия аппаратной платформы из CK_TOKEN_INFO
         public string Firmware;      // версия прошивки
-        public RutokenKind Kind;
+        public RutokenKind Kind = RutokenKind.Unknown;
 
         /// <summary>Число механизмов PKCS#11; -1 — список получить не удалось.</summary>
         public int MechanismCount = -1;
@@ -133,6 +135,7 @@ namespace CryptoProExport
     public static class Pkcs11Token
     {
         private const string RutokenDll = "rtPKCS11ECP.dll";
+        private const string RutokenLegacyDll = "rtPKCS11.dll";
         private const string JaCartaDll = "jcPKCS11-2.dll";
         private const string CryptoProApp = "CryptoPro CSP";
 
@@ -148,6 +151,10 @@ namespace CryptoProExport
             new (string Vendor, string Dll)[]
             {
                 ("Rutoken", RutokenDll),
+                // Старый Rutoken S не показывается ECP-библиотеке, но штатный драйвер
+                // устанавливает отдельный rtPKCS11.dll. Дедупликация по reader ниже не
+                // даст двум Rutoken-библиотекам показать один носитель дважды.
+                ("Rutoken S", RutokenLegacyDll),
                 ("JaCarta", JaCartaDll),
             };
 
@@ -182,7 +189,8 @@ namespace CryptoProExport
                 // Каталог установки перечисляется только для Рутокена: JaCarta Unified Client
                 // кладёт jcPKCS11-2.dll исключительно в системный каталог (проверено на машине,
                 // где клиент установлен, — в Program Files библиотеки нет).
-                if (!string.Equals(dll, RutokenDll, StringComparison.OrdinalIgnoreCase)) yield break;
+                if (!string.Equals(dll, RutokenDll, StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(dll, RutokenLegacyDll, StringComparison.OrdinalIgnoreCase)) yield break;
 
                 foreach (var pf in new[]
                 {
@@ -277,6 +285,17 @@ namespace CryptoProExport
         /// </summary>
         public static RutokenKind Classify(string model, string manufacturer = null)
         {
+            // У JaCarta LT маркетинговое имя и модель апплета различаются: живой носитель
+            // сообщает model='JaCarta DS', а официальная документация называет апплет
+            // Datastore. Проверяем эту пару до общей классификации JaCarta как Other и до
+            // эвристики Rutoken Lite. Короткое 'DS' намеренно недостаточно.
+            if (IsJaCartaLt(model, manufacturer)) return RutokenKind.JaCartaLt;
+
+            // Маркер LT/Datastore без независимого свидетельства вендора недостаточен:
+            // не понижаем безопасный Unknown до общего Other только из-за слова JaCarta
+            // внутри самой модели.
+            if (IsJaCartaLtCandidate(model)) return RutokenKind.Unknown;
+
             RutokenKind byModel = ClassifyText(model);
             if (byModel != RutokenKind.Unknown) return byModel;
 
@@ -285,6 +304,75 @@ namespace CryptoProExport
             // rtCOMLite как Рутокен S (см. RutokenExporter.ShouldWalk).
             return ClassifyText(manufacturer) == RutokenKind.Other ? RutokenKind.Other : RutokenKind.Unknown;
         }
+
+        /// <summary>
+        /// Определить семейство считывателя для выбора протокола: достоверная PKCS#11-
+        /// классификация имеет приоритет, а отсутствующие или неполные метаданные дополняются
+        /// безопасной классификацией по имени считывателя. В частности, известный <see cref="RutokenKind.Other"/>
+        /// нельзя превратить в Рутокен Lite вводящим в заблуждение именем reader, а одной
+        /// подстроки <c>lite</c> без независимого свидетельства Rutoken/Aktiv недостаточно.
+        /// </summary>
+        public static RutokenKind ResolveReaderKind(string readerName, Pkcs11TokenInfo metadata)
+        {
+            if (metadata != null && metadata.Kind != RutokenKind.Unknown)
+                return metadata.Kind;
+
+            RutokenKind fallback = Classify(readerName, metadata?.Manufacturer);
+            if (fallback != RutokenKind.RutokenLite) return fallback;
+
+            // Явный чужой вендор сильнее совпавшей подстроки lite — смешивать протоколы
+            // смарт-карт опасно. Для неопознанного Foo Lite безопасный результат Unknown.
+            if (HasForeignVendorEvidence(readerName) || HasForeignVendorEvidence(metadata?.Manufacturer))
+                return RutokenKind.Other;
+
+            return HasRutokenVendorEvidence(readerName) || HasRutokenVendorEvidence(metadata?.Manufacturer)
+                ? RutokenKind.RutokenLite
+                : RutokenKind.Unknown;
+        }
+
+        private static bool HasRutokenVendorEvidence(string text)
+        {
+            string value = (text ?? string.Empty).Trim().ToLowerInvariant();
+            return value.Contains("rutoken") || value.Contains("рутокен")
+                || value.Contains("aktiv") || value.Contains("актив");
+        }
+
+        private static bool HasForeignVendorEvidence(string text)
+        {
+            string value = (text ?? string.Empty).Trim().ToLowerInvariant();
+            return value.Contains("jacarta") || value.Contains("aladdin")
+                || value.Contains("etoken") || value.Contains("esmart");
+        }
+
+        private static bool IsJaCartaLt(string model, string manufacturer)
+        {
+            string m = (model ?? string.Empty).Trim().ToLowerInvariant();
+            if (!IsJaCartaLtCandidate(m)) return false;
+
+            string vendor = (manufacturer ?? string.Empty).Trim().ToLowerInvariant();
+            bool vendorMetadata = vendor.Contains("aladdin") || vendor.Contains("jacarta");
+
+            // Слово JaCarta входит в названия моделей DS/LT и само по себе ничего не
+            // доказывает. В полной строке штатного reader независимое свидетельство вендора —
+            // «Aladdin R.D.» (например, «Aladdin R.D. JaCarta LT 0»).
+            bool vendorInReaderName = m.Contains("aladdin");
+            return vendorMetadata || vendorInReaderName;
+        }
+
+        private static bool IsJaCartaLtCandidate(string model)
+        {
+            string m = (model ?? string.Empty).Trim().ToLowerInvariant();
+            return m.Contains("jacarta ds") || m.Contains("jacarta lt")
+                || m.Contains("datastore");
+        }
+
+        /// <summary>
+        /// Fail-closed признак только для маршрутизации файлового обхода. Он намеренно шире
+        /// точной идентификации: bare LT/Datastore остаётся <see cref="RutokenKind.Unknown"/>,
+        /// но к такому считывателю нельзя применять файловый API Рутокен S.
+        /// </summary>
+        internal static bool HasUnsafeForeignFileWalkEvidence(string text)
+            => HasForeignVendorEvidence(text) || IsJaCartaLtCandidate(text);
 
         private static RutokenKind ClassifyText(string text)
         {
@@ -301,13 +389,18 @@ namespace CryptoProExport
         }
 
         /// <summary>
-        /// Имена считывателей, чью файловую память обходить нельзя: смарт-карточные Рутокены
-        /// (ЭЦП, Lite) и носители чужих вендоров — см. <see cref="RutokenExporter.ShouldWalk"/>.
+        /// Имена считывателей, которые нельзя отдавать rtCOMLite: смарт-карточные Рутокены,
+        /// чужие вендоры и Rutoken S, уже подтверждённый PKCS#11. Для S теперь используется
+        /// прямой APDU: rtCOMLite на непустом токене либо отвечает Unsupported function,
+        /// либо рушит кучу процесса.
         ///
         /// Чужие вендоры обязаны попадать сюда именно из PKCS#11: <c>ShouldWalk</c> получает только
         /// имя считывателя, а оно бывает безликим (<c>ACS ACR38U 0</c>), и тогда классификация по
         /// имени даёт <c>Unknown</c>. PKCS#11 в этот момент уже знает производителя — этот список
         /// и есть способ донести знание до файлового обхода (замечание Codex на PR #25).
+        /// Неподтверждённая LT/Datastore-модель намеренно остаётся <c>Unknown</c> и не получает
+        /// имя JaCarta LT, но всё равно исключается отсюда по принципу fail-closed: таких данных
+        /// уже достаточно, чтобы не применять к безликому считывателю файловый API Рутокен S.
         ///
         /// Чистая функция: покрыта тестами без обращения к железу.
         /// </summary>
@@ -317,22 +410,30 @@ namespace CryptoProExport
             foreach (var t in tokens ?? new List<Pkcs11TokenInfo>())
             {
                 if (t == null || string.IsNullOrEmpty(t.Reader)) continue;
-                if (t.Kind == RutokenKind.RutokenEcp || t.Kind == RutokenKind.RutokenLite
-                    || t.Kind == RutokenKind.Other)
+                if (t.Kind == RutokenKind.RutokenS
+                    || t.Kind == RutokenKind.RutokenEcp || t.Kind == RutokenKind.RutokenLite
+                    || t.Kind == RutokenKind.JaCartaLt
+                    || t.Kind == RutokenKind.Other
+                    || HasUnsafeForeignFileWalkEvidence(t.Model))
                     set.Add(t.Reader);
             }
             return set;
         }
 
         /// <summary>Локализованное название семейства токена.</summary>
-        public static string KindName(RutokenKind kind) => Strings.Get(kind switch
+        public static string KindName(RutokenKind kind)
         {
-            RutokenKind.RutokenS => "kind.rutoken.s",
-            RutokenKind.RutokenLite => "kind.rutoken.lite",
-            RutokenKind.RutokenEcp => "kind.rutoken.ecp",
-            RutokenKind.Other => "kind.other",
-            _ => "kind.unknown",
-        });
+            // Название продукта — торговая марка и во всех языках остаётся одинаковым.
+            if (kind == RutokenKind.JaCartaLt) return "JaCarta LT";
+            return Strings.Get(kind switch
+            {
+                RutokenKind.RutokenS => "kind.rutoken.s",
+                RutokenKind.RutokenLite => "kind.rutoken.lite",
+                RutokenKind.RutokenEcp => "kind.rutoken.ecp",
+                RutokenKind.Other => "kind.other",
+                _ => "kind.unknown",
+            });
+        }
 
         /// <summary>
         /// Классифицировать поколение только по возможностям, а не по PID/model/ATR/firmware.
