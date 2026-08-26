@@ -72,6 +72,25 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void ExportLiteContainer_RejectsJaCartaLtBeforeApduOrFilesystemWrite()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "cpx-jacarta-lt-" + Guid.NewGuid().ToString("N"));
+            var token = new Pkcs11TokenInfo
+            {
+                Reader = "Aladdin R.D. JaCarta LT 0",
+                Kind = RutokenKind.JaCartaLt,
+            };
+            var selected = new LiteContainerRef();
+            var pipeline = new ExportPipeline();
+
+            var error = Assert.Throws<ArgumentException>(
+                () => pipeline.ExportLiteContainer(token, selected, dir, "not-used"));
+
+            Assert.Contains("JaCarta LT", error.Message, StringComparison.Ordinal);
+            Assert.False(Directory.Exists(dir));
+        }
+
+        [Fact]
         public void NormalizeLiteContainer_ConvertsBothPrimaryFilesAndPreservesHeader()
         {
             string dir = Path.Combine(Path.GetTempPath(), "cpx-normalize-" + Guid.NewGuid().ToString("N"));

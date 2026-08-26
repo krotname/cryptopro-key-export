@@ -39,8 +39,8 @@ btn.logs = Log
 btn.help = Help
 btn.cancel = Cancel
 
-tip.refresh = Step 1. Show the list of key containers:\n  • those visible to CryptoPro CSP (including the inserted token);\n  • those found directly on connected Rutoken devices.\nChanges nothing — it only reads. A good place to start.
-tip.export = Step 2. Copy the containers from all connected Rutoken devices into the destination folder\n(6 *.key files per container). Reads the token memory directly, bypassing the CSP,\nso it works even when export is banned. The token and its data are not modified.\nThe key in the copy stays non-exportable — that is what «Make exportable» is for.
+tip.refresh = Step 1. Show the list of key containers:\n  • those visible to CryptoPro CSP (including the inserted token);\n  • those found directly on connected supported tokens.\nChanges nothing — it only reads. A good place to start.
+tip.export = Step 2. Copy containers from Rutoken S / Lite and JaCarta LT into the destination folder\n(6 *.key files per container). Reads token memory directly, bypassing the CSP,\nso it works even when export is banned. The token and its data are not modified.\nThe key in the copy stays non-exportable — that is what «Make exportable» is for.
 tip.extract = Step 3. Save the certificate of the container selected in the list into a .cer file\n(public data, extracted normally through CryptoAPI).\nRequires a selected container, an inserted token and the container being visible to the CSP.\np12utility needs that certificate in order to lift the export ban.
 tip.full = Everything in one click: copy the containers off the token → extract the certificates →\nlift the ban on exporting the private key (p12utility --cprepair --keyexport).\nResult: the destination folder holds a copy of the container with an exportable key\n(good for a backup, for moving to another machine and for conversion to PFX).\nThe original token is not modified; the original header.key of the copy is kept as header.key.backup.
 tip.check = Check the container selected in the list: has the private key export ban been lifted.\nThe program reads the key permissions (KP_PERMISSIONS) — the key itself is never exported.\nThis is how you confirm that «Make exportable» really worked.
@@ -54,7 +54,7 @@ tip.cancel = Interrupt the current operation.\nWork stops at the nearest step: a
 col.location = Location
 col.container = Container
 col.details = Details
-tip.list = Key containers that were found.\n«Location» = CSP (visible to CryptoPro), PKCS#11/APDU, or a Rutoken name read directly.\n«Export from token» and «Make exportable» act only on a selected APDU/rtCOMLite row; with no selection they scan every Rutoken S.\nOther actions use the selected container.
+tip.list = Key containers that were found.\n«Location» = CSP (visible to CryptoPro), PKCS#11/APDU, or direct carrier access.\n«Export from token» and «Make exportable» act on a selected APDU/rtCOMLite row; with no selection they scan every supported token.\nOther actions use the selected container.
 tip.log = Execution log: p12utility commands, token steps and errors.\nThe text can be selected and copied (Ctrl+C) — useful when investigating problems.
 
 # --- status bar ---
@@ -320,9 +320,12 @@ err.pfx.nocert = No certificate in the container and none given — point to a .
 err.pfx.badcert = The certificate file did not parse as X.509 with a 256-bit GOST key
 err.pfx.certmismatch = The certificate belongs to another key: the public keys differ
 cli.usage.liteexport = read a Rutoken Lite container over APDU and recover the key (no CSP)
+cli.usage.tokenexport = copy containers from one selected supported token to disk
+cli.usage.tokenfull = copy from one selected token + auto .cer + keyexport
 err.lite.none = no CryptoPro containers found on {0} over APDU
 err.lite.pin = the card rejected the PIN ({0}); check the PIN, guessing is not allowed
-log.export.directonly = The selected row does not expose a readable private-key container. Select an APDU/rtCOMLite row, or clear the selection to scan all Rutoken S devices.
+err.direct.pin.scope = one entered PIN cannot be sent to multiple readers; select one exact reader
+log.export.directonly = The selected row does not expose a readable private-key container. Select an APDU/rtCOMLite row, or clear the selection to scan all supported tokens.
 pipe.lite.normalized = Lite container «{0}» converted to the HDIMAGE file format
 pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAGE format: {1}
 

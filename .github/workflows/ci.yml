@@ -159,8 +159,13 @@ jobs:
           }
           if ($bad) { throw "Коды возврата разошлись с контрактом: $($bad -join '; ')" }
 
+      # Выкладка — удобство, а не проверка: сборка, тесты, self-test, зависимости,
+      # руководство, локализация и коды CLI уже проверены обязательными шагами выше.
+      # Квота GitHub Artifacts пересчитывается с задержкой 6–12 часов и не должна
+      # давать ложный красный всему job после успешной функциональной валидации.
       - name: Выложить портативный exe
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: CryptoProExport-portable-${{ env.PORTABLE_RID }}
           path: |
