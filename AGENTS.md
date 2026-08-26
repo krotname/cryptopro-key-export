@@ -669,7 +669,8 @@ GitHub Actions **работает** (`.github/workflows/ci.yml`). Прежнее
       `p12utility` поднял обе пары до `0x0013089C`/`0x0012289C`, HDIMAGE виден CSP,
       PFX содержит keybag и certificate bag по OpenSSL.
     - Маршрутизация fail-closed: одного похожего reader недостаточно — нужны одновременно
-      `Kind=Esmart`, производитель ISBC/ESMART из PKCS#11 и согласованная model/reader.
+      `Kind=Esmart`, производитель ISBC/ESMART из PKCS#11 и одно из двух точных проверенных
+      семейств reader (`ESMART Token USB 64K N` / `ISBC ESMART Token N`).
       Подробности: `docs/hardware/esmart-usb64k.md`.
     - На JaCarta LT в том же сеансе Unified Client 3.3 установил admin PIN форматированием;
       `C_InitPIN` в общем и STORAGE-модулях не поддержан, а `C_SetPIN(admin,newUser)`
@@ -717,7 +718,7 @@ GitHub Actions **работает** (`.github/workflows/ci.yml`). Прежнее
 прошли строгий физический E2E на синтетических неэкспортируемых двухключевых
 контейнерах до HDIMAGE и PFX (пп. 41–42). Не возвращай S к `rtCOMLite`, не
 маршрутизируй LT через PRO/Lite-протокол и не отправляй ESMART APDU без строгих
-PKCS#11-свидетельств ISBC.
+PKCS#11-свидетельств ISBC и точного проверенного семейства reader.
 
 **Рутокен ЭЦП** (п. 22–23, 25) остаётся отдельной отрицательной границей:
 PKCS#11 отдаёт публичный сертификат без PIN, но закрытый ключ аппаратно неизвлекаем.

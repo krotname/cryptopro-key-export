@@ -326,8 +326,8 @@ namespace CryptoProExport
         public static RutokenKind Classify(string model, string manufacturer = null)
         {
             // Штатный PKCS#11-модуль ESMART сообщает ISBC/ESMART в модели или производителе.
-            // Отдельная строгая проверка перед APDU дополнительно требует согласованные
-            // метаданные и точный reader; здесь достаточно корректно назвать семейство.
+            // Отдельная строгая проверка перед APDU дополнительно требует точное
+            // проверенное семейство reader; здесь достаточно корректно назвать вендора.
             if (HasEsmartEvidence(model))
                 return RutokenKind.Esmart;
 
@@ -399,15 +399,32 @@ namespace CryptoProExport
         }
 
         /// <summary>
-        /// Достаточны ли метаданные именно для отправки ESMART APDU. Одного похожего имени
-        /// reader недостаточно: семейство должен подтвердить штатный PKCS#11-модуль ISBC.
+        /// Достаточны ли метаданные именно для отправки ESMART APDU. Семейство должен
+        /// подтвердить штатный PKCS#11-модуль ISBC, а reader — совпасть с одной из двух
+        /// физически проверенных моделей. Числовой индекс reader может меняться.
         /// </summary>
         internal static bool IsConfirmedEsmart(Pkcs11TokenInfo token)
         {
             if (token == null || token.Kind != RutokenKind.Esmart) return false;
             bool vendor = HasEsmartEvidence(token.Manufacturer);
-            bool identity = HasEsmartEvidence(token.Model) || HasEsmartEvidence(token.Reader);
-            return vendor && identity;
+            return vendor && IsValidatedEsmartReader(token.Reader);
+        }
+
+        private static bool IsValidatedEsmartReader(string reader)
+        {
+            string value = (reader ?? string.Empty).Trim();
+            return IsIndexedReader(value, "ESMART Token USB 64K")
+                || IsIndexedReader(value, "ISBC ESMART Token");
+        }
+
+        private static bool IsIndexedReader(string value, string family)
+        {
+            if (!value.StartsWith(family + " ", StringComparison.OrdinalIgnoreCase)) return false;
+            string index = value.Substring(family.Length + 1);
+            if (index.Length == 0) return false;
+            foreach (char character in index)
+                if (character is < '0' or > '9') return false;
+            return true;
         }
 
         private static bool IsJaCartaLt(string model, string manufacturer)

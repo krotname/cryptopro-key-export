@@ -199,26 +199,37 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
-        public void IsConfirmedEsmart_RequiresVendorAndFamilyEvidenceTogether()
+        public void IsConfirmedEsmart_RequiresVendorAndValidatedReaderTogether()
         {
             Assert.True(Pkcs11Token.IsConfirmedEsmart(new Pkcs11TokenInfo
             {
                 Kind = RutokenKind.Esmart,
                 Reader = "ESMART Token USB 64K 0",
-                Model = "USB 64K",
                 Manufacturer = "ISBC",
             }));
             Assert.True(Pkcs11Token.IsConfirmedEsmart(new Pkcs11TokenInfo
             {
                 Kind = RutokenKind.Esmart,
-                Reader = "ISBC ESMART Token 0",
-                Model = "ESMART Token",
+                Reader = "ISBC ESMART Token 3",
                 Manufacturer = "ISBC CORP.",
             }));
             Assert.False(Pkcs11Token.IsConfirmedEsmart(new Pkcs11TokenInfo
             {
                 Kind = RutokenKind.Esmart,
                 Reader = "ESMART-looking reader",
+                Manufacturer = "ISBC",
+            }));
+            Assert.False(Pkcs11Token.IsConfirmedEsmart(new Pkcs11TokenInfo
+            {
+                Kind = RutokenKind.Esmart,
+                Reader = "ISBC ESMART Token Pro 0",
+                Model = "ESMART Token Pro",
+                Manufacturer = "ISBC",
+            }));
+            Assert.False(Pkcs11Token.IsConfirmedEsmart(new Pkcs11TokenInfo
+            {
+                Kind = RutokenKind.Esmart,
+                Reader = "ESMART Token USB 64K 0",
                 Manufacturer = "Contoso",
             }));
             Assert.False(Pkcs11Token.IsConfirmedEsmart(new Pkcs11TokenInfo
