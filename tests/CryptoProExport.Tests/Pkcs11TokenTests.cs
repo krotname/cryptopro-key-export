@@ -210,6 +210,86 @@ namespace CryptoProExport.Tests
             Assert.Equal(Strings.Get("pin.state.ok"), ok);
         }
 
+        [Theory]
+        [InlineData(false, 2048, false, false, true, RutokenCapabilityProfile.Unknown)]
+        [InlineData(true, 2048, false, false, true, RutokenCapabilityProfile.Ecp2Capabilities)]
+        [InlineData(true, 4096, false, false, true, RutokenCapabilityProfile.Ecp3Capable)]
+        [InlineData(true, 2048, true, true, true, RutokenCapabilityProfile.Ecp3Capable)]
+        [InlineData(true, 0, false, false, true, RutokenCapabilityProfile.Unknown)]
+        [InlineData(true, 2048, false, false, false, RutokenCapabilityProfile.Unknown)]
+        public void ClassifyCapabilities_UsesMechanismsNotNames(bool known, int rsa, bool ecdsa,
+            bool ecMechanismPresent, bool gost, RutokenCapabilityProfile expected)
+        {
+            Assert.Equal(expected,
+                Pkcs11Token.ClassifyCapabilities(known, rsa, ecdsa, ecMechanismPresent, gost));
+        }
+
+        [Fact]
+        public void ClassifyCapabilities_SoftwareEcdsaPresent_IsUnknown()
+        {
+            Assert.Equal(RutokenCapabilityProfile.Unknown,
+                Pkcs11Token.ClassifyCapabilities(capabilitiesKnown: true,
+                    hardwareRsaMaxBits: 2048, hardwareEcdsa: false,
+                    ecMechanismPresent: true, hardwareGost: true));
+        }
+
+        [Fact]
+        public void CapabilitySummary_ReportsReadOnlyHardwareProfile()
+        {
+            using var scope = Strings.Scope("en");
+            var info = new Pkcs11TokenInfo
+            {
+                Hardware = "20.05",
+                MechanismCount = 45,
+                HardwareRsaMaxBits = 2048,
+                HardwareEcdsa = false,
+                HardwareGost = true,
+                CapabilitiesKnown = true,
+                CapabilityProfile = RutokenCapabilityProfile.Ecp2Capabilities,
+            };
+
+            string summary = Pkcs11Token.CapabilitySummary(info);
+
+            Assert.Contains("20.05", summary, StringComparison.Ordinal);
+            Assert.Contains("45", summary, StringComparison.Ordinal);
+            Assert.Contains("2048", summary, StringComparison.Ordinal);
+            Assert.Contains(Pkcs11Token.CapabilityProfileName(
+                RutokenCapabilityProfile.Ecp2Capabilities), summary, StringComparison.Ordinal);
+            Assert.DoesNotContain(Strings.MissingMarkerStart, summary, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void CapabilitySummary_UnreadCapabilitiesUseUnknownMarkers()
+        {
+            using var scope = Strings.Scope("en");
+            var info = new Pkcs11TokenInfo
+            {
+                Hardware = "20.05",
+                MechanismCount = 45,
+                CapabilitiesKnown = false,
+                CapabilityProfile = RutokenCapabilityProfile.Unknown,
+            };
+
+            string summary = Pkcs11Token.CapabilitySummary(info);
+
+            Assert.Contains("RSA HW keygen up to ? bit", summary, StringComparison.Ordinal);
+            Assert.Contains("ECDSA HW ?", summary, StringComparison.Ordinal);
+            Assert.Contains("GOST HW ?", summary, StringComparison.Ordinal);
+            Assert.DoesNotContain("ECDSA HW −", summary, StringComparison.Ordinal);
+            Assert.DoesNotContain("GOST HW −", summary, StringComparison.Ordinal);
+        }
+
+        [Theory]
+        [InlineData(RutokenCapabilityProfile.Unknown)]
+        [InlineData(RutokenCapabilityProfile.Ecp2Capabilities)]
+        [InlineData(RutokenCapabilityProfile.Ecp3Capable)]
+        public void CapabilityProfileName_IsLocalized(RutokenCapabilityProfile profile)
+        {
+            string name = Pkcs11Token.CapabilityProfileName(profile);
+            Assert.False(string.IsNullOrWhiteSpace(name));
+            Assert.DoesNotContain(Strings.MissingMarkerStart, name, StringComparison.Ordinal);
+        }
+
         [Fact]
         public void Combine_KeepsContainersAndTheirCerts()
         {
@@ -295,6 +375,28 @@ namespace CryptoProExport.Tests
             Assert.False(RutokenExporter.ShouldWalk("ACS ACR38U 0", set));
         }
 
+        [Fact]
+        public void SmartCardReaders_MixedInventoryProtectsEcpAndForeignReaders()
+        {
+            // Регрессия для одновременного присутствия разных носителей: ни один уже
+            // опознанный считыватель не уходит в нативный rtCOMLite-обход. Для Rutoken S
+            // после аппаратной проверки используется отдельный безопасный APDU-бэкенд.
+            var tokens = new List<Pkcs11TokenInfo>
+            {
+                new Pkcs11TokenInfo { Reader = "Aktiv Rutoken ECP 0", Kind = RutokenKind.RutokenEcp },
+                new Pkcs11TokenInfo { Reader = "Aladdin Token JC 0", Kind = RutokenKind.Other },
+                new Pkcs11TokenInfo { Reader = "ESMART USB64K 0", Kind = RutokenKind.Other },
+                new Pkcs11TokenInfo { Reader = "Aktiv ruToken 0", Kind = RutokenKind.RutokenS },
+            };
+
+            var skip = Pkcs11Token.SmartCardReaders(tokens);
+
+            Assert.False(RutokenExporter.ShouldWalk("Aktiv Rutoken ECP 0", skip));
+            Assert.False(RutokenExporter.ShouldWalk("Aladdin Token JC 0", skip));
+            Assert.False(RutokenExporter.ShouldWalk("ESMART USB64K 0", skip));
+            Assert.False(RutokenExporter.ShouldWalk("Aktiv ruToken 0", skip));
+        }
+
         [Theory]
         [InlineData("JaCarta DS", null)]
         [InlineData("JaCarta LT", "Contoso")]
@@ -353,30 +455,148 @@ namespace CryptoProExport.Tests
             // Первая библиотека сорвалась на считывателе, вторая его прочитала: в списке должна
             // остаться одна строка — удачная, и на прежнем месте (замечание Codex, PR #25).
             var result = new List<Pkcs11TokenInfo>();
-            var seen = new Dictionary<string, (int Index, bool Ok)>(StringComparer.OrdinalIgnoreCase);
+            var seen = new Dictionary<string, Pkcs11ReadState>(StringComparer.OrdinalIgnoreCase);
 
-            Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0" }, ok: false);
-            Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "Другой 0", Serial = "a" }, ok: true);
-            Assert.False(Pkcs11Token.AlreadyRead(seen, "JC 0"));
+            Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0" },
+                capabilitiesRead: false, containersRead: false);
+            Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "Другой 0", Serial = "a" },
+                capabilitiesRead: true, containersRead: true);
+            Assert.False(Pkcs11Token.AlreadyRead(seen, "JC 0", readContainers: true));
 
-            Assert.True(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0", Serial = "b" }, ok: true));
+            Assert.True(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0", Serial = "b" },
+                capabilitiesRead: true, containersRead: true));
 
             Assert.Equal(2, result.Count);
             Assert.Equal("b", result[0].Serial);       // заменена на месте, порядок не прыгнул
             Assert.Equal("a", result[1].Serial);
-            Assert.True(Pkcs11Token.AlreadyRead(seen, "JC 0"));
+            Assert.True(Pkcs11Token.AlreadyRead(seen, "JC 0", readContainers: true));
+        }
+
+        [Fact]
+        public void IncompleteCapabilities_LetLaterLibraryRetryWhenContainersAreSkipped()
+        {
+            // Первая библиотека знает считыватель, но не дочитала механизмы. Даже в режиме без
+            // объектов это не должно ставить AlreadyRead и блокировать полную вторую библиотеку.
+            var result = new List<Pkcs11TokenInfo>();
+            var seen = new Dictionary<string, Pkcs11ReadState>(StringComparer.OrdinalIgnoreCase);
+            var incomplete = new Pkcs11TokenInfo
+            {
+                Reader = "Shared reader 0",
+                CapabilitiesKnown = false,
+                CapabilityProfile = RutokenCapabilityProfile.Unknown,
+            };
+
+            Assert.True(Pkcs11Token.Place(result, seen, incomplete,
+                capabilitiesRead: false, containersRead: false));
+            Assert.False(Pkcs11Token.AlreadyRead(seen, incomplete.Reader, readContainers: false));
+
+            var complete = new Pkcs11TokenInfo
+            {
+                Reader = incomplete.Reader,
+                CapabilitiesKnown = true,
+                CapabilityProfile = RutokenCapabilityProfile.Ecp2Capabilities,
+            };
+            Assert.True(Pkcs11Token.Place(result, seen, complete,
+                capabilitiesRead: true, containersRead: false));
+            Assert.Single(result);
+            Assert.Same(complete, result[0]);
+            Assert.True(result[0].CapabilitiesKnown);
+            Assert.Equal(RutokenCapabilityProfile.Ecp2Capabilities, result[0].CapabilityProfile);
+            Assert.True(Pkcs11Token.AlreadyRead(seen, complete.Reader, readContainers: false));
+        }
+
+        [Fact]
+        public void Place_MergesCapabilitiesThenContainersAcrossLibraries()
+        {
+            var result = new List<Pkcs11TokenInfo>();
+            var seen = new Dictionary<string, Pkcs11ReadState>(StringComparer.OrdinalIgnoreCase);
+            var capabilities = new Pkcs11TokenInfo
+            {
+                Reader = "Shared reader 0",
+                MechanismCount = 45,
+                HardwareRsaMaxBits = 2048,
+                HardwareGost = true,
+                CapabilitiesKnown = true,
+                CapabilityProfile = RutokenCapabilityProfile.Ecp2Capabilities,
+            };
+
+            Assert.True(Pkcs11Token.Place(result, seen, capabilities,
+                capabilitiesRead: true, containersRead: false));
+            Assert.False(Pkcs11Token.AlreadyRead(seen, capabilities.Reader, readContainers: true));
+
+            var container = new Pkcs11Container();
+            var containers = new Pkcs11TokenInfo
+            {
+                Reader = capabilities.Reader,
+                Containers = new List<Pkcs11Container> { container },
+                CapabilitiesKnown = false,
+                CapabilityProfile = RutokenCapabilityProfile.Unknown,
+            };
+            Assert.True(Pkcs11Token.Place(result, seen, containers,
+                capabilitiesRead: false, containersRead: true));
+
+            Assert.Single(result);
+            Assert.Same(capabilities, result[0]);
+            Assert.True(result[0].CapabilitiesKnown);
+            Assert.Equal(45, result[0].MechanismCount);
+            Assert.Equal(RutokenCapabilityProfile.Ecp2Capabilities, result[0].CapabilityProfile);
+            Assert.Same(container, Assert.Single(result[0].Containers));
+            Assert.True(Pkcs11Token.AlreadyRead(seen, capabilities.Reader, readContainers: true));
+        }
+
+        [Fact]
+        public void Place_MergesContainersThenCapabilitiesAcrossLibraries()
+        {
+            var result = new List<Pkcs11TokenInfo>();
+            var seen = new Dictionary<string, Pkcs11ReadState>(StringComparer.OrdinalIgnoreCase);
+            var container = new Pkcs11Container();
+            var containers = new Pkcs11TokenInfo
+            {
+                Reader = "Shared reader 0",
+                Containers = new List<Pkcs11Container> { container },
+                CapabilitiesKnown = false,
+                CapabilityProfile = RutokenCapabilityProfile.Unknown,
+            };
+
+            Assert.True(Pkcs11Token.Place(result, seen, containers,
+                capabilitiesRead: false, containersRead: true));
+            Assert.False(Pkcs11Token.AlreadyRead(seen, containers.Reader, readContainers: true));
+            Assert.False(result[0].CapabilitiesKnown);
+            Assert.Equal(RutokenCapabilityProfile.Unknown, result[0].CapabilityProfile);
+
+            var capabilities = new Pkcs11TokenInfo
+            {
+                Reader = containers.Reader,
+                MechanismCount = 48,
+                HardwareEcdsa = true,
+                CapabilitiesKnown = true,
+                CapabilityProfile = RutokenCapabilityProfile.Ecp3Capable,
+            };
+            Assert.True(Pkcs11Token.Place(result, seen, capabilities,
+                capabilitiesRead: true, containersRead: false));
+
+            Assert.Single(result);
+            Assert.Same(containers, result[0]);
+            Assert.True(result[0].CapabilitiesKnown);
+            Assert.Equal(48, result[0].MechanismCount);
+            Assert.Equal(RutokenCapabilityProfile.Ecp3Capable, result[0].CapabilityProfile);
+            Assert.Same(container, Assert.Single(result[0].Containers));
+            Assert.True(Pkcs11Token.AlreadyRead(seen, containers.Reader, readContainers: true));
         }
 
         [Fact]
         public void Place_KeepsOneRowPerReader()
         {
             var result = new List<Pkcs11TokenInfo>();
-            var seen = new Dictionary<string, (int Index, bool Ok)>(StringComparer.OrdinalIgnoreCase);
+            var seen = new Dictionary<string, Pkcs11ReadState>(StringComparer.OrdinalIgnoreCase);
 
-            Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0", Serial = "ok" }, ok: true);
+            Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0", Serial = "ok" },
+                capabilitiesRead: true, containersRead: true);
             // Прочитанный удачно второй раз не кладётся, и неудачная попытка его не портит.
-            Assert.False(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "jc 0", Serial = "x" }, ok: true));
-            Assert.False(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0", Serial = "y" }, ok: false));
+            Assert.False(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "jc 0", Serial = "x" },
+                capabilitiesRead: true, containersRead: true));
+            Assert.False(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0", Serial = "y" },
+                capabilitiesRead: false, containersRead: false));
 
             Assert.Single(result);
             Assert.Equal("ok", result[0].Serial);
@@ -386,10 +606,12 @@ namespace CryptoProExport.Tests
         public void Place_DoesNotStackTwoFailuresForOneReader()
         {
             var result = new List<Pkcs11TokenInfo>();
-            var seen = new Dictionary<string, (int Index, bool Ok)>(StringComparer.OrdinalIgnoreCase);
+            var seen = new Dictionary<string, Pkcs11ReadState>(StringComparer.OrdinalIgnoreCase);
 
-            Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0", Serial = "first" }, ok: false);
-            Assert.False(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0", Serial = "second" }, ok: false));
+            Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0", Serial = "first" },
+                capabilitiesRead: false, containersRead: false);
+            Assert.False(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "JC 0", Serial = "second" },
+                capabilitiesRead: false, containersRead: false));
 
             Assert.Single(result);
             Assert.Equal("first", result[0].Serial);
@@ -400,14 +622,16 @@ namespace CryptoProExport.Tests
         {
             // Имени нет — дедуплицировать нечем; терять такой токен нельзя.
             var result = new List<Pkcs11TokenInfo>();
-            var seen = new Dictionary<string, (int Index, bool Ok)>(StringComparer.OrdinalIgnoreCase);
+            var seen = new Dictionary<string, Pkcs11ReadState>(StringComparer.OrdinalIgnoreCase);
 
-            Assert.True(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = null }, ok: true));
-            Assert.True(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "" }, ok: false));
+            Assert.True(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = null },
+                capabilitiesRead: true, containersRead: true));
+            Assert.True(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = "" },
+                capabilitiesRead: false, containersRead: false));
 
             Assert.Equal(2, result.Count);
             Assert.Empty(seen);
-            Assert.False(Pkcs11Token.AlreadyRead(seen, null));
+            Assert.False(Pkcs11Token.AlreadyRead(seen, null, readContainers: true));
         }
 
         [Fact]
