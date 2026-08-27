@@ -82,7 +82,7 @@ namespace CryptoProExport
         public List<DirectTokenContainerRef> ListContainers(string reader)
         {
             var result = new List<DirectTokenContainerRef>();
-            using var session = PcscApduSession.Open(reader);
+            using var session = PcscApduSession.Open(reader, ExactAtr);
             SelectApplet(session);
             for (int index = 0; index <= LastContainerIndex; index++)
             {
@@ -131,7 +131,7 @@ namespace CryptoProExport
             bool transferred = false;
             try
             {
-                using var session = PcscApduSession.Open(reader);
+                using var session = PcscApduSession.Open(reader, ExactAtr);
                 SelectApplet(session);
                 byte[] saltResponse = null;
                 byte[] salt = null;

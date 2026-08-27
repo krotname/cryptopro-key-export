@@ -25,7 +25,7 @@
 ## Сборка и тесты
 ```bash
 dotnet build CryptoProExport.slnx -c Release -warnaserror   # 0 ошибок, 0 предупреждений
-dotnet test  CryptoProExport.slnx -c Release --no-build     # 494 теста xunit
+dotnet test  CryptoProExport.slnx -c Release --no-build     # 495 тестов xunit
 ```
 Тесты покрывают чистую логику: кодеки cp1251/cp866, `name.key`, аргументы p12utility,
 разбор разрядности PE, наличие вшитых зависимостей, `ContainerStore` (во временной папке —
@@ -730,7 +730,8 @@ wrap → `CKR_KEY_NOT_WRAPPABLE`, cleanup → 0 объектов. PKCS#11 отд
 
 **JaCarta PRO закрыта production-путём 27.08.2026.** `JaCartaProApdu`
 проверяет exact manufacturer/model/indexed reader/live ATR, воспроизводит прямой
-challenge-response и читает protected EF только после обязательного
+challenge-response, повторно сверяет ATR через `SCardGetAttrib` на уже открытом
+PC/SC handle и читает protected EF только после обязательного
 `--container jacartapro_XX`. Двухключевой синтетический контейнер прошёл
 `…98 → …9C`, две HDIMAGE-копии и два PFX; после cleanup два остальных
 контейнера не открывались для protected read, а их публичные имена сохранились

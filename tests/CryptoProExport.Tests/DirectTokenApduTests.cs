@@ -238,6 +238,20 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void PcscAtrMatch_RequiresExactConnectedHandleAtr()
+        {
+            byte[] exact = Convert.FromHexString(JaCartaProApdu.ExactAtr.Replace(" ", ""));
+
+            Assert.True(PcscApduSession.AtrMatches(
+                JaCartaProApdu.ExactAtr.ToLowerInvariant(), exact, exact.Length));
+            exact[^1] ^= 0x01;
+            Assert.False(PcscApduSession.AtrMatches(
+                JaCartaProApdu.ExactAtr, exact, exact.Length));
+            Assert.False(PcscApduSession.AtrMatches(
+                JaCartaProApdu.ExactAtr, exact, exact.Length + 1));
+        }
+
+        [Fact]
         public void RutokenSFcp_UsesLittleEndianSizeAndFindsNestedTags()
         {
             byte[] fcp = { 0x62, 0x08, 0x82, 0x01, 0x01, 0x80, 0x02, 0x2C, 0x01, 0x00 };

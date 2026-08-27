@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 
 namespace CryptoProExport
 {
@@ -15,13 +16,15 @@ namespace CryptoProExport
         private const uint ProtocolT0 = 1;
         private const uint ProtocolT1 = 2;
         private const uint LeaveCard = 0;
+        private const uint AtrStringAttribute = 0x00090303;
+        private const int MaxAtrLength = 36;
 
         private IntPtr _context;
         private IntPtr _card;
         private bool _transaction;
         private IoRequest _pci;
 
-        public static PcscApduSession Open(string reader)
+        public static PcscApduSession Open(string reader, string expectedAtr = null)
         {
             if (string.IsNullOrWhiteSpace(reader))
                 throw new LiteApduException(CryptoErrors.Describe(unchecked((int)0x80100009)));
@@ -55,6 +58,16 @@ namespace CryptoProExport
                 throw new LiteApduException(CryptoErrors.Describe(rc));
             }
             session._transaction = true;
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(expectedAtr))
+                    session.RequireConnectedAtr(expectedAtr);
+            }
+            catch
+            {
+                session.Dispose();
+                throw;
+            }
             return session;
         }
 
@@ -62,13 +75,23 @@ namespace CryptoProExport
         {
             if (command == null) throw new ArgumentNullException(nameof(command));
             var response = new byte[65538];
-            int length = response.Length;
-            int rc = SCardTransmit(_card, ref _pci, command, command.Length,
-                IntPtr.Zero, response, ref length);
-            if (rc != 0) throw new LiteApduException(CryptoErrors.Describe(rc));
-            var result = new byte[length];
-            Array.Copy(response, result, length);
-            return result;
+            try
+            {
+                int length = response.Length;
+                int rc = SCardTransmit(_card, ref _pci, command, command.Length,
+                    IntPtr.Zero, response, ref length);
+                if (rc != 0) throw new LiteApduException(CryptoErrors.Describe(rc));
+                if (length < 0 || length > response.Length)
+                    throw new LiteApduException(Strings.Format(
+                        "err.com.call", "SCardTransmit", "INVALID_RESPONSE_LENGTH"));
+                var result = new byte[length];
+                Array.Copy(response, result, length);
+                return result;
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(response);
+            }
         }
 
         /// <summary>Для T=0: если карта вернула 61xx, забрать тело отдельным GET RESPONSE.</summary>
@@ -76,8 +99,49 @@ namespace CryptoProExport
         {
             byte[] response = Transmit(command);
             if (response.Length >= 2 && response[response.Length - 2] == 0x61)
-                return Transmit(new byte[] { 0x00, 0xC0, 0x00, 0x00, response[response.Length - 1] });
+            {
+                try
+                {
+                    return Transmit(new byte[]
+                    {
+                        0x00, 0xC0, 0x00, 0x00, response[response.Length - 1],
+                    });
+                }
+                finally
+                {
+                    CryptographicOperations.ZeroMemory(response);
+                }
+            }
             return response;
+        }
+
+        private void RequireConnectedAtr(string expectedAtr)
+        {
+            var actualAtr = new byte[MaxAtrLength];
+            try
+            {
+                uint length = (uint)actualAtr.Length;
+                int rc = SCardGetAttrib(_card, AtrStringAttribute, actualAtr, ref length);
+                if (rc != 0) throw new LiteApduException(CryptoErrors.Describe(rc));
+                if (length > actualAtr.Length
+                    || !AtrMatches(expectedAtr, actualAtr, checked((int)length)))
+                    throw new LiteApduException(Strings.Format(
+                        "err.com.call", "PC/SC ATR", "MISMATCH"));
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(actualAtr);
+            }
+        }
+
+        internal static bool AtrMatches(string expectedAtr, byte[] actualAtr, int actualLength)
+        {
+            if (string.IsNullOrWhiteSpace(expectedAtr) || actualAtr == null
+                || actualLength < 0 || actualLength > actualAtr.Length)
+                return false;
+            string actual = BitConverter.ToString(actualAtr, 0, actualLength)
+                .Replace('-', ' ');
+            return string.Equals(expectedAtr.Trim(), actual, StringComparison.OrdinalIgnoreCase);
         }
 
         public static bool IsOk(byte[] response) => Status(response) == 0x9000;
@@ -145,5 +209,8 @@ namespace CryptoProExport
         private static extern int SCardTransmit(IntPtr card, ref IoRequest sendPci,
             byte[] sendBuffer, int sendLength, IntPtr receivePci,
             byte[] receiveBuffer, ref int receiveLength);
+        [DllImport("winscard.dll")]
+        private static extern int SCardGetAttrib(IntPtr card, uint attribute,
+            byte[] buffer, ref uint bufferLength);
     }
 }

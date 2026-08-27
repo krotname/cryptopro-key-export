@@ -21,10 +21,11 @@ Live-инвентаризация точного физического носи
 | механизмы PKCS#11 | 28 |
 
 Строка reader, USB ID, ATR или model по отдельности недостаточны. Production gate
-проверяет точную пару manufacturer/model, indexed reader и свежий ATR; USB ID
-независимо подтверждён PnP-инвентаризацией перед E2E. Если обязательный сигнал
-отсутствует либо неоднозначен, `DirectTokenApdu` не отправляет PRO APDU и не
-подставляет заводской PIN.
+проверяет точную пару manufacturer/model, indexed reader и свежий ATR, а после
+`SCardConnect` повторно сверяет ATR через `SCardGetAttrib` на том же handle до
+первой APDU; USB ID независимо подтверждён PnP-инвентаризацией перед E2E. Если
+обязательный сигнал отсутствует либо неоднозначен, `DirectTokenApdu` не отправляет
+PRO APDU и не подставляет заводской PIN.
 
 ## Устройство CSP-раздела
 
