@@ -23,8 +23,8 @@ namespace CryptoProExport
         /// <summary>JaCarta LT: пассивный носитель; файлы контейнера читаются прямым APDU.</summary>
         JaCartaLt,
         /// <summary>
-        /// JaCarta PRO с applet PRO: файловые CSP-контейнеры читаются прямым APDU только
-        /// после точного подтверждения модели, производителя, reader и ATR.
+        /// eToken PRO (Java) с апплетом PRO: файловые CSP-контейнеры читаются прямым
+        /// APDU только после точного подтверждения модели, производителя, reader и ATR.
         /// </summary>
         JaCartaPro,
         /// <summary>ESMART Token: пассивный CSP-раздел читается прямым APDU.</summary>
@@ -338,7 +338,7 @@ namespace CryptoProExport
             if (HasEsmartEvidence(model))
                 return RutokenKind.Esmart;
 
-            // У applet JaCarta PRO строка модели слишком общая: ровно "PRO". Поддержанный
+            // У апплета PRO на eToken PRO строка модели слишком общая: ровно "PRO". Поддержанный
             // профиль разрешаем только в точной паре со штатным manufacturerID; похожие
             // Aladdin/PRO-строки остаются Other/Unknown и никогда не получают этот APDU.
             if (string.Equals((model ?? string.Empty).Trim(), "PRO",
@@ -427,7 +427,7 @@ namespace CryptoProExport
         }
 
         /// <summary>
-        /// Точные PKCS#11/PCSC-метаданные проверенного JaCarta PRO. Это лишь статическая
+        /// Точные PKCS#11/PCSC-метаданные проверенного eToken PRO (Java) / PRO. Это лишь статическая
         /// часть допуска: непосредственно перед APDU backend дополнительно перечитывает
         /// текущий PC/SC reader и ATR через <see cref="JaCartaProApdu.IsExactLiveReader"/>.
         /// </summary>
@@ -534,7 +534,7 @@ namespace CryptoProExport
         {
             // Название продукта — торговая марка и во всех языках остаётся одинаковым.
             if (kind == RutokenKind.JaCartaLt) return "JaCarta LT";
-            if (kind == RutokenKind.JaCartaPro) return "JaCarta PRO";
+            if (kind == RutokenKind.JaCartaPro) return "eToken PRO (Java) / PRO";
             if (kind == RutokenKind.Esmart) return "ESMART";
             return Strings.Get(kind switch
             {

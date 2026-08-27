@@ -15,8 +15,9 @@
 | Тип чипа | JavaCard / GlobalPlatform (CPLC читается) |
 
 **Не путать** с уже описанными носителями:
-- JaCarta PRO (`docs/apdu/jacarta-pro.md`) — считыватель `Aladdin Token JC 0`, модель `PRO`, ГОСТ,
-  закрытый ключ снимается по APDU. Другая карта и другой апплет.
+- [eToken PRO (Java), профиль PRO](../apdu/jacarta-pro.md) — считыватель
+  `Aladdin Token JC 0`, модель `PRO`, без механизмов ГОСТ; пассивный CSP-раздел
+  читается по APDU. Другая карта и другой апплет.
 - [JaCarta LT](jacarta-lt.md) — USB `24DC:0102`, PKCS#11-модель `JaCarta DS` /
   Datastore, отдельный поддерживаемый APDU-бэкенд. Другой USB ID и другой протокол;
   здесь модель по семейству **не угадывается**.

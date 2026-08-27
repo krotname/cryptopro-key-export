@@ -429,10 +429,13 @@ GitHub Actions **работает** (`.github/workflows/ci.yml`). Прежнее
       имя считывателя бывает безликим (`ACS ACR38U 0`), и классификация по нему даёт `Unknown` —
       это замечание Codex на PR #25.
 
-33. **JaCarta PRO, живой экземпляр 13.08.2026 — что удалось и что нет.**
+33. **eToken PRO (Java), профиль PRO, живой экземпляр 13.08.2026 — что удалось и что нет.**
     `label='PROFELTORG'`, `manufacturer='Aladdin R.D.'`, `model='PRO'`, серийный `00A7A257`,
     fw 1.01, hw 4.03, 28 механизмов — **RSA/3DES/AES/SHA и ни одного ГОСТ**. То есть это не
-    JaCarta-2 ГОСТ из таблицы рынка, а другая модель линейки; строку таблицы это различает.
+    JaCarta-2 ГОСТ из таблицы рынка. Корпус тёмно-фиолетовый, спереди рельеф `eToken PRO`,
+    сзади `Aladdin.com` / `Patented`; исходные фото и SHA-256 лежат в
+    `docs/images/etoken-pro/`. Имя `JaCartaProApdu` относится к совместимому PRO-апплету
+    и не переименовывает этот корпус в JaCarta PRO.
     - **PIN не заводской** (`CKF_USER_PIN_TO_BE_CHANGED = false`), счётчик чист. Владелец сообщил
       его в тот же день, и проверки с авторизацией сделаны — см. п. 35. PIN лежит в `secrets.txt`
       (в `.gitignore`), в репозиторий его писать нельзя. Пробник — `token-session\jcprobe\`: только
@@ -482,7 +485,7 @@ GitHub Actions **работает** (`.github/workflows/ci.yml`). Прежнее
       созданного CSP-контейнера. Это то же, что на Рутокен ЭЦП (п. 25): контейнеры CSP объектами
       PKCS#11 не становятся. Плюс rtCOMLite считыватель JaCarta вообще не показывает (п. 32).
 
-    **Итог (уточнён 13.08.2026): JaCarta PRO — закрытый ключ снимается через APDU.** Штатные пути
+    **Итог (уточнён 27.08.2026): eToken PRO/PRO — закрытый ключ снимается через APDU.** Штатные пути
     (`csptest -keycopy`, `certmgr`, PKCS#11) дают `0x8009000b` — но это политика CSP, не карта.
     APDU-разбор показал, что носитель **пассивный** (подпись на хосте, `primary.key`+`masks.key`
     уходят с карты и для неэкспортируемого ключа), а закрытый ключ восстановлен офлайн и сверен с
@@ -614,7 +617,8 @@ GitHub Actions **работает** (`.github/workflows/ci.yml`). Прежнее
       карте) + `Uncovered`/`CarrierHintKey`; `deps`/`list`/`token` теперь показывают такую карту с
       именем, вендором и ATR вместо «токенов нет (драйверы Рутокен)». `token` fail-closed (код 2).
       Обезличенная документация — [docs/hardware/jacarta-idprotect.md](docs/hardware/jacarta-idprotect.md).
-      Не путать с JaCarta PRO (ГОСТ, ключ по APDU) и JaCarta LT (PR #44, `24DC:0102`, модель `JaCarta DS`).
+      Не путать с eToken PRO/PRO (пассивный CSP-раздел, ключ по APDU) и JaCarta LT
+      (PR #44, `24DC:0102`, модель `JaCarta DS`).
 
 41. **Рутокен S и JaCarta LT получили production APDU и физический E2E 26.08.2026.**
     - Точные носители: S `VID_0A89/PID_0020`, reader `Aktiv Co. ruToken 0`, model
@@ -728,7 +732,7 @@ wrap → `CKR_KEY_NOT_WRAPPABLE`, cleanup → 0 объектов. PKCS#11 отд
 (падение и потеря сертификата без парного контейнера) исправлены и проверены на живом железе; тезис
 «публичные объекты PKCS#11 читаются без PIN» перепроверен прямым опытом на 3.0 и на Lite.
 
-**JaCarta PRO закрыта production-путём 27.08.2026.** `JaCartaProApdu`
+**eToken PRO (Java), профиль PRO закрыт production-путём 27.08.2026.** `JaCartaProApdu`
 проверяет exact manufacturer/model/indexed reader/live ATR, воспроизводит прямой
 challenge-response, повторно сверяет ATR через `SCardGetAttrib` на уже открытом
 PC/SC handle и читает protected EF только после обязательного
@@ -737,8 +741,8 @@ PC/SC handle и читает protected EF только после обязате
 контейнера не открывались для protected read, а их публичные имена сохранились
 неизменными. Метод — `docs/apdu/jacarta-pro.md`.
 
-Незакрытое по токенам: JaCarta-2 ГОСТ и eToken — только при появлении точного
-живого носителя.
+Незакрытое по токенам: JaCarta PRO/PKI новых поколений и JaCarta-2/3 ГОСТ — только
+при появлении точного живого носителя.
 
 Для будущей регрессии на S/LT/PRO/ESMART не копируй готовый экспортируемый ключ:
 создавай контейнер прямо на точном reader, сначала доказывай отсутствие

@@ -54,7 +54,8 @@ PKCS#12 (.pfx). Аппаратный ключ не копируется с Ру�
   12345678 для Рутокена и ESMART, 1234567890 для JaCarta LT.
   Один явно введённый PIN не отправляется нескольким ридерам: выберите
   строку APDU или tokenexport/tokenfull с точным именем ридера.
-  Для JaCarta PRO также обязательно укажите --container jacartapro_XX.
+  Для eToken PRO (Java) / PRO также обязательно укажите
+  --container jacartapro_XX.
   Берите этот technical id из строки [APDU ...] команды list. Имя
   контейнера для выбора не используется; читается только точный индекс.
   Глобальные export/full с PRO блокируются до protected read:

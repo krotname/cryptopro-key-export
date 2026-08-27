@@ -54,7 +54,7 @@ interface languages fall back to the English text.
   12345678 for Rutoken and ESMART, 1234567890 for JaCarta LT.
   One entered PIN is never sent to several readers: select an APDU row
   or use tokenexport/tokenfull with the exact reader name.
-  JaCarta PRO also requires --container jacartapro_XX. Copy that
+  eToken PRO (Java) / PRO also requires --container jacartapro_XX. Copy
   technical id from the [APDU ...] line printed by list. A container
   name is never used for selection; only the exact index is read.
   Global export/full are blocked before protected reads with PRO attached:
