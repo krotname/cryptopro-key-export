@@ -45,17 +45,17 @@
 | `RutokenExporter` — legacy rtCOMLite | ⚠️ совместимость | На S bulk-методы портят кучу, поштучный обход не поддержан; production-маршрут S переведён на APDU. Смарт-карточные ЭЦП по-прежнему исключаются |
 | `RutokenSApdu` — Рутокен S | ✅ **e2e на живом токене** | 26.08.2026, `VID_0A89/PID_0020`, fw 36.0: безопасный no-PIN list, чтение 6 файлов после VERIFY, обе пары `…98 → …9C`, HDIMAGE и PFX |
 | `JaCartaLtApdu` — JaCarta LT | ✅ **e2e на живом токене** | 26 и повторно 27.08.2026, `VID_24DC/PID_0102`, `JaCarta DS`: Datastore APDU прочитал 6 файлов; обе пары `…98 → …9C`, HDIMAGE и PFX |
-| `JaCartaProApdu` — JaCarta PRO | ✅ **e2e на живом токене** | 27.08.2026, `VID_0529/PID_0620`, fw 1.01: exact selector ограничил protected read одним индексом; 6 файлов, обе пары `…98 → …9C`, две HDIMAGE-копии и два проверенных PFX |
+| `JaCartaProApdu` — eToken PRO (Java), профиль PRO | ✅ **e2e на живом токене** | 27.08.2026, корпус `eToken PRO`, `VID_0529/PID_0620`, fw 1.01: exact selector ограничил protected read одним индексом; 6 файлов, обе пары `…98 → …9C`, две HDIMAGE-копии и два проверенных PFX. Имя backend относится к совместимому PRO-апплету, не к маркировке корпуса |
 | `EsmartApdu` — два ESMART | ✅ **e2e на живых токенах** | 27.08.2026, `VID_072F/PID_90DE` и `VID_2CE4/PID_7479`: оба инициализированы; CSP-контейнеры прочитаны из F100…F900; обе пары `…98 → …9C`, HDIMAGE и PFX. Аппаратные PKCS#11 RSA-ключи отдельно подтверждены неизвлекаемыми |
 | `Pkcs11Token` — Рутокен ЭЦП/Lite по PKCS#11 | ✅ **работает; ЭЦП 2.x закрыт полностью (−)** | На расходном `Aktiv Rutoken ECP 0`, fw 23.02: 46 механизмов, исходно 0 объектов; data/certificate CRUD, hardware RSA-2048 sign/verify, `CKA_NEVER_EXTRACTABLE=true`, отказ `CKA_VALUE`/wrap, cleanup снова до 0. Публичные объекты по-прежнему читаются без PIN, если существуют |
 | `liteexport` / GUI — снятие Lite по APDU + разбор | ✅ **e2e на живом токене** | GUI считает все три токена по PKCS#11, отдельно маркирует счётчик `rtCOMLite`, перечисляет APDU-контейнеры и работает только с выбранной строкой. Двухключевой Lite даёт две одноключевые HDIMAGE-копии; `liteexport` оставляет сырую копию для CSP-free `extractkey`/`extractpfx` |
-| полный цикл (снять→.cer→keyexport→HDIMAGE→PFX) | ✅ S, Lite, JaCarta LT/PRO и ESMART; аппаратный ЭЦП 2.x/3.0 — полностью (−) | Lite проверен 15.08; S/LT — 26–27.08; PRO и два ESMART — 27.08 адресной командой `tokenfull` на собственных синтетических неэкспортируемых контейнерах. Права и PFX проверены `certutil`/OpenSSL |
+| полный цикл (снять→.cer→keyexport→HDIMAGE→PFX) | ✅ S, Lite, JaCarta LT, eToken PRO/PRO и ESMART; аппаратный ЭЦП 2.x/3.0 — полностью (−) | Lite проверен 15.08; S/LT — 26–27.08; eToken PRO/PRO и два ESMART — 27.08 адресной командой `tokenfull` на собственных синтетических неэкспортируемых контейнерах. Права и PFX проверены `certutil`/OpenSSL |
 
 ## 1.1. Физические токены: пассивные (+), аппаратные ЭЦП (−)
 
 Актуальный снимок 27.08.2026 закрывает оба новых устройства:
 
-- **JaCarta PRO fw 1.01 — полностью (+):** production `JaCartaProApdu`,
+- **eToken PRO (Java), профиль PRO, fw 1.01 — полностью (+):** production `JaCartaProApdu`,
   обязательный selector одного индекса, шесть файлов, обе пары `…98 → …9C`,
   две HDIMAGE-копии и два PFX. Синтетический контейнер удалён; защищённые EF
   двух остальных не читались, их публичные имена сохранились неизменными.
@@ -109,7 +109,7 @@ ESMART production-пути подтверждены полным E2E до PFX.
 
 **Что закрыто позднее:** пункт «E2E-тест на физическом Рутокене S» и строка полного цикла
 закрыты 26.08.2026 прямым APDU, а не rtCOMLite. Тем же доказательным сценарием закрыта
-JaCarta LT, а 27.08 — JaCarta PRO и оба доступных ESMART.
+JaCarta LT, а 27.08 — eToken PRO с профилем PRO и оба доступных ESMART.
 
 ### 1.1.1. Сеанс 13.08.2026 — Рутокен ЭЦП 3.0 и Lite: два дефекта, найденных только железом
 
@@ -205,7 +205,7 @@ JaCarta LT, а 27.08 — JaCarta PRO и оба доступных ESMART.
 - [x] **E2E на JaCarta LT.** Закрыт 26.08.2026 отдельным Datastore APDU-бэкендом.
       PKCS#11/jcFS контейнер CSP не показывали, прямой протокол прочитал все 6 файлов;
       полный цикл и PFX успешны. Подробности — `docs/hardware/jacarta-lt.md`.
-- [x] **E2E на JaCarta PRO.** Закрыт 27.08.2026 отдельным fail-closed
+- [x] **E2E на eToken PRO (Java), профиль PRO.** Закрыт 27.08.2026 отдельным fail-closed
       `JaCartaProApdu`: точные manufacturer/model/reader/ATR, прямой challenge-response,
       повторная проверка ATR на открытом PC/SC handle,
       обязательный `--container jacartapro_XX` до protected read. На синтетическом
@@ -292,7 +292,7 @@ JaCarta LT, а 27.08 — JaCarta PRO и оба доступных ESMART.
       тогда стоит одной операции, а не всего приложения с несохранённым журналом.
 
 ### P3 — качество и сопровождение
-- [x] Unit-тесты `Core` — 495 тестов: кодеки, `name.key`, обе формы `primary.key`, аргументы и маскирование `P12Utility`, APDU-парсеры S/Lite/LT/PRO/ESMART, точный selector и handle-bound ATR JaCarta PRO, запрет глобального PRO batch и очистка секретных буферов, разбор PE, вшитые зависимости, `ContainerStore`, руководство (ru + en), 20 файлов локализации, классификация PKCS#11 и мягкая деградация без драйвера.
+- [x] Unit-тесты `Core` — 495 тестов: кодеки, `name.key`, обе формы `primary.key`, аргументы и маскирование `P12Utility`, APDU-парсеры S/Lite/LT/PRO/ESMART, точный selector и handle-bound ATR профиля PRO, запрет глобального PRO batch и очистка секретных буферов, разбор PE, вшитые зависимости, `ContainerStore`, руководство (ru + en), 20 файлов локализации, классификация PKCS#11 и мягкая деградация без драйвера.
 - [x] Встроенная документация — `src/Core/guide/ru.txt` и `guide/en.txt` вшиты ресурсами: окно «Справка» и команда `help`, ничего внешнего не нужно.
 - [x] Логи в файл (`%LOCALAPPDATA%\CryptoProExport\logs`), кнопка «Журнал», пароли маскируются.
 - [x] **CI** — GitHub Actions на своём Windows-раннере `adler-white-1w` (целевая платформа продукта; резерв — Linux-раннер `adler-ubuntu-xeon` для compile/publish). Утверждение про блокировку биллингом не подтвердилось. Матрица x64/arm64 и релиз по тегу `v*` с контрольной суммой.
@@ -317,9 +317,9 @@ JaCarta LT, а 27.08 — JaCarta PRO и оба доступных ESMART.
 
 ### Идеи / бэклог
 - ~~Поддержка других токенов: JaCarta, ESMART — свои библиотеки и протоколы.~~
-  **JaCarta LT/PRO и ESMART сделаны:** общая PKCS#11-диагностика, отдельные
-  production APDU-бэкенды и полный E2E. Остались eToken и модели без точного
-  живого экземпляра.
+  **JaCarta LT, eToken PRO/PRO и ESMART сделаны:** общая PKCS#11-диагностика,
+  отдельные production APDU-бэкенды и полный E2E. Остались отдельные JaCarta
+  PRO/PKI/ГОСТ новых поколений и модели без точного живого экземпляра.
 - Пакетный режим (несколько контейнеров без диалогов), CSV-отчёт.
 - Прямое чтение файла сертификата с токена (искать объект серта в структуре токена) — чтобы не зависеть от видимости в CSP.
 
