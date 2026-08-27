@@ -22,9 +22,14 @@ namespace CryptoProExport
         RutokenEcp,
         /// <summary>JaCarta LT: пассивный носитель; файлы контейнера читаются прямым APDU.</summary>
         JaCartaLt,
+        /// <summary>
+        /// JaCarta PRO с applet PRO: файловые CSP-контейнеры читаются прямым APDU только
+        /// после точного подтверждения модели, производителя, reader и ATR.
+        /// </summary>
+        JaCartaPro,
         /// <summary>ESMART Token: пассивный CSP-раздел читается прямым APDU.</summary>
         Esmart,
-        /// <summary>Токен другого вендора (JaCarta PRO, eToken…) — распознан, но отдельного безопасного пути нет.</summary>
+        /// <summary>Другой токен (неподдержанный профиль JaCarta, eToken…) — безопасного пути нет.</summary>
         Other,
         /// <summary>Модель не опознана.</summary>
         Unknown,
@@ -71,6 +76,8 @@ namespace CryptoProExport
         public string Serial;        // серийный номер
         public string Hardware;      // версия аппаратной платформы из CK_TOKEN_INFO
         public string Firmware;      // версия прошивки
+        /// <summary>ATR из независимого пассивного PC/SC-снимка; null, если подтвердить не удалось.</summary>
+        public string Atr;
         public RutokenKind Kind = RutokenKind.Unknown;
 
         /// <summary>Число механизмов PKCS#11; -1 — список получить не удалось.</summary>
@@ -317,9 +324,9 @@ namespace CryptoProExport
         /// Определить семейство токена по строке модели PKCS#11 (CK_TOKEN_INFO.model) и,
         /// если модель ни о чём не говорит, по производителю (CK_TOKEN_INFO.manufacturerID).
         ///
-        /// Производитель нужен не для красоты: у живой JaCarta модель — просто <c>PRO</c>
-        /// (проверено 13.08.2026), и по одной модели носитель попадал бы в «не опознан».
-        /// Производитель там <c>Aladdin R.D.</c>, чего достаточно.
+        /// Производитель нужен не для красоты: у живой JaCarta модель — просто <c>PRO</c>,
+        /// поэтому статическая классификация требует точную пару model/manufacturer.
+        /// Перед прямым APDU этого недостаточно: отдельно проверяются indexed reader и live ATR.
         ///
         /// Чистая функция: покрыта тестами без обращения к железу.
         /// </summary>
@@ -330,6 +337,15 @@ namespace CryptoProExport
             // проверенное семейство reader; здесь достаточно корректно назвать вендора.
             if (HasEsmartEvidence(model))
                 return RutokenKind.Esmart;
+
+            // У applet JaCarta PRO строка модели слишком общая: ровно "PRO". Поддержанный
+            // профиль разрешаем только в точной паре со штатным manufacturerID; похожие
+            // Aladdin/PRO-строки остаются Other/Unknown и никогда не получают этот APDU.
+            if (string.Equals((model ?? string.Empty).Trim(), "PRO",
+                    StringComparison.OrdinalIgnoreCase)
+                && string.Equals((manufacturer ?? string.Empty).Trim(), "Aladdin R.D.",
+                    StringComparison.OrdinalIgnoreCase))
+                return RutokenKind.JaCartaPro;
 
             // У JaCarta LT маркетинговое имя и модель апплета различаются: живой носитель
             // сообщает model='JaCarta DS', а официальная документация называет апплет
@@ -409,6 +425,14 @@ namespace CryptoProExport
             bool vendor = HasEsmartEvidence(token.Manufacturer);
             return vendor && IsValidatedEsmartReader(token.Reader);
         }
+
+        /// <summary>
+        /// Точные PKCS#11/PCSC-метаданные проверенного JaCarta PRO. Это лишь статическая
+        /// часть допуска: непосредственно перед APDU backend дополнительно перечитывает
+        /// текущий PC/SC reader и ATR через <see cref="JaCartaProApdu.IsExactLiveReader"/>.
+        /// </summary>
+        internal static bool IsConfirmedJaCartaPro(Pkcs11TokenInfo token)
+            => JaCartaProApdu.IsExactMetadata(token);
 
         private static bool IsValidatedEsmartReader(string reader)
         {
@@ -496,7 +520,8 @@ namespace CryptoProExport
                 if (t == null || string.IsNullOrEmpty(t.Reader)) continue;
                 if (t.Kind == RutokenKind.RutokenS
                     || t.Kind == RutokenKind.RutokenEcp || t.Kind == RutokenKind.RutokenLite
-                    || t.Kind == RutokenKind.JaCartaLt || t.Kind == RutokenKind.Esmart
+                    || t.Kind == RutokenKind.JaCartaLt || t.Kind == RutokenKind.JaCartaPro
+                    || t.Kind == RutokenKind.Esmart
                     || t.Kind == RutokenKind.Other
                     || HasUnsafeForeignFileWalkEvidence(t.Model))
                     set.Add(t.Reader);
@@ -509,6 +534,7 @@ namespace CryptoProExport
         {
             // Название продукта — торговая марка и во всех языках остаётся одинаковым.
             if (kind == RutokenKind.JaCartaLt) return "JaCarta LT";
+            if (kind == RutokenKind.JaCartaPro) return "JaCarta PRO";
             if (kind == RutokenKind.Esmart) return "ESMART";
             return Strings.Get(kind switch
             {
@@ -604,7 +630,22 @@ namespace CryptoProExport
                 cancel.ThrowIfCancellationRequested();
                 EnumerateLibrary(path, readContainers, result, seen, log, cancel);
             }
+            AttachPcscAtr(result, PcscReaders.List(log));
             return result;
+        }
+
+        /// <summary>Привязать ATR только по точному имени reader; slot index не является идентичностью.</summary>
+        internal static void AttachPcscAtr(IEnumerable<Pkcs11TokenInfo> tokens,
+                                           IEnumerable<PcscReader> readers)
+        {
+            var byName = new Dictionary<string, PcscReader>(StringComparer.OrdinalIgnoreCase);
+            foreach (PcscReader reader in readers ?? Array.Empty<PcscReader>())
+                if (reader != null && reader.CardPresent && !string.IsNullOrWhiteSpace(reader.Name))
+                    byName[reader.Name.Trim()] = reader;
+            foreach (Pkcs11TokenInfo token in tokens ?? Array.Empty<Pkcs11TokenInfo>())
+                if (token != null && !string.IsNullOrWhiteSpace(token.Reader)
+                    && byName.TryGetValue(token.Reader.Trim(), out PcscReader reader))
+                    token.Atr = reader.Atr;
         }
 
         /// <summary>

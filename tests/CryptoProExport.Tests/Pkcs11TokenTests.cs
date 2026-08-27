@@ -44,12 +44,13 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
-        public void Classify_FallsBackToManufacturerWhenModelSaysNothing()
+        public void Classify_RecognizesOnlyTheExactJaCartaProMetadataPair()
         {
-            // Живая JaCarta 13.08.2026: model='PRO', manufacturerID='Aladdin R.D.'.
-            // По одной модели носитель попадал бы в «не опознан».
             Assert.Equal(RutokenKind.Unknown, Pkcs11Token.Classify("PRO"));
-            Assert.Equal(RutokenKind.Other, Pkcs11Token.Classify("PRO", "Aladdin R.D."));
+            Assert.Equal(RutokenKind.JaCartaPro,
+                Pkcs11Token.Classify("PRO", "Aladdin R.D."));
+            Assert.Equal(RutokenKind.Other, Pkcs11Token.Classify("PRO", "Aladdin"));
+            Assert.Equal(RutokenKind.Other, Pkcs11Token.Classify("PRO X", "Aladdin R.D."));
             Assert.Equal(RutokenKind.Esmart, Pkcs11Token.Classify("USB 64K", "ISBC"));
         }
 
@@ -181,6 +182,7 @@ namespace CryptoProExport.Tests
         [InlineData(RutokenKind.RutokenLite)]
         [InlineData(RutokenKind.RutokenEcp)]
         [InlineData(RutokenKind.JaCartaLt)]
+        [InlineData(RutokenKind.JaCartaPro)]
         [InlineData(RutokenKind.Esmart)]
         [InlineData(RutokenKind.Other)]
         [InlineData(RutokenKind.Unknown)]
@@ -195,7 +197,84 @@ namespace CryptoProExport.Tests
         public void KindName_UsesProductNamesForDirectForeignBackends()
         {
             Assert.Equal("JaCarta LT", Pkcs11Token.KindName(RutokenKind.JaCartaLt));
+            Assert.Equal("JaCarta PRO", Pkcs11Token.KindName(RutokenKind.JaCartaPro));
             Assert.Equal("ESMART", Pkcs11Token.KindName(RutokenKind.Esmart));
+        }
+
+        [Fact]
+        public void ConfirmedJaCartaPro_RequiresAllIndependentExactSignals()
+        {
+            var token = new Pkcs11TokenInfo
+            {
+                Kind = RutokenKind.JaCartaPro,
+                Reader = "Aladdin Token JC 0",
+                Model = "PRO",
+                Manufacturer = "Aladdin R.D.",
+                Atr = JaCartaProApdu.ExactAtr,
+            };
+
+            Assert.True(Pkcs11Token.IsConfirmedJaCartaPro(token));
+            Assert.True(JaCartaProApdu.IsExactLiveReader(token, new[]
+            {
+                new PcscReader
+                {
+                    Name = token.Reader,
+                    CardPresent = true,
+                    Atr = JaCartaProApdu.ExactAtr,
+                },
+            }));
+
+            foreach (Action<Pkcs11TokenInfo> mutate in new Action<Pkcs11TokenInfo>[]
+            {
+                value => value.Kind = RutokenKind.Other,
+                value => value.Reader = "Aladdin Token JC clone 0",
+                value => value.Model = "PRO X",
+                value => value.Manufacturer = "Aladdin R.D. clone",
+                value => value.Atr = "3B 00",
+            })
+            {
+                var lookalike = new Pkcs11TokenInfo
+                {
+                    Kind = token.Kind,
+                    Reader = token.Reader,
+                    Model = token.Model,
+                    Manufacturer = token.Manufacturer,
+                    Atr = token.Atr,
+                };
+                mutate(lookalike);
+                Assert.False(Pkcs11Token.IsConfirmedJaCartaPro(lookalike));
+            }
+
+            Assert.False(JaCartaProApdu.IsExactLiveReader(token, new[]
+            {
+                new PcscReader { Name = token.Reader, CardPresent = true, Atr = "3B 00" },
+            }));
+        }
+
+        [Fact]
+        public void AttachPcscAtr_MatchesByReaderNameAndRequiresPresentCard()
+        {
+            var exact = new Pkcs11TokenInfo { Reader = "Aladdin Token JC 0" };
+            var absent = new Pkcs11TokenInfo { Reader = "Reader absent 0" };
+
+            Pkcs11Token.AttachPcscAtr(new[] { exact, absent }, new[]
+            {
+                new PcscReader
+                {
+                    Name = "aladdin token jc 0",
+                    CardPresent = true,
+                    Atr = JaCartaProApdu.ExactAtr,
+                },
+                new PcscReader
+                {
+                    Name = absent.Reader,
+                    CardPresent = false,
+                    Atr = "3B 00",
+                },
+            });
+
+            Assert.Equal(JaCartaProApdu.ExactAtr, exact.Atr);
+            Assert.Null(absent.Atr);
         }
 
         [Fact]
@@ -391,6 +470,7 @@ namespace CryptoProExport.Tests
                 new Pkcs11TokenInfo { Reader = "Aktiv Rutoken ECP 0", Kind = RutokenKind.RutokenEcp },
                 new Pkcs11TokenInfo { Reader = "Aktiv Rutoken lite 0", Kind = RutokenKind.RutokenLite },
                 new Pkcs11TokenInfo { Reader = "Aladdin R.D. JaCarta LT 0", Kind = RutokenKind.JaCartaLt },
+                new Pkcs11TokenInfo { Reader = "Aladdin Token JC 0", Kind = RutokenKind.JaCartaPro },
                 new Pkcs11TokenInfo { Reader = "ESMART Token USB 64K 0", Kind = RutokenKind.Esmart },
                 new Pkcs11TokenInfo { Reader = "Aktiv ruToken 0", Kind = RutokenKind.RutokenS },
                 new Pkcs11TokenInfo { Reader = null, Kind = RutokenKind.RutokenEcp },
@@ -399,10 +479,11 @@ namespace CryptoProExport.Tests
 
             var set = Pkcs11Token.SmartCardReaders(tokens);
 
-            Assert.Equal(5, set.Count);
+            Assert.Equal(6, set.Count);
             Assert.Contains("Aktiv Rutoken ECP 0", set);
             Assert.Contains("Aktiv Rutoken lite 0", set);
             Assert.Contains("Aladdin R.D. JaCarta LT 0", set);
+            Assert.Contains("Aladdin Token JC 0", set);
             Assert.Contains("ESMART Token USB 64K 0", set);
             Assert.Contains("Aktiv ruToken 0", set);
         }

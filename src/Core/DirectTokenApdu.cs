@@ -23,8 +23,8 @@ namespace CryptoProExport
 
     /// <summary>
     /// Единая маршрутизация доказанных пассивных носителей: Rutoken S, Rutoken Lite,
-    /// JaCarta LT и ESMART. Тип сначала подтверждается метаданными токена; APDU чужого семейства
-    /// к reader никогда не отправляется.
+    /// JaCarta LT/PRO и ESMART. Тип сначала подтверждается метаданными токена; APDU чужого
+    /// семейства к reader никогда не отправляется.
     /// </summary>
     public sealed class DirectTokenApdu
     {
@@ -35,7 +35,7 @@ namespace CryptoProExport
 
         public static bool Supports(RutokenKind kind) => kind == RutokenKind.RutokenS
             || kind == RutokenKind.RutokenLite || kind == RutokenKind.JaCartaLt
-            || kind == RutokenKind.Esmart;
+            || kind == RutokenKind.JaCartaPro || kind == RutokenKind.Esmart;
 
         public List<DirectTokenContainerRef> ListContainers(Pkcs11TokenInfo token)
         {
@@ -64,7 +64,52 @@ namespace CryptoProExport
                 return new RutokenSApdu { Log = Say, Cancel = Cancel }.ListContainers(token.Reader);
             if (token.Kind == RutokenKind.Esmart)
                 return new EsmartApdu { Log = Say, Cancel = Cancel }.ListContainers(token.Reader);
+            if (token.Kind == RutokenKind.JaCartaPro)
+                return new JaCartaProApdu { Log = Say, Cancel = Cancel }.ListContainers(token.Reader);
             return new JaCartaLtApdu { Log = Say, Cancel = Cancel }.ListContainers(token.Reader);
+        }
+
+        /// <summary>
+        /// Отобрать контейнер по полному техническому <see cref="DirectTokenContainerRef.OutputName"/>.
+        /// Для JaCarta PRO селектор обязателен: публичный список может содержать несколько
+        /// контейнеров, а защищённые файлы разрешено читать только у явно выбранного индекса.
+        /// Имена из <c>name.key</c> намеренно не участвуют в выборе.
+        /// </summary>
+        public static List<DirectTokenContainerRef> SelectContainers(
+            Pkcs11TokenInfo token, IEnumerable<DirectTokenContainerRef> containers,
+            string outputName)
+        {
+            if (token == null) throw new ArgumentNullException(nameof(token));
+            var candidates = new List<DirectTokenContainerRef>();
+            foreach (DirectTokenContainerRef candidate in
+                containers ?? Array.Empty<DirectTokenContainerRef>())
+            {
+                if (candidate == null || candidate.Kind != token.Kind
+                    || !string.Equals(candidate.Reader, token.Reader,
+                        StringComparison.OrdinalIgnoreCase)
+                    || string.IsNullOrWhiteSpace(candidate.OutputName))
+                    throw ContainerSelectionError(outputName);
+                if (token.Kind == RutokenKind.JaCartaPro
+                    && !IsJaCartaProOutputName(candidate.OutputName, candidate.Index))
+                    throw ContainerSelectionError(outputName);
+                candidates.Add(candidate);
+            }
+
+            if (string.IsNullOrWhiteSpace(outputName))
+            {
+                if (token.Kind == RutokenKind.JaCartaPro)
+                    throw ContainerSelectionError("--container <technical OutputName>");
+                return candidates;
+            }
+
+            if (token.Kind == RutokenKind.JaCartaPro
+                && !IsJaCartaProOutputName(outputName, index: null))
+                throw ContainerSelectionError(outputName);
+
+            var matches = candidates.FindAll(candidate => string.Equals(
+                candidate.OutputName, outputName, StringComparison.OrdinalIgnoreCase));
+            if (matches.Count != 1) throw ContainerSelectionError(outputName);
+            return matches;
         }
 
         public RutokenContainer ReadContainer(Pkcs11TokenInfo token,
@@ -115,6 +160,16 @@ namespace CryptoProExport
             if (token.Kind == RutokenKind.Esmart)
                 return new EsmartApdu { Log = Say, Cancel = Cancel }
                     .ReadContainer(token.Reader, selected, pin);
+            if (token.Kind == RutokenKind.JaCartaPro)
+            {
+                if (token.PinCountLow || token.PinFinalTry || token.PinLocked)
+                    throw new LiteApduException(Strings.Format(
+                        "err.lite.pin", Pkcs11Token.PinState(token)));
+                if (!IsJaCartaProOutputName(selected.OutputName, selected.Index))
+                    throw ContainerSelectionError(selected.OutputName);
+                return new JaCartaProApdu { Log = Say, Cancel = Cancel }
+                    .ReadContainer(token.Reader, selected, pin);
+            }
             return new JaCartaLtApdu { Log = Say, Cancel = Cancel }
                 .ReadContainer(token.Reader, selected, pin);
         }
@@ -153,6 +208,42 @@ namespace CryptoProExport
                 throw new LiteApduException(Strings.Get("err.direct.pin.scope"));
         }
 
+        /// <summary>
+        /// Глобальный batch-путь не имеет technical selector. При подключённой JaCarta PRO
+        /// он обязан остановиться до первого защищённого чтения; пользователь выбирает
+        /// точную APDU-строку в GUI либо задаёт <c>--container</c> адресной CLI-команде.
+        /// </summary>
+        internal static void EnsureBatchSelectionSafe(IEnumerable<Pkcs11TokenInfo> tokens)
+        {
+            foreach (Pkcs11TokenInfo token in
+                tokens ?? Array.Empty<Pkcs11TokenInfo>())
+            {
+                if (token?.Kind == RutokenKind.JaCartaPro)
+                    throw ContainerSelectionError("--container <technical OutputName>");
+            }
+        }
+
+        private static bool IsJaCartaProOutputName(string value, int? index)
+        {
+            const string prefix = "jacartapro_";
+            string candidate = (value ?? string.Empty).Trim();
+            if (candidate.Length != prefix.Length + 2
+                || !candidate.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                || candidate[prefix.Length] != '0')
+                return false;
+            char suffix = char.ToUpperInvariant(candidate[prefix.Length + 1]);
+            if (!(suffix is >= '0' and <= '9' or >= 'A' and <= 'F')) return false;
+            if (!index.HasValue) return true;
+            return index.Value is >= 0 and <= 15
+                && string.Equals(candidate, $"{prefix}{index.Value:X2}",
+                    StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static ArgumentException ContainerSelectionError(string outputName)
+            => new ArgumentException(Strings.Format("err.container.nokey",
+                string.IsNullOrWhiteSpace(outputName) ? "--container" : outputName),
+                nameof(outputName));
+
         private static void ValidateToken(Pkcs11TokenInfo token)
         {
             if (token == null) throw new ArgumentNullException(nameof(token));
@@ -160,6 +251,12 @@ namespace CryptoProExport
                 throw new ArgumentException(Pkcs11Token.KindName(token.Kind), nameof(token));
             if (token.Kind == RutokenKind.Esmart && !Pkcs11Token.IsConfirmedEsmart(token))
                 throw new ArgumentException(Pkcs11Token.KindName(token.Kind), nameof(token));
+            if (token.Kind == RutokenKind.JaCartaPro)
+            {
+                if (!Pkcs11Token.IsConfirmedJaCartaPro(token)
+                    || !JaCartaProApdu.IsExactLiveReader(token, PcscReaders.List()))
+                    throw new ArgumentException(Pkcs11Token.KindName(token.Kind), nameof(token));
+            }
             RutokenKind resolved = Pkcs11Token.ResolveReaderKind(token.Reader, token);
             if (resolved != token.Kind)
                 throw new ArgumentException(Pkcs11Token.KindName(resolved), nameof(token));

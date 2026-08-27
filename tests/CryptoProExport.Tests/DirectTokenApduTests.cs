@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 
@@ -48,6 +49,19 @@ namespace CryptoProExport.Tests
             };
 
             Assert.Throws<LiteApduException>(() => DirectTokenApdu.ResolvePin(token, null));
+        }
+
+        [Fact]
+        public void ResolvePin_NeverGuessesAFactoryCredentialForJaCartaPro()
+        {
+            var token = new Pkcs11TokenInfo
+            {
+                Kind = RutokenKind.JaCartaPro,
+                PinDefault = true,
+            };
+
+            Assert.Throws<LiteApduException>(() => DirectTokenApdu.ResolvePin(token, null));
+            Assert.Equal("entered", DirectTokenApdu.ResolvePin(token, "entered"));
         }
 
         [Fact]
@@ -109,6 +123,134 @@ namespace CryptoProExport.Tests
             Assert.Equal(expected, JaCartaLtApdu.DerLength(header));
         }
 
+        [Theory]
+        [InlineData(new byte[] { 0x30, 0x0D }, 15)]
+        [InlineData(new byte[] { 0x30, 0x81, 0xC4 }, 199)]
+        [InlineData(new byte[] { 0x30, 0x82, 0x01, 0x00 }, 260)]
+        public void JaCartaProDerLength_UsesTheObservedDerEnvelope(byte[] header, int expected)
+        {
+            Assert.Equal(expected, JaCartaProApdu.DerLength(header));
+        }
+
+        [Fact]
+        public void JaCartaProAuthentication_MatchesIndependentPublicVector()
+        {
+            byte[] salt = Enumerable.Range(0, 20).Select(value => (byte)value).ToArray();
+            byte[] key = JaCartaProApdu.DeriveKey("public-test", salt);
+            byte[] cryptogram = JaCartaProApdu.EncryptChallenge(
+                key, Convert.FromHexString("0011223344556677"));
+
+            Assert.Equal("914E419E89810EDEA2F6D8C9E68507F53FEA14B0520FDA70",
+                Convert.ToHexString(key));
+            Assert.Equal("E53775610CAF052C", Convert.ToHexString(cryptogram));
+        }
+
+        [Fact]
+        public void JaCartaProFailureCleanup_ZeroesEveryCollectedBlob()
+        {
+            byte[] primary = { 1, 2, 3 };
+            byte[] mask = { 4, 5, 6 };
+            var blobs = new Dictionary<string, byte[]>
+            {
+                ["primary.key"] = primary,
+                ["masks.key"] = mask,
+            };
+
+            JaCartaProApdu.ZeroBlobs(blobs);
+
+            Assert.Empty(blobs);
+            Assert.All(primary, value => Assert.Equal(0, value));
+            Assert.All(mask, value => Assert.Equal(0, value));
+        }
+
+        [Fact]
+        public void JaCartaProSelection_RequiresOneExactTechnicalOutputName()
+        {
+            var token = new Pkcs11TokenInfo
+            {
+                Kind = RutokenKind.JaCartaPro,
+                Reader = "Aladdin Token JC 0",
+            };
+            var containers = new[]
+            {
+                DirectRef(token, 1, "synthetic-one"),
+                DirectRef(token, 7, "personal-looking-name"),
+            };
+
+            DirectTokenContainerRef selected = Assert.Single(
+                DirectTokenApdu.SelectContainers(token, containers, "jacartapro_01"));
+
+            Assert.Equal(1, selected.Index);
+            Assert.Equal("jacartapro_01", selected.OutputName);
+            Assert.Throws<ArgumentException>(() =>
+                DirectTokenApdu.SelectContainers(token, containers, null));
+            Assert.Throws<ArgumentException>(() =>
+                DirectTokenApdu.SelectContainers(token, containers, "synthetic-one"));
+            Assert.Throws<ArgumentException>(() =>
+                DirectTokenApdu.SelectContainers(token, containers, "jacartapro_0"));
+            Assert.Throws<ArgumentException>(() =>
+                DirectTokenApdu.SelectContainers(token, containers, "jacartapro_07-extra"));
+        }
+
+        [Fact]
+        public void ExistingDirectBackends_KeepBatchSelectionWhenOptionIsAbsent()
+        {
+            var token = new Pkcs11TokenInfo
+            {
+                Kind = RutokenKind.RutokenLite,
+                Reader = "Aktiv Rutoken lite 0",
+            };
+            var containers = new[]
+            {
+                DirectRef(token, 1, "first"),
+                DirectRef(token, 2, "second"),
+            };
+
+            Assert.Equal(2, DirectTokenApdu.SelectContainers(token, containers, null).Count);
+            Assert.Equal("lite_02", Assert.Single(
+                DirectTokenApdu.SelectContainers(token, containers, "lite_02")).OutputName);
+        }
+
+        [Fact]
+        public void GlobalBatch_RejectsJaCartaProBeforeAnyContainerCanBeRead()
+        {
+            var tokens = new[]
+            {
+                new Pkcs11TokenInfo { Kind = RutokenKind.RutokenLite, Reader = "Lite" },
+                new Pkcs11TokenInfo { Kind = RutokenKind.JaCartaPro, Reader = "PRO" },
+            };
+
+            Assert.Throws<ArgumentException>(() =>
+                DirectTokenApdu.EnsureBatchSelectionSafe(tokens));
+        }
+
+        [Fact]
+        public void GlobalBatch_RemainsAvailableForEarlierPassiveBackends()
+        {
+            var tokens = new[]
+            {
+                new Pkcs11TokenInfo { Kind = RutokenKind.RutokenS, Reader = "S" },
+                new Pkcs11TokenInfo { Kind = RutokenKind.JaCartaLt, Reader = "LT" },
+                new Pkcs11TokenInfo { Kind = RutokenKind.Esmart, Reader = "ESMART" },
+            };
+
+            DirectTokenApdu.EnsureBatchSelectionSafe(tokens);
+        }
+
+        [Fact]
+        public void PcscAtrMatch_RequiresExactConnectedHandleAtr()
+        {
+            byte[] exact = Convert.FromHexString(JaCartaProApdu.ExactAtr.Replace(" ", ""));
+
+            Assert.True(PcscApduSession.AtrMatches(
+                JaCartaProApdu.ExactAtr.ToLowerInvariant(), exact, exact.Length));
+            exact[^1] ^= 0x01;
+            Assert.False(PcscApduSession.AtrMatches(
+                JaCartaProApdu.ExactAtr, exact, exact.Length));
+            Assert.False(PcscApduSession.AtrMatches(
+                JaCartaProApdu.ExactAtr, exact, exact.Length + 1));
+        }
+
         [Fact]
         public void RutokenSFcp_UsesLittleEndianSizeAndFindsNestedTags()
         {
@@ -151,6 +293,7 @@ namespace CryptoProExport.Tests
         [InlineData(RutokenKind.RutokenS, true)]
         [InlineData(RutokenKind.RutokenLite, true)]
         [InlineData(RutokenKind.JaCartaLt, true)]
+        [InlineData(RutokenKind.JaCartaPro, true)]
         [InlineData(RutokenKind.Esmart, true)]
         [InlineData(RutokenKind.RutokenEcp, false)]
         [InlineData(RutokenKind.Other, false)]
@@ -158,5 +301,17 @@ namespace CryptoProExport.Tests
         {
             Assert.Equal(expected, DirectTokenApdu.Supports(kind));
         }
+
+        private static DirectTokenContainerRef DirectRef(Pkcs11TokenInfo token, int index,
+                                                         string name)
+            => new DirectTokenContainerRef
+            {
+                Kind = token.Kind,
+                Reader = token.Reader,
+                Name = name,
+                OutputName = token.Kind == RutokenKind.JaCartaPro
+                    ? $"jacartapro_{index:X2}" : $"lite_{index:X2}",
+                Index = index,
+            };
     }
 }

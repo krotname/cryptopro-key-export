@@ -21,7 +21,8 @@ interface languages fall back to the English text.
   * Windows with CryptoPro CSP installed (tested on 5.0 R2).
   * Private-key operations need a license (.jws). This machine's
     fingerprint for obtaining one is shown by the fingerprint command.
-  * To read from a token — Rutoken S / Lite, JaCarta LT or ESMART. A Rutoken
+  * To read from a token — Rutoken S / Lite, JaCarta LT / PRO or ESMART.
+    A Rutoken
     ECP 2.0 with a hardware non-extractable key cannot be exported
     this way: the key never physically leaves the chip.
   * Install the vendor driver/client for the exact token. It supplies
@@ -53,6 +54,11 @@ interface languages fall back to the English text.
   12345678 for Rutoken and ESMART, 1234567890 for JaCarta LT.
   One entered PIN is never sent to several readers: select an APDU row
   or use tokenexport/tokenfull with the exact reader name.
+  JaCarta PRO also requires --container jacartapro_XX. Copy that
+  technical id from the [APDU ...] line printed by list. A container
+  name is never used for selection; only the exact index is read.
+  Global export/full are blocked before protected reads with PRO attached:
+  use an addressed command or select the exact APDU row in the GUI.
 
 
 3. HOW TO WORK: THE CONTAINER IS ALREADY IN A FOLDER
@@ -105,8 +111,10 @@ interface languages fall back to the English text.
   extractcert <container> <folder>    extract the .cer
   checkexport <container>             check the export ban
   export <folder> [pin]               copy containers off tokens
-  tokenexport <reader> <dir> [pin]    copy from one selected token
-  tokenfull <reader> <dir> [pin]      selected token + all remaining steps
+  tokenexport <reader> <dir> [pin] [--container <id>]
+                                      copy from the selected token
+  tokenfull <reader> <dir> [pin] [--container <id>]
+                                      token + all remaining steps
   keyexport <folder> <cert.cer> [pw]  lift the export ban
   install <folder> [name]             install a container into CSP
   installed                           show installed containers
