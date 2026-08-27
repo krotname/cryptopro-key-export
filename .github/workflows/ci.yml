@@ -171,7 +171,7 @@ jobs:
           path: |
             publish/CryptoProExport.exe
             publish/CryptoProExport.exe.sha256
-          retention-days: 30
+          retention-days: 7
 
   # Другие архитектуры собираем, чтобы ловить регрессии компиляции.
   # Портативной сборкой остаётся x86 — только в ней работает вшитый rtCOMLite.
