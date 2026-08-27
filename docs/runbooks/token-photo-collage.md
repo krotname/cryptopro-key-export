@@ -16,10 +16,13 @@
 Имена файлов для модели со slug `<model>`:
 
 ```text
-docs/images/<model>/<model>-front-original.png
-docs/images/<model>/<model>-rear-original.png
+docs/images/<model>/<model>-front-original.<ext>
+docs/images/<model>/<model>-rear-original.<ext>
 docs/images/<model>/<model>-front-rear-studio.png
 ```
+
+`<ext>` сохраняет фактический формат доказательного оригинала (`jpg` или `png`):
+перекодировать исходник ради расширения нельзя.
 
 ## Шаги
 
