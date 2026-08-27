@@ -197,7 +197,8 @@ namespace CryptoProExport.Tests
         public void KindName_UsesProductNamesForDirectForeignBackends()
         {
             Assert.Equal("JaCarta LT", Pkcs11Token.KindName(RutokenKind.JaCartaLt));
-            Assert.Equal("JaCarta PRO", Pkcs11Token.KindName(RutokenKind.JaCartaPro));
+            Assert.Equal("eToken PRO (Java) / PRO",
+                Pkcs11Token.KindName(RutokenKind.JaCartaPro));
             Assert.Equal("ESMART", Pkcs11Token.KindName(RutokenKind.Esmart));
         }
 

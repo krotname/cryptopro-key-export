@@ -9,7 +9,7 @@ using System.Threading;
 namespace CryptoProExport
 {
     /// <summary>
-    /// Чтение файловых контейнеров КриптоПро из applet JaCarta PRO. Backend разрешён
+    /// Чтение файловых контейнеров КриптоПро из апплета PRO на eToken PRO (Java). Backend разрешён
     /// только для точной комбинации CK_TOKEN_INFO, indexed reader и live ATR, проверенной
     /// на физическом VID_0529/PID_0620. Все команды чтения относятся только к выбранному
     /// контейнеру; защищённые EF требуют challenge-response перед каждым READ.
@@ -20,6 +20,7 @@ namespace CryptoProExport
         private const string ExactModel = "PRO";
         private const string ExactManufacturer = "Aladdin R.D.";
         private const string ReaderFamily = "Aladdin Token JC";
+        private const string DisplayName = "eToken PRO (Java) / PRO";
         private const int LastContainerIndex = 15;
 
         private static readonly byte[] AppletAid = Convert.FromHexString("A0000003120202");
@@ -91,13 +92,13 @@ namespace CryptoProExport
                 byte[] selected = session.Transmit(SelectPath(directory, 0x0C));
                 int status = PcscApduSession.Status(selected);
                 if (IsMissing(status)) continue;
-                PcscApduSession.RequireOk(selected, $"SELECT JaCarta PRO CC{index:X2}");
+                PcscApduSession.RequireOk(selected, $"SELECT {DisplayName} CC{index:X2}");
 
                 byte[] namePath = FilePath(index, 0x06);
                 byte[] nameSelect = session.Transmit(SelectPath(namePath, 0x0C));
                 status = PcscApduSession.Status(nameSelect);
                 if (IsMissing(status)) continue;
-                PcscApduSession.RequireOk(nameSelect, $"SELECT JaCarta PRO F006/{index:X2}");
+                PcscApduSession.RequireOk(nameSelect, $"SELECT {DisplayName} F006/{index:X2}");
                 byte[] name = ReadDer(session, null);
                 try
                 {
@@ -141,14 +142,14 @@ namespace CryptoProExport
                     try
                     {
                         PcscApduSession.RequireOk(saltSelect,
-                            "SELECT JaCarta PRO service salt");
+                            $"SELECT {DisplayName} service salt");
                     }
                     finally
                     {
                         CryptographicOperations.ZeroMemory(saltSelect);
                     }
                     saltResponse = session.Transmit(ReadAt(0));
-                    PcscApduSession.RequireOk(saltResponse, "READ JaCarta PRO service salt");
+                    PcscApduSession.RequireOk(saltResponse, $"READ {DisplayName} service salt");
                     salt = PcscApduSession.Data(saltResponse);
                     if (salt.Length != 20)
                         throw ProtocolError("SERVICE_SALT_LENGTH");
@@ -168,7 +169,7 @@ namespace CryptoProExport
                     try
                     {
                         PcscApduSession.RequireOk(response,
-                            $"SELECT JaCarta PRO F0{mapping.Id:X2}/{selected.Index:X2}");
+                            $"SELECT {DisplayName} F0{mapping.Id:X2}/{selected.Index:X2}");
                     }
                     finally
                     {
@@ -215,7 +216,7 @@ namespace CryptoProExport
             command[4] = checked((byte)AppletAid.Length);
             Array.Copy(AppletAid, 0, command, 5, AppletAid.Length);
             byte[] response = session.Transmit(command);
-            PcscApduSession.RequireOk(response, "SELECT JaCarta PRO applet");
+            PcscApduSession.RequireOk(response, $"SELECT {DisplayName} applet");
         }
 
         private static byte[] SelectPath(byte[] path, byte p2)
@@ -285,7 +286,7 @@ namespace CryptoProExport
             byte[] response = session.Transmit(ReadAt(offset));
             try
             {
-                PcscApduSession.RequireOk(response, "READ JaCarta PRO object");
+                PcscApduSession.RequireOk(response, $"READ {DisplayName} object");
                 return PcscApduSession.Data(response);
             }
             finally
@@ -320,7 +321,7 @@ namespace CryptoProExport
             try
             {
                 challengeResponse = session.Transmit(Convert.FromHexString("8017000008"));
-                PcscApduSession.RequireOk(challengeResponse, "GET CHALLENGE JaCarta PRO");
+                PcscApduSession.RequireOk(challengeResponse, $"GET CHALLENGE {DisplayName}");
                 challenge = PcscApduSession.Data(challengeResponse);
                 if (challenge.Length != 8) throw ProtocolError("CHALLENGE_LENGTH");
                 cryptogram = EncryptChallenge(key, challenge);
@@ -470,7 +471,7 @@ namespace CryptoProExport
         }
 
         private static LiteApduException ProtocolError(string code)
-            => new LiteApduException(Strings.Format("err.com.call", "JaCarta PRO APDU", code));
+            => new LiteApduException(Strings.Format("err.com.call", $"{DisplayName} APDU", code));
 
         internal static void ZeroBlobs(IDictionary<string, byte[]> blobs)
         {
