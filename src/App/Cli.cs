@@ -26,8 +26,8 @@ namespace CryptoProExport.App
             ("extractcert <container> <outDir>",     "cli.usage.extractcert"),
             ("checkexport <container>",              "cli.usage.checkexport"),
             ("export <destDir> [pin]",               "cli.usage.export"),
-            ("tokenexport <reader> <outDir> [pin]", "cli.usage.tokenexport"),
-            ("tokenfull <reader> <outDir> [pin]",   "cli.usage.tokenfull"),
+            ("tokenexport <reader> <outDir> [pin] [--container <id>]", "cli.usage.tokenexport"),
+            ("tokenfull <reader> <outDir> [pin] [--container <id>]",   "cli.usage.tokenfull"),
             ("keyexport <folder> <cert.cer> [pass]", "cli.usage.keyexport"),
             ("install <folder> [name]",              "cli.usage.install"),
             ("installed",                            "cli.usage.installed"),
@@ -216,7 +216,12 @@ namespace CryptoProExport.App
                         if (args.Length < 3) { Usage(); return 1; }
                         string reader = args[1];
                         string outDir = args[2];
-                        string pin = args.Length > 3 ? args[3] : null;
+                        if (!TryParseDirectOptions(args, 3, out string pin,
+                                out string outputName))
+                        {
+                            Usage();
+                            return 1;
+                        }
                         Pkcs11TokenInfo token = Pkcs11Token.Enumerate(readContainers: false, log: Out)
                             .Find(candidate => string.Equals(candidate.Reader, reader,
                                 StringComparison.OrdinalIgnoreCase));
@@ -230,6 +235,15 @@ namespace CryptoProExport.App
 
                         var pipeline = new ExportPipeline { Log = Out };
                         List<DirectTokenContainerRef> containers = pipeline.Direct.ListContainers(token);
+                        try
+                        {
+                            containers = DirectTokenApdu.SelectContainers(token, containers, outputName);
+                        }
+                        catch (ArgumentException error)
+                        {
+                            Err(error.Message);
+                            return 1;
+                        }
                         if (containers.Count == 0)
                         {
                             Err(Strings.Format("err.lite.none", reader));
@@ -249,7 +263,12 @@ namespace CryptoProExport.App
                         if (args.Length < 3) { Usage(); return 1; }
                         string reader = args[1];
                         string outDir = args[2];
-                        string pin = args.Length > 3 ? args[3] : null;
+                        if (!TryParseDirectOptions(args, 3, out string pin,
+                                out string outputName))
+                        {
+                            Usage();
+                            return 1;
+                        }
                         Pkcs11TokenInfo token = Pkcs11Token.Enumerate(readContainers: false, log: Out)
                             .Find(candidate => string.Equals(candidate.Reader, reader,
                                 StringComparison.OrdinalIgnoreCase));
@@ -263,6 +282,15 @@ namespace CryptoProExport.App
 
                         var pipeline = new ExportPipeline { Log = Out };
                         List<DirectTokenContainerRef> containers = pipeline.Direct.ListContainers(token);
+                        try
+                        {
+                            containers = DirectTokenApdu.SelectContainers(token, containers, outputName);
+                        }
+                        catch (ArgumentException error)
+                        {
+                            Err(error.Message);
+                            return 1;
+                        }
                         if (containers.Count == 0)
                         {
                             Err(Strings.Format("err.lite.none", reader));
@@ -502,6 +530,44 @@ namespace CryptoProExport.App
                 ? Strings.Format("cli.token.certonly", c.Name ?? "?")
                 : Strings.Format("cli.token.container", c.Name ?? "?",
                     Strings.Get(c.Certificate != null ? "common.present" : "common.none"));
+
+        /// <summary>
+        /// Разобрать единственный позиционный PIN и необязательный точный технический
+        /// селектор. Значение можно передать как --container id или --container=id.
+        /// Неизвестные опции и дубли отклоняются, а не превращаются в PIN.
+        /// </summary>
+        private static bool TryParseDirectOptions(string[] args, int firstOptional,
+                                                  out string pin, out string outputName)
+        {
+            pin = null;
+            outputName = null;
+            for (int i = firstOptional; i < args.Length; i++)
+            {
+                string argument = args[i];
+                if (argument.StartsWith("--container=", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (outputName != null) return false;
+                    outputName = argument.Substring("--container=".Length);
+                    if (string.IsNullOrWhiteSpace(outputName)) return false;
+                }
+                else if (string.Equals(argument, "--container",
+                             StringComparison.OrdinalIgnoreCase))
+                {
+                    if (outputName != null || i + 1 >= args.Length) return false;
+                    outputName = args[++i];
+                    if (string.IsNullOrWhiteSpace(outputName)
+                        || outputName.StartsWith("--", StringComparison.Ordinal))
+                        return false;
+                }
+                else
+                {
+                    if (argument.StartsWith("--", StringComparison.Ordinal) || pin != null)
+                        return false;
+                    pin = argument;
+                }
+            }
+            return true;
+        }
 
         /// <summary>
         /// Сохранить извлечённый с токена сертификат (.cer) — без обращения к CSP.

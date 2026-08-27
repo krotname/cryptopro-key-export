@@ -54,7 +54,7 @@ $stderr = [IO.Path]::GetTempFileName()
 
 # Окно НЕ скрываем: Био ДСЧ рисует прогресс и должен быть на переднем плане.
 $cmdline = "-keyset -newkeyset -container `"$ContainerPath`" -provtype $ProvType -password $Password -protected=none"
-Write-Host "csptest $cmdline"
+Write-Host "csptest -keyset -newkeyset -container `"$ContainerPath`" -provtype $ProvType -password [REDACTED] -protected=none"
 $proc = Start-Process $exe -ArgumentList $cmdline -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
 
 [Inp2+POINT]$origin = New-Object 'Inp2+POINT'
