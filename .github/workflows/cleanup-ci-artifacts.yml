@@ -18,7 +18,7 @@ permissions:
 jobs:
   cleanup:
     name: Delete expired GHCR versions
-    runs-on: [self-hosted, linux, adler]
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","linux","adler"]') }}
     timeout-minutes: 10
     steps:
       - name: Delete only expired versions of this repository package
