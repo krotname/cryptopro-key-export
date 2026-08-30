@@ -2,7 +2,7 @@ name: Clean expired private CI artifacts
 
 on:
   schedule:
-    - cron: '23 3 * * 0'
+    - cron: '23 3 * * *'
   workflow_dispatch:
     inputs:
       delete-canary-probes:
@@ -30,9 +30,12 @@ jobs:
           script: |
             const packageName = `${context.repo.repo.toLowerCase()}-ci-artifacts`;
             const expectedOwner = context.repo.owner.toLowerCase();
-            const today = new Date().toISOString().slice(0, 10).replaceAll('-', '');
+            const compactNow = new Date().toISOString()
+              .replace(/[-:]/g, '')
+              .replace(/\.\d{3}Z$/, '');
+            const today = compactNow.slice(0, 8);
             const deleteCanaryProbes = process.env.DELETE_CANARY_PROBES === 'true';
-            const artifactTag = /^run-\d+-a\d+-[a-z0-9._-]{1,48}-[a-f0-9]{8}-e(\d{8})$/;
+            const artifactTag = /^run-\d+-a\d+-[a-z0-9._-]{1,48}-[a-f0-9]{8}-e(\d{8}(?:T\d{6})?)$/;
             let versions;
 
             try {
@@ -82,8 +85,12 @@ jobs:
               const probeOnly = tags.length > 0 && tags.every((tag) => /^probe-\d+-\d+$/.test(tag));
               const artifactMatches = tags.map((tag) => tag.match(artifactTag));
               const contractOnly = tags.length > 0 && artifactMatches.every(Boolean);
-              const expired = contractOnly
-                && artifactMatches.every((match) => match[1] < today);
+              const expired = contractOnly && artifactMatches.every((match) => {
+                const expiration = match[1];
+                return expiration.length === 8
+                  ? expiration <= today
+                  : expiration <= compactNow;
+              });
 
               if (!expired && !(deleteCanaryProbes && probeOnly)) {
                 skipped.push(`${version.id}: ${tags.join(', ') || '<untagged>'}`);

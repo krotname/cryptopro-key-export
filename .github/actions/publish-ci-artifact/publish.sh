@@ -129,7 +129,7 @@ archive_sha256="$(sha256_file "${archive_path}")"
 archive_bytes="$(wc -c < "${archive_path}" | tr -d '[:space:]')"
 created_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 expires_at="$(utc_plus_days)"
-expiry_tag="$(printf '%s' "${expires_at}" | tr -d ':-' | cut -c1-8)"
+expiry_tag="$(printf '%s' "${expires_at}" | tr -d ':-' | sed -E 's/Z$//')"
 
 repository_name="${GITHUB_REPOSITORY#*/}"
 owner="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
