@@ -11,32 +11,35 @@ namespace CryptoProExport
     /// </summary>
     public sealed class StandardPin
     {
+        // Свойства только init: записи реестра раздаются по ссылке всем вызывающим, и правка
+        // одного значения меняла бы PIN во всём процессе — вплоть до отправки чужого значения
+        // на носитель в заводском состоянии.
         /// <summary>
         /// Имя модели или семейства — так, как его пишет производитель (латиницей).
         /// Не переводится: это торговая марка, и вывод реестра на любом языке одинаков.
         /// </summary>
-        public string Model { get; set; }
+        public string Model { get; init; }
         /// <summary>Производитель носителя.</summary>
-        public string Vendor { get; set; }
+        public string Vendor { get; init; }
         /// <summary>Заводской PIN Пользователя; <c>null</c> — вендор его не задаёт.</summary>
-        public string UserPin { get; set; }
+        public string UserPin { get; init; }
         /// <summary>Заводской PIN Администратора (или PUK); <c>null</c> — не задан.</summary>
-        public string AdminPin { get; set; }
+        public string AdminPin { get; init; }
         /// <summary>Модель уже поддержана приложением (иначе — из плана, см. ROADMAP).</summary>
-        public bool Supported { get; set; }
+        public bool Supported { get; init; }
         /// <summary>
         /// Значение можно подставлять в поле PIN автоматически. Выключено там, где промах
         /// стоит дороже обычной попытки: у PRO-апплета PIN проверяется challenge-response,
         /// а часть моделей вообще не имеет заводского PIN Пользователя.
         /// </summary>
-        public bool AutoFill { get; set; }
+        public bool AutoFill { get; init; }
         /// <summary>Страница производителя, откуда взято значение.</summary>
-        public string Source { get; set; }
+        public string Source { get; init; }
         /// <summary>
         /// Ключ локализованного уточнения (апплет, ревизия, особенность PUK) или <c>null</c>.
         /// Здесь именно ключ, а не текст: вывод реестра идёт на языке интерфейса.
         /// </summary>
-        public string NoteKey { get; set; }
+        public string NoteKey { get; init; }
     }
 
     /// <summary>
