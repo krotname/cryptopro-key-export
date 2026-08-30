@@ -575,6 +575,22 @@ namespace CryptoProExport.App
         }
 
         /// <summary>
+        /// PIN для операции. Подставленное самой программой значение явным вводом не считается:
+        /// оно уходит как <c>null</c>, и PIN выбирает <c>DirectTokenApdu.ResolvePin</c> по
+        /// актуальным флагам носителя. Иначе горячая замена токена без обновления списка
+        /// отправила бы заводское значение на носитель со сменённым PIN и сожгла бы попытку.
+        /// Отредактированный пользователем текст перестаёт совпадать с подставленным и идёт
+        /// дальше как явный PIN — как и любое значение, введённое руками.
+        /// </summary>
+        private string OperationPin()
+        {
+            string text = TextOf(_txtPin);
+            if (_autoFilledPin != null && string.Equals(text, _autoFilledPin, StringComparison.Ordinal))
+                return null;
+            return NullIfEmpty(text);
+        }
+
+        /// <summary>
         /// Убрать из поля значение, подставленное самой программой. Введённый пользователем
         /// текст остаётся: его судьбу решает только он сам.
         /// </summary>
@@ -647,7 +663,7 @@ namespace CryptoProExport.App
             if (selected?.Apdu != null)
             {
                 pipe.ExportDirectContainer(selected.Apdu.Token, selected.Apdu.Container,
-                    dest, NullIfEmpty(TextOf(_txtPin)));
+                    dest, OperationPin());
                 saved = 1;
             }
             else if (selected?.Direct != null)
@@ -657,7 +673,7 @@ namespace CryptoProExport.App
             }
             else
             {
-                saved = pipe.ExportFromTokens(dest, NullIfEmpty(TextOf(_txtPin))).Count;
+                saved = pipe.ExportFromTokens(dest, OperationPin()).Count;
             }
             Log(Strings.Format("log.exported", saved));
             RefreshList(cancel);   // из рабочего потока: внутри всё, что трогает UI, идёт через Invoke
@@ -730,11 +746,11 @@ namespace CryptoProExport.App
             if (selected?.Apdu != null)
                 result = pipe.ExportDirectAndMakeExportable(
                     selected.Apdu.Token, selected.Apdu.Container, dest,
-                    userPin: NullIfEmpty(TextOf(_txtPin)));
+                    userPin: OperationPin());
             else if (selected?.Direct != null)
                 result = pipe.ExportAndMakeExportable(selected.Direct, dest);
             else
-                result = pipe.ExportAndMakeExportable(dest, userPin: NullIfEmpty(TextOf(_txtPin)));
+                result = pipe.ExportAndMakeExportable(dest, userPin: OperationPin());
             if (result.AllSucceeded) Log(Strings.Get("log.full.done"));
             else Log(Strings.Format("log.exported", result.Exported));
             RefreshList(cancel);   // из рабочего потока: внутри всё, что трогает UI, идёт через Invoke
