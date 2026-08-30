@@ -328,6 +328,17 @@ namespace CryptoProExport.App
                             Out(Strings.Get("cli.install.invisible"));
                             return 2;
                         }
+                        if (installed.VisibleToCsp)
+                        {
+                            string certMgrPath = CertMgr.Locate();
+                            if (certMgrPath != null)
+                            {
+                                var cm = new CertMgr(certMgrPath) { Log = Out };
+                                var linked = cm.InstallContainerCertificates(
+                                    args[1], CertMgr.HdImageContainer(installed.Name));
+                                if (linked.Found > 0 && !linked.AllSucceeded) return 3;
+                            }
+                        }
                         return 0;
                     }
                     case "installed":

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Versioning;
 using System.Text;
@@ -16,6 +17,14 @@ namespace CryptoProExport
     [SupportedOSPlatform("windows")]
     public sealed class CertMgr
     {
+        public sealed class CertificateInstallSummary
+        {
+            public int Found { get; internal set; }
+            public int Installed { get; internal set; }
+            public List<ToolResult> Results { get; } = new List<ToolResult>();
+            public bool AllSucceeded => Found > 0 && Found == Installed;
+        }
+
         public string ExePath { get; }
         public Action<string> Log { get; set; } = _ => { };
 
@@ -48,11 +57,92 @@ namespace CryptoProExport
         /// <summary>Установить сертификат в хранилище «Личное» и связать его с контейнером.</summary>
         public ToolResult InstallCertificate(string cerPath, string container, bool signatureKey = false)
         {
+            return Execute(BuildInstallArguments(cerPath, container, signatureKey), 30000);
+        }
+
+        internal static string BuildInstallArguments(
+            string cerPath, string container, bool signatureKey = false)
+        {
             var sb = new StringBuilder("-install -file ").Append(Quote(cerPath));
             sb.Append(" -container ").Append(Quote(container));
             if (signatureKey) sb.Append(" -at_signature");
             sb.Append(" -silent");
-            return Execute(sb.ToString(), 30000);
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Установить найденные сертификаты в «Личное» и привязать их к точному контейнеру.
+        /// Сначала используются cert_exchange.cer/cert_signature.cer из снятой папки; для
+        /// отсутствующих файлов сертификат пробуем извлечь уже из установленной HDIMAGE-копии.
+        /// </summary>
+        public CertificateInstallSummary InstallContainerCertificates(
+            string containerFolder, string container)
+        {
+            if (string.IsNullOrWhiteSpace(containerFolder))
+                throw new ArgumentException(nameof(containerFolder));
+            if (string.IsNullOrWhiteSpace(container))
+                throw new ArgumentException(Strings.Get("err.container.name"), nameof(container));
+
+            bool hasExchangeKey = CertFromContainer.CheckExportable(
+                container, CertFromContainer.AT_KEYEXCHANGE).KeyFound;
+            bool hasSignatureKey = CertFromContainer.CheckExportable(
+                container, CertFromContainer.AT_SIGNATURE).KeyFound;
+            var certificates = CertificatesForPresentKeys(
+                hasExchangeKey, hasSignatureKey,
+                ExistingCertificate(containerFolder, "cert_exchange.cer"),
+                ExistingCertificate(containerFolder, "cert_signature.cer"));
+            string exchange = certificates.exchange;
+            string signature = certificates.signature;
+            string tempDir = null;
+            try
+            {
+                if ((hasExchangeKey && exchange == null)
+                    || (hasSignatureKey && signature == null))
+                {
+                    tempDir = Path.Combine(Path.GetTempPath(),
+                        "cpx-cert-install-" + Guid.NewGuid().ToString("N"));
+                    var extracted = CertFromContainer.SaveCerts(container, tempDir);
+                    certificates = CertificatesForPresentKeys(
+                        hasExchangeKey, hasSignatureKey,
+                        exchange ?? extracted.exchange,
+                        signature ?? extracted.signature);
+                    exchange = certificates.exchange;
+                    signature = certificates.signature;
+                }
+
+                var summary = new CertificateInstallSummary();
+                InstallIfPresent(summary, exchange, container, signatureKey: false);
+                InstallIfPresent(summary, signature, container, signatureKey: true);
+                return summary;
+            }
+            finally
+            {
+                if (tempDir != null && Directory.Exists(tempDir))
+                    try { Directory.Delete(tempDir, recursive: true); } catch (IOException) { }
+            }
+        }
+
+        private void InstallIfPresent(CertificateInstallSummary summary, string path,
+                                      string container, bool signatureKey)
+        {
+            if (path == null) return;
+            summary.Found++;
+            Log(Strings.Get("tool.certmgr.install"));
+            ToolResult result = InstallCertificate(path, container, signatureKey);
+            summary.Results.Add(result);
+            if (result.Success) summary.Installed++;
+        }
+
+        private static string ExistingCertificate(string folder, string fileName)
+        {
+            string path = Path.Combine(folder, fileName);
+            return File.Exists(path) ? path : null;
+        }
+
+        internal static (string exchange, string signature) CertificatesForPresentKeys(
+            bool hasExchangeKey, bool hasSignatureKey, string exchange, string signature)
+        {
+            return (hasExchangeKey ? exchange : null, hasSignatureKey ? signature : null);
         }
 
         /// <summary>Выгрузить сертификат вместе с закрытым ключом в PKCS#12.</summary>
