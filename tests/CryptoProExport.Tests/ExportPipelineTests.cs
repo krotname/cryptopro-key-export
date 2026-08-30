@@ -46,6 +46,28 @@ namespace CryptoProExport.Tests
                                                                      "exchange.cer", "signature.cer"));
         }
 
+        [Theory]
+        [InlineData(true, false, true, false)]
+        [InlineData(false, true, false, true)]
+        [InlineData(true, true, true, true)]
+        [InlineData(false, false, false, false)]
+        public void LiteRepairTargets_SelectsOnlyKeysWithMatchingCertificates(
+            bool hasExchangeCert, bool hasSignatureCert,
+            bool expectExchange, bool expectSignature)
+        {
+            var both = new RutokenContainer();
+            both.Files["primary.key"] = new byte[] { 1 };
+            both.Files["primary2.key"] = new byte[] { 2 };
+
+            var targets = ExportPipeline.LiteRepairTargets(
+                both,
+                hasExchangeCert ? "exchange.cer" : null,
+                hasSignatureCert ? "signature.cer" : null);
+
+            Assert.Equal(expectExchange, targets.exchange);
+            Assert.Equal(expectSignature, targets.signature);
+        }
+
         [Fact]
         public void ResolveLitePin_UsesExplicitPinWithoutInspectingTokenFlags()
         {

@@ -36,7 +36,7 @@
 ## Сборка и тесты
 ```bash
 dotnet build CryptoProExport.slnx -c Release -warnaserror   # 0 ошибок, 0 предупреждений
-dotnet test  CryptoProExport.slnx -c Release --no-build     # 502 теста xunit
+dotnet test  CryptoProExport.slnx -c Release --no-build     # 506 тестов xunit
 ```
 Тесты покрывают чистую логику: кодеки cp1251/cp866, `name.key`, аргументы p12utility,
 разбор разрядности PE, наличие вшитых зависимостей, `ContainerStore` (во временной папке —

@@ -280,13 +280,14 @@ namespace CryptoProExport
 
             bool hasExchange = container.Files.ContainsKey("primary.key");
             bool hasSignature = container.Files.ContainsKey("primary2.key");
+            var targets = LiteRepairTargets(container, ex, sg);
             string signatureFolder = null;
             try
             {
-                if (hasExchange && hasSignature)
+                if (targets.exchange && targets.signature)
                     signatureFolder = CloneLiteOutput(folder, "signature");
 
-                if (hasExchange)
+                if (targets.exchange)
                 {
                     NormalizeLiteContainer(folder, containerPassword, useCspEnvelope: false);
                     RestoreOriginalHeader(folder);
@@ -303,7 +304,7 @@ namespace CryptoProExport
                     Log(Strings.Format("pipe.lite.normalized", folder));
                 }
 
-                if (hasSignature)
+                if (targets.signature)
                 {
                     string target = signatureFolder ?? folder;
                     NormalizeLiteContainer(target, containerPassword, useCspEnvelope: true);
@@ -329,6 +330,20 @@ namespace CryptoProExport
                 Log(Strings.Format("pipe.lite.normalizefail", folder, e.Message));
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Двухключевой Lite/PRO-контейнер может содержать сертификат только для одной пары.
+        /// Ремонтировать можно лишь ветку, где одновременно присутствуют ключ и его сертификат:
+        /// иначе p12utility либо падает без --cert, либо привязывает чужой сертификат.
+        /// </summary>
+        internal static (bool exchange, bool signature) LiteRepairTargets(
+            RutokenContainer container, string certExchange, string certSignature)
+        {
+            if (container == null) return (false, false);
+            return (
+                container.Files.ContainsKey("primary.key") && !string.IsNullOrEmpty(certExchange),
+                container.Files.ContainsKey("primary2.key") && !string.IsNullOrEmpty(certSignature));
         }
 
         /// <summary>
