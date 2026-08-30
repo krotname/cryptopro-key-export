@@ -1,0 +1,131 @@
+name: Clean expired private CI artifacts
+
+on:
+  schedule:
+    - cron: '23 3 * * *'
+  workflow_dispatch:
+    inputs:
+      delete-canary-probes:
+        description: Delete probe-only versions created during the GHCR rollout.
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  cleanup:
+    name: Delete expired GHCR versions
+    runs-on: [self-hosted, linux, adler]
+    timeout-minutes: 10
+    steps:
+      - name: Delete only expired versions of this repository package
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
+        env:
+          DELETE_CANARY_PROBES: ${{ inputs.delete-canary-probes || 'false' }}
+          EXPECTED_PACKAGE_ID: ${{ vars.CI_ARTIFACT_PACKAGE_ID }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const packageName = `${context.repo.repo.toLowerCase()}-ci-artifacts`;
+            const expectedOwner = context.repo.owner.toLowerCase();
+            const expectedRepository = `${context.repo.owner}/${context.repo.repo}`.toLowerCase();
+            const expectedPackageId = Number.parseInt(process.env.EXPECTED_PACKAGE_ID, 10);
+            if (!Number.isSafeInteger(expectedPackageId) || expectedPackageId <= 0) {
+              core.setFailed('CI_ARTIFACT_PACKAGE_ID must be a positive integer');
+              return;
+            }
+            const compactNow = new Date().toISOString()
+              .replace(/[-:]/g, '')
+              .replace(/\.\d{3}Z$/, '');
+            const today = compactNow.slice(0, 8);
+            const deleteCanaryProbes = process.env.DELETE_CANARY_PROBES === 'true';
+            const artifactTag = /^run-\d+-a\d+-[a-z0-9._-]{1,48}-[a-f0-9]{8}-e(\d{8}(?:T\d{6})?)$/;
+            let versions;
+
+            try {
+              const packageResponse = await github.request(
+                'GET /users/{username}/packages/{package_type}/{package_name}',
+                {
+                  username: context.repo.owner,
+                  package_type: 'container',
+                  package_name: packageName,
+                  headers: { 'X-GitHub-Api-Version': '2022-11-28' },
+                },
+              );
+              const packageInfo = packageResponse.data;
+              const linkedRepository = packageInfo.repository?.full_name?.toLowerCase();
+              if (
+                packageInfo.name !== packageName
+                || packageInfo.id !== expectedPackageId
+                || packageInfo.visibility !== 'private'
+                || packageInfo.owner?.login?.toLowerCase() !== expectedOwner
+                || (linkedRepository && linkedRepository !== expectedRepository)
+              ) {
+                core.setFailed(
+                  `Refusing cleanup for unexpected package state: id=${packageInfo.id}, name=${packageInfo.name}, `
+                  + `visibility=${packageInfo.visibility}, owner=${packageInfo.owner?.login ?? 'unknown'}, `
+                  + `repository=${packageInfo.repository?.full_name ?? 'unlinked'}`,
+                );
+                return;
+              }
+
+              versions = await github.paginate(
+                'GET /users/{username}/packages/{package_type}/{package_name}/versions',
+                {
+                  username: context.repo.owner,
+                  package_type: 'container',
+                  package_name: packageName,
+                  per_page: 100,
+                  headers: { 'X-GitHub-Api-Version': '2022-11-28' },
+                },
+              );
+            } catch (error) {
+              if (error.status === 404) {
+                core.notice(`Package ${packageName} does not exist yet`);
+                return;
+              }
+              throw error;
+            }
+
+            const deleted = [];
+            const skipped = [];
+
+            for (const version of versions) {
+              const tags = version.metadata?.container?.tags ?? [];
+              const probeOnly = tags.length > 0 && tags.every((tag) => /^probe-\d+-\d+$/.test(tag));
+              const artifactMatches = tags.map((tag) => tag.match(artifactTag));
+              const contractOnly = tags.length > 0 && artifactMatches.every(Boolean);
+              const expired = contractOnly && artifactMatches.every((match) => {
+                const expiration = match[1];
+                return expiration.length === 8
+                  ? expiration <= today
+                  : expiration <= compactNow;
+              });
+
+              if (!expired && !(deleteCanaryProbes && probeOnly)) {
+                skipped.push(`${version.id}: ${tags.join(', ') || '<untagged>'}`);
+                continue;
+              }
+
+              await github.request(
+                'DELETE /users/{username}/packages/{package_type}/{package_name}/versions/{package_version_id}',
+                {
+                  username: context.repo.owner,
+                  package_type: 'container',
+                  package_name: packageName,
+                  package_version_id: version.id,
+                  headers: { 'X-GitHub-Api-Version': '2022-11-28' },
+                },
+              );
+              deleted.push(`${version.id}: ${tags.join(', ')}`);
+            }
+
+            await core.summary
+              .addHeading(`GHCR cleanup: ${packageName}`, 2)
+              .addRaw(`Deleted: ${deleted.length}\n\n`)
+              .addList(deleted.length ? deleted : ['Nothing expired'])
+              .addRaw(`\nSkipped: ${skipped.length}\n`)
+              .write();

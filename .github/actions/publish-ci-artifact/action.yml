@@ -1,0 +1,192 @@
+name: Publish private CI artifact to GHCR
+description: Archive CI files and publish them as a private, expiring OCI artifact.
+
+inputs:
+  name:
+    description: Logical artifact name.
+    required: true
+  path:
+    description: Newline-separated paths or Bash glob patterns relative to the workspace.
+    required: true
+  if-no-files-found:
+    description: Behaviour when no input matches; one of error, warn, or ignore.
+    required: false
+    default: warn
+  retention-days:
+    description: Retention marker written to the OCI tag and metadata; from 1 to 7 days.
+    required: false
+    default: '7'
+  token:
+    description: Job-scoped GitHub token with packages write permission.
+    required: true
+  package-id:
+    description: Immutable package ID verified against this repository with a read:packages token.
+    required: true
+
+outputs:
+  published:
+    description: Whether a package version was published.
+    value: ${{ steps.publish_unix.outputs.published || steps.publish_windows.outputs.published }}
+  reference:
+    description: GHCR reference without the canonical digest.
+    value: ${{ steps.publish_unix.outputs.reference || steps.publish_windows.outputs.reference }}
+  digest:
+    description: Canonical OCI manifest digest.
+    value: ${{ steps.publish_unix.outputs.digest || steps.publish_windows.outputs.digest }}
+  sha256:
+    description: SHA-256 of the compressed payload.
+    value: ${{ steps.publish_unix.outputs.sha256 || steps.publish_windows.outputs.sha256 }}
+  expires-at:
+    description: UTC expiry timestamp recorded in the metadata.
+    value: ${{ steps.publish_unix.outputs['expires-at'] || steps.publish_windows.outputs['expires-at'] }}
+
+runs:
+  using: composite
+  steps:
+    - name: Require a pre-existing private GHCR package
+      uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
+      env:
+        EXPECTED_PACKAGE_ID: ${{ inputs.package-id }}
+      with:
+        github-token: ${{ inputs.token }}
+        script: |
+          const packageName = `${context.repo.repo.toLowerCase()}-ci-artifacts`;
+          const expectedOwner = context.repo.owner.toLowerCase();
+          const expectedRepository = `${context.repo.owner}/${context.repo.repo}`.toLowerCase();
+          const expectedPackageId = Number.parseInt(process.env.EXPECTED_PACKAGE_ID, 10);
+          if (!Number.isSafeInteger(expectedPackageId) || expectedPackageId <= 0) {
+            throw new Error('CI_ARTIFACT_PACKAGE_ID must be a positive integer');
+          }
+          const response = await github.request(
+            'GET /users/{username}/packages/{package_type}/{package_name}',
+            {
+              username: context.repo.owner,
+              package_type: 'container',
+              package_name: packageName,
+              headers: { 'X-GitHub-Api-Version': '2022-11-28' },
+            },
+          );
+          const packageInfo = response.data;
+          const linkedRepository = packageInfo.repository?.full_name?.toLowerCase();
+
+          if (
+            packageInfo.name !== packageName
+            || packageInfo.id !== expectedPackageId
+            || packageInfo.visibility !== 'private'
+            || packageInfo.owner?.login?.toLowerCase() !== expectedOwner
+            || (linkedRepository && linkedRepository !== expectedRepository)
+          ) {
+            throw new Error(
+              `Refusing publication to unexpected package state: id=${packageInfo.id}, name=${packageInfo.name}, `
+              + `visibility=${packageInfo.visibility}, owner=${packageInfo.owner?.login ?? 'unknown'}, `
+              + `repository=${packageInfo.repository?.full_name ?? 'unlinked'}`,
+            );
+          }
+
+          core.notice(
+            linkedRepository
+              ? `Pre-publish privacy and repository gate passed for ${expectedOwner}/${packageName}`
+              : `Package repository is API-redacted; immutable package ID ${expectedPackageId} matched`,
+          );
+
+    - name: Set up ORAS 1.3.3
+      uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d
+      with:
+        version: 1.3.3
+
+    - name: Archive and publish the private OCI artifact
+      id: publish_unix
+      if: runner.os != 'Windows'
+      shell: bash
+      env:
+        ARTIFACT_NAME: ${{ inputs.name }}
+        ARTIFACT_PATHS: ${{ inputs.path }}
+        NO_FILES_BEHAVIOUR: ${{ inputs.if-no-files-found }}
+        RETENTION_DAYS: ${{ inputs.retention-days }}
+        GHCR_TOKEN: ${{ inputs.token }}
+        SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      run: bash "${{ github.action_path }}/publish.sh"
+
+    - name: Archive and publish the private OCI artifact on Windows
+      id: publish_windows
+      if: runner.os == 'Windows'
+      shell: pwsh
+      env:
+        ARTIFACT_NAME: ${{ inputs.name }}
+        ARTIFACT_PATHS: ${{ inputs.path }}
+        NO_FILES_BEHAVIOUR: ${{ inputs.if-no-files-found }}
+        RETENTION_DAYS: ${{ inputs.retention-days }}
+        GHCR_TOKEN: ${{ inputs.token }}
+        SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      run: '& "${{ github.action_path }}/publish.ps1"'
+
+    - name: Verify private GHCR package state
+      if: ${{ steps.publish_unix.outputs.published == 'true' || steps.publish_windows.outputs.published == 'true' }}
+      uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
+      env:
+        PACKAGE_NAME: ${{ steps.publish_unix.outputs.package || steps.publish_windows.outputs.package }}
+        PACKAGE_REFERENCE: ${{ steps.publish_unix.outputs.reference || steps.publish_windows.outputs.reference }}
+        PACKAGE_DIGEST: ${{ steps.publish_unix.outputs.digest || steps.publish_windows.outputs.digest }}
+        EXPECTED_PACKAGE_ID: ${{ inputs.package-id }}
+      with:
+        github-token: ${{ inputs.token }}
+        script: |
+          let packageInfo = null;
+
+          for (let attempt = 1; attempt <= 6; attempt += 1) {
+            try {
+              const response = await github.request(
+                'GET /users/{username}/packages/{package_type}/{package_name}',
+                {
+                  username: context.repo.owner,
+                  package_type: 'container',
+                  package_name: process.env.PACKAGE_NAME,
+                  headers: { 'X-GitHub-Api-Version': '2022-11-28' },
+                },
+              );
+              packageInfo = response.data;
+              break;
+            } catch (error) {
+              if (attempt === 6 || error.status !== 404) {
+                throw error;
+              }
+              await new Promise((resolve) => setTimeout(resolve, 5_000));
+            }
+          }
+
+          const expectedOwner = context.repo.owner.toLowerCase();
+          const expectedRepository = `${context.repo.owner}/${context.repo.repo}`.toLowerCase();
+          const expectedPackageId = Number.parseInt(process.env.EXPECTED_PACKAGE_ID, 10);
+          const linkedRepository = packageInfo.repository?.full_name?.toLowerCase();
+          if (!Number.isSafeInteger(expectedPackageId) || expectedPackageId <= 0) {
+            core.setFailed('CI_ARTIFACT_PACKAGE_ID must be a positive integer');
+          }
+          if (packageInfo.id !== expectedPackageId) {
+            core.setFailed(`GHCR package ID is ${packageInfo.id}, expected ${expectedPackageId}`);
+          }
+          if (packageInfo.visibility !== 'private') {
+            core.setFailed(`GHCR package visibility is ${packageInfo.visibility}, expected private`);
+          }
+          if (packageInfo.owner?.login?.toLowerCase() !== expectedOwner) {
+            core.setFailed(`GHCR package owner is ${packageInfo.owner?.login ?? 'unknown'}, expected ${expectedOwner}`);
+          }
+          if (packageInfo.name !== process.env.PACKAGE_NAME) {
+            core.setFailed(`GHCR package name is ${packageInfo.name}, expected ${process.env.PACKAGE_NAME}`);
+          }
+          if (linkedRepository && linkedRepository !== expectedRepository) {
+            core.setFailed(
+              `GHCR package repository is ${packageInfo.repository?.full_name ?? 'unlinked'}, `
+              + `expected ${context.repo.owner}/${context.repo.repo}`,
+            );
+          }
+
+          await core.summary
+            .addHeading('Private GHCR artifact readback', 3)
+            .addList([
+              `Visibility: ${packageInfo.visibility}`,
+              `Owner: ${packageInfo.owner?.login}`,
+              `Package ID: ${packageInfo.id}`,
+              `Linked repository: ${packageInfo.repository?.full_name ?? 'API-redacted; package ID attested'}`,
+              `Reference: ${process.env.PACKAGE_REFERENCE}@${process.env.PACKAGE_DIGEST}`,
+            ])
+            .write();
