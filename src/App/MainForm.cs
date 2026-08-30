@@ -438,6 +438,10 @@ namespace CryptoProExport.App
 
         private void RefreshList(CancellationToken cancel = default)
         {
+            // Снимаем своё прежнее значение до опроса, а не после: список успевает наполниться
+            // строками нового носителя ещё до конца обхода, и прерванное обновление (отмена,
+            // ошибка) оставило бы в поле PIN уже вынутого токена — он ушёл бы дальше как явный.
+            ClearAutoFilledPin();
             Invoke(() => _lv.Items.Clear());
             Log(Strings.Get("status.refresh"));
 
@@ -552,26 +556,39 @@ namespace CryptoProExport.App
         /// подставить, решает <see cref="StandardPins.SuggestFor"/> — там же и границы: ровно
         /// один носитель, подтверждённое драйвером заводское состояние PIN и чистый счётчик.
         ///
-        /// Своё прежнее значение снимается на каждом обновлении списка: набор носителей мог
-        /// смениться, а оставшийся в поле текст ушёл бы дальше как явный PIN и потратил бы
-        /// попытку уже другого носителя. Введённое пользователем не трогается.
-        /// Отправки PIN на карту подстановка не делает — это по-прежнему явное действие.
+        /// Своё прежнее значение снимает <see cref="ClearAutoFilledPin"/> в начале обновления,
+        /// поэтому прерванный обход не оставляет в поле PIN уже вынутого носителя. Введённое
+        /// пользователем не трогается, а отправки PIN на карту подстановка не делает — это
+        /// по-прежнему явное действие.
         /// </summary>
         private void SuggestFactoryPin(IEnumerable<Pkcs11TokenInfo> tokens)
         {
             StandardPin suggestion = StandardPins.SuggestFor(tokens);
+            if (suggestion == null) return;
             Invoke(() =>
             {
-                if (_autoFilledPin != null && _txtPin.Text == _autoFilledPin)
+                if (_txtPin.Text.Length != 0) return;
+                _txtPin.Text = suggestion.UserPin;
+                _autoFilledPin = suggestion.UserPin;
+                _lblPinHint.Text = Strings.Format("field.pin.hint.factory", suggestion.Model);
+            });
+        }
+
+        /// <summary>
+        /// Убрать из поля значение, подставленное самой программой. Введённый пользователем
+        /// текст остаётся: его судьбу решает только он сам.
+        /// </summary>
+        private void ClearAutoFilledPin()
+        {
+            Invoke(() =>
+            {
+                if (_autoFilledPin == null) return;
+                if (_txtPin.Text == _autoFilledPin)
                 {
                     _txtPin.Text = string.Empty;
                     _lblPinHint.Text = Strings.Get("field.pin.hint");
                 }
                 _autoFilledPin = null;
-                if (suggestion == null || _txtPin.Text.Length != 0) return;
-                _txtPin.Text = suggestion.UserPin;
-                _autoFilledPin = suggestion.UserPin;
-                _lblPinHint.Text = Strings.Format("field.pin.hint.factory", suggestion.Model);
             });
         }
 
