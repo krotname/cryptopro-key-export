@@ -385,4 +385,5 @@ pins.note.sopin = प्रशासक PIN को SO-PIN कहा जाता
 pins.note.nouser = उपयोगकर्ता PIN सेट नहीं है
 pins.note.puk = प्रशासक के लिए यह PUK है
 pins.note.applets = बाक़ी ऐपलेट अपने-अपने फ़ैक्ट्री मान रखते हैं
-log.token.replaced = रीडर में टोकन बदल गया — स्थिति दोबारा पढ़ी गई
+log.token.replaced = रीडर में टोकन बदल गया — सूची ताज़ा करें और फिर से आज़माएँ
+log.token.state.unknown = टोकन की मौजूदा स्थिति नहीं पढ़ी जा सकी — कार्रवाई रोक दी गई

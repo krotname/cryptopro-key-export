@@ -385,4 +385,5 @@ pins.note.sopin = PIN administratora nazywa się SO-PIN
 pins.note.nouser = PIN użytkownika nie jest ustawiony
 pins.note.puk = u administratora jest to PUK
 pins.note.applets = pozostałe aplety zachowują własne wartości fabryczne
-log.token.replaced = Nośnik w czytniku został wymieniony — stan odczytano ponownie
+log.token.replaced = Nośnik w czytniku został wymieniony — odśwież listę i spróbuj ponownie
+log.token.state.unknown = Nie udało się odczytać bieżącego stanu nośnika — operację przerwano

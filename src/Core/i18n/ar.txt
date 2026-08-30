@@ -385,4 +385,5 @@ pins.note.sopin = رمز المسؤول يُسمى SO-PIN
 pins.note.nouser = لم يُحدَّد رمز PIN للمستخدم
 pins.note.puk = لدى المسؤول هذا رمز PUK
 pins.note.applets = تحتفظ التطبيقات الأخرى بقيمها المصنعية الخاصة
-log.token.replaced = تم تبديل الحامل في القارئ؛ أُعيدت قراءة حالته
+log.token.replaced = تم تبديل الحامل في القارئ؛ حدِّث القائمة وأعد المحاولة
+log.token.state.unknown = تعذّرت قراءة الحالة الحالية للحامل؛ أُوقفت العملية

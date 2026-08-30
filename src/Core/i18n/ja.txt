@@ -385,4 +385,5 @@ pins.note.sopin = 管理者PINはSO-PINと呼ばれます
 pins.note.nouser = ユーザーPINは設定されていません
 pins.note.puk = 管理者側はPUKです
 pins.note.applets = 他のアプレットはそれぞれの初期値のままです
-log.token.replaced = リーダーのトークンが交換されました。状態を読み直しました
+log.token.replaced = リーダーのトークンが交換されました。一覧を更新してやり直してください
+log.token.state.unknown = トークンの現在の状態を読み取れませんでした。処理を中止しました

@@ -385,4 +385,5 @@ pins.note.sopin = 관리자 PIN은 SO-PIN이라고 합니다
 pins.note.nouser = 사용자 PIN이 설정되어 있지 않습니다
 pins.note.puk = 관리자 쪽은 PUK입니다
 pins.note.applets = 나머지 애플릿은 각자의 공장 초기값을 유지합니다
-log.token.replaced = 리더의 매체가 교체되어 상태를 다시 읽었습니다
+log.token.replaced = 리더의 매체가 교체되었습니다. 목록을 새로 고치고 다시 시도하세요
+log.token.state.unknown = 매체의 현재 상태를 읽지 못해 작업을 중단했습니다

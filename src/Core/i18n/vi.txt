@@ -385,4 +385,5 @@ pins.note.sopin = PIN quản trị viên gọi là SO-PIN
 pins.note.nouser = không đặt PIN người dùng
 pins.note.puk = với quản trị viên đây là PUK
 pins.note.applets = các applet khác giữ giá trị mặc định riêng
-log.token.replaced = Thiết bị trong đầu đọc đã bị thay; trạng thái được đọc lại
+log.token.replaced = Thiết bị trong đầu đọc đã bị thay; hãy làm mới danh sách và thử lại
+log.token.state.unknown = Không đọc được trạng thái hiện tại của thiết bị; thao tác đã dừng

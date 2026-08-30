@@ -385,4 +385,5 @@ pins.note.sopin = منتظم کے PIN کو SO-PIN کہا جاتا ہے
 pins.note.nouser = صارف کا PIN مقرر نہیں
 pins.note.puk = منتظم کے لیے یہ PUK ہے
 pins.note.applets = باقی ایپلٹس اپنی فیکٹری قدریں رکھتے ہیں
-log.token.replaced = ریڈر میں ٹوکن بدل گیا — حالت دوبارہ پڑھی گئی
+log.token.replaced = ریڈر میں ٹوکن بدل گیا — فہرست تازہ کریں اور دوبارہ کوشش کریں
+log.token.state.unknown = ٹوکن کی موجودہ حالت نہیں پڑھی جا سکی — کارروائی روک دی گئی

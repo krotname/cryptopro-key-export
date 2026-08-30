@@ -385,4 +385,5 @@ pins.note.sopin = el PIN de administrador se llama SO-PIN
 pins.note.nouser = no hay PIN de usuario definido
 pins.note.puk = para el administrador es un PUK
 pins.note.applets = los demás applets conservan sus propios valores de fábrica
-log.token.replaced = El soporte del lector fue sustituido; se releyó su estado
+log.token.replaced = El soporte del lector fue sustituido; actualice la lista e inténtelo de nuevo
+log.token.state.unknown = No se pudo leer el estado actual del soporte; la operación se detuvo

@@ -578,30 +578,42 @@ namespace CryptoProExport.App
         }
 
         /// <summary>
-        /// Перечитать состояние выбранного носителя перед операцией. Строка списка несёт снимок,
-        /// снятый прошлым обновлением, а токен могли заменить в том же считывателе: на снимке
-        /// PIN числится заводским, тогда как у нового носителя он уже сменён, и авто-PIN сжёг бы
-        /// его попытку. Если перечисление недоступно (нет драйвера) или носитель исчез, работаем
-        /// по прежнему снимку — это ровно то поведение, что было до появления подстановки.
+        /// Перечитать состояние выбранного носителя перед операцией и вернуть <c>null</c>, если
+        /// работать по строке списка больше нельзя. Строка несёт снимок прошлого обновления, а
+        /// токен могли заменить в том же считывателе: индексы контейнеров и флаги PIN тогда
+        /// относятся к другой карте, и операция сожгла бы её попытку на чужом значении.
+        ///
+        /// Поэтому здесь fail-closed: заменённый носитель (другой серийный номер), исчезнувший
+        /// из перечисления или недоступное перечисление — все три случая прекращают операцию с
+        /// сообщением в журнале, а не продолжают её по устаревшему снимку.
         /// </summary>
-        private Pkcs11TokenInfo CurrentStateOf(Pkcs11TokenInfo snapshot)
+        private Pkcs11TokenInfo CurrentStateOf(Pkcs11TokenInfo snapshot, CancellationToken cancel)
         {
             if (snapshot == null || string.IsNullOrEmpty(snapshot.Reader)) return snapshot;
-            try
+            List<Pkcs11TokenInfo> live;
+            try { live = Pkcs11Token.Enumerate(readContainers: false, cancel: cancel); }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception e)
             {
-                foreach (var token in Pkcs11Token.Enumerate(readContainers: false))
-                {
-                    if (!string.Equals(token.Reader, snapshot.Reader, StringComparison.OrdinalIgnoreCase))
-                        continue;
-                    // Серийный номер отличает заменённый носитель от того же самого в том же ридере.
-                    if (!string.IsNullOrEmpty(snapshot.Serial) && !string.IsNullOrEmpty(token.Serial)
-                        && !string.Equals(token.Serial, snapshot.Serial, StringComparison.Ordinal))
-                        Log(Strings.Get("log.token.replaced"));
-                    return token;
-                }
+                Log(Strings.Format("log.tokens.unavailable", e.Message));
+                Log(Strings.Get("log.token.state.unknown"));
+                return null;
             }
-            catch (Exception e) { Log(Strings.Format("log.tokens.unavailable", e.Message)); }
-            return snapshot;
+            foreach (var token in live)
+            {
+                if (!string.Equals(token.Reader, snapshot.Reader, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                // Серийный номер отличает заменённый носитель от того же самого в том же ридере.
+                if (!string.IsNullOrEmpty(snapshot.Serial) && !string.IsNullOrEmpty(token.Serial)
+                    && !string.Equals(token.Serial, snapshot.Serial, StringComparison.Ordinal))
+                {
+                    Log(Strings.Get("log.token.replaced"));
+                    return null;
+                }
+                return token;
+            }
+            Log(Strings.Get("log.token.state.unknown"));
+            return null;
         }
 
         /// <summary>
@@ -706,8 +718,9 @@ namespace CryptoProExport.App
             int saved;
             if (selected?.Apdu != null)
             {
-                pipe.ExportDirectContainer(CurrentStateOf(selected.Apdu.Token),
-                    selected.Apdu.Container, dest, OperationPin());
+                Pkcs11TokenInfo live = CurrentStateOf(selected.Apdu.Token, cancel);
+                if (live == null) return;
+                pipe.ExportDirectContainer(live, selected.Apdu.Container, dest, OperationPin());
                 saved = 1;
             }
             else if (selected?.Direct != null)
@@ -788,9 +801,12 @@ namespace CryptoProExport.App
             var pipe = new ExportPipeline(NullIfEmpty(TextOf(_txtP12))) { Log = Log, Cancel = cancel };
             ExportPipelineResult result;
             if (selected?.Apdu != null)
+            {
+                Pkcs11TokenInfo live = CurrentStateOf(selected.Apdu.Token, cancel);
+                if (live == null) return;
                 result = pipe.ExportDirectAndMakeExportable(
-                    CurrentStateOf(selected.Apdu.Token), selected.Apdu.Container, dest,
-                    userPin: OperationPin());
+                    live, selected.Apdu.Container, dest, userPin: OperationPin());
+            }
             else if (selected?.Direct != null)
                 result = pipe.ExportAndMakeExportable(selected.Direct, dest);
             else
