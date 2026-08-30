@@ -20,13 +20,13 @@ permissions:
 jobs:
   build:
     name: Сборка, тесты, портативный exe
-    # Pull requests исполняются на одноразовом GitHub-hosted runner.
-    # Доверенные push/tag jobs идут на раннере правообладателя
+    # PR владельца и доверенные push/tag jobs идут на раннере правообладателя;
+    # fork, Dependabot и PR других акторов — на одноразовом GitHub-hosted.
     # (adler-white-1w-cryptopro). Переменная репозитория CI_RUNS_ON_WINDOWS
     # временно переводит их на другой раннер, когда собственный недоступен:
     # например ["windows-latest"]. Она отдельная от CI_RUNS_ON, потому что
     # та переключает Linux-job релиза и значения у них несовместимы.
-    runs-on: ${{ fromJSON(github.event_name == 'pull_request' && '["windows-latest"]' || (vars.CI_RUNS_ON_WINDOWS || '["self-hosted","windows","adler-white-1w","cryptopro"]')) }}
+    runs-on: ${{ fromJSON(github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name != github.repository || github.actor != github.repository_owner) && '["windows-latest"]' || (vars.CI_RUNS_ON_WINDOWS || '["self-hosted","windows","adler-white-1w","cryptopro"]')) }}
     timeout-minutes: 30
     permissions:
       contents: read
@@ -169,7 +169,7 @@ jobs:
 
       - name: Сохранить портативный exe в приватном GHCR
         id: portable_artifact
-        if: ${{ github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') }}
+        if: ${{ github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor == github.repository_owner) }}
         uses: ./.github/actions/publish-ci-artifact
         with:
           name: CryptoProExport-portable-${{ env.PORTABLE_RID }}
@@ -182,7 +182,7 @@ jobs:
           package-id: ${{ vars.CI_ARTIFACT_PACKAGE_ID }}
 
       - name: Однодневный fallback для внешнего pull request
-        if: ${{ github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name != github.repository || github.actor == 'dependabot[bot]') }}
+        if: ${{ github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name != github.repository || github.actor != github.repository_owner) }}
         uses: actions/upload-artifact@v4
         continue-on-error: true
         with:
@@ -197,7 +197,7 @@ jobs:
   architectures:
     name: Сборка под ${{ matrix.rid }}
     # Для pull request действует та же изоляция от постоянного раннера.
-    runs-on: ${{ fromJSON(github.event_name == 'pull_request' && '["windows-latest"]' || (vars.CI_RUNS_ON_WINDOWS || '["self-hosted","windows","adler-white-1w","cryptopro"]')) }}
+    runs-on: ${{ fromJSON(github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name != github.repository || github.actor != github.repository_owner) && '["windows-latest"]' || (vars.CI_RUNS_ON_WINDOWS || '["self-hosted","windows","adler-white-1w","cryptopro"]')) }}
     timeout-minutes: 20
     strategy:
       fail-fast: false
