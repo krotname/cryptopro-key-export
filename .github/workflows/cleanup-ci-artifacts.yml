@@ -63,7 +63,7 @@ jobs:
                 || packageInfo.id !== expectedPackageId
                 || packageInfo.visibility !== 'private'
                 || packageInfo.owner?.login?.toLowerCase() !== expectedOwner
-                || (linkedRepository && linkedRepository !== expectedRepository)
+                || linkedRepository !== expectedRepository
               ) {
                 core.setFailed(
                   `Refusing cleanup for unexpected package state: id=${packageInfo.id}, name=${packageInfo.name}, `
