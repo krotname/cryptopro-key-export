@@ -69,6 +69,33 @@ function Convert-ArtifactGlobToRegex {
             [void]$builder.Append('[^/]*')
         } elseif ($character -eq '?') {
             [void]$builder.Append('[^/]')
+        } elseif ($character -eq '[') {
+            $closingIndex = $normalized.IndexOf([char] ']', $index + 1)
+            if ($closingIndex -le $index + 1) {
+                [void]$builder.Append('\[')
+                continue
+            }
+
+            $classContent = $normalized.Substring($index + 1, $closingIndex - $index - 1)
+            $negated = $classContent.StartsWith('!', [StringComparison]::Ordinal) -or
+                $classContent.StartsWith('^', [StringComparison]::Ordinal)
+            if ($negated) {
+                $classContent = $classContent.Substring(1)
+            }
+            if ([string]::IsNullOrEmpty($classContent) -or $classContent.Contains('/')) {
+                [void]$builder.Append('\[')
+                continue
+            }
+
+            $escapedClass = $classContent.Replace('\', '\\').Replace(']', '\]')
+            if ($escapedClass.StartsWith('^', [StringComparison]::Ordinal)) {
+                $escapedClass = '\' + $escapedClass
+            }
+            [void]$builder.Append('[')
+            if ($negated) { [void]$builder.Append('^') }
+            [void]$builder.Append($escapedClass)
+            [void]$builder.Append(']')
+            $index = $closingIndex
         } else {
             [void]$builder.Append([regex]::Escape($character))
         }
