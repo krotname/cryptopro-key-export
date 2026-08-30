@@ -25,12 +25,18 @@ jobs:
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
         env:
           DELETE_CANARY_PROBES: ${{ inputs.delete-canary-probes || 'false' }}
+          EXPECTED_PACKAGE_ID: ${{ vars.CI_ARTIFACT_PACKAGE_ID }}
         with:
           github-token: ${{ github.token }}
           script: |
             const packageName = `${context.repo.repo.toLowerCase()}-ci-artifacts`;
             const expectedOwner = context.repo.owner.toLowerCase();
             const expectedRepository = `${context.repo.owner}/${context.repo.repo}`.toLowerCase();
+            const expectedPackageId = Number.parseInt(process.env.EXPECTED_PACKAGE_ID, 10);
+            if (!Number.isSafeInteger(expectedPackageId) || expectedPackageId <= 0) {
+              core.setFailed('CI_ARTIFACT_PACKAGE_ID must be a positive integer');
+              return;
+            }
             const compactNow = new Date().toISOString()
               .replace(/[-:]/g, '')
               .replace(/\.\d{3}Z$/, '');
@@ -49,14 +55,16 @@ jobs:
                 },
               );
               const packageInfo = packageResponse.data;
+              const linkedRepository = packageInfo.repository?.full_name?.toLowerCase();
               if (
                 packageInfo.name !== packageName
+                || packageInfo.id !== expectedPackageId
                 || packageInfo.visibility !== 'private'
                 || packageInfo.owner?.login?.toLowerCase() !== expectedOwner
-                || packageInfo.repository?.full_name?.toLowerCase() !== expectedRepository
+                || (linkedRepository && linkedRepository !== expectedRepository)
               ) {
                 core.setFailed(
-                  `Refusing cleanup for unexpected package state: name=${packageInfo.name}, `
+                  `Refusing cleanup for unexpected package state: id=${packageInfo.id}, name=${packageInfo.name}, `
                   + `visibility=${packageInfo.visibility}, owner=${packageInfo.owner?.login ?? 'unknown'}, `
                   + `repository=${packageInfo.repository?.full_name ?? 'unlinked'}`,
                 );
