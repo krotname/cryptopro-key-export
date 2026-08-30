@@ -133,9 +133,9 @@ namespace CryptoProExport.Tests
             var planned = StandardPins.All.Where(p => !p.Supported).Select(p => p.Model).ToArray();
 
             Assert.Contains("JaCarta PKI", planned);
-            Assert.Contains("JaCarta ГОСТ", planned);
-            Assert.Contains("JaCarta-2 ГОСТ", planned);
-            Assert.Contains("eToken ГОСТ", planned);
+            Assert.Contains("JaCarta GOST", planned);
+            Assert.Contains("JaCarta-2 GOST", planned);
+            Assert.Contains("eToken GOST", planned);
         }
 
         [Fact]
@@ -174,6 +174,20 @@ namespace CryptoProExport.Tests
                 foreach (string language in Strings.Available)
                     Assert.True(Strings.Table(language).ContainsKey(pin.NoteKey),
                                 $"{language}: нет перевода {pin.NoteKey}");
+            }
+        }
+
+        /// <summary>
+        /// Имена моделей и вендоров — торговые марки латиницей: они попадают в вывод `pins`
+        /// и в подсказку GUI на любом языке, поэтому русской прозы в них быть не должно.
+        /// </summary>
+        [Fact]
+        public void Registry_NamesStayLanguageNeutral()
+        {
+            foreach (StandardPin pin in StandardPins.All)
+            {
+                Assert.DoesNotContain(pin.Model, c => c >= 'А' && c <= 'я');
+                Assert.DoesNotContain(pin.Vendor, c => c >= 'А' && c <= 'я');
             }
         }
 

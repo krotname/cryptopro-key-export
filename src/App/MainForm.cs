@@ -26,6 +26,8 @@ namespace CryptoProExport.App
         private TextBox _txtP12, _txtDest, _txtPin, _txtLog;
         /// <summary>Последнее подставленное программой значение PIN — чтобы отличать его от введённого.</summary>
         private string _autoFilledPin;
+        /// <summary>Модель, чьё заводское значение подставлено, — для подсказки на текущем языке.</summary>
+        private string _autoFilledModel;
         private ListView _lv;
         private SplitContainer _split;
         private ColumnHeader _colWhere, _colName, _colDetails;
@@ -256,7 +258,7 @@ namespace CryptoProExport.App
             _lblP12.Text = Strings.Get("field.p12");
             _lblDest.Text = Strings.Get("field.dest");
             _lblPin.Text = Strings.Get("field.pin");
-            _lblPinHint.Text = Strings.Get("field.pin.hint");
+            _lblPinHint.Text = PinHintText();
             _lblLang.Text = Strings.Get("field.lang");
             _btnP12.Text = Strings.Get("common.browse");
             _btnDest.Text = Strings.Get("common.browse");
@@ -570,7 +572,8 @@ namespace CryptoProExport.App
                 if (_txtPin.Text.Length != 0) return;
                 _txtPin.Text = suggestion.UserPin;
                 _autoFilledPin = suggestion.UserPin;
-                _lblPinHint.Text = Strings.Format("field.pin.hint.factory", suggestion.Model);
+                _autoFilledModel = suggestion.Model;
+                _lblPinHint.Text = PinHintText();
             });
         }
 
@@ -602,6 +605,18 @@ namespace CryptoProExport.App
         }
 
         /// <summary>
+        /// Текст подсказки у поля PIN. Пока в поле лежит подставленное программой значение,
+        /// подсказка называет модель — иначе смена языка стёрла бы единственный признак того,
+        /// что PIN заводской, а не введённый владельцем.
+        /// </summary>
+        private string PinHintText()
+        {
+            return _autoFilledModel != null && _txtPin.Text == _autoFilledPin
+                ? Strings.Format("field.pin.hint.factory", _autoFilledModel)
+                : Strings.Get("field.pin.hint");
+        }
+
+        /// <summary>
         /// PIN для операции. Подставленное самой программой значение явным вводом не считается:
         /// оно уходит как <c>null</c>, и PIN выбирает <c>DirectTokenApdu.ResolvePin</c> по
         /// актуальным флагам носителя. Иначе горячая замена токена без обновления списка
@@ -626,12 +641,14 @@ namespace CryptoProExport.App
             Invoke(() =>
             {
                 if (_autoFilledPin == null) return;
-                if (_txtPin.Text == _autoFilledPin)
+                bool ours = _txtPin.Text == _autoFilledPin;
+                _autoFilledPin = null;
+                _autoFilledModel = null;
+                if (ours)
                 {
                     _txtPin.Text = string.Empty;
-                    _lblPinHint.Text = Strings.Get("field.pin.hint");
+                    _lblPinHint.Text = PinHintText();
                 }
-                _autoFilledPin = null;
             });
         }
 

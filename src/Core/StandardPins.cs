@@ -11,7 +11,10 @@ namespace CryptoProExport
     /// </summary>
     public sealed class StandardPin
     {
-        /// <summary>Отображаемое имя модели или семейства.</summary>
+        /// <summary>
+        /// Имя модели или семейства — так, как его пишет производитель (латиницей).
+        /// Не переводится: это торговая марка, и вывод реестра на любом языке одинаков.
+        /// </summary>
         public string Model { get; set; }
         /// <summary>Производитель носителя.</summary>
         public string Vendor { get; set; }
@@ -57,74 +60,74 @@ namespace CryptoProExport
         {
             new StandardPin
             {
-                Model = "Рутокен S / DS", Vendor = "Актив",
+                Model = "Rutoken S / DS", Vendor = "Aktiv",
                 UserPin = "12345678", AdminPin = "87654321",
                 Supported = true, AutoFill = true, Source = RutokenSource,
             },
             new StandardPin
             {
-                Model = "Рутокен Lite", Vendor = "Актив",
+                Model = "Rutoken Lite", Vendor = "Aktiv",
                 UserPin = "12345678", AdminPin = "87654321",
                 Supported = true, AutoFill = true, Source = RutokenSource,
             },
             new StandardPin
             {
-                Model = "Рутокен ЭЦП / 2.0 / 3.0", Vendor = "Актив",
+                Model = "Rutoken ECP / 2.0 / 3.0", Vendor = "Aktiv",
                 UserPin = "12345678", AdminPin = "87654321",
                 Supported = true, AutoFill = true, Source = RutokenSource,
                 NoteKey = "pins.note.diagnostic",
             },
             new StandardPin
             {
-                Model = "JaCarta LT", Vendor = "Аладдин Р.Д.",
+                Model = "JaCarta LT", Vendor = "Aladdin R.D.",
                 UserPin = "1234567890", AdminPin = null,
                 Supported = true, AutoFill = true, Source = AladdinSource,
                 NoteKey = "pins.note.noadmin",
             },
             new StandardPin
             {
-                Model = "eToken PRO (Java) / JaCarta PRO", Vendor = "Аладдин Р.Д.",
+                Model = "eToken PRO (Java) / JaCarta PRO", Vendor = "Aladdin R.D.",
                 UserPin = "1234567890", AdminPin = null,
                 Supported = true, AutoFill = false, Source = AladdinSource,
                 NoteKey = "pins.note.challenge",
             },
             new StandardPin
             {
-                Model = "ESMART Token / ESMART Token ГОСТ", Vendor = "ESMART (ИСБК)",
+                Model = "ESMART Token / ESMART Token GOST", Vendor = "ESMART (ISBC)",
                 UserPin = "12345678", AdminPin = "12345678",
                 Supported = true, AutoFill = true, Source = EsmartSource,
                 NoteKey = "pins.note.sopin",
             },
             new StandardPin
             {
-                Model = "JaCarta PKI", Vendor = "Аладдин Р.Д.",
+                Model = "JaCarta PKI", Vendor = "Aladdin R.D.",
                 UserPin = "11111111", AdminPin = "00000000",
                 Supported = false, Source = AladdinSource,
             },
             new StandardPin
             {
-                Model = "JaCarta ГОСТ", Vendor = "Аладдин Р.Д.",
+                Model = "JaCarta GOST", Vendor = "Aladdin R.D.",
                 UserPin = null, AdminPin = "1234567890",
                 Supported = false, Source = AladdinSource,
                 NoteKey = "pins.note.nouser",
             },
             new StandardPin
             {
-                Model = "JaCarta-2 ГОСТ", Vendor = "Аладдин Р.Д.",
+                Model = "JaCarta-2 GOST", Vendor = "Aladdin R.D.",
                 UserPin = "1234567890", AdminPin = "0987654321",
                 Supported = false, Source = AladdinSource,
                 NoteKey = "pins.note.puk",
             },
             new StandardPin
             {
-                Model = "JaCarta-2 SE (JC-267), ГОСТ-апплет", Vendor = "Аладдин Р.Д.",
+                Model = "JaCarta-2 SE (JC-267), GOST applet", Vendor = "Aladdin R.D.",
                 UserPin = "0987654321", AdminPin = null,
                 Supported = false, Source = AladdinSource,
                 NoteKey = "pins.note.applets",
             },
             new StandardPin
             {
-                Model = "eToken ГОСТ", Vendor = "Аладдин Р.Д.",
+                Model = "eToken GOST", Vendor = "Aladdin R.D.",
                 UserPin = null, AdminPin = "1234567890",
                 Supported = false, Source = AladdinSource,
                 NoteKey = "pins.note.nouser",
@@ -143,12 +146,12 @@ namespace CryptoProExport
         {
             switch (kind)
             {
-                case RutokenKind.RutokenS: return Find("Рутокен S / DS");
-                case RutokenKind.RutokenLite: return Find("Рутокен Lite");
-                case RutokenKind.RutokenEcp: return Find("Рутокен ЭЦП / 2.0 / 3.0");
+                case RutokenKind.RutokenS: return Find("Rutoken S / DS");
+                case RutokenKind.RutokenLite: return Find("Rutoken Lite");
+                case RutokenKind.RutokenEcp: return Find("Rutoken ECP / 2.0 / 3.0");
                 case RutokenKind.JaCartaLt: return Find("JaCarta LT");
                 case RutokenKind.JaCartaPro: return Find("eToken PRO (Java) / JaCarta PRO");
-                case RutokenKind.Esmart: return Find("ESMART Token / ESMART Token ГОСТ");
+                case RutokenKind.Esmart: return Find("ESMART Token / ESMART Token GOST");
                 default: return null;
             }
         }
