@@ -53,7 +53,7 @@ $excludePatterns = [Collections.Generic.List[string]]::new()
 function Convert-ArtifactGlobToRegex {
     param([Parameter(Mandatory)][string] $Pattern)
 
-    $normalized = $Pattern.Replace('\\', '/')
+    $normalized = $Pattern.Replace('\', '/')
     $builder = [Text.StringBuilder]::new('^')
     for ($index = 0; $index -lt $normalized.Length; $index++) {
         $character = $normalized[$index]
@@ -104,6 +104,81 @@ function Convert-ArtifactGlobToRegex {
     return [regex]::new($builder.ToString(), [Text.RegularExpressions.RegexOptions]::IgnoreCase)
 }
 
+function Test-ArtifactPathMatchesGlob {
+    param(
+        [Parameter(Mandatory)][string] $Path,
+        [Parameter(Mandatory)][string] $Pattern
+    )
+
+    $pathParts = $Path.Split('/')
+    $patternParts = $Pattern.Split('/')
+    $pending = [Collections.Generic.Stack[Tuple[int, int]]]::new()
+    $pending.Push([Tuple]::Create(0, 0))
+    $visited = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+
+    while ($pending.Count -gt 0) {
+        $state = $pending.Pop()
+        $pathIndex = $state.Item1
+        $patternIndex = $state.Item2
+        if (-not $visited.Add("$pathIndex,$patternIndex")) {
+            continue
+        }
+        if ($patternIndex -eq $patternParts.Count) {
+            if ($pathIndex -eq $pathParts.Count) {
+                return $true
+            }
+            continue
+        }
+
+        $patternPart = $patternParts[$patternIndex]
+        if ($patternPart -eq '**') {
+            $pending.Push([Tuple]::Create($pathIndex, $patternIndex + 1))
+            if ($pathIndex -lt $pathParts.Count -and -not $pathParts[$pathIndex].StartsWith('.', [StringComparison]::Ordinal)) {
+                $pending.Push([Tuple]::Create($pathIndex + 1, $patternIndex))
+            }
+            continue
+        }
+        if ($pathIndex -eq $pathParts.Count) {
+            continue
+        }
+
+        $pathPart = $pathParts[$pathIndex]
+        if ($pathPart.StartsWith('.', [StringComparison]::Ordinal) -and
+            -not $patternPart.StartsWith('.', [StringComparison]::Ordinal)) {
+            continue
+        }
+        if ((Convert-ArtifactGlobToRegex -Pattern $patternPart).IsMatch($pathPart)) {
+            $pending.Push([Tuple]::Create($pathIndex + 1, $patternIndex + 1))
+        }
+    }
+
+    return $false
+}
+
+function Get-ArtifactArchiveItems {
+    param([Parameter(Mandatory)][IO.FileSystemInfo] $Item)
+
+    $isReparsePoint = ($Item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0
+    if ($isReparsePoint -or -not $Item.PSIsContainer) {
+        return @($Item)
+    }
+
+    return @(Get-ChildItem -LiteralPath $Item.FullName -Force -Recurse -ErrorAction SilentlyContinue |
+        Where-Object {
+            $relative = [IO.Path]::GetRelativePath($Item.FullName, $_.FullName)
+            foreach ($part in $relative.Split([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)) {
+                if ($part.StartsWith('.', [StringComparison]::Ordinal)) {
+                    return $false
+                }
+            }
+            $childIsReparsePoint = ($_.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0
+            if ($_.PSIsContainer -and -not $childIsReparsePoint) {
+                return $false
+            }
+            return $true
+        })
+}
+
 foreach ($rawLine in [regex]::Split($artifactPaths, '\r?\n')) {
     $pattern = $rawLine.Trim()
     if ([string]::IsNullOrWhiteSpace($pattern)) {
@@ -114,7 +189,7 @@ foreach ($rawLine in [regex]::Split($artifactPaths, '\r?\n')) {
         continue
     }
 
-    $normalizedPattern = $pattern.Replace('\\', '/')
+    $normalizedPattern = $pattern.Replace('\', '/')
     $purePattern = $normalizedPattern
     while ($purePattern.StartsWith('./', [StringComparison]::Ordinal)) {
         $purePattern = $purePattern.Substring(2)
@@ -124,8 +199,14 @@ foreach ($rawLine in [regex]::Split($artifactPaths, '\r?\n')) {
     }
 
     $items = @()
-    if ($purePattern.EndsWith('/**', [StringComparison]::Ordinal)) {
-        $literalDirectory = Join-Path $workspace $purePattern.Substring(0, $purePattern.Length - 3)
+    $recursivePrefix = if ($purePattern.EndsWith('/**', [StringComparison]::Ordinal)) {
+        $purePattern.Substring(0, $purePattern.Length - 3)
+    } else {
+        $null
+    }
+    if ($null -ne $recursivePrefix -and
+        -not [Management.Automation.WildcardPattern]::ContainsWildcardCharacters($recursivePrefix)) {
+        $literalDirectory = Join-Path $workspace $recursivePrefix
         if (Test-Path -LiteralPath $literalDirectory) {
             $items = @(Get-Item -LiteralPath $literalDirectory -Force)
         }
@@ -142,11 +223,10 @@ foreach ($rawLine in [regex]::Split($artifactPaths, '\r?\n')) {
             Join-Path $workspace ([IO.Path]::Combine($literalSegments.ToArray()))
         }
         if (Test-Path -LiteralPath $searchRoot) {
-            $matcher = Convert-ArtifactGlobToRegex -Pattern $purePattern
             $items = @(Get-ChildItem -LiteralPath $searchRoot -Force -Recurse -ErrorAction SilentlyContinue |
                 Where-Object {
-                    $candidateRelative = [IO.Path]::GetRelativePath($workspace, $_.FullName).Replace('\\', '/')
-                    $matcher.IsMatch($candidateRelative)
+                    $candidateRelative = [IO.Path]::GetRelativePath($workspace, $_.FullName).Replace('\', '/')
+                    Test-ArtifactPathMatchesGlob -Path $candidateRelative -Pattern $purePattern
                 })
         }
     } else {
@@ -157,13 +237,30 @@ foreach ($rawLine in [regex]::Split($artifactPaths, '\r?\n')) {
     }
 
     foreach ($item in $items) {
-        $fullPath = [IO.Path]::GetFullPath($item.FullName)
-        if ($fullPath -ne $workspace -and -not $fullPath.StartsWith($workspacePrefix, [StringComparison]::OrdinalIgnoreCase)) {
-            throw "Artifact path escapes the workspace: $fullPath"
-        }
-        $relativePath = [IO.Path]::GetRelativePath($workspace, $fullPath)
-        if ($seenPaths.Add($relativePath)) {
-            $matchedPaths.Add($relativePath)
+        foreach ($archiveItem in Get-ArtifactArchiveItems -Item $item) {
+            $fullPath = [IO.Path]::GetFullPath($archiveItem.FullName)
+            if ($fullPath -ne $workspace -and -not $fullPath.StartsWith($workspacePrefix, [StringComparison]::OrdinalIgnoreCase)) {
+                throw "Artifact path escapes the workspace: $fullPath"
+            }
+            if (($archiveItem.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+                try {
+                    $resolvedTarget = $archiveItem.ResolveLinkTarget($true)
+                } catch {
+                    throw "Unable to resolve artifact link target: $fullPath"
+                }
+                if ($null -eq $resolvedTarget) {
+                    throw "Unable to resolve artifact link target: $fullPath"
+                }
+                $resolvedTargetPath = [IO.Path]::GetFullPath($resolvedTarget.FullName)
+                if ($resolvedTargetPath -ne $workspace -and
+                    -not $resolvedTargetPath.StartsWith($workspacePrefix, [StringComparison]::OrdinalIgnoreCase)) {
+                    throw "Artifact link target escapes the workspace: $fullPath -> $resolvedTargetPath"
+                }
+            }
+            $relativePath = [IO.Path]::GetRelativePath($workspace, $fullPath)
+            if ($seenPaths.Add($relativePath)) {
+                $matchedPaths.Add($relativePath)
+            }
         }
     }
 }

@@ -84,6 +84,7 @@ done <<< "${ARTIFACT_PATHS}"
 match_list="$(mktemp "${RUNNER_TEMP%/}/ci-artifact-matches.XXXXXX")"
 if ! python3 - "${workspace}" "${ARTIFACT_PATHS}" "${match_list}" <<'PY'
 import os
+import fnmatch
 import pathlib
 import sys
 
@@ -93,33 +94,109 @@ output = pathlib.Path(sys.argv[3])
 seen = set()
 matches = []
 
+
+def has_magic(pattern):
+    return any(character in pattern for character in "*?[")
+
+
+def matches_glob(relative_path, pattern):
+    """Match Bash-style path globs without implicitly matching dotfiles."""
+    path_parts = pathlib.PurePosixPath(relative_path).parts
+    pattern_parts = pathlib.PurePosixPath(pattern).parts
+    visited = set()
+
+    def visit(path_index, pattern_index):
+        state = (path_index, pattern_index)
+        if state in visited:
+            return False
+        visited.add(state)
+
+        if pattern_index == len(pattern_parts):
+            return path_index == len(path_parts)
+
+        pattern_part = pattern_parts[pattern_index]
+        if pattern_part == "**":
+            if visit(path_index, pattern_index + 1):
+                return True
+            return (
+                path_index < len(path_parts)
+                and not path_parts[path_index].startswith(".")
+                and visit(path_index + 1, pattern_index)
+            )
+
+        if path_index == len(path_parts):
+            return False
+        path_part = path_parts[path_index]
+        if path_part.startswith(".") and not pattern_part.startswith("."):
+            return False
+        return fnmatch.fnmatchcase(path_part, pattern_part) and visit(
+            path_index + 1, pattern_index + 1
+        )
+
+    return visit(0, 0)
+
+
+def archive_entries(candidate):
+    """Expand selected directories while excluding implicit hidden descendants."""
+    if candidate.is_file() or candidate.is_symlink():
+        yield candidate
+        return
+    if not candidate.is_dir():
+        return
+
+    for root, directory_names, file_names in os.walk(candidate, followlinks=False):
+        root_path = pathlib.Path(root)
+        retained_directories = []
+        for directory_name in directory_names:
+            if directory_name.startswith("."):
+                continue
+            directory_path = root_path / directory_name
+            if directory_path.is_symlink():
+                yield directory_path
+            else:
+                retained_directories.append(directory_name)
+        directory_names[:] = retained_directories
+        for file_name in file_names:
+            if not file_name.startswith("."):
+                yield root_path / file_name
+
 for raw_pattern in patterns:
     pattern = raw_pattern.rstrip("\r").strip()
     if not pattern or pattern.startswith("!"):
         continue
-    candidate_pattern = pathlib.PurePosixPath(pattern.replace("\\", "/"))
+    normalized_pattern = pattern.replace("\\", "/")
+    while normalized_pattern.startswith("./"):
+        normalized_pattern = normalized_pattern[2:]
+    candidate_pattern = pathlib.PurePosixPath(normalized_pattern)
     if candidate_pattern.is_absolute() or ".." in candidate_pattern.parts:
         raise SystemExit(f"Artifact pattern must stay relative to GITHUB_WORKSPACE: {pattern}")
 
-    if pattern.endswith("/**"):
-        candidates = [workspace / pattern[:-3]]
-    elif any(character in pattern for character in "*?["):
-        candidates = workspace.glob(pattern.replace("\\", "/"))
+    wildcard_pattern = has_magic(normalized_pattern)
+    if wildcard_pattern:
+        candidates = workspace.glob(normalized_pattern)
     else:
-        candidates = [workspace / pattern]
+        candidates = [workspace / normalized_pattern]
 
     for candidate in candidates:
         if not candidate.exists():
             continue
-        resolved = candidate.resolve()
-        try:
-            relative = resolved.relative_to(workspace)
-        except ValueError as error:
-            raise SystemExit(f"Artifact path escapes GITHUB_WORKSPACE: {candidate}") from error
-        relative_text = relative.as_posix()
-        if relative_text not in seen:
-            seen.add(relative_text)
-            matches.append(relative_text)
+        candidate_relative = candidate.relative_to(workspace).as_posix()
+        if wildcard_pattern and not matches_glob(candidate_relative, normalized_pattern):
+            continue
+
+        for archive_entry in archive_entries(candidate):
+            resolved = archive_entry.resolve()
+            try:
+                resolved.relative_to(workspace)
+                relative = archive_entry.relative_to(workspace)
+            except ValueError as error:
+                raise SystemExit(
+                    f"Artifact path escapes GITHUB_WORKSPACE: {archive_entry}"
+                ) from error
+            relative_text = relative.as_posix()
+            if relative_text not in seen:
+                seen.add(relative_text)
+                matches.append(relative_text)
 
 with output.open("wb") as stream:
     for match in matches:
