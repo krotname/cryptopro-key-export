@@ -43,6 +43,7 @@ jobs:
             const today = compactNow.slice(0, 8);
             const deleteCanaryProbes = process.env.DELETE_CANARY_PROBES === 'true';
             const artifactTag = /^run-\d+-a\d+-[a-z0-9._-]{1,48}-[a-f0-9]{8}-e(\d{8}(?:T\d{6})?)$/;
+            const digestPattern = /^sha256:[a-f0-9]{64}$/;
             let versions;
 
             try {
@@ -72,6 +73,12 @@ jobs:
                 return;
               }
 
+              if (!linkedRepository) {
+                core.notice(
+                  `Package repository is API-redacted; immutable package ID ${expectedPackageId} matched`,
+                );
+              }
+
               versions = await github.paginate(
                 'GET /users/{username}/packages/{package_type}/{package_name}/versions',
                 {
@@ -84,17 +91,21 @@ jobs:
               );
             } catch (error) {
               if (error.status === 404) {
-                core.notice(`Package ${packageName} does not exist yet`);
+                core.setFailed(
+                  `Package ${packageName} is missing or inaccessible; `
+                  + `expected configured package ID ${expectedPackageId}`,
+                );
                 return;
               }
               throw error;
             }
 
-            const deleted = [];
+            const candidates = [];
             const skipped = [];
 
             for (const version of versions) {
               const tags = version.metadata?.container?.tags ?? [];
+              const digest = version.name ?? '';
               const probeOnly = tags.length > 0 && tags.every((tag) => /^probe-\d+-\d+$/.test(tag));
               const artifactMatches = tags.map((tag) => tag.match(artifactTag));
               const contractOnly = tags.length > 0 && artifactMatches.every(Boolean);
@@ -110,17 +121,33 @@ jobs:
                 continue;
               }
 
+              if (
+                !Number.isSafeInteger(version.id)
+                || version.id <= 0
+                || !digestPattern.test(digest)
+              ) {
+                core.setFailed(
+                  `Refusing to delete invalid package version: id=${version.id}, digest=${digest || '<missing>'}`,
+                );
+                return;
+              }
+
+              candidates.push({ id: version.id, digest, tags });
+            }
+
+            const deleted = [];
+            for (const candidate of candidates) {
               await github.request(
                 'DELETE /users/{username}/packages/{package_type}/{package_name}/versions/{package_version_id}',
                 {
                   username: context.repo.owner,
                   package_type: 'container',
                   package_name: packageName,
-                  package_version_id: version.id,
+                  package_version_id: candidate.id,
                   headers: { 'X-GitHub-Api-Version': '2022-11-28' },
                 },
               );
-              deleted.push(`${version.id}: ${tags.join(', ')}`);
+              deleted.push(`${candidate.id}@${candidate.digest}: ${candidate.tags.join(', ')}`);
             }
 
             await core.summary
