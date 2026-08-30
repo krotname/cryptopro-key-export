@@ -89,10 +89,10 @@ runs:
               : `Package repository is API-redacted; immutable package ID ${expectedPackageId} matched`,
           );
 
-    - name: Set up ORAS 1.3.3
+    - name: Set up ORAS 1.3.4
       uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d
       with:
-        version: 1.3.3
+        version: 1.3.4
 
     - name: Archive and publish the private OCI artifact
       id: publish_unix
