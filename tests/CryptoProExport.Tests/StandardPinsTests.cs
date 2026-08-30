@@ -60,6 +60,74 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void SuggestFor_OffersTheFactoryPinOfASingleFactoryStateCarrier()
+        {
+            var tokens = new[]
+            {
+                new Pkcs11TokenInfo { Kind = RutokenKind.RutokenLite, PinDefault = true },
+            };
+
+            Assert.Equal("12345678", StandardPins.SuggestFor(tokens)?.UserPin);
+        }
+
+        /// <summary>
+        /// Второй носитель делает подстановку небезопасной: подставленное значение уходит
+        /// дальше как явный PIN и минует проверку в ResolvePin, а выбрана может оказаться
+        /// строка того носителя, чей PIN уже сменён.
+        /// </summary>
+        [Fact]
+        public void SuggestFor_StaysSilentWhenMoreThanOneCarrierIsConnected()
+        {
+            var tokens = new[]
+            {
+                new Pkcs11TokenInfo { Kind = RutokenKind.RutokenLite, PinDefault = true },
+                new Pkcs11TokenInfo { Kind = RutokenKind.RutokenS, PinDefault = true },
+            };
+
+            Assert.Null(StandardPins.SuggestFor(tokens));
+        }
+
+        [Theory]
+        [InlineData(false, false, false, false)]
+        [InlineData(true, true, false, false)]
+        [InlineData(true, false, true, false)]
+        [InlineData(true, false, false, true)]
+        public void SuggestFor_NeedsConfirmedFactoryStateAndACleanCounter(
+            bool isDefault, bool countLow, bool finalTry, bool locked)
+        {
+            var tokens = new[]
+            {
+                new Pkcs11TokenInfo
+                {
+                    Kind = RutokenKind.RutokenLite,
+                    PinDefault = isDefault,
+                    PinCountLow = countLow,
+                    PinFinalTry = finalTry,
+                    PinLocked = locked,
+                },
+            };
+
+            Assert.Null(StandardPins.SuggestFor(tokens));
+        }
+
+        [Theory]
+        [InlineData(RutokenKind.JaCartaPro)]
+        [InlineData(RutokenKind.Unknown)]
+        public void SuggestFor_SkipsCarriersWhereAutofillIsNotAllowed(RutokenKind kind)
+        {
+            var tokens = new[] { new Pkcs11TokenInfo { Kind = kind, PinDefault = true } };
+
+            Assert.Null(StandardPins.SuggestFor(tokens));
+        }
+
+        [Fact]
+        public void SuggestFor_HandlesAnEmptyOrMissingList()
+        {
+            Assert.Null(StandardPins.SuggestFor(null));
+            Assert.Null(StandardPins.SuggestFor(Array.Empty<Pkcs11TokenInfo>()));
+        }
+
+        [Fact]
         public void Registry_CoversTheModelsThatAreOnlyPlannedYet()
         {
             var planned = StandardPins.All.Where(p => !p.Supported).Select(p => p.Model).ToArray();

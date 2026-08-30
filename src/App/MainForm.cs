@@ -24,6 +24,8 @@ namespace CryptoProExport.App
     public sealed class MainForm : Form
     {
         private TextBox _txtP12, _txtDest, _txtPin, _txtLog;
+        /// <summary>Последнее подставленное программой значение PIN — чтобы отличать его от введённого.</summary>
+        private string _autoFilledPin;
         private ListView _lv;
         private SplitContainer _split;
         private ColumnHeader _colWhere, _colName, _colDetails;
@@ -523,37 +525,30 @@ namespace CryptoProExport.App
 
         /// <summary>
         /// Подставить в поле PIN заводское значение подключённой модели: владелец чаще всего
-        /// PIN не менял, а вводить «12345678» руками каждый раз бессмысленно. Значения берутся
-        /// из <see cref="StandardPins"/> (документация производителей).
+        /// PIN не менял, а вводить «12345678» руками каждый раз бессмысленно. Что именно можно
+        /// подставить, решает <see cref="StandardPins.SuggestFor"/> — там же и границы: ровно
+        /// один носитель, подтверждённое драйвером заводское состояние PIN и чистый счётчик.
         ///
-        /// Границы, из-за которых это безопасно, те же, что у <c>DirectTokenApdu.ResolvePin</c>:
-        /// драйвер должен подтвердить заводское состояние PIN (<c>PinDefault</c>) при чистом
-        /// счётчике попыток, все подключённые носители должны давать одно и то же значение, и
-        /// введённое пользователем не затирается. Без флага <c>PinDefault</c> подстановки нет:
-        /// поле уходит дальше как явный PIN, минуя проверку в <c>ResolvePin</c>, и на носителе
-        /// со сменённым PIN тратило бы попытку на заведомо неверном значении.
+        /// Своё прежнее значение снимается на каждом обновлении списка: набор носителей мог
+        /// смениться, а оставшийся в поле текст ушёл бы дальше как явный PIN и потратил бы
+        /// попытку уже другого носителя. Введённое пользователем не трогается.
         /// Отправки PIN на карту подстановка не делает — это по-прежнему явное действие.
         /// </summary>
         private void SuggestFactoryPin(IEnumerable<Pkcs11TokenInfo> tokens)
         {
-            string pin = null, model = null;
-            foreach (var t in tokens ?? Array.Empty<Pkcs11TokenInfo>())
-            {
-                if (t == null || !t.PinDefault) continue;
-                if (t.PinCountLow || t.PinFinalTry || t.PinLocked) continue;
-                StandardPin std = StandardPins.ForKind(t.Kind);
-                if (std == null || !std.AutoFill || string.IsNullOrEmpty(std.UserPin)) continue;
-                // Две разные модели рядом — молча выбрать одну нельзя: чужой PIN спалит попытку.
-                if (pin != null && !string.Equals(pin, std.UserPin, StringComparison.Ordinal)) return;
-                pin = std.UserPin;
-                model = std.Model;
-            }
-            if (pin == null) return;
+            StandardPin suggestion = StandardPins.SuggestFor(tokens);
             Invoke(() =>
             {
-                if (_txtPin.Text.Length != 0) return;
-                _txtPin.Text = pin;
-                _lblPinHint.Text = Strings.Format("field.pin.hint.factory", model);
+                if (_autoFilledPin != null && _txtPin.Text == _autoFilledPin)
+                {
+                    _txtPin.Text = string.Empty;
+                    _lblPinHint.Text = Strings.Get("field.pin.hint");
+                }
+                _autoFilledPin = null;
+                if (suggestion == null || _txtPin.Text.Length != 0) return;
+                _txtPin.Text = suggestion.UserPin;
+                _autoFilledPin = suggestion.UserPin;
+                _lblPinHint.Text = Strings.Format("field.pin.hint.factory", suggestion.Model);
             });
         }
 

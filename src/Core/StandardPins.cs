@@ -173,6 +173,34 @@ namespace CryptoProExport
             return pin != null && pin.AutoFill ? pin.UserPin : null;
         }
 
+        /// <summary>
+        /// Что можно подставить в поле PIN для текущего набора подключённых носителей, или
+        /// <c>null</c>. Правило намеренно узкое: носитель должен быть ровно один, драйвер
+        /// должен подтверждать заводское состояние PIN при чистом счётчике попыток, а модель —
+        /// допускать подстановку.
+        ///
+        /// Одного «все дают одинаковое значение» мало: подставленный текст уходит дальше как
+        /// явный PIN и минует проверку в <c>DirectTokenApdu.ResolvePin</c>, поэтому при двух и
+        /// более носителях выбранной может оказаться строка того из них, чей PIN уже сменён, —
+        /// и попытка сгорит на заведомо неверном значении.
+        /// </summary>
+        public static StandardPin SuggestFor(IEnumerable<Pkcs11TokenInfo> tokens)
+        {
+            if (tokens == null) return null;
+            Pkcs11TokenInfo single = null;
+            foreach (Pkcs11TokenInfo token in tokens)
+            {
+                if (token == null) continue;
+                if (single != null) return null;
+                single = token;
+            }
+            if (single == null) return null;
+            if (!single.PinDefault || single.PinCountLow || single.PinFinalTry || single.PinLocked)
+                return null;
+            StandardPin pin = ForKind(single.Kind);
+            return pin != null && pin.AutoFill && !string.IsNullOrEmpty(pin.UserPin) ? pin : null;
+        }
+
         private static StandardPin Find(string model)
         {
             foreach (StandardPin pin in Registry)
