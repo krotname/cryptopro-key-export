@@ -63,7 +63,7 @@ jobs:
                 || packageInfo.id !== expectedPackageId
                 || packageInfo.visibility !== 'private'
                 || packageInfo.owner?.login?.toLowerCase() !== expectedOwner
-                || linkedRepository !== expectedRepository
+                || (linkedRepository && linkedRepository !== expectedRepository)
               ) {
                 core.setFailed(
                   `Refusing cleanup for unexpected package state: id=${packageInfo.id}, name=${packageInfo.name}, `
@@ -71,6 +71,12 @@ jobs:
                   + `repository=${packageInfo.repository?.full_name ?? 'unlinked'}`,
                 );
                 return;
+              }
+
+              if (!linkedRepository) {
+                core.notice(
+                  `Package repository is API-redacted; immutable package ID ${expectedPackageId} matched`,
+                );
               }
 
               versions = await github.paginate(
