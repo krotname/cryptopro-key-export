@@ -138,6 +138,15 @@ namespace CryptoProExport.App
             _txtP12 = new TextBox { Dock = DockStyle.Fill, Margin = new Padding(3, 4, 3, 4) };
             _txtDest = new TextBox { Dock = DockStyle.Fill, Margin = new Padding(3, 4, 3, 4) };
             _txtPin = new TextBox { Dock = DockStyle.Fill, UseSystemPasswordChar = true, Margin = new Padding(3, 4, 3, 4) };
+            // Правка поля отменяет подстановку: дальше это уже введённый пользователем PIN,
+            // и подпись не должна называть его заводским значением модели.
+            _txtPin.TextChanged += (_, _) =>
+            {
+                if (_autoFilledPin == null || _txtPin.Text == _autoFilledPin) return;
+                _autoFilledPin = null;
+                _autoFilledModel = null;
+                if (_lblPinHint != null) _lblPinHint.Text = PinHintText();
+            };
 
             _lblP12 = MakeFieldLabel();
             settings.Controls.Add(_lblP12, 0, 0);
@@ -570,9 +579,11 @@ namespace CryptoProExport.App
             Invoke(() =>
             {
                 if (_txtPin.Text.Length != 0) return;
-                _txtPin.Text = suggestion.UserPin;
+                // Сначала запоминаем своё значение, потом ставим текст: обработчик TextChanged
+                // иначе принял бы собственную подстановку за правку пользователя.
                 _autoFilledPin = suggestion.UserPin;
                 _autoFilledModel = suggestion.Model;
+                _txtPin.Text = suggestion.UserPin;
                 _lblPinHint.Text = PinHintText();
             });
         }
