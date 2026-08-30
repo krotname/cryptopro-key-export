@@ -44,5 +44,17 @@ namespace CryptoProExport.Tests
             Assert.False(CertFromContainer.AllFoundKeysExportable(
                 new CertFromContainer.ExportCheck { KeyFound = false }));
         }
+
+        [Fact]
+        public void AllFoundKeysExportable_AcceptsTwoExportableKeysButRejectsReadError()
+        {
+            var exchange = new CertFromContainer.ExportCheck { KeyFound = true, Exportable = true };
+            var signature = new CertFromContainer.ExportCheck { KeyFound = true, Exportable = true };
+
+            Assert.True(CertFromContainer.AllFoundKeysExportable(exchange, signature));
+
+            signature.Error = unchecked((int)0x8009000B);
+            Assert.False(CertFromContainer.AllFoundKeysExportable(exchange, signature));
+        }
     }
 }

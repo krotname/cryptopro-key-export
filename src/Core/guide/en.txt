@@ -46,7 +46,7 @@ interface languages fall back to the English text.
        extracts the certificates through CryptoAPI,
        lifts the ban on exporting the private key.
      The original token is not modified.
-  5) «Check key» — confirm that the ban is really gone.
+  5) «View container» — see its details and both key permissions.
   6) «Export to PFX» — get a .pfx with the private key.
 
   PIN: enter the PIN of the selected token. The program uses a factory
@@ -70,7 +70,7 @@ interface languages fall back to the English text.
      CryptoPro really sees the container.
   2) «Refresh list» — the container shows up in the list.
   3) «Extract certificate», then «Make exportable».
-  4) «Check key» and «Export to PFX».
+  4) «View container» and «Export to PFX».
 
   About the container name: CryptoPro matches the name against the
   contents, so renaming a copy does not always work. If it fails,
@@ -84,7 +84,7 @@ interface languages fall back to the English text.
   Export from token     copy an S/Lite file-backed container
   Extract certificate   save the .cer of the selected container
   Make exportable       the whole cycle for a file container
-  Check key             is the export ban lifted
+  View container        details and whether the export ban is lifted
   Install into CryptoPro  put an extracted folder into the CSP store
   Export to PFX         write the container out as .pfx
   Extract key (PEM)     the private key as PKCS#8/PEM, no CSP
@@ -178,6 +178,10 @@ interface languages fall back to the English text.
       The ban is still in place — press «Make exportable». For a
       container taken off a token this is done on the copy in the
       destination folder, not on the token itself.
+
+  «Container is already exportable»
+      The ban does not need to be lifted again. View the container or
+      continue with export to PFX.
 
   Logs of every run: %LOCALAPPDATA%\CryptoProExport\logs
   Passwords are never written there. That file is handy to attach to
