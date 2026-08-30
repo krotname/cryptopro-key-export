@@ -23,19 +23,19 @@ inputs:
 outputs:
   published:
     description: Whether a package version was published.
-    value: ${{ steps.publish.outputs.published }}
+    value: ${{ steps.publish_unix.outputs.published || steps.publish_windows.outputs.published }}
   reference:
     description: GHCR reference without the canonical digest.
-    value: ${{ steps.publish.outputs.reference }}
+    value: ${{ steps.publish_unix.outputs.reference || steps.publish_windows.outputs.reference }}
   digest:
     description: Canonical OCI manifest digest.
-    value: ${{ steps.publish.outputs.digest }}
+    value: ${{ steps.publish_unix.outputs.digest || steps.publish_windows.outputs.digest }}
   sha256:
     description: SHA-256 of the compressed payload.
-    value: ${{ steps.publish.outputs.sha256 }}
+    value: ${{ steps.publish_unix.outputs.sha256 || steps.publish_windows.outputs.sha256 }}
   expires-at:
     description: UTC expiry timestamp recorded in the metadata.
-    value: ${{ steps.publish.outputs.expires-at }}
+    value: ${{ steps.publish_unix.outputs['expires-at'] || steps.publish_windows.outputs['expires-at'] }}
 
 runs:
   using: composite
@@ -76,7 +76,8 @@ runs:
         version: 1.3.3
 
     - name: Archive and publish the private OCI artifact
-      id: publish
+      id: publish_unix
+      if: runner.os != 'Windows'
       shell: bash
       env:
         ARTIFACT_NAME: ${{ inputs.name }}
@@ -87,13 +88,26 @@ runs:
         SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       run: bash "${{ github.action_path }}/publish.sh"
 
+    - name: Archive and publish the private OCI artifact on Windows
+      id: publish_windows
+      if: runner.os == 'Windows'
+      shell: pwsh
+      env:
+        ARTIFACT_NAME: ${{ inputs.name }}
+        ARTIFACT_PATHS: ${{ inputs.path }}
+        NO_FILES_BEHAVIOUR: ${{ inputs.if-no-files-found }}
+        RETENTION_DAYS: ${{ inputs.retention-days }}
+        GHCR_TOKEN: ${{ inputs.token }}
+        SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      run: '& "${{ github.action_path }}/publish.ps1"'
+
     - name: Verify private GHCR package state
-      if: ${{ steps.publish.outputs.published == 'true' }}
+      if: ${{ steps.publish_unix.outputs.published == 'true' || steps.publish_windows.outputs.published == 'true' }}
       uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
       env:
-        PACKAGE_NAME: ${{ steps.publish.outputs.package }}
-        PACKAGE_REFERENCE: ${{ steps.publish.outputs.reference }}
-        PACKAGE_DIGEST: ${{ steps.publish.outputs.digest }}
+        PACKAGE_NAME: ${{ steps.publish_unix.outputs.package || steps.publish_windows.outputs.package }}
+        PACKAGE_REFERENCE: ${{ steps.publish_unix.outputs.reference || steps.publish_windows.outputs.reference }}
+        PACKAGE_DIGEST: ${{ steps.publish_unix.outputs.digest || steps.publish_windows.outputs.digest }}
       with:
         github-token: ${{ inputs.token }}
         script: |
