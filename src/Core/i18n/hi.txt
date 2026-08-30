@@ -368,3 +368,13 @@ diag.pnp.ok = स्मार्ट-कार्ड रीडर (PnP): {0} PnP-
 diag.pnp.failed = स्मार्ट-कार्ड रीडर {0}: PnP-present है, लेकिन ड्राइवर शुरू नहीं हुआ — कोड {1}, स्थिति {2}
 diag.pnp.problem = स्मार्ट-कार्ड रीडर {0}: PnP-present है, लेकिन Windows एक PnP समस्या की रिपोर्ट करता है — कोड {1}, स्थिति {2}
 diag.pnp.unavailable = स्मार्ट-कार्ड रीडर (PnP): जाँच उपलब्ध नहीं है ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = टोकन के फ़ैक्ट्री PIN कोड दिखाएँ (मॉडल सूची)
+cli.pins.header = टोकन के फ़ैक्ट्री PIN कोड (निर्माताओं के दस्तावेज़ों के अनुसार):
+cli.pins.line = {0} — उपयोगकर्ता: {1}, प्रशासक: {2} [{3}]
+cli.pins.unset = सेट नहीं
+cli.pins.supported = समर्थित
+cli.pins.planned = नियोजित
+cli.pins.note = ये मान तभी तक सही हैं जब तक PIN बदला न गया हो। ग़लत PIN एक प्रयास ख़र्च करता है; लगातार तीन बार टोकन लॉक कर देते हैं।
+field.pin.hint.factory = फ़ैक्ट्री PIN {0}

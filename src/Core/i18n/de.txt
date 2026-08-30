@@ -368,3 +368,13 @@ diag.pnp.ok = Smartcard-Leser (PnP): {0} PnP-present, alle Treiber gestartet
 diag.pnp.failed = Smartcard-Leser {0}: ist PnP-present, aber der Treiber wurde nicht gestartet — Code {1}, Status {2}
 diag.pnp.problem = Smartcard-Leser {0}: ist PnP-present, aber Windows meldet ein PnP-Problem — Code {1}, Status {2}
 diag.pnp.unavailable = Smartcard-Leser (PnP): Prüfung nicht verfügbar ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = Werks-PIN-Codes der Träger anzeigen (Modellregister)
+cli.pins.header = Werks-PIN-Codes der Träger (laut Dokumentation der Hersteller):
+cli.pins.line = {0} — Benutzer: {1}, Administrator: {2} [{3}]
+cli.pins.unset = nicht gesetzt
+cli.pins.supported = unterstützt
+cli.pins.planned = geplant
+cli.pins.note = Die Werte gelten nur, solange die PIN nicht geändert wurde. Eine falsche PIN verbraucht einen Versuch; drei hintereinander sperren den Träger.
+field.pin.hint.factory = Werks-PIN {0}

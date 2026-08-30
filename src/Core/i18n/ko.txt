@@ -368,3 +368,13 @@ diag.pnp.ok = 스마트카드 리더(PnP): {0}개가 PnP-present, 모든 드라�
 diag.pnp.failed = 스마트카드 리더 {0}: PnP-present 상태이지만 드라이버가 시작되지 않았습니다 — 코드 {1}, 상태 {2}
 diag.pnp.problem = 스마트카드 리더 {0}: PnP-present 상태이지만 Windows에서 PnP 문제를 보고합니다 — 코드 {1}, 상태 {2}
 diag.pnp.unavailable = 스마트카드 리더(PnP): 확인할 수 없음 ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = 매체의 공장 초기 PIN 코드 표시(모델 목록)
+cli.pins.header = 매체의 공장 초기 PIN 코드(제조사 문서 기준):
+cli.pins.line = {0} — 사용자: {1}, 관리자: {2} [{3}]
+cli.pins.unset = 설정 안 됨
+cli.pins.supported = 지원됨
+cli.pins.planned = 계획됨
+cli.pins.note = PIN을 변경하지 않은 경우에만 유효합니다. 잘못된 PIN은 시도 횟수를 소모하며, 연속 세 번이면 매체가 잠깁니다.
+field.pin.hint.factory = 공장 초기 PIN {0}

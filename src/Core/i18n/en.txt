@@ -368,3 +368,13 @@ diag.pnp.ok = Smart-card readers (PnP): {0} PnP-present, all drivers started
 diag.pnp.failed = Smart-card reader {0}: PnP-present, but its driver did not start — Code {1}, status {2}
 diag.pnp.problem = Smart-card reader {0}: PnP-present, but Windows reports a PnP problem — Code {1}, status {2}
 diag.pnp.unavailable = Smart-card readers (PnP): check unavailable ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = list the factory PIN codes of carriers (model registry)
+cli.pins.header = Factory PIN codes of carriers (from the vendors' own documentation):
+cli.pins.line = {0} — user: {1}, administrator: {2} [{3}]
+cli.pins.unset = not set
+cli.pins.supported = supported
+cli.pins.planned = planned
+cli.pins.note = The values hold only while the PIN has not been changed. A wrong PIN spends an attempt; three in a row lock the carrier.
+field.pin.hint.factory = factory PIN {0}

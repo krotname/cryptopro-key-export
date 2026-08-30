@@ -37,6 +37,7 @@ namespace CryptoProExport.App
             ("extractpfx <folder> <out.pfx> <pfx-pass> [pass] [cert.cer]", "cli.usage.extractpfx"),
             ("liteexport <reader> <outDir> [pin]",   "cli.usage.liteexport"),
             ("full <destDir> [cert.cer] [pin]",      "cli.usage.full"),
+            ("pins",                                 "cli.usage.pins"),
             ("fingerprint",                          "cli.usage.fingerprint"),
             ("license [file|status]",                "cli.usage.license"),
             ("help",                                 "cli.usage.help"),
@@ -413,8 +414,10 @@ namespace CryptoProExport.App
                             // Авто-PIN только при заводском PIN И полностью чистом счётчике:
                             // при подъеденном счётчике даже верный ввод рискует, а промах — блокирует.
                             if (tok != null && tok.PinDefault &&
-                                !tok.PinCountLow && !tok.PinFinalTry && !tok.PinLocked) pin = "12345678";
-                            else { Err(Strings.Format("err.lite.pin", "—")); return 2; }
+                                !tok.PinCountLow && !tok.PinFinalTry && !tok.PinLocked)
+                                pin = StandardPins.AutoFillUserPinFor(RutokenKind.RutokenLite);
+                            if (string.IsNullOrEmpty(pin))
+                            { Err(Strings.Format("err.lite.pin", "—")); return 2; }
                         }
                         int done = 0;
                         int failed = 0;
@@ -461,6 +464,25 @@ namespace CryptoProExport.App
                             userPin: args.Length > 3 ? args[3] : null);
                         Out(Strings.Format("log.exported", result.Exported));
                         return result.AllSucceeded ? 0 : result.Exported == 0 ? 2 : 3;
+                    }
+                    case "pins":
+                    {
+                        // Реестр заводских PIN: значения опубликованы производителями и нужны,
+                        // когда владелец забыл, менялся ли PIN на его носителе.
+                        Out(Strings.Get("cli.pins.header"));
+                        foreach (StandardPin pin in StandardPins.All)
+                        {
+                            string user = string.IsNullOrEmpty(pin.UserPin)
+                                ? Strings.Get("cli.pins.unset") : pin.UserPin;
+                            string admin = string.IsNullOrEmpty(pin.AdminPin)
+                                ? Strings.Get("cli.pins.unset") : pin.AdminPin;
+                            Out("  " + Strings.Format("cli.pins.line", pin.Model, user, admin,
+                                Strings.Get(pin.Supported ? "cli.pins.supported" : "cli.pins.planned")));
+                            if (!string.IsNullOrEmpty(pin.Note)) Out("      " + pin.Note);
+                            Out("      " + pin.Source);
+                        }
+                        Out(Strings.Get("cli.pins.note"));
+                        return 0;
                     }
                     case "fingerprint":
                         Out(LicenseGate.FingerprintText());

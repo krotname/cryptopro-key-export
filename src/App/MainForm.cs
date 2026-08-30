@@ -517,7 +517,40 @@ namespace CryptoProExport.App
                            Strings.Format("log.container.files", c.TokenDir, c.Files.Count), c);
             }
             catch (Exception e) { Log(Strings.Format("log.tokens.unavailable", e.Message)); }
+            SuggestFactoryPin(tokens);
             Log(Strings.Get("log.done"));
+        }
+
+        /// <summary>
+        /// Подставить в поле PIN заводское значение подключённой модели: владелец чаще всего
+        /// PIN не менял, а вводить «12345678» руками каждый раз бессмысленно. Значения берутся
+        /// из <see cref="StandardPins"/> (документация производителей).
+        ///
+        /// Границы, из-за которых это безопасно: подставляем только при чистом счётчике попыток
+        /// (иначе одна опечатка приближает блокировку), только когда все подключённые носители
+        /// дают одно и то же значение, и никогда не затираем то, что ввёл пользователь.
+        /// Отправки PIN на карту подстановка не делает — это по-прежнему явное действие.
+        /// </summary>
+        private void SuggestFactoryPin(IEnumerable<Pkcs11TokenInfo> tokens)
+        {
+            string pin = null, model = null;
+            foreach (var t in tokens ?? Array.Empty<Pkcs11TokenInfo>())
+            {
+                if (t == null || t.PinCountLow || t.PinFinalTry || t.PinLocked) continue;
+                StandardPin std = StandardPins.ForKind(t.Kind);
+                if (std == null || !std.AutoFill || string.IsNullOrEmpty(std.UserPin)) continue;
+                // Две разные модели рядом — молча выбрать одну нельзя: чужой PIN спалит попытку.
+                if (pin != null && !string.Equals(pin, std.UserPin, StringComparison.Ordinal)) return;
+                pin = std.UserPin;
+                model = std.Model;
+            }
+            if (pin == null) return;
+            Invoke(() =>
+            {
+                if (_txtPin.Text.Length != 0) return;
+                _txtPin.Text = pin;
+                _lblPinHint.Text = Strings.Format("field.pin.hint.factory", model);
+            });
         }
 
         /// <summary>

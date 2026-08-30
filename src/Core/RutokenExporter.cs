@@ -316,7 +316,7 @@ namespace CryptoProExport
             if (pinDefault)
             {
                 Log(Strings.Get("token.pin.default"));
-                rt.AuthenticateOwner(RT_USER, "12345678");
+                rt.AuthenticateOwner(RT_USER, StandardPins.UserPinFor(RutokenKind.RutokenLite));
             }
             else if (!string.IsNullOrEmpty(UserPin))
             {

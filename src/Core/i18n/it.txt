@@ -368,3 +368,13 @@ diag.pnp.ok = Lettori di smart card (PnP): {0} PnP-present, tutti i driver sono 
 diag.pnp.failed = Lettore di smart card {0}: è PnP-present, ma il driver non si è avviato — codice {1}, stato {2}
 diag.pnp.problem = Lettore di smart card {0}: è PnP-present, ma Windows segnala un problema PnP — codice {1}, stato {2}
 diag.pnp.unavailable = Lettori di smart card (PnP): verifica non disponibile ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = mostrare i PIN di fabbrica dei supporti (registro dei modelli)
+cli.pins.header = PIN di fabbrica dei supporti (dalla documentazione dei produttori):
+cli.pins.line = {0} — utente: {1}, amministratore: {2} [{3}]
+cli.pins.unset = non impostato
+cli.pins.supported = supportato
+cli.pins.planned = pianificato
+cli.pins.note = I valori valgono finché il PIN non è stato cambiato. Un PIN errato consuma un tentativo; tre di seguito bloccano il supporto.
+field.pin.hint.factory = PIN di fabbrica {0}

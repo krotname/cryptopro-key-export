@@ -368,3 +368,13 @@ diag.pnp.ok = اسمارٹ کارڈ ریڈرز (PnP): {0} PnP-present، تمام
 diag.pnp.failed = اسمارٹ کارڈ ریڈر {0}: PnP-present حالت میں ہے، لیکن ڈرائیور شروع نہیں ہوا — کوڈ {1}، حالت {2}
 diag.pnp.problem = اسمارٹ کارڈ ریڈر {0}: PnP-present حالت میں ہے، لیکن Windows ایک PnP مسئلے کی اطلاع دیتا ہے — کوڈ {1}، حالت {2}
 diag.pnp.unavailable = اسمارٹ کارڈ ریڈرز (PnP): جانچ دستیاب نہیں ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = ٹوکنز کے فیکٹری PIN کوڈ دکھائیں (ماڈل فہرست)
+cli.pins.header = ٹوکنز کے فیکٹری PIN کوڈ (کارخانہ داروں کی دستاویزات کے مطابق):
+cli.pins.line = {0} — صارف: {1}، منتظم: {2} [{3}]
+cli.pins.unset = مقرر نہیں
+cli.pins.supported = معاونت شدہ
+cli.pins.planned = منصوبہ بند
+cli.pins.note = یہ قدریں تبھی درست ہیں جب PIN تبدیل نہ کیا گیا ہو۔ غلط PIN ایک کوشش ضائع کرتا ہے، لگاتار تین بار ٹوکن مقفل کر دیتے ہیں۔
+field.pin.hint.factory = فیکٹری PIN {0}

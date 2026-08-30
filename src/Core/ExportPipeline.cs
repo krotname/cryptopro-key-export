@@ -163,7 +163,10 @@ namespace CryptoProExport
             if (!string.IsNullOrEmpty(userPin)) return userPin;
             if (token != null && token.PinDefault && !token.PinCountLow &&
                 !token.PinFinalTry && !token.PinLocked)
-                return "12345678";
+            {
+                string factory = StandardPins.AutoFillUserPinFor(RutokenKind.RutokenLite);
+                if (!string.IsNullOrEmpty(factory)) return factory;
+            }
             throw new LiteApduException(Strings.Format("err.lite.pin", "—"));
         }
 

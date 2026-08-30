@@ -368,3 +368,13 @@ diag.pnp.ok = স্মার্ট-কার্ড রিডার (PnP): {0}�
 diag.pnp.failed = স্মার্ট-কার্ড রিডার {0}: PnP-present, কিন্তু ড্রাইভার চালু হয়নি — কোড {1}, স্থিতি {2}
 diag.pnp.problem = স্মার্ট-কার্ড রিডার {0}: PnP-present, কিন্তু Windows একটি PnP সমস্যা রিপোর্ট করছে — কোড {1}, স্থিতি {2}
 diag.pnp.unavailable = স্মার্ট-কার্ড রিডার (PnP): পরীক্ষা উপলভ্য নয় ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = টোকেনের কারখানার PIN কোড দেখান (মডেল তালিকা)
+cli.pins.header = টোকেনের কারখানার PIN কোড (নির্মাতাদের নথি অনুযায়ী):
+cli.pins.line = {0} — ব্যবহারকারী: {1}, প্রশাসক: {2} [{3}]
+cli.pins.unset = নির্ধারিত নয়
+cli.pins.supported = সমর্থিত
+cli.pins.planned = পরিকল্পিত
+cli.pins.note = PIN পরিবর্তন না হলে মানগুলি প্রযোজ্য। ভুল PIN একটি চেষ্টা ব্যয় করে; পরপর তিনবার টোকেন লক করে দেয়।
+field.pin.hint.factory = কারখানার PIN {0}

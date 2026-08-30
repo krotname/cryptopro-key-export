@@ -368,3 +368,13 @@ diag.pnp.ok = قارئات البطاقات الذكية (PnP): عدد الأج�
 diag.pnp.failed = قارئ البطاقة الذكية {0}: بحالة PnP-present، لكن برنامج التشغيل لم يبدأ — الرمز {1}، الحالة {2}
 diag.pnp.problem = قارئ البطاقة الذكية {0}: بحالة PnP-present، لكن Windows يبلغ عن مشكلة PnP — الرمز {1}، الحالة {2}
 diag.pnp.unavailable = قارئات البطاقات الذكية (PnP): الفحص غير متاح ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = عرض رموز PIN المصنعية للحوامل (سجل الطُرز)
+cli.pins.header = رموز PIN المصنعية للحوامل (حسب وثائق الشركات المصنعة):
+cli.pins.line = {0} — المستخدم: {1}، المسؤول: {2} [{3}]
+cli.pins.unset = غير محدد
+cli.pins.supported = مدعوم
+cli.pins.planned = مخطط له
+cli.pins.note = تصلح القيم ما دام رمز PIN لم يُغيَّر. رمز خاطئ يستهلك محاولة، وثلاث محاولات متتالية تقفل الحامل.
+field.pin.hint.factory = رمز PIN المصنعي {0}

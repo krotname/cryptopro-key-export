@@ -125,6 +125,7 @@ interface languages fall back to the English text.
                                       then [container-pw] [cert.cer]
   liteexport <reader> <dir> [pin]     read a Lite container by APDU + recover
   full <folder> [cert.cer] [pin]      file-backed Rutoken S cycle
+  pins                                factory PIN codes of carriers
   fingerprint                         this machine's fingerprint
   license [file|status]               install a license or show status
   help                                this manual

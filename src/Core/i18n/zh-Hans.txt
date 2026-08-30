@@ -368,3 +368,13 @@ diag.pnp.ok = 智能卡读卡器 (PnP)：{0} 个设备为 PnP-present，所有�
 diag.pnp.failed = 智能卡读卡器 {0}：处于 PnP-present 状态，但驱动程序未能启动 — 代码 {1}，状态 {2}
 diag.pnp.problem = 智能卡读卡器 {0}：处于 PnP-present 状态，但 Windows 报告了 PnP 问题 — 代码 {1}，状态 {2}
 diag.pnp.unavailable = 智能卡读卡器 (PnP)：无法检查 ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = 显示载体的出厂 PIN 码（型号清单）
+cli.pins.header = 载体的出厂 PIN 码（来自厂商官方文档）：
+cli.pins.line = {0} — 用户：{1}，管理员：{2} [{3}]
+cli.pins.unset = 未设置
+cli.pins.supported = 已支持
+cli.pins.planned = 计划中
+cli.pins.note = 仅在未修改 PIN 时有效。输错 PIN 会消耗一次尝试，连续三次将锁定载体。
+field.pin.hint.factory = 出厂 PIN {0}

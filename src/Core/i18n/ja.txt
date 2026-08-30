@@ -368,3 +368,13 @@ diag.pnp.ok = スマートカードリーダー (PnP): {0} 台が PnP-present、
 diag.pnp.failed = スマートカードリーダー {0}: PnP-present ですが、ドライバーを起動できませんでした — コード {1}、状態 {2}
 diag.pnp.problem = スマートカードリーダー {0}: PnP-present ですが、Windows から PnP の問題が報告されています — コード {1}、状態 {2}
 diag.pnp.unavailable = スマートカードリーダー (PnP): 確認できません ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = トークンの初期PINコードを表示する（機種一覧）
+cli.pins.header = トークンの初期PINコード（各メーカーの公式資料より）:
+cli.pins.line = {0} — ユーザー: {1}、管理者: {2} [{3}]
+cli.pins.unset = 未設定
+cli.pins.supported = 対応済み
+cli.pins.planned = 予定
+cli.pins.note = PINを変更していない場合にのみ有効です。誤ったPINは試行回数を消費し、3回続けるとトークンがロックされます。
+field.pin.hint.factory = 初期PIN {0}

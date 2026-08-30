@@ -368,3 +368,13 @@ diag.pnp.ok = Leitores de cartões inteligentes (PnP): {0} PnP-present, todos os
 diag.pnp.failed = Leitor de cartões inteligentes {0}: está PnP-present, mas o driver não iniciou — código {1}, estado {2}
 diag.pnp.problem = Leitor de cartões inteligentes {0}: está PnP-present, mas o Windows informa um problema de PnP — código {1}, estado {2}
 diag.pnp.unavailable = Leitores de cartões inteligentes (PnP): verificação indisponível ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = mostrar os PIN de fábrica dos suportes (registo de modelos)
+cli.pins.header = PIN de fábrica dos suportes (segundo a documentação dos fabricantes):
+cli.pins.line = {0} — utilizador: {1}, administrador: {2} [{3}]
+cli.pins.unset = não definido
+cli.pins.supported = suportado
+cli.pins.planned = planeado
+cli.pins.note = Os valores valem enquanto o PIN não for alterado. Um PIN errado gasta uma tentativa; três seguidas bloqueiam o suporte.
+field.pin.hint.factory = PIN de fábrica {0}
