@@ -29,7 +29,7 @@ namespace CryptoProExport.App
         private ColumnHeader _colWhere, _colName, _colDetails;
         private Label _lblP12, _lblDest, _lblPin, _lblPinHint, _lblLang;
         private Button _btnP12, _btnDest;
-        private Button _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnInstall, _btnCheck, _btnPfx, _btnExtractKey, _btnExtractPfx, _btnLicense, _btnLogs, _btnHelp;
+        private Button _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnInstall, _btnView, _btnPfx, _btnExtractKey, _btnExtractPfx, _btnLicense, _btnLogs, _btnHelp;
         private Button _btnCancel;
         private Button[] _actionButtons;
         private ComboBox _cmbLang;
@@ -53,10 +53,14 @@ namespace CryptoProExport.App
         }
 
         private sealed class TokenDeviceSelection { }
+        private sealed class CspContainerSelection { }
 
         private sealed class ContainerSelection
         {
             public string Name;
+            public string Location;
+            public string Details;
+            public bool IsCsp;
             public TokenCertificateSelection Token;
             public ApduContainerSelection Apdu;
             public RutokenContainer Direct;
@@ -172,7 +176,7 @@ namespace CryptoProExport.App
             _btnExtract = MakeButton((_, __) => Run("status.extract", DoExtract));
             _btnFull = MakeButton((_, __) => Run("status.full", DoFull));
             _btnFull.Font = new Font(Font, FontStyle.Bold);
-            _btnCheck = MakeButton((_, __) => Run("status.check", DoCheckExportable));
+            _btnView = MakeButton((_, __) => Run("status.check", DoViewContainer));
             _btnInstall = MakeButton((_, __) => Run("status.install", DoInstall));
             _btnPfx = MakeButton((_, __) => Run("status.pfx", DoExportPfx));
             _btnExtractKey = MakeButton((_, __) => Run("status.extractkey", DoExtractKey));
@@ -185,7 +189,7 @@ namespace CryptoProExport.App
             _actionButtons = new[]
             {
                 _btnRefresh, _btnExport, _btnExtract, _btnFull,
-                _btnCheck, _btnInstall, _btnPfx, _btnExtractKey, _btnExtractPfx, _btnLicense, _btnLogs, _btnHelp,
+                _btnView, _btnInstall, _btnPfx, _btnExtractKey, _btnExtractPfx, _btnLicense, _btnLogs, _btnHelp,
             };
             buttons.Controls.AddRange(_actionButtons);
             buttons.Controls.Add(_btnCancel);
@@ -261,7 +265,7 @@ namespace CryptoProExport.App
             SetButton(_btnExport, "btn.export", "tip.export");
             SetButton(_btnExtract, "btn.extract", "tip.extract");
             SetButton(_btnFull, "btn.full", "tip.full");
-            SetButton(_btnCheck, "btn.check", "tip.check");
+            SetButton(_btnView, "btn.check", "tip.check");
             SetButton(_btnInstall, "btn.install", "tip.install");
             SetButton(_btnPfx, "btn.pfx", "tip.pfx");
             SetButton(_btnExtractKey, "btn.extractkey", "tip.extractkey");
@@ -431,7 +435,8 @@ namespace CryptoProExport.App
             Invoke(() => _lv.Items.Clear());
             Log(Strings.Get("status.refresh"));
             foreach (var c in CertFromContainer.EnumContainers())
-                AddRow(Strings.Get("log.container.csp"), c.Name, Strings.Format("log.container.provider", c.ProvType));
+                AddRow(Strings.Get("log.container.csp"), c.Name,
+                       Strings.Format("log.container.provider", c.ProvType), new CspContainerSelection());
 
             // Токены по PKCS#11: метаданные и профиль механизмов видны без PIN;
             // публичные сертификаты показываются только когда реально присутствуют.
@@ -622,15 +627,27 @@ namespace CryptoProExport.App
 
         private void DoFull(CancellationToken cancel)
         {
-            if (!RequireLicense()) return;
-            string dest = TextOf(_txtDest).Trim();
-            if (string.IsNullOrEmpty(dest)) { Log(Strings.Get("log.need.dest")); return; }
             ContainerSelection selected = SelectedContainer();
             if (selected != null && selected.Apdu == null && selected.Direct == null)
             {
+                // Строка CSP не является источником для APDU-копирования. Но если все её
+                // реальные ключи уже имеют CRYPT_EXPORT, говорим точную причину вместо
+                // общего сообщения про неподходящую строку и не требуем лицензию зря.
+                if (selected.IsCsp && !string.IsNullOrEmpty(selected.Name))
+                {
+                    var (exchange, signature) = CheckExportability(selected.Name);
+                    if (CertFromContainer.AllFoundKeysExportable(exchange, signature))
+                    {
+                        Log(Strings.Format("log.error", Strings.Get("err.container.exportable")));
+                        return;
+                    }
+                }
                 Log(Strings.Get("log.export.directonly"));
                 return;
             }
+            if (!RequireLicense()) return;
+            string dest = TextOf(_txtDest).Trim();
+            if (string.IsNullOrEmpty(dest)) { Log(Strings.Get("log.need.dest")); return; }
             var confirm = AskConfirm(
                 Strings.Get(selected == null ? "dlg.confirm.full" : "dlg.confirm.full.selected"),
                 Strings.Get("dlg.confirm.title"));
@@ -651,16 +668,31 @@ namespace CryptoProExport.App
             RefreshList(cancel);   // из рабочего потока: внутри всё, что трогает UI, идёт через Invoke
         }
 
-        private void DoCheckExportable()
+        private void DoViewContainer()
         {
-            string container = SelectedContainerName();
+            ContainerSelection selected = SelectedContainer();
+            string container = selected?.Name;
             if (container == null) { Log(Strings.Get("log.need.container")); return; }
-            var ex = CertFromContainer.CheckExportable(container, CertFromContainer.AT_KEYEXCHANGE);
-            var sg = CertFromContainer.CheckExportable(container, CertFromContainer.AT_SIGNATURE);
+            var (ex, sg) = CheckExportability(container);
             Log(Strings.Format("log.check.container", container));
+            Log("  " + Strings.Get("col.location") + ": " + selected.Location);
+            Log("  " + Strings.Get("col.details") + ": " + selected.Details);
             Log("  " + Strings.Format("log.check.exchange", ex));
             Log("  " + Strings.Format("log.check.sign", sg));
+
+            string text = Strings.Format("log.check.container", container) + Environment.NewLine
+                        + Strings.Get("col.location") + ": " + selected.Location + Environment.NewLine
+                        + Strings.Get("col.details") + ": " + selected.Details + Environment.NewLine
+                        + Environment.NewLine
+                        + Strings.Format("log.check.exchange", ex) + Environment.NewLine
+                        + Strings.Format("log.check.sign", sg);
+            ShowInfo(text, Strings.Get("col.container"));
         }
+
+        private static (CertFromContainer.ExportCheck exchange,
+                        CertFromContainer.ExportCheck signature) CheckExportability(string container) =>
+            (CertFromContainer.CheckExportable(container, CertFromContainer.AT_KEYEXCHANGE),
+             CertFromContainer.CheckExportable(container, CertFromContainer.AT_SIGNATURE));
 
         private void DoInstall()
         {
@@ -831,6 +863,16 @@ namespace CryptoProExport.App
                                    MessageBoxDefaultButton.Button1, options);
         }
 
+        private void ShowInfo(string text, string caption)
+        {
+            if (InvokeRequired) { Invoke(new Action(() => ShowInfo(text, caption))); return; }
+            var options = Strings.CurrentIsRightToLeft
+                ? MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign
+                : default;
+            MessageBox.Show(this, text, caption, MessageBoxButtons.OK, MessageBoxIcon.Information,
+                            MessageBoxDefaultButton.Button1, options);
+        }
+
         private string AskFolder(string description, string initial)
         {
             if (InvokeRequired) return (string)Invoke(new Func<string>(() => AskFolder(description, initial)));
@@ -950,6 +992,9 @@ namespace CryptoProExport.App
             return new ContainerSelection
             {
                 Name = deviceOnly ? null : item.SubItems[1].Text,
+                Location = item.SubItems[0].Text,
+                Details = item.SubItems[2].Text,
+                IsCsp = item.Tag is CspContainerSelection,
                 Token = item.Tag as TokenCertificateSelection,
                 Apdu = item.Tag as ApduContainerSelection,
                 Direct = item.Tag as RutokenContainer,
