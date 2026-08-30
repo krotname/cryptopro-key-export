@@ -9,31 +9,41 @@ namespace CryptoProExport.Tests
     public sealed class ExportPipelineTests
     {
         [Fact]
-        public void AllPresentKeysHandled_RequiresCertificateForEveryPresentKey()
+        public void HasCertificateForPresentKey_AllowsOneCertifiedPairInTwoKeyFiles()
         {
             var both = new RutokenContainer();
             both.Files["primary.key"] = new byte[] { 1 };
             both.Files["primary2.key"] = new byte[] { 2 };
 
-            Assert.False(ExportPipeline.AllPresentKeysHandled(both, "exchange.cer", null));
-            Assert.False(ExportPipeline.AllPresentKeysHandled(both, null, "signature.cer"));
-            Assert.True(ExportPipeline.AllPresentKeysHandled(both, "exchange.cer", "signature.cer"));
+            Assert.True(ExportPipeline.HasCertificateForPresentKey(both, "exchange.cer", null));
+            Assert.True(ExportPipeline.HasCertificateForPresentKey(both, null, "signature.cer"));
+            Assert.True(ExportPipeline.HasCertificateForPresentKey(
+                both, "exchange.cer", "signature.cer"));
         }
 
         [Fact]
-        public void AllPresentKeysHandled_AllowsSingleKeyContainer()
+        public void HasCertificateForPresentKey_RequiresMatchingPresentPair()
         {
             var exchangeOnly = new RutokenContainer();
             exchangeOnly.Files["primary.key"] = new byte[] { 1 };
+            var signatureOnly = new RutokenContainer();
+            signatureOnly.Files["primary2.key"] = new byte[] { 2 };
 
-            Assert.True(ExportPipeline.AllPresentKeysHandled(exchangeOnly, "exchange.cer", null));
+            Assert.True(ExportPipeline.HasCertificateForPresentKey(
+                exchangeOnly, "exchange.cer", null));
+            Assert.False(ExportPipeline.HasCertificateForPresentKey(
+                exchangeOnly, null, "signature.cer"));
+            Assert.False(ExportPipeline.HasCertificateForPresentKey(
+                signatureOnly, "exchange.cer", null));
+            Assert.True(ExportPipeline.HasCertificateForPresentKey(
+                signatureOnly, null, "signature.cer"));
         }
 
         [Fact]
-        public void AllPresentKeysHandled_RejectsContainerWithoutRecognizedKey()
+        public void HasCertificateForPresentKey_RejectsContainerWithoutRecognizedKey()
         {
-            Assert.False(ExportPipeline.AllPresentKeysHandled(new RutokenContainer(),
-                                                               "exchange.cer", "signature.cer"));
+            Assert.False(ExportPipeline.HasCertificateForPresentKey(new RutokenContainer(),
+                                                                     "exchange.cer", "signature.cer"));
         }
 
         [Fact]

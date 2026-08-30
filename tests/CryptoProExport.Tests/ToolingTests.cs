@@ -40,6 +40,17 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void InstallCertificateArguments_KeepExactHdImageTarget()
+        {
+            string args = CertMgr.BuildInstallArguments(
+                @"C:\backup\cert_exchange.cer", @"\\.\HDIMAGE\container", signatureKey: false);
+
+            Assert.Equal(
+                "-install -file \"C:\\backup\\cert_exchange.cer\" " +
+                "-container \"\\\\.\\HDIMAGE\\container\" -silent", args);
+        }
+
+        [Fact]
         public void MaskPassword_HidesContainerPassword()
         {
             string args = P12Utility.BuildRepairArguments(true, false, "пароль с пробелом", true);

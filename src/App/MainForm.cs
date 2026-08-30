@@ -53,11 +53,15 @@ namespace CryptoProExport.App
         }
 
         private sealed class TokenDeviceSelection { }
-        private sealed class CspContainerSelection { }
+        private sealed class CspContainerSelection
+        {
+            public string Target;
+        }
 
         private sealed class ContainerSelection
         {
             public string Name;
+            public string Target;
             public string Location;
             public string Details;
             public bool IsCsp;
@@ -434,9 +438,24 @@ namespace CryptoProExport.App
         {
             Invoke(() => _lv.Items.Clear());
             Log(Strings.Get("status.refresh"));
+
+            // HDIMAGE-копия и исходный токен часто имеют одно логическое имя. Показываем
+            // файловую копию отдельной строкой и адресуем её полным именем, иначе CryptoAPI
+            // снова выбирает токен и показывает старые права ключа.
+            var installedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var c in ContainerStore.Installed())
+            {
+                if (!installedNames.Add(c.Name)) continue;
+                AddRow("HDIMAGE", c.Name, c.Folder,
+                    new CspContainerSelection { Target = CertMgr.HdImageContainer(c.Name) });
+            }
             foreach (var c in CertFromContainer.EnumContainers())
+            {
+                if (installedNames.Contains(c.Name)) continue;
                 AddRow(Strings.Get("log.container.csp"), c.Name,
-                       Strings.Format("log.container.provider", c.ProvType), new CspContainerSelection());
+                       Strings.Format("log.container.provider", c.ProvType),
+                       new CspContainerSelection { Target = c.Name });
+            }
 
             // Токены по PKCS#11: метаданные и профиль механизмов видны без PIN;
             // публичные сертификаты показываются только когда реально присутствуют.
@@ -594,11 +613,11 @@ namespace CryptoProExport.App
         private void DoExtract()
         {
             ContainerSelection selected = SelectedContainer();
-            string container = selected?.Name;
+            string container = selected?.Target;
             if (container == null) { Log(Strings.Get("log.need.container")); return; }
             string destRoot = TextOf(_txtDest).Trim();
             if (string.IsNullOrEmpty(destRoot)) { Log(Strings.Get("log.need.dest")); return; }
-            string dest = Path.Combine(destRoot, "certs_" + Sanitize(container));
+            string dest = Path.Combine(destRoot, "certs_" + Sanitize(selected.Name));
 
             // Для строки PKCS#11 сохраняем именно сертификат выбранного токена. Поиск заново
             // только по метке раньше брал первый попавшийся токен с тем же именем контейнера.
@@ -635,7 +654,7 @@ namespace CryptoProExport.App
                 // общего сообщения про неподходящую строку и не требуем лицензию зря.
                 if (selected.IsCsp && !string.IsNullOrEmpty(selected.Name))
                 {
-                    var (exchange, signature) = CheckExportability(selected.Name);
+                    var (exchange, signature) = CheckExportability(selected.Target);
                     if (CertFromContainer.AllFoundKeysExportable(exchange, signature))
                     {
                         Log(Strings.Format("log.error", Strings.Get("err.container.exportable")));
@@ -671,7 +690,7 @@ namespace CryptoProExport.App
         private void DoViewContainer()
         {
             ContainerSelection selected = SelectedContainer();
-            string container = selected?.Name;
+            string container = selected?.Target;
             if (container == null) { Log(Strings.Get("log.need.container")); return; }
             var (ex, sg) = CheckExportability(container);
             Log(Strings.Format("log.check.container", container));
@@ -718,13 +737,27 @@ namespace CryptoProExport.App
                 Log(Strings.Format("log.install.norename", installed.Name));
             if (installed.Verified && !installed.VisibleToCsp)
                 Log(Strings.Get("log.install.invisible"));
+            else if (installed.VisibleToCsp)
+            {
+                string certMgrPath = CertMgr.Locate();
+                if (certMgrPath != null)
+                {
+                    var cm = new CertMgr(certMgrPath) { Log = Log };
+                    var linked = cm.InstallContainerCertificates(
+                        folder, CertMgr.HdImageContainer(installed.Name));
+                    foreach (ToolResult failure in linked.Results)
+                        if (!failure.Success)
+                            Log(Strings.Format("tool.certmgr.installwarn", failure.Explain()));
+                }
+            }
             RefreshList();
         }
 
         private void DoExportPfx(CancellationToken cancel)
         {
             if (!RequireLicense()) return;
-            string container = SelectedContainerName();
+            ContainerSelection selected = SelectedContainer();
+            string container = selected?.Target;
             if (container == null) { Log(Strings.Get("log.need.container")); return; }
 
             string exe = CertMgr.Locate();
@@ -732,7 +765,7 @@ namespace CryptoProExport.App
 
             string dest = AskSaveFile(Strings.Get("dlg.pfx.save"),
                                       "PKCS#12 (*.pfx)|*.pfx|" + Strings.Get("files.all") + "|*.*",
-                                      TextOf(_txtDest).Trim(), Sanitize(container) + ".pfx");
+                                      TextOf(_txtDest).Trim(), Sanitize(selected.Name) + ".pfx");
             if (dest == null) { Log(Strings.Get("log.cancelled")); return; }
 
             string pass = AskText(Strings.Get("dlg.pfx.pass.title"), Strings.Get("dlg.pfx.pass.prompt"),
@@ -976,11 +1009,6 @@ namespace CryptoProExport.App
             return box.Text;
         }
 
-        private string SelectedContainerName()
-        {
-            return SelectedContainer()?.Name;
-        }
-
         /// <summary>Имя и Tag одной строки снимаются одним UI-вызовом, без selection race.</summary>
         private ContainerSelection SelectedContainer()
         {
@@ -989,9 +1017,11 @@ namespace CryptoProExport.App
             if (_lv.SelectedItems.Count == 0) return null;
             ListViewItem item = _lv.SelectedItems[0];
             bool deviceOnly = item.Tag is TokenDeviceSelection;
+            var csp = item.Tag as CspContainerSelection;
             return new ContainerSelection
             {
                 Name = deviceOnly ? null : item.SubItems[1].Text,
+                Target = deviceOnly ? null : csp?.Target ?? item.SubItems[1].Text,
                 Location = item.SubItems[0].Text,
                 Details = item.SubItems[2].Text,
                 IsCsp = item.Tag is CspContainerSelection,

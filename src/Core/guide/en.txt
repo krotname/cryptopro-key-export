@@ -67,8 +67,9 @@ interface languages fall back to the English text.
 
   1) «Install into CryptoPro» — pick the container folder. It is
      copied into the CSP store and the program verifies that
-     CryptoPro really sees the container.
-  2) «Refresh list» — the container shows up in the list.
+     CryptoPro really sees it. A discovered certificate is bound
+     specifically to the HDIMAGE copy.
+  2) «Refresh list» — the HDIMAGE copy gets its own row.
   3) «Extract certificate», then «Make exportable».
   4) «View container» and «Export to PFX».
 
