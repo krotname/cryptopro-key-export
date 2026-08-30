@@ -67,10 +67,8 @@ PY
 cd -- "${GITHUB_WORKSPACE}"
 workspace="$(pwd -P)"
 
-shopt -s globstar nullglob dotglob
 declare -a matches=()
 declare -a excludes=()
-declare -A seen=()
 
 while IFS= read -r raw_pattern || [[ -n "${raw_pattern}" ]]; do
   raw_pattern="${raw_pattern%$'\r'}"
@@ -81,24 +79,62 @@ while IFS= read -r raw_pattern || [[ -n "${raw_pattern}" ]]; do
     continue
   fi
 
-  search_pattern="${raw_pattern}"
-  if [[ "${search_pattern}" == */'**' ]]; then
-    search_pattern="${search_pattern%/**}"
-  fi
-
-  while IFS= read -r match; do
-    [[ -e "${match}" ]] || continue
-    canonical_match="$(canonical_path "${match}")"
-    if [[ "${canonical_match}" != "${workspace}" && "${canonical_match}" != "${workspace}/"* ]]; then
-      echo "::error::Artifact path escapes GITHUB_WORKSPACE: ${match}"
-      exit 2
-    fi
-    if [[ -z "${seen[${match}]+x}" ]]; then
-      seen["${match}"]=1
-      matches+=("${match}")
-    fi
-  done < <(compgen -G "${search_pattern}" || true)
 done <<< "${ARTIFACT_PATHS}"
+
+match_list="$(mktemp "${RUNNER_TEMP%/}/ci-artifact-matches.XXXXXX")"
+if ! python3 - "${workspace}" "${ARTIFACT_PATHS}" "${match_list}" <<'PY'
+import os
+import pathlib
+import sys
+
+workspace = pathlib.Path(sys.argv[1]).resolve()
+patterns = sys.argv[2].splitlines()
+output = pathlib.Path(sys.argv[3])
+seen = set()
+matches = []
+
+for raw_pattern in patterns:
+    pattern = raw_pattern.rstrip("\r").strip()
+    if not pattern or pattern.startswith("!"):
+        continue
+    candidate_pattern = pathlib.PurePosixPath(pattern.replace("\\", "/"))
+    if candidate_pattern.is_absolute() or ".." in candidate_pattern.parts:
+        raise SystemExit(f"Artifact pattern must stay relative to GITHUB_WORKSPACE: {pattern}")
+
+    if pattern.endswith("/**"):
+        candidates = [workspace / pattern[:-3]]
+    elif any(character in pattern for character in "*?["):
+        candidates = workspace.glob(pattern.replace("\\", "/"))
+    else:
+        candidates = [workspace / pattern]
+
+    for candidate in candidates:
+        if not candidate.exists():
+            continue
+        resolved = candidate.resolve()
+        try:
+            relative = resolved.relative_to(workspace)
+        except ValueError as error:
+            raise SystemExit(f"Artifact path escapes GITHUB_WORKSPACE: {candidate}") from error
+        relative_text = relative.as_posix()
+        if relative_text not in seen:
+            seen.add(relative_text)
+            matches.append(relative_text)
+
+with output.open("wb") as stream:
+    for match in matches:
+        stream.write(os.fsencode(match) + b"\0")
+PY
+then
+  rm -f -- "${match_list}"
+  echo "::error::Invalid or unsafe artifact path pattern"
+  exit 2
+fi
+
+while IFS= read -r -d '' match; do
+  matches+=("${match}")
+done < "${match_list}"
+rm -f -- "${match_list}"
 
 if (( ${#matches[@]} == 0 )); then
   echo "published=false" >> "${GITHUB_OUTPUT}"

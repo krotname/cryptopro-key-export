@@ -47,8 +47,9 @@ jobs:
 
             try {
               const packageResponse = await github.request(
-                'GET /user/packages/{package_type}/{package_name}',
+                'GET /users/{username}/packages/{package_type}/{package_name}',
                 {
+                  username: context.repo.owner,
                   package_type: 'container',
                   package_name: packageName,
                   headers: { 'X-GitHub-Api-Version': '2022-11-28' },
@@ -72,8 +73,9 @@ jobs:
               }
 
               versions = await github.paginate(
-                'GET /user/packages/{package_type}/{package_name}/versions',
+                'GET /users/{username}/packages/{package_type}/{package_name}/versions',
                 {
+                  username: context.repo.owner,
                   package_type: 'container',
                   package_name: packageName,
                   per_page: 100,
@@ -109,8 +111,9 @@ jobs:
               }
 
               await github.request(
-                'DELETE /user/packages/{package_type}/{package_name}/versions/{package_version_id}',
+                'DELETE /users/{username}/packages/{package_type}/{package_name}/versions/{package_version_id}',
                 {
+                  username: context.repo.owner,
                   package_type: 'container',
                   package_name: packageName,
                   package_version_id: version.id,

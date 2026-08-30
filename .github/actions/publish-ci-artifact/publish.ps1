@@ -50,6 +50,33 @@ $matchedPaths = [Collections.Generic.List[string]]::new()
 $seenPaths = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
 $excludePatterns = [Collections.Generic.List[string]]::new()
 
+function Convert-ArtifactGlobToRegex {
+    param([Parameter(Mandatory)][string] $Pattern)
+
+    $normalized = $Pattern.Replace('\\', '/')
+    $builder = [Text.StringBuilder]::new('^')
+    for ($index = 0; $index -lt $normalized.Length; $index++) {
+        $character = $normalized[$index]
+        if ($character -eq '*' -and $index + 2 -lt $normalized.Length -and
+            $normalized[$index + 1] -eq '*' -and $normalized[$index + 2] -eq '/') {
+            [void]$builder.Append('(?:.*/)?')
+            $index += 2
+        } elseif ($character -eq '*' -and $index + 1 -lt $normalized.Length -and
+                  $normalized[$index + 1] -eq '*') {
+            [void]$builder.Append('.*')
+            $index += 1
+        } elseif ($character -eq '*') {
+            [void]$builder.Append('[^/]*')
+        } elseif ($character -eq '?') {
+            [void]$builder.Append('[^/]')
+        } else {
+            [void]$builder.Append([regex]::Escape($character))
+        }
+    }
+    [void]$builder.Append('$')
+    return [regex]::new($builder.ToString(), [Text.RegularExpressions.RegexOptions]::IgnoreCase)
+}
+
 foreach ($rawLine in [regex]::Split($artifactPaths, '\r?\n')) {
     $pattern = $rawLine.Trim()
     if ([string]::IsNullOrWhiteSpace($pattern)) {
@@ -60,16 +87,46 @@ foreach ($rawLine in [regex]::Split($artifactPaths, '\r?\n')) {
         continue
     }
 
-    $searchPattern = $pattern
-    if ($searchPattern.EndsWith('/**', [StringComparison]::Ordinal)) {
-        $searchPattern = $searchPattern.Substring(0, $searchPattern.Length - 3)
+    $normalizedPattern = $pattern.Replace('\\', '/')
+    $purePattern = $normalizedPattern
+    while ($purePattern.StartsWith('./', [StringComparison]::Ordinal)) {
+        $purePattern = $purePattern.Substring(2)
+    }
+    if ([IO.Path]::IsPathRooted($pattern) -or $purePattern.Split('/') -contains '..') {
+        throw "Artifact pattern must stay relative to the workspace: $pattern"
     }
 
     $items = @()
-    if ([Management.Automation.WildcardPattern]::ContainsWildcardCharacters($searchPattern)) {
-        $items = @(Get-ChildItem -Path $searchPattern -Force -ErrorAction SilentlyContinue)
-    } elseif (Test-Path -LiteralPath $searchPattern) {
-        $items = @(Get-Item -LiteralPath $searchPattern -Force)
+    if ($purePattern.EndsWith('/**', [StringComparison]::Ordinal)) {
+        $literalDirectory = Join-Path $workspace $purePattern.Substring(0, $purePattern.Length - 3)
+        if (Test-Path -LiteralPath $literalDirectory) {
+            $items = @(Get-Item -LiteralPath $literalDirectory -Force)
+        }
+    } elseif ([Management.Automation.WildcardPattern]::ContainsWildcardCharacters($purePattern)) {
+        $segments = $purePattern.Split('/')
+        $literalSegments = [Collections.Generic.List[string]]::new()
+        foreach ($segment in $segments) {
+            if ([Management.Automation.WildcardPattern]::ContainsWildcardCharacters($segment)) { break }
+            $literalSegments.Add($segment)
+        }
+        $searchRoot = if ($literalSegments.Count -eq 0) {
+            $workspace
+        } else {
+            Join-Path $workspace ([IO.Path]::Combine($literalSegments.ToArray()))
+        }
+        if (Test-Path -LiteralPath $searchRoot) {
+            $matcher = Convert-ArtifactGlobToRegex -Pattern $purePattern
+            $items = @(Get-ChildItem -LiteralPath $searchRoot -Force -Recurse -ErrorAction SilentlyContinue |
+                Where-Object {
+                    $candidateRelative = [IO.Path]::GetRelativePath($workspace, $_.FullName).Replace('\\', '/')
+                    $matcher.IsMatch($candidateRelative)
+                })
+        }
+    } else {
+        $literalPath = Join-Path $workspace $purePattern
+        if (Test-Path -LiteralPath $literalPath) {
+            $items = @(Get-Item -LiteralPath $literalPath -Force)
+        }
     }
 
     foreach ($item in $items) {
@@ -119,7 +176,7 @@ try {
     $archiveName = "$nameSlug.tar.gz"
     $archivePath = Join-Path $staging $archiveName
 
-    $tarPath = (Get-Command tar.exe -ErrorAction Stop).Source
+    $tarPath = (Get-Command tar -ErrorAction Stop).Source
     $tarArguments = [Collections.Generic.List[string]]::new()
     $tarArguments.Add('-czf')
     $tarArguments.Add($archivePath)
@@ -174,7 +231,7 @@ try {
     $manifestJson = $manifest | ConvertTo-Json -Depth 4
     [IO.File]::WriteAllText($manifestPath, $manifestJson + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
 
-    $orasPath = (Get-Command oras.exe -ErrorAction Stop).Source
+    $orasPath = (Get-Command oras -ErrorAction Stop).Source
     $actor = [Environment]::GetEnvironmentVariable('GITHUB_ACTOR')
     if ([string]::IsNullOrWhiteSpace($actor)) { $actor = 'github-actions' }
 
@@ -234,7 +291,7 @@ try {
     ) | Add-Content -LiteralPath $githubStepSummary -Encoding utf8
 } finally {
     if ($loggedIn) {
-        & (Get-Command oras.exe -ErrorAction SilentlyContinue).Source logout ghcr.io --registry-config $registryConfig 2>$null | Out-Null
+        & (Get-Command oras -ErrorAction SilentlyContinue).Source logout ghcr.io --registry-config $registryConfig 2>$null | Out-Null
     }
     if (Test-Path -LiteralPath $staging) {
         $stagingReadback = [IO.Path]::GetFullPath($staging)
