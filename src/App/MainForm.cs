@@ -526,9 +526,12 @@ namespace CryptoProExport.App
         /// PIN не менял, а вводить «12345678» руками каждый раз бессмысленно. Значения берутся
         /// из <see cref="StandardPins"/> (документация производителей).
         ///
-        /// Границы, из-за которых это безопасно: подставляем только при чистом счётчике попыток
-        /// (иначе одна опечатка приближает блокировку), только когда все подключённые носители
-        /// дают одно и то же значение, и никогда не затираем то, что ввёл пользователь.
+        /// Границы, из-за которых это безопасно, те же, что у <c>DirectTokenApdu.ResolvePin</c>:
+        /// драйвер должен подтвердить заводское состояние PIN (<c>PinDefault</c>) при чистом
+        /// счётчике попыток, все подключённые носители должны давать одно и то же значение, и
+        /// введённое пользователем не затирается. Без флага <c>PinDefault</c> подстановки нет:
+        /// поле уходит дальше как явный PIN, минуя проверку в <c>ResolvePin</c>, и на носителе
+        /// со сменённым PIN тратило бы попытку на заведомо неверном значении.
         /// Отправки PIN на карту подстановка не делает — это по-прежнему явное действие.
         /// </summary>
         private void SuggestFactoryPin(IEnumerable<Pkcs11TokenInfo> tokens)
@@ -536,7 +539,8 @@ namespace CryptoProExport.App
             string pin = null, model = null;
             foreach (var t in tokens ?? Array.Empty<Pkcs11TokenInfo>())
             {
-                if (t == null || t.PinCountLow || t.PinFinalTry || t.PinLocked) continue;
+                if (t == null || !t.PinDefault) continue;
+                if (t.PinCountLow || t.PinFinalTry || t.PinLocked) continue;
                 StandardPin std = StandardPins.ForKind(t.Kind);
                 if (std == null || !std.AutoFill || string.IsNullOrEmpty(std.UserPin)) continue;
                 // Две разные модели рядом — молча выбрать одну нельзя: чужой PIN спалит попытку.

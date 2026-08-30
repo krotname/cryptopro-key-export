@@ -478,7 +478,8 @@ namespace CryptoProExport.App
                                 ? Strings.Get("cli.pins.unset") : pin.AdminPin;
                             Out("  " + Strings.Format("cli.pins.line", pin.Model, user, admin,
                                 Strings.Get(pin.Supported ? "cli.pins.supported" : "cli.pins.planned")));
-                            if (!string.IsNullOrEmpty(pin.Note)) Out("      " + pin.Note);
+                            if (!string.IsNullOrEmpty(pin.NoteKey))
+                                Out("      " + Strings.Get(pin.NoteKey));
                             Out("      " + pin.Source);
                         }
                         Out(Strings.Get("cli.pins.note"));

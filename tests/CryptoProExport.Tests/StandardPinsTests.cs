@@ -92,6 +92,23 @@ namespace CryptoProExport.Tests
             }
         }
 
+        /// <summary>
+        /// Примечания хранятся ключами, иначе `pins --lang en` печатал бы русскую прозу
+        /// вперемешку с переведёнными заголовками.
+        /// </summary>
+        [Fact]
+        public void Registry_NotesAreStoredAsTranslatableKeys()
+        {
+            foreach (StandardPin pin in StandardPins.All)
+            {
+                if (string.IsNullOrEmpty(pin.NoteKey)) continue;
+                Assert.StartsWith("pins.note.", pin.NoteKey, StringComparison.Ordinal);
+                foreach (string language in Strings.Available)
+                    Assert.True(Strings.Table(language).ContainsKey(pin.NoteKey),
+                                $"{language}: нет перевода {pin.NoteKey}");
+            }
+        }
+
         [Fact]
         public void Registry_HasNoDuplicateModels()
         {

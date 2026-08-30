@@ -29,8 +29,11 @@ namespace CryptoProExport
         public bool AutoFill { get; set; }
         /// <summary>Страница производителя, откуда взято значение.</summary>
         public string Source { get; set; }
-        /// <summary>Уточнение: апплет, ревизия, особенность PUK.</summary>
-        public string Note { get; set; }
+        /// <summary>
+        /// Ключ локализованного уточнения (апплет, ревизия, особенность PUK) или <c>null</c>.
+        /// Здесь именно ключ, а не текст: вывод реестра идёт на языке интерфейса.
+        /// </summary>
+        public string NoteKey { get; set; }
     }
 
     /// <summary>
@@ -69,28 +72,28 @@ namespace CryptoProExport
                 Model = "Рутокен ЭЦП / 2.0 / 3.0", Vendor = "Актив",
                 UserPin = "12345678", AdminPin = "87654321",
                 Supported = true, AutoFill = true, Source = RutokenSource,
-                Note = "только диагностика: закрытый ключ не покидает чип",
+                NoteKey = "pins.note.diagnostic",
             },
             new StandardPin
             {
                 Model = "JaCarta LT", Vendor = "Аладдин Р.Д.",
                 UserPin = "1234567890", AdminPin = null,
                 Supported = true, AutoFill = true, Source = AladdinSource,
-                Note = "PIN Администратора не задан",
+                NoteKey = "pins.note.noadmin",
             },
             new StandardPin
             {
                 Model = "eToken PRO (Java) / JaCarta PRO", Vendor = "Аладдин Р.Д.",
                 UserPin = "1234567890", AdminPin = null,
                 Supported = true, AutoFill = false, Source = AladdinSource,
-                Note = "PIN проверяется challenge-response; подставляется только вручную",
+                NoteKey = "pins.note.challenge",
             },
             new StandardPin
             {
                 Model = "ESMART Token / ESMART Token ГОСТ", Vendor = "ESMART (ИСБК)",
                 UserPin = "12345678", AdminPin = "12345678",
                 Supported = true, AutoFill = true, Source = EsmartSource,
-                Note = "PIN Администратора называется SO-PIN",
+                NoteKey = "pins.note.sopin",
             },
             new StandardPin
             {
@@ -103,28 +106,28 @@ namespace CryptoProExport
                 Model = "JaCarta ГОСТ", Vendor = "Аладдин Р.Д.",
                 UserPin = null, AdminPin = "1234567890",
                 Supported = false, Source = AladdinSource,
-                Note = "PIN Пользователя не задан",
+                NoteKey = "pins.note.nouser",
             },
             new StandardPin
             {
                 Model = "JaCarta-2 ГОСТ", Vendor = "Аладдин Р.Д.",
                 UserPin = "1234567890", AdminPin = "0987654321",
                 Supported = false, Source = AladdinSource,
-                Note = "у Администратора это PUK",
+                NoteKey = "pins.note.puk",
             },
             new StandardPin
             {
                 Model = "JaCarta-2 SE (JC-267), ГОСТ-апплет", Vendor = "Аладдин Р.Д.",
                 UserPin = "0987654321", AdminPin = null,
                 Supported = false, Source = AladdinSource,
-                Note = "остальные апплеты — со своими стандартными значениями",
+                NoteKey = "pins.note.applets",
             },
             new StandardPin
             {
                 Model = "eToken ГОСТ", Vendor = "Аладдин Р.Д.",
                 UserPin = null, AdminPin = "1234567890",
                 Supported = false, Source = AladdinSource,
-                Note = "PIN Пользователя не задан",
+                NoteKey = "pins.note.nouser",
             },
         };
 
