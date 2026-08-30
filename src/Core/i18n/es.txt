@@ -368,3 +368,22 @@ diag.pnp.ok = Lectores de tarjetas inteligentes (PnP): {0} PnP-present, todos lo
 diag.pnp.failed = Lector de tarjetas inteligentes {0}: está PnP-present, pero el controlador no se inició — código {1}, estado {2}
 diag.pnp.problem = Lector de tarjetas inteligentes {0}: está PnP-present, pero Windows informa de un problema de PnP — código {1}, estado {2}
 diag.pnp.unavailable = Lectores de tarjetas inteligentes (PnP): comprobación no disponible ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = mostrar los PIN de fábrica de los soportes (registro de modelos)
+cli.pins.header = PIN de fábrica de los soportes (según la documentación de los fabricantes):
+cli.pins.line = {0} — usuario: {1}, administrador: {2} [{3}]
+cli.pins.unset = no definido
+cli.pins.supported = compatible
+cli.pins.planned = previsto
+cli.pins.note = Los valores sirven mientras no se haya cambiado el PIN. Un PIN incorrecto gasta un intento; tres seguidos bloquean el soporte.
+field.pin.hint.factory = PIN de fábrica {0}
+pins.note.diagnostic = solo diagnóstico: la clave privada no sale del chip
+pins.note.noadmin = no hay PIN de administrador definido
+pins.note.challenge = el PIN se verifica por desafío-respuesta; introdúzcalo a mano
+pins.note.sopin = el PIN de administrador se llama SO-PIN
+pins.note.nouser = no hay PIN de usuario definido
+pins.note.puk = para el administrador es un PUK
+pins.note.applets = los demás applets conservan sus propios valores de fábrica
+log.token.replaced = El soporte del lector fue sustituido; actualice la lista e inténtelo de nuevo
+log.token.state.unknown = No se pudo leer el estado actual del soporte; la operación se detuvo

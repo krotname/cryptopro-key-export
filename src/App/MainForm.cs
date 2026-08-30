@@ -24,6 +24,10 @@ namespace CryptoProExport.App
     public sealed class MainForm : Form
     {
         private TextBox _txtP12, _txtDest, _txtPin, _txtLog;
+        /// <summary>Последнее подставленное программой значение PIN — чтобы отличать его от введённого.</summary>
+        private string _autoFilledPin;
+        /// <summary>Модель, чьё заводское значение подставлено, — для подсказки на текущем языке.</summary>
+        private string _autoFilledModel;
         private ListView _lv;
         private SplitContainer _split;
         private ColumnHeader _colWhere, _colName, _colDetails;
@@ -134,6 +138,15 @@ namespace CryptoProExport.App
             _txtP12 = new TextBox { Dock = DockStyle.Fill, Margin = new Padding(3, 4, 3, 4) };
             _txtDest = new TextBox { Dock = DockStyle.Fill, Margin = new Padding(3, 4, 3, 4) };
             _txtPin = new TextBox { Dock = DockStyle.Fill, UseSystemPasswordChar = true, Margin = new Padding(3, 4, 3, 4) };
+            // Правка поля отменяет подстановку: дальше это уже введённый пользователем PIN,
+            // и подпись не должна называть его заводским значением модели.
+            _txtPin.TextChanged += (_, _) =>
+            {
+                if (_autoFilledPin == null || _txtPin.Text == _autoFilledPin) return;
+                _autoFilledPin = null;
+                _autoFilledModel = null;
+                if (_lblPinHint != null) _lblPinHint.Text = PinHintText();
+            };
 
             _lblP12 = MakeFieldLabel();
             settings.Controls.Add(_lblP12, 0, 0);
@@ -254,7 +267,7 @@ namespace CryptoProExport.App
             _lblP12.Text = Strings.Get("field.p12");
             _lblDest.Text = Strings.Get("field.dest");
             _lblPin.Text = Strings.Get("field.pin");
-            _lblPinHint.Text = Strings.Get("field.pin.hint");
+            _lblPinHint.Text = PinHintText();
             _lblLang.Text = Strings.Get("field.lang");
             _btnP12.Text = Strings.Get("common.browse");
             _btnDest.Text = Strings.Get("common.browse");
@@ -436,6 +449,10 @@ namespace CryptoProExport.App
 
         private void RefreshList(CancellationToken cancel = default)
         {
+            // Снимаем своё прежнее значение до опроса, а не после: список успевает наполниться
+            // строками нового носителя ещё до конца обхода, и прерванное обновление (отмена,
+            // ошибка) оставило бы в поле PIN уже вынутого токена — он ушёл бы дальше как явный.
+            ClearAutoFilledPin();
             Invoke(() => _lv.Items.Clear());
             Log(Strings.Get("status.refresh"));
 
@@ -540,7 +557,128 @@ namespace CryptoProExport.App
                            Strings.Format("log.container.files", c.TokenDir, c.Files.Count), c);
             }
             catch (Exception e) { Log(Strings.Format("log.tokens.unavailable", e.Message)); }
+            SuggestFactoryPin(tokens);
             Log(Strings.Get("log.done"));
+        }
+
+        /// <summary>
+        /// Подставить в поле PIN заводское значение подключённой модели: владелец чаще всего
+        /// PIN не менял, а вводить «12345678» руками каждый раз бессмысленно. Что именно можно
+        /// подставить, решает <see cref="StandardPins.SuggestFor"/> — там же и границы: ровно
+        /// один носитель, подтверждённое драйвером заводское состояние PIN и чистый счётчик.
+        ///
+        /// Своё прежнее значение снимает <see cref="ClearAutoFilledPin"/> в начале обновления,
+        /// поэтому прерванный обход не оставляет в поле PIN уже вынутого носителя. Введённое
+        /// пользователем не трогается, а отправки PIN на карту подстановка не делает — это
+        /// по-прежнему явное действие.
+        /// </summary>
+        private void SuggestFactoryPin(IEnumerable<Pkcs11TokenInfo> tokens)
+        {
+            StandardPin suggestion = StandardPins.SuggestFor(tokens);
+            if (suggestion == null) return;
+            Invoke(() =>
+            {
+                if (_txtPin.Text.Length != 0) return;
+                // Сначала запоминаем своё значение, потом ставим текст: обработчик TextChanged
+                // иначе принял бы собственную подстановку за правку пользователя.
+                _autoFilledPin = suggestion.UserPin;
+                _autoFilledModel = suggestion.Model;
+                _txtPin.Text = suggestion.UserPin;
+                _lblPinHint.Text = PinHintText();
+            });
+        }
+
+        /// <summary>
+        /// Перечитать состояние выбранного носителя перед операцией и вернуть <c>null</c>, если
+        /// работать по строке списка больше нельзя. Строка несёт снимок прошлого обновления, а
+        /// токен могли заменить в том же считывателе: индексы контейнеров и флаги PIN тогда
+        /// относятся к другой карте, и операция сожгла бы её попытку на чужом значении.
+        ///
+        /// Поэтому здесь fail-closed: заменённый носитель (другой серийный номер), исчезнувший
+        /// из перечисления или недоступное перечисление — все три случая прекращают операцию с
+        /// сообщением в журнале, а не продолжают её по устаревшему снимку.
+        /// </summary>
+        private Pkcs11TokenInfo CurrentStateOf(Pkcs11TokenInfo snapshot, CancellationToken cancel)
+        {
+            if (snapshot == null || string.IsNullOrEmpty(snapshot.Reader)) return snapshot;
+            List<Pkcs11TokenInfo> live;
+            try { live = Pkcs11Token.Enumerate(readContainers: false, cancel: cancel); }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception e)
+            {
+                Log(Strings.Format("log.tokens.unavailable", e.Message));
+                Log(Strings.Get("log.token.state.unknown"));
+                return null;
+            }
+            foreach (var token in live)
+            {
+                if (!string.Equals(token.Reader, snapshot.Reader, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                // Серийный номер — единственное, чем «тот же носитель» отличается от подменённого
+                // в том же считывателе. PKCS#11 разрешает его не сообщать, и тогда подтвердить
+                // тождество нечем: пустой серийник считаем неизвестным состоянием, а не совпадением.
+                if (string.IsNullOrEmpty(snapshot.Serial) || string.IsNullOrEmpty(token.Serial))
+                {
+                    Log(Strings.Get("log.token.state.unknown"));
+                    return null;
+                }
+                if (!string.Equals(token.Serial, snapshot.Serial, StringComparison.Ordinal))
+                {
+                    Log(Strings.Get("log.token.replaced"));
+                    return null;
+                }
+                return token;
+            }
+            Log(Strings.Get("log.token.state.unknown"));
+            return null;
+        }
+
+        /// <summary>
+        /// Текст подсказки у поля PIN. Пока в поле лежит подставленное программой значение,
+        /// подсказка называет модель — иначе смена языка стёрла бы единственный признак того,
+        /// что PIN заводской, а не введённый владельцем.
+        /// </summary>
+        private string PinHintText()
+        {
+            return _autoFilledModel != null && _txtPin.Text == _autoFilledPin
+                ? Strings.Format("field.pin.hint.factory", _autoFilledModel)
+                : Strings.Get("field.pin.hint");
+        }
+
+        /// <summary>
+        /// PIN для операции. Подставленное самой программой значение явным вводом не считается:
+        /// оно уходит как <c>null</c>, и PIN выбирает <c>DirectTokenApdu.ResolvePin</c> по
+        /// актуальным флагам носителя. Иначе горячая замена токена без обновления списка
+        /// отправила бы заводское значение на носитель со сменённым PIN и сожгла бы попытку.
+        /// Отредактированный пользователем текст перестаёт совпадать с подставленным и идёт
+        /// дальше как явный PIN — как и любое значение, введённое руками.
+        /// </summary>
+        private string OperationPin()
+        {
+            string text = TextOf(_txtPin);
+            if (_autoFilledPin != null && string.Equals(text, _autoFilledPin, StringComparison.Ordinal))
+                return null;
+            return NullIfEmpty(text);
+        }
+
+        /// <summary>
+        /// Убрать из поля значение, подставленное самой программой. Введённый пользователем
+        /// текст остаётся: его судьбу решает только он сам.
+        /// </summary>
+        private void ClearAutoFilledPin()
+        {
+            Invoke(() =>
+            {
+                if (_autoFilledPin == null) return;
+                bool ours = _txtPin.Text == _autoFilledPin;
+                _autoFilledPin = null;
+                _autoFilledModel = null;
+                if (ours)
+                {
+                    _txtPin.Text = string.Empty;
+                    _lblPinHint.Text = PinHintText();
+                }
+            });
         }
 
         /// <summary>
@@ -597,8 +735,9 @@ namespace CryptoProExport.App
             int saved;
             if (selected?.Apdu != null)
             {
-                pipe.ExportDirectContainer(selected.Apdu.Token, selected.Apdu.Container,
-                    dest, NullIfEmpty(TextOf(_txtPin)));
+                Pkcs11TokenInfo live = CurrentStateOf(selected.Apdu.Token, cancel);
+                if (live == null) return;
+                pipe.ExportDirectContainer(live, selected.Apdu.Container, dest, OperationPin());
                 saved = 1;
             }
             else if (selected?.Direct != null)
@@ -608,7 +747,7 @@ namespace CryptoProExport.App
             }
             else
             {
-                saved = pipe.ExportFromTokens(dest, NullIfEmpty(TextOf(_txtPin))).Count;
+                saved = pipe.ExportFromTokens(dest, OperationPin()).Count;
             }
             Log(Strings.Format("log.exported", saved));
             RefreshList(cancel);   // из рабочего потока: внутри всё, что трогает UI, идёт через Invoke
@@ -679,13 +818,16 @@ namespace CryptoProExport.App
             var pipe = new ExportPipeline(NullIfEmpty(TextOf(_txtP12))) { Log = Log, Cancel = cancel };
             ExportPipelineResult result;
             if (selected?.Apdu != null)
+            {
+                Pkcs11TokenInfo live = CurrentStateOf(selected.Apdu.Token, cancel);
+                if (live == null) return;
                 result = pipe.ExportDirectAndMakeExportable(
-                    selected.Apdu.Token, selected.Apdu.Container, dest,
-                    userPin: NullIfEmpty(TextOf(_txtPin)));
+                    live, selected.Apdu.Container, dest, userPin: OperationPin());
+            }
             else if (selected?.Direct != null)
                 result = pipe.ExportAndMakeExportable(selected.Direct, dest);
             else
-                result = pipe.ExportAndMakeExportable(dest, userPin: NullIfEmpty(TextOf(_txtPin)));
+                result = pipe.ExportAndMakeExportable(dest, userPin: OperationPin());
             if (result.AllSucceeded) Log(Strings.Get("log.full.done"));
             else Log(Strings.Format("log.exported", result.Exported));
             RefreshList(cancel);   // из рабочего потока: внутри всё, что трогает UI, идёт через Invoke

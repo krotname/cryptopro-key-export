@@ -368,3 +368,22 @@ diag.pnp.ok = स्मार्ट-कार्ड रीडर (PnP): {0} PnP-
 diag.pnp.failed = स्मार्ट-कार्ड रीडर {0}: PnP-present है, लेकिन ड्राइवर शुरू नहीं हुआ — कोड {1}, स्थिति {2}
 diag.pnp.problem = स्मार्ट-कार्ड रीडर {0}: PnP-present है, लेकिन Windows एक PnP समस्या की रिपोर्ट करता है — कोड {1}, स्थिति {2}
 diag.pnp.unavailable = स्मार्ट-कार्ड रीडर (PnP): जाँच उपलब्ध नहीं है ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = टोकन के फ़ैक्ट्री PIN कोड दिखाएँ (मॉडल सूची)
+cli.pins.header = टोकन के फ़ैक्ट्री PIN कोड (निर्माताओं के दस्तावेज़ों के अनुसार):
+cli.pins.line = {0} — उपयोगकर्ता: {1}, प्रशासक: {2} [{3}]
+cli.pins.unset = सेट नहीं
+cli.pins.supported = समर्थित
+cli.pins.planned = नियोजित
+cli.pins.note = ये मान तभी तक सही हैं जब तक PIN बदला न गया हो। ग़लत PIN एक प्रयास ख़र्च करता है; लगातार तीन बार टोकन लॉक कर देते हैं।
+field.pin.hint.factory = फ़ैक्ट्री PIN {0}
+pins.note.diagnostic = केवल निदान: निजी कुंजी चिप से बाहर नहीं जाती
+pins.note.noadmin = प्रशासक PIN सेट नहीं है
+pins.note.challenge = PIN चैलेंज-रिस्पॉन्स से जाँचा जाता है; इसे हाथ से दर्ज करें
+pins.note.sopin = प्रशासक PIN को SO-PIN कहा जाता है
+pins.note.nouser = उपयोगकर्ता PIN सेट नहीं है
+pins.note.puk = प्रशासक के लिए यह PUK है
+pins.note.applets = बाक़ी ऐपलेट अपने-अपने फ़ैक्ट्री मान रखते हैं
+log.token.replaced = रीडर में टोकन बदल गया — सूची ताज़ा करें और फिर से आज़माएँ
+log.token.state.unknown = टोकन की मौजूदा स्थिति नहीं पढ़ी जा सकी — कार्रवाई रोक दी गई

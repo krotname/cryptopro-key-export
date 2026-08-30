@@ -368,3 +368,22 @@ diag.pnp.ok = スマートカードリーダー (PnP): {0} 台が PnP-present、
 diag.pnp.failed = スマートカードリーダー {0}: PnP-present ですが、ドライバーを起動できませんでした — コード {1}、状態 {2}
 diag.pnp.problem = スマートカードリーダー {0}: PnP-present ですが、Windows から PnP の問題が報告されています — コード {1}、状態 {2}
 diag.pnp.unavailable = スマートカードリーダー (PnP): 確認できません ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = トークンの初期PINコードを表示する（機種一覧）
+cli.pins.header = トークンの初期PINコード（各メーカーの公式資料より）:
+cli.pins.line = {0} — ユーザー: {1}、管理者: {2} [{3}]
+cli.pins.unset = 未設定
+cli.pins.supported = 対応済み
+cli.pins.planned = 予定
+cli.pins.note = PINを変更していない場合にのみ有効です。誤ったPINは試行回数を消費し、3回続けるとトークンがロックされます。
+field.pin.hint.factory = 初期PIN {0}
+pins.note.diagnostic = 診断のみ: 秘密鍵はチップから出ません
+pins.note.noadmin = 管理者PINは設定されていません
+pins.note.challenge = PINはチャレンジレスポンスで検証されます。手入力してください
+pins.note.sopin = 管理者PINはSO-PINと呼ばれます
+pins.note.nouser = ユーザーPINは設定されていません
+pins.note.puk = 管理者側はPUKです
+pins.note.applets = 他のアプレットはそれぞれの初期値のままです
+log.token.replaced = リーダーのトークンが交換されました。一覧を更新してやり直してください
+log.token.state.unknown = トークンの現在の状態を読み取れませんでした。処理を中止しました

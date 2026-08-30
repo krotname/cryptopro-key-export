@@ -368,3 +368,22 @@ diag.pnp.ok = Akıllı kart okuyucuları (PnP): {0} PnP-present, tüm sürücül
 diag.pnp.failed = Akıllı kart okuyucusu {0}: PnP-present durumunda, ancak sürücüsü başlatılamadı — kod {1}, durum {2}
 diag.pnp.problem = Akıllı kart okuyucusu {0}: PnP-present durumunda, ancak Windows bir PnP sorunu bildiriyor — kod {1}, durum {2}
 diag.pnp.unavailable = Akıllı kart okuyucuları (PnP): denetim kullanılamıyor ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = taşıyıcıların fabrika PIN kodlarını göster (model kaydı)
+cli.pins.header = Taşıyıcıların fabrika PIN kodları (üretici belgelerine göre):
+cli.pins.line = {0} — kullanıcı: {1}, yönetici: {2} [{3}]
+cli.pins.unset = tanımlı değil
+cli.pins.supported = destekleniyor
+cli.pins.planned = planlanıyor
+cli.pins.note = Değerler PIN değiştirilmediği sürece geçerlidir. Yanlış PIN bir deneme harcar; arka arkaya üçü taşıyıcıyı kilitler.
+field.pin.hint.factory = fabrika PIN {0}
+pins.note.diagnostic = yalnızca tanılama: özel anahtar yongadan çıkmaz
+pins.note.noadmin = yönetici PIN'i tanımlı değil
+pins.note.challenge = PIN meydan okuma-yanıt ile doğrulanır; elle girin
+pins.note.sopin = yönetici PIN'inin adı SO-PIN'dir
+pins.note.nouser = kullanıcı PIN'i tanımlı değil
+pins.note.puk = yönetici için bu bir PUK'tur
+pins.note.applets = diğer uygulamacıklar kendi fabrika değerlerini korur
+log.token.replaced = Okuyucudaki taşıyıcı değiştirildi; listeyi yenileyip yeniden deneyin
+log.token.state.unknown = Taşıyıcının güncel durumu okunamadı; işlem durduruldu

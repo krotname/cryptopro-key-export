@@ -368,3 +368,22 @@ diag.pnp.ok = Pembaca kartu pintar (PnP): {0} PnP-present, semua driver telah di
 diag.pnp.failed = Pembaca kartu pintar {0}: berstatus PnP-present, tetapi drivernya tidak dimulai — kode {1}, status {2}
 diag.pnp.problem = Pembaca kartu pintar {0}: berstatus PnP-present, tetapi Windows melaporkan masalah PnP — kode {1}, status {2}
 diag.pnp.unavailable = Pembaca kartu pintar (PnP): pemeriksaan tidak tersedia ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = tampilkan PIN pabrik media (daftar model)
+cli.pins.header = PIN pabrik media (menurut dokumentasi produsen):
+cli.pins.line = {0} — pengguna: {1}, administrator: {2} [{3}]
+cli.pins.unset = tidak diatur
+cli.pins.supported = didukung
+cli.pins.planned = direncanakan
+cli.pins.note = Nilai berlaku selama PIN belum diubah. PIN salah menghabiskan satu percobaan; tiga berturut-turut mengunci media.
+field.pin.hint.factory = PIN pabrik {0}
+pins.note.diagnostic = hanya diagnostik: kunci privat tidak meninggalkan cip
+pins.note.noadmin = PIN administrator tidak diatur
+pins.note.challenge = PIN diverifikasi secara challenge-response; masukkan manual
+pins.note.sopin = PIN administrator disebut SO-PIN
+pins.note.nouser = PIN pengguna tidak diatur
+pins.note.puk = bagi administrator ini adalah PUK
+pins.note.applets = applet lain memakai nilai pabriknya sendiri
+log.token.replaced = Media di pembaca diganti; segarkan daftar lalu coba lagi
+log.token.state.unknown = Status media saat ini tidak terbaca; operasi dihentikan

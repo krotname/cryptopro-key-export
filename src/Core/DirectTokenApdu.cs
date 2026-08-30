@@ -180,10 +180,9 @@ namespace CryptoProExport
             if (token != null && token.PinDefault && !token.PinCountLow &&
                 !token.PinFinalTry && !token.PinLocked)
             {
-                if (token.Kind == RutokenKind.JaCartaLt) return "1234567890";
-                if (token.Kind == RutokenKind.RutokenS || token.Kind == RutokenKind.RutokenLite
-                    || token.Kind == RutokenKind.Esmart)
-                    return "12345678";
+                // Значения — из реестра заводских PIN (StandardPins), а не из констант по месту.
+                string factory = StandardPins.AutoFillUserPinFor(token.Kind);
+                if (!string.IsNullOrEmpty(factory) && Supports(token.Kind)) return factory;
             }
             throw new LiteApduException(Strings.Format("err.lite.pin", "—"));
         }

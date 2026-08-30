@@ -368,3 +368,22 @@ diag.pnp.ok = کارت‌خوان‌های هوشمند (PnP): {0} دستگاه 
 diag.pnp.failed = کارت‌خوان هوشمند {0}: در حالت PnP-present است، اما درایور اجرا نشد — کد {1}، وضعیت {2}
 diag.pnp.problem = کارت‌خوان هوشمند {0}: در حالت PnP-present است، اما Windows یک مشکل PnP گزارش می‌کند — کد {1}، وضعیت {2}
 diag.pnp.unavailable = کارت‌خوان‌های هوشمند (PnP): بررسی در دسترس نیست ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = نمایش رمزهای PIN کارخانه‌ای حامل‌ها (فهرست مدل‌ها)
+cli.pins.header = رمزهای PIN کارخانه‌ای حامل‌ها (بر پایهٔ مستندات سازندگان):
+cli.pins.line = {0} — کاربر: {1}، مدیر: {2} [{3}]
+cli.pins.unset = تعیین‌نشده
+cli.pins.supported = پشتیبانی‌شده
+cli.pins.planned = برنامه‌ریزی‌شده
+cli.pins.note = این مقادیر تا زمانی معتبرند که PIN تغییر نکرده باشد. PIN نادرست یک تلاش را مصرف می‌کند و سه بار پیاپی حامل را قفل می‌کند.
+field.pin.hint.factory = PIN کارخانه‌ای {0}
+pins.note.diagnostic = فقط تشخیص: کلید خصوصی از تراشه خارج نمی‌شود
+pins.note.noadmin = رمز PIN مدیر تعیین نشده است
+pins.note.challenge = رمز با روش چالش-پاسخ بررسی می‌شود؛ آن را دستی وارد کنید
+pins.note.sopin = رمز مدیر SO-PIN نامیده می‌شود
+pins.note.nouser = رمز PIN کاربر تعیین نشده است
+pins.note.puk = برای مدیر این یک PUK است
+pins.note.applets = اپلت‌های دیگر مقادیر کارخانه‌ای خود را نگه می‌دارند
+log.token.replaced = حامل داخل کارت‌خوان تعویض شد؛ فهرست را تازه کنید و دوباره تلاش کنید
+log.token.state.unknown = وضعیت کنونی حامل خوانده نشد؛ عملیات متوقف شد

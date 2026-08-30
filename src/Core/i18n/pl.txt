@@ -368,3 +368,22 @@ diag.pnp.ok = Czytniki kart inteligentnych (PnP): {0} PnP-present, wszystkie ste
 diag.pnp.failed = Czytnik kart inteligentnych {0}: jest PnP-present, ale sterownik nie został uruchomiony — kod {1}, stan {2}
 diag.pnp.problem = Czytnik kart inteligentnych {0}: jest PnP-present, ale system Windows zgłasza problem PnP — kod {1}, stan {2}
 diag.pnp.unavailable = Czytniki kart inteligentnych (PnP): sprawdzenie niedostępne ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = pokazać fabryczne kody PIN nośników (rejestr modeli)
+cli.pins.header = Fabryczne kody PIN nośników (według dokumentacji producentów):
+cli.pins.line = {0} — użytkownik: {1}, administrator: {2} [{3}]
+cli.pins.unset = nie ustawiono
+cli.pins.supported = obsługiwany
+cli.pins.planned = planowany
+cli.pins.note = Wartości obowiązują, dopóki PIN nie został zmieniony. Błędny PIN zużywa próbę; trzy z rzędu blokują nośnik.
+field.pin.hint.factory = fabryczny PIN {0}
+pins.note.diagnostic = tylko diagnostyka: klucz prywatny nie opuszcza układu
+pins.note.noadmin = PIN administratora nie jest ustawiony
+pins.note.challenge = PIN sprawdzany metodą wyzwanie-odpowiedź; wpisz go ręcznie
+pins.note.sopin = PIN administratora nazywa się SO-PIN
+pins.note.nouser = PIN użytkownika nie jest ustawiony
+pins.note.puk = u administratora jest to PUK
+pins.note.applets = pozostałe aplety zachowują własne wartości fabryczne
+log.token.replaced = Nośnik w czytniku został wymieniony — odśwież listę i spróbuj ponownie
+log.token.state.unknown = Nie udało się odczytać bieżącego stanu nośnika — operację przerwano

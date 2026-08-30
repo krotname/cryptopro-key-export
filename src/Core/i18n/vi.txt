@@ -368,3 +368,22 @@ diag.pnp.ok = Đầu đọc thẻ thông minh (PnP): {0} thiết bị PnP-presen
 diag.pnp.failed = Đầu đọc thẻ thông minh {0}: ở trạng thái PnP-present nhưng trình điều khiển không khởi động — mã {1}, trạng thái {2}
 diag.pnp.problem = Đầu đọc thẻ thông minh {0}: ở trạng thái PnP-present nhưng Windows báo cáo sự cố PnP — mã {1}, trạng thái {2}
 diag.pnp.unavailable = Đầu đọc thẻ thông minh (PnP): không thể kiểm tra ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = hiển thị mã PIN mặc định của thiết bị (danh mục mẫu)
+cli.pins.header = Mã PIN mặc định của thiết bị (theo tài liệu của nhà sản xuất):
+cli.pins.line = {0} — người dùng: {1}, quản trị viên: {2} [{3}]
+cli.pins.unset = chưa đặt
+cli.pins.supported = được hỗ trợ
+cli.pins.planned = dự kiến
+cli.pins.note = Các giá trị chỉ đúng khi PIN chưa được đổi. Nhập sai PIN sẽ tiêu tốn một lần thử; ba lần liên tiếp sẽ khóa thiết bị.
+field.pin.hint.factory = PIN mặc định {0}
+pins.note.diagnostic = chỉ chẩn đoán: khóa riêng không rời khỏi chip
+pins.note.noadmin = không đặt PIN quản trị viên
+pins.note.challenge = PIN được kiểm tra theo challenge-response; hãy nhập thủ công
+pins.note.sopin = PIN quản trị viên gọi là SO-PIN
+pins.note.nouser = không đặt PIN người dùng
+pins.note.puk = với quản trị viên đây là PUK
+pins.note.applets = các applet khác giữ giá trị mặc định riêng
+log.token.replaced = Thiết bị trong đầu đọc đã bị thay; hãy làm mới danh sách và thử lại
+log.token.state.unknown = Không đọc được trạng thái hiện tại của thiết bị; thao tác đã dừng

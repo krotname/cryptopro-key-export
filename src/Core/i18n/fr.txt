@@ -368,3 +368,22 @@ diag.pnp.ok = Lecteurs de cartes à puce (PnP) : {0} PnP-present, tous les pilot
 diag.pnp.failed = Lecteur de cartes à puce {0} : est PnP-present, mais son pilote n’a pas démarré — code {1}, état {2}
 diag.pnp.problem = Lecteur de cartes à puce {0} : est PnP-present, mais Windows signale un problème PnP — code {1}, état {2}
 diag.pnp.unavailable = Lecteurs de cartes à puce (PnP) : vérification indisponible ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = afficher les codes PIN d'usine des supports (registre des modèles)
+cli.pins.header = Codes PIN d'usine des supports (d'après la documentation des fabricants) :
+cli.pins.line = {0} — utilisateur : {1}, administrateur : {2} [{3}]
+cli.pins.unset = non défini
+cli.pins.supported = pris en charge
+cli.pins.planned = prévu
+cli.pins.note = Les valeurs ne valent que tant que le PIN n'a pas été changé. Un PIN erroné consomme une tentative ; trois de suite bloquent le support.
+field.pin.hint.factory = PIN d'usine {0}
+pins.note.diagnostic = diagnostic seulement : la clé privée ne quitte pas la puce
+pins.note.noadmin = aucun PIN administrateur défini
+pins.note.challenge = le PIN est vérifié en défi-réponse ; saisissez-le manuellement
+pins.note.sopin = le PIN administrateur s'appelle SO-PIN
+pins.note.nouser = aucun PIN utilisateur défini
+pins.note.puk = pour l'administrateur c'est un PUK
+pins.note.applets = les autres applets gardent leurs propres valeurs d'usine
+log.token.replaced = Le support du lecteur a été remplacé ; actualisez la liste et réessayez
+log.token.state.unknown = L'état actuel du support n'a pas pu être lu ; l'opération a été arrêtée
