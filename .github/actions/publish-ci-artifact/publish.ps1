@@ -48,6 +48,7 @@ $workspace = [IO.Path]::GetFullPath((Get-Location).Path)
 $workspacePrefix = $workspace.TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
 $matchedPaths = [Collections.Generic.List[string]]::new()
 $seenPaths = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+$positivePatterns = [Collections.Generic.List[string]]::new()
 $excludePatterns = [Collections.Generic.List[string]]::new()
 
 function Convert-ArtifactGlobToRegex {
@@ -179,25 +180,36 @@ function Get-ArtifactArchiveItems {
         })
 }
 
+function ConvertTo-NormalizedArtifactPattern {
+    param([Parameter(Mandatory)][string] $Pattern)
+
+    $normalized = $Pattern.Trim().Replace('\', '/')
+    while ($normalized.StartsWith('./', [StringComparison]::Ordinal)) {
+        $normalized = $normalized.Substring(2)
+    }
+    if ([string]::IsNullOrWhiteSpace($normalized) -or
+        [IO.Path]::IsPathRooted($Pattern) -or
+        $normalized.StartsWith('/', [StringComparison]::Ordinal) -or
+        $normalized.Split('/') -contains '..') {
+        throw "Artifact pattern must stay relative to the workspace: $Pattern"
+    }
+    return $normalized
+}
+
 foreach ($rawLine in [regex]::Split($artifactPaths, '\r?\n')) {
     $pattern = $rawLine.Trim()
     if ([string]::IsNullOrWhiteSpace($pattern)) {
         continue
     }
     if ($pattern.StartsWith('!', [StringComparison]::Ordinal)) {
-        $excludePatterns.Add($pattern.Substring(1))
+        $excludePatterns.Add((ConvertTo-NormalizedArtifactPattern -Pattern $pattern.Substring(1)))
         continue
     }
 
-    $normalizedPattern = $pattern.Replace('\', '/')
-    $purePattern = $normalizedPattern
-    while ($purePattern.StartsWith('./', [StringComparison]::Ordinal)) {
-        $purePattern = $purePattern.Substring(2)
-    }
-    if ([IO.Path]::IsPathRooted($pattern) -or $purePattern.Split('/') -contains '..') {
-        throw "Artifact pattern must stay relative to the workspace: $pattern"
-    }
+    $positivePatterns.Add((ConvertTo-NormalizedArtifactPattern -Pattern $pattern))
+}
 
+foreach ($purePattern in $positivePatterns) {
     $items = @()
     $recursivePrefix = if ($purePattern.EndsWith('/**', [StringComparison]::Ordinal)) {
         $purePattern.Substring(0, $purePattern.Length - 3)
@@ -257,8 +269,17 @@ foreach ($rawLine in [regex]::Split($artifactPaths, '\r?\n')) {
                     throw "Artifact link target escapes the workspace: $fullPath -> $resolvedTargetPath"
                 }
             }
-            $relativePath = [IO.Path]::GetRelativePath($workspace, $fullPath)
-            if ($seenPaths.Add($relativePath)) {
+            $relativePath = [IO.Path]::GetRelativePath($workspace, $fullPath).Replace('\', '/')
+            $excluded = $false
+            foreach ($excludePattern in $excludePatterns) {
+                if ((Test-ArtifactPathMatchesGlob -Path $relativePath -Pattern $excludePattern) -or
+                    (-not [Management.Automation.WildcardPattern]::ContainsWildcardCharacters($excludePattern) -and
+                     $relativePath.StartsWith($excludePattern.TrimEnd('/') + '/', [StringComparison]::OrdinalIgnoreCase))) {
+                    $excluded = $true
+                    break
+                }
+            }
+            if (-not $excluded -and $seenPaths.Add($relativePath)) {
                 $matchedPaths.Add($relativePath)
             }
         }
@@ -299,19 +320,21 @@ try {
     $nameHash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($nameBytes)).ToLowerInvariant().Substring(0, 8)
     $archiveName = "$nameSlug.tar.gz"
     $archivePath = Join-Path $staging $archiveName
+    $pathList = Join-Path $staging 'paths.nul'
+
+    $pathListStream = [IO.File]::Open($pathList, [IO.FileMode]::Create, [IO.FileAccess]::Write, [IO.FileShare]::None)
+    try {
+        foreach ($matchedPath in $matchedPaths) {
+            $pathBytes = [Text.Encoding]::UTF8.GetBytes($matchedPath)
+            $pathListStream.Write($pathBytes, 0, $pathBytes.Length)
+            $pathListStream.WriteByte(0)
+        }
+    } finally {
+        $pathListStream.Dispose()
+    }
 
     $tarPath = (Get-Command tar -ErrorAction Stop).Source
-    $tarArguments = [Collections.Generic.List[string]]::new()
-    $tarArguments.Add('-czf')
-    $tarArguments.Add($archivePath)
-    foreach ($excludePattern in $excludePatterns) {
-        $tarArguments.Add("--exclude=$excludePattern")
-    }
-    $tarArguments.Add('--')
-    foreach ($matchedPath in $matchedPaths) {
-        $tarArguments.Add($matchedPath)
-    }
-    & $tarPath @tarArguments
+    & $tarPath '-czf' $archivePath '--null' '-T' $pathList
     if ($LASTEXITCODE -ne 0) {
         throw "tar failed with exit code $LASTEXITCODE"
     }

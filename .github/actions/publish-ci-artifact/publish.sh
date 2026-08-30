@@ -67,29 +67,15 @@ PY
 cd -- "${GITHUB_WORKSPACE}"
 workspace="$(pwd -P)"
 
-declare -a matches=()
-declare -a excludes=()
-
-while IFS= read -r raw_pattern || [[ -n "${raw_pattern}" ]]; do
-  raw_pattern="${raw_pattern%$'\r'}"
-  [[ -z "${raw_pattern}" ]] && continue
-
-  if [[ "${raw_pattern}" == '!'* ]]; then
-    excludes+=("${raw_pattern:1}")
-    continue
-  fi
-
-done <<< "${ARTIFACT_PATHS}"
-
 match_list="$(mktemp "${RUNNER_TEMP%/}/ci-artifact-matches.XXXXXX")"
 if ! python3 - "${workspace}" "${ARTIFACT_PATHS}" "${match_list}" <<'PY'
 import os
 import fnmatch
 import pathlib
+import re
 import sys
 
 workspace = pathlib.Path(sys.argv[1]).resolve()
-patterns = sys.argv[2].splitlines()
 output = pathlib.Path(sys.argv[3])
 seen = set()
 matches = []
@@ -97,6 +83,35 @@ matches = []
 
 def has_magic(pattern):
     return any(character in pattern for character in "*?[")
+
+
+def normalize_pattern(raw_pattern):
+    pattern = raw_pattern.rstrip("\r").strip().replace("\\", "/")
+    while pattern.startswith("./"):
+        pattern = pattern[2:]
+    candidate = pathlib.PurePosixPath(pattern)
+    if not pattern or candidate.is_absolute() or ".." in candidate.parts:
+        raise SystemExit(
+            f"Artifact pattern must stay relative to GITHUB_WORKSPACE: {raw_pattern}"
+        )
+    return pattern
+
+
+positive_patterns = []
+exclude_patterns = []
+for raw_pattern in sys.argv[2].splitlines():
+    trimmed = raw_pattern.rstrip("\r").strip()
+    if not trimmed:
+        continue
+    if trimmed.startswith("!"):
+        exclude_patterns.append(normalize_pattern(trimmed[1:]))
+    else:
+        positive_patterns.append(normalize_pattern(trimmed))
+
+
+def normalize_caret_classes(pattern_part):
+    """fnmatch uses ! for negation while Bash accepts both ! and ^."""
+    return re.sub(r"\[\^([^\]]+)\]", r"[!\1]", pattern_part)
 
 
 def matches_glob(relative_path, pattern):
@@ -129,7 +144,9 @@ def matches_glob(relative_path, pattern):
         path_part = path_parts[path_index]
         if path_part.startswith(".") and not pattern_part.startswith("."):
             return False
-        return fnmatch.fnmatchcase(path_part, pattern_part) and visit(
+        return fnmatch.fnmatchcase(
+            path_part, normalize_caret_classes(pattern_part)
+        ) and visit(
             path_index + 1, pattern_index + 1
         )
 
@@ -160,20 +177,10 @@ def archive_entries(candidate):
             if not file_name.startswith("."):
                 yield root_path / file_name
 
-for raw_pattern in patterns:
-    pattern = raw_pattern.rstrip("\r").strip()
-    if not pattern or pattern.startswith("!"):
-        continue
-    normalized_pattern = pattern.replace("\\", "/")
-    while normalized_pattern.startswith("./"):
-        normalized_pattern = normalized_pattern[2:]
-    candidate_pattern = pathlib.PurePosixPath(normalized_pattern)
-    if candidate_pattern.is_absolute() or ".." in candidate_pattern.parts:
-        raise SystemExit(f"Artifact pattern must stay relative to GITHUB_WORKSPACE: {pattern}")
-
+for normalized_pattern in positive_patterns:
     wildcard_pattern = has_magic(normalized_pattern)
     if wildcard_pattern:
-        candidates = workspace.glob(normalized_pattern)
+        candidates = workspace.glob(normalize_caret_classes(normalized_pattern))
     else:
         candidates = [workspace / normalized_pattern]
 
@@ -194,6 +201,16 @@ for raw_pattern in patterns:
                     f"Artifact path escapes GITHUB_WORKSPACE: {archive_entry}"
                 ) from error
             relative_text = relative.as_posix()
+            excluded = any(
+                matches_glob(relative_text, exclude_pattern)
+                or (
+                    not has_magic(exclude_pattern)
+                    and relative_text.startswith(exclude_pattern.rstrip("/") + "/")
+                )
+                for exclude_pattern in exclude_patterns
+            )
+            if excluded:
+                continue
             if relative_text not in seen:
                 seen.add(relative_text)
                 matches.append(relative_text)
@@ -208,12 +225,8 @@ then
   exit 2
 fi
 
-while IFS= read -r -d '' match; do
-  matches+=("${match}")
-done < "${match_list}"
-rm -f -- "${match_list}"
-
-if (( ${#matches[@]} == 0 )); then
+if [[ ! -s "${match_list}" ]]; then
+  rm -f -- "${match_list}"
   echo "published=false" >> "${GITHUB_OUTPUT}"
   case "${NO_FILES_BEHAVIOUR}" in
     error)
@@ -237,6 +250,7 @@ cleanup() {
   if [[ "${logged_in}" == true ]]; then
     oras logout ghcr.io --registry-config "${registry_config}" >/dev/null 2>&1 || true
   fi
+  rm -f -- "${match_list}"
   rm -rf -- "${staging}"
 }
 trap cleanup EXIT
@@ -250,11 +264,7 @@ name_hash="$(printf '%s' "${ARTIFACT_NAME}" | sha256_file /dev/stdin | cut -c1-8
 
 archive_name="${name_slug}.tar.gz"
 archive_path="${staging}/${archive_name}"
-tar_args=(-czf "${archive_path}")
-for exclude in "${excludes[@]}"; do
-  tar_args+=("--exclude=${exclude}")
-done
-tar "${tar_args[@]}" -- "${matches[@]}"
+tar -czf "${archive_path}" --null -T "${match_list}"
 
 archive_sha256="$(sha256_file "${archive_path}")"
 archive_bytes="$(wc -c < "${archive_path}" | tr -d '[:space:]')"
