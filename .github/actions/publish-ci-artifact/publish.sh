@@ -15,6 +15,7 @@ set -euo pipefail
 : "${GITHUB_OUTPUT:?GITHUB_OUTPUT is required}"
 : "${GITHUB_STEP_SUMMARY:?GITHUB_STEP_SUMMARY is required}"
 : "${RUNNER_TEMP:?RUNNER_TEMP is required}"
+: "${GITHUB_WORKSPACE:?GITHUB_WORKSPACE is required}"
 
 case "${NO_FILES_BEHAVIOUR}" in
   error|warn|ignore) ;;
@@ -54,6 +55,18 @@ utc_plus_days() {
   date -u -v+"${RETENTION_DAYS}"d '+%Y-%m-%dT%H:%M:%SZ'
 }
 
+canonical_path() {
+  python3 - "$1" <<'PY'
+import os
+import sys
+
+print(os.path.realpath(sys.argv[1]))
+PY
+}
+
+cd -- "${GITHUB_WORKSPACE}"
+workspace="$(pwd -P)"
+
 shopt -s globstar nullglob dotglob
 declare -a matches=()
 declare -a excludes=()
@@ -75,6 +88,11 @@ while IFS= read -r raw_pattern || [[ -n "${raw_pattern}" ]]; do
 
   while IFS= read -r match; do
     [[ -e "${match}" ]] || continue
+    canonical_match="$(canonical_path "${match}")"
+    if [[ "${canonical_match}" != "${workspace}" && "${canonical_match}" != "${workspace}/"* ]]; then
+      echo "::error::Artifact path escapes GITHUB_WORKSPACE: ${match}"
+      exit 2
+    fi
     if [[ -z "${seen[${match}]+x}" ]]; then
       seen["${match}"]=1
       matches+=("${match}")

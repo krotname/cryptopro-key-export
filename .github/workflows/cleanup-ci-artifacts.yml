@@ -30,6 +30,7 @@ jobs:
           script: |
             const packageName = `${context.repo.repo.toLowerCase()}-ci-artifacts`;
             const expectedOwner = context.repo.owner.toLowerCase();
+            const expectedRepository = `${context.repo.owner}/${context.repo.repo}`.toLowerCase();
             const compactNow = new Date().toISOString()
               .replace(/[-:]/g, '')
               .replace(/\.\d{3}Z$/, '');
@@ -52,10 +53,12 @@ jobs:
                 packageInfo.name !== packageName
                 || packageInfo.visibility !== 'private'
                 || packageInfo.owner?.login?.toLowerCase() !== expectedOwner
+                || packageInfo.repository?.full_name?.toLowerCase() !== expectedRepository
               ) {
                 core.setFailed(
                   `Refusing cleanup for unexpected package state: name=${packageInfo.name}, `
-                  + `visibility=${packageInfo.visibility}, owner=${packageInfo.owner?.login ?? 'unknown'}`,
+                  + `visibility=${packageInfo.visibility}, owner=${packageInfo.owner?.login ?? 'unknown'}, `
+                  + `repository=${packageInfo.repository?.full_name ?? 'unlinked'}`,
                 );
                 return;
               }

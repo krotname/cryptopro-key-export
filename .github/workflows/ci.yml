@@ -20,12 +20,13 @@ permissions:
 jobs:
   build:
     name: Сборка, тесты, портативный exe
-    # Windows-job'ы идут на собственном раннере правообладателя
+    # Pull requests исполняются на одноразовом GitHub-hosted runner.
+    # Доверенные push/tag jobs идут на раннере правообладателя
     # (adler-white-1w-cryptopro). Переменная репозитория CI_RUNS_ON_WINDOWS
     # временно переводит их на другой раннер, когда собственный недоступен:
     # например ["windows-latest"]. Она отдельная от CI_RUNS_ON, потому что
     # та переключает Linux-job релиза и значения у них несовместимы.
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON_WINDOWS || '["self-hosted","windows","adler-white-1w","cryptopro"]') }}
+    runs-on: ${{ fromJSON(github.event_name == 'pull_request' && '["windows-latest"]' || (vars.CI_RUNS_ON_WINDOWS || '["self-hosted","windows","adler-white-1w","cryptopro"]')) }}
     timeout-minutes: 30
     permissions:
       contents: read
@@ -194,7 +195,8 @@ jobs:
   # Портативной сборкой остаётся x86 — только в ней работает вшитый rtCOMLite.
   architectures:
     name: Сборка под ${{ matrix.rid }}
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON_WINDOWS || '["self-hosted","windows","adler-white-1w","cryptopro"]') }}
+    # Для pull request действует та же изоляция от постоянного раннера.
+    runs-on: ${{ fromJSON(github.event_name == 'pull_request' && '["windows-latest"]' || (vars.CI_RUNS_ON_WINDOWS || '["self-hosted","windows","adler-white-1w","cryptopro"]')) }}
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -270,6 +272,7 @@ jobs:
           import json
           import pathlib
           import sys
+          import tarfile
 
           manifest_path = pathlib.Path(sys.argv[1])
           expected_repository = sys.argv[2]
@@ -286,6 +289,13 @@ jobs:
           actual = hashlib.sha256(archive_path.read_bytes()).hexdigest()
           if actual != manifest['archiveSha256']:
               raise SystemExit('OCI payload SHA-256 mismatch')
+          with tarfile.open(archive_path, mode='r:gz') as tar:
+              for member in tar.getmembers():
+                  member_path = pathlib.PurePosixPath(member.name)
+                  if member_path.is_absolute() or '..' in member_path.parts:
+                      raise SystemExit(f'Unsafe archive member path: {member.name}')
+                  if not (member.isfile() or member.isdir()):
+                      raise SystemExit(f'Unsafe archive member type: {member.name}')
           print(archive_name)
           PY
           )"
