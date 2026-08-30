@@ -603,9 +603,15 @@ namespace CryptoProExport.App
             {
                 if (!string.Equals(token.Reader, snapshot.Reader, StringComparison.OrdinalIgnoreCase))
                     continue;
-                // Серийный номер отличает заменённый носитель от того же самого в том же ридере.
-                if (!string.IsNullOrEmpty(snapshot.Serial) && !string.IsNullOrEmpty(token.Serial)
-                    && !string.Equals(token.Serial, snapshot.Serial, StringComparison.Ordinal))
+                // Серийный номер — единственное, чем «тот же носитель» отличается от подменённого
+                // в том же считывателе. PKCS#11 разрешает его не сообщать, и тогда подтвердить
+                // тождество нечем: пустой серийник считаем неизвестным состоянием, а не совпадением.
+                if (string.IsNullOrEmpty(snapshot.Serial) || string.IsNullOrEmpty(token.Serial))
+                {
+                    Log(Strings.Get("log.token.state.unknown"));
+                    return null;
+                }
+                if (!string.Equals(token.Serial, snapshot.Serial, StringComparison.Ordinal))
                 {
                     Log(Strings.Get("log.token.replaced"));
                     return null;
