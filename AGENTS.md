@@ -684,6 +684,46 @@ GitHub Actions **работает** (`.github/workflows/ci.yml`). Прежнее
       штатно установил пользовательский PIN. После подтверждённого `CKU_USER`-login LT
       повторно прошёл полный `tokenfull → HDIMAGE → PFX`.
 
+43. **Регрессия на 7 токенах сразу + баг мультиконтейнера JaCarta LT (30.08.2026).**
+    Полный физический E2E прогнан на всех семи одновременно подключённых носителях:
+    Рутокен S (`Aktiv Co. ruToken 0`), Рутокен Lite (`Aktiv Rutoken lite 0`),
+    eToken PRO (`Aladdin Token JC 0`, PIN 1122), два ESMART
+    (`ESMART Token USB 64K 0` и `ISBC ESMART Token 0`, PIN 12345678) и **две**
+    JaCarta LT (`ARDS ZAO JaCarta LT 0` и `Aladdin R.D. JaCarta LT 0`, PIN
+    1234567890). На каждом создан свой синтетический двухключевой контейнер
+    (`make-token-container.ps1`, ключи генерируются на носителе, оба
+    неэкспортируемы), прогнан `tokenfull → install → checkexport`; у всех семи
+    обе пары дошли до `0x0013089C`/`0x0012289C`, HDIMAGE виден CSP, на Рутокен S
+    дополнительно проверены OpenSSL-PFX (`extractpfx`) и КриптоПро-PFX (`topfx`,
+    `certutil` подтвердил провайдер и наличие ключа). После теста удалены только
+    синтетические `cpxt_*` (с токенов, из HDIMAGE и из «Личное»); боевые
+    контейнеры владельца не тронуты, состояние сверено до и после.
+    - **Найден и исправлен баг `JaCartaLtApdu.GroupContainers`.** На носителе с
+      двумя контейнерами `list` показывал только один через APDU, хотя
+      `csptest -enum_cont` видел оба. Дамп таблицы объектов (`80 20 60`) показал,
+      что шесть `*.key` каждого контейнера имеют **общий байт `Type`** (у первого
+      `0x03`, у второго `0x0E`), а `Code` F1..F6 задаёт роль файла. Группировка
+      захардкоживала `Type == 0x03` и теряла все контейнеры с другим типом.
+      Теперь тип берётся из записи `name.key` (0xF6) и файлы собираются по его
+      совпадению. Тест `JaCartaTable_GroupsTwoContainersWithDifferentTypeBytes`.
+    - **`Aladdin R.D. JaCarta LT 0` (ATR `3B DC 18 FF 81 91 FE 1F …`) в этом
+      сеансе принял GOST-контейнер КриптоПро и прошёл полный E2E.** ATR совпадает
+      с п. 40 (IDProtect), но данный экземпляр — рабочая JaCarta LT, а не
+      TERMINATED-минидрайверная карта: контейнер создаётся, ключ снимается по
+      `JaCartaLtApdu`. Различать по фактическому поведению (`csptest -newkeyset`),
+      а не по одному ATR.
+    - **Грабли уборки:** `csptest -deletekeyset` на смарт-картах требует
+      интерактивного PIN даже с `-password` (Рутокен S/Lite и одна JaCarta —
+      удалились с `-password`, оба ESMART и вторая JaCarta показали диалог
+      «Аутентификация — КриптоПро CSP»). PIN в такой диалог вводится только
+      `SendInput` (как в п. 12/36), затем Enter. `CryptAcquireContext`
+      с `CRYPT_DELETEKEYSET` на этих контейнерах вернул `0x8009001F` — путь
+      удаления через CryptoAPI здесь не годится, чистить через `csptest`.
+    - **UX-замечание (не исправлялось):** селектор `--container <id>` матчит
+      технический `OutputName` (`rutokens_0B00`, `jacartalt_0F`, …), а не видимое
+      имя контейнера; при вводе имени ошибка «Контейнер «…» не найден». Оба
+      значения видны в `list` (`[APDU <id>] <имя>`).
+
 ## Git-процесс
 - Приватный репозиторий `krotname/cryptopro-key-export`, ветка `main`.
 - Перед завершением: `dotnet build -warnaserror` + `dotnet test` + `--selftest` OK + `git status` чистый + зелёный CI на PR.

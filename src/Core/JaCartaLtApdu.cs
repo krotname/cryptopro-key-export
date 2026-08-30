@@ -148,13 +148,19 @@ namespace CryptoProExport
             for (int i = 0; i < (entries?.Count ?? 0); i++)
             {
                 ObjectEntry current = entries[i];
-                if (current.Type != 0x03 || current.Code != 0xF6) continue;
+                // name.key (0xF6) отмечает начало контейнера. Его Type — общий идентификатор
+                // всех шести файлов ЭТОГО контейнера; у разных контейнеров он разный (0x03,
+                // 0x0E, …). Раньше тип был захардкожен 0x03, поэтому на носителе со вторым
+                // контейнером тот целиком терялся — снять его по APDU было нельзя.
+                if (current.Code != 0xF6) continue;
+                byte containerType = current.Type;
                 var group = new ContainerEntries();
                 for (int j = i; j < entries.Count; j++)
                 {
                     ObjectEntry candidate = entries[j];
-                    if (j != i && candidate.Type == 0x03 && candidate.Code == 0xF6) break;
-                    if (candidate.Type == 0x03 && Files.Any(file => file.Code == candidate.Code)
+                    if (j != i && candidate.Code == 0xF6) break;
+                    if (candidate.Type == containerType
+                        && Files.Any(file => file.Code == candidate.Code)
                         && !group.ByCode.ContainsKey(candidate.Code))
                         group.ByCode[candidate.Code] = candidate;
                 }
