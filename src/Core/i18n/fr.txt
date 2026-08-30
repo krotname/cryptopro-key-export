@@ -385,3 +385,4 @@ pins.note.sopin = le PIN administrateur s'appelle SO-PIN
 pins.note.nouser = aucun PIN utilisateur défini
 pins.note.puk = pour l'administrateur c'est un PUK
 pins.note.applets = les autres applets gardent leurs propres valeurs d'usine
+log.token.replaced = Le support du lecteur a été remplacé ; son état a été relu

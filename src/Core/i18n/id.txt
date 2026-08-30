@@ -385,3 +385,4 @@ pins.note.sopin = PIN administrator disebut SO-PIN
 pins.note.nouser = PIN pengguna tidak diatur
 pins.note.puk = bagi administrator ini adalah PUK
 pins.note.applets = applet lain memakai nilai pabriknya sendiri
+log.token.replaced = Media di pembaca diganti; statusnya dibaca ulang

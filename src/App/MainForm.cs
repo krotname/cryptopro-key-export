@@ -575,6 +575,33 @@ namespace CryptoProExport.App
         }
 
         /// <summary>
+        /// Перечитать состояние выбранного носителя перед операцией. Строка списка несёт снимок,
+        /// снятый прошлым обновлением, а токен могли заменить в том же считывателе: на снимке
+        /// PIN числится заводским, тогда как у нового носителя он уже сменён, и авто-PIN сжёг бы
+        /// его попытку. Если перечисление недоступно (нет драйвера) или носитель исчез, работаем
+        /// по прежнему снимку — это ровно то поведение, что было до появления подстановки.
+        /// </summary>
+        private Pkcs11TokenInfo CurrentStateOf(Pkcs11TokenInfo snapshot)
+        {
+            if (snapshot == null || string.IsNullOrEmpty(snapshot.Reader)) return snapshot;
+            try
+            {
+                foreach (var token in Pkcs11Token.Enumerate(readContainers: false))
+                {
+                    if (!string.Equals(token.Reader, snapshot.Reader, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    // Серийный номер отличает заменённый носитель от того же самого в том же ридере.
+                    if (!string.IsNullOrEmpty(snapshot.Serial) && !string.IsNullOrEmpty(token.Serial)
+                        && !string.Equals(token.Serial, snapshot.Serial, StringComparison.Ordinal))
+                        Log(Strings.Get("log.token.replaced"));
+                    return token;
+                }
+            }
+            catch (Exception e) { Log(Strings.Format("log.tokens.unavailable", e.Message)); }
+            return snapshot;
+        }
+
+        /// <summary>
         /// PIN для операции. Подставленное самой программой значение явным вводом не считается:
         /// оно уходит как <c>null</c>, и PIN выбирает <c>DirectTokenApdu.ResolvePin</c> по
         /// актуальным флагам носителя. Иначе горячая замена токена без обновления списка
@@ -662,8 +689,8 @@ namespace CryptoProExport.App
             int saved;
             if (selected?.Apdu != null)
             {
-                pipe.ExportDirectContainer(selected.Apdu.Token, selected.Apdu.Container,
-                    dest, OperationPin());
+                pipe.ExportDirectContainer(CurrentStateOf(selected.Apdu.Token),
+                    selected.Apdu.Container, dest, OperationPin());
                 saved = 1;
             }
             else if (selected?.Direct != null)
@@ -745,7 +772,7 @@ namespace CryptoProExport.App
             ExportPipelineResult result;
             if (selected?.Apdu != null)
                 result = pipe.ExportDirectAndMakeExportable(
-                    selected.Apdu.Token, selected.Apdu.Container, dest,
+                    CurrentStateOf(selected.Apdu.Token), selected.Apdu.Container, dest,
                     userPin: OperationPin());
             else if (selected?.Direct != null)
                 result = pipe.ExportAndMakeExportable(selected.Direct, dest);

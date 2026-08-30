@@ -385,3 +385,4 @@ pins.note.sopin = প্রশাসক PIN-কে SO-PIN বলা হয়
 pins.note.nouser = ব্যবহারকারী PIN নির্ধারিত নয়
 pins.note.puk = প্রশাসকের ক্ষেত্রে এটি PUK
 pins.note.applets = বাকি অ্যাপলেটগুলি নিজস্ব কারখানার মান রাখে
+log.token.replaced = রিডারের টোকেন বদলে গেছে — অবস্থা আবার পড়া হয়েছে

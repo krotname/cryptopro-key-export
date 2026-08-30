@@ -385,3 +385,4 @@ pins.note.sopin = 管理员 PIN 称为 SO-PIN
 pins.note.nouser = 未设置用户 PIN
 pins.note.puk = 管理员一侧是 PUK
 pins.note.applets = 其余小程序各自保留出厂值
+log.token.replaced = 读卡器中的载体已更换，已重新读取其状态

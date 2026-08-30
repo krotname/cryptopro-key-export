@@ -385,3 +385,4 @@ pins.note.sopin = رمز مدیر SO-PIN نامیده می‌شود
 pins.note.nouser = رمز PIN کاربر تعیین نشده است
 pins.note.puk = برای مدیر این یک PUK است
 pins.note.applets = اپلت‌های دیگر مقادیر کارخانه‌ای خود را نگه می‌دارند
+log.token.replaced = حامل داخل کارت‌خوان تعویض شد؛ وضعیت آن دوباره خوانده شد

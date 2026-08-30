@@ -385,3 +385,4 @@ pins.note.sopin = the administrator PIN is called SO-PIN
 pins.note.nouser = no user PIN is set
 pins.note.puk = for the administrator this is a PUK
 pins.note.applets = the other applets keep their own factory values
+log.token.replaced = The carrier in the reader was replaced; its state was read again

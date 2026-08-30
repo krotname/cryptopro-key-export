@@ -385,3 +385,4 @@ pins.note.sopin = yönetici PIN'inin adı SO-PIN'dir
 pins.note.nouser = kullanıcı PIN'i tanımlı değil
 pins.note.puk = yönetici için bu bir PUK'tur
 pins.note.applets = diğer uygulamacıklar kendi fabrika değerlerini korur
+log.token.replaced = Okuyucudaki taşıyıcı değiştirildi; durumu yeniden okundu

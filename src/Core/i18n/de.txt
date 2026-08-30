@@ -385,3 +385,4 @@ pins.note.sopin = die Administrator-PIN heißt SO-PIN
 pins.note.nouser = keine Benutzer-PIN gesetzt
 pins.note.puk = beim Administrator ist das eine PUK
 pins.note.applets = die übrigen Applets behalten ihre eigenen Werkswerte
+log.token.replaced = Der Träger im Leser wurde gewechselt — Zustand neu gelesen
