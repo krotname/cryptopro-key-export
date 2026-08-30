@@ -83,18 +83,31 @@ namespace CryptoProExport
             if (string.IsNullOrWhiteSpace(container))
                 throw new ArgumentException(Strings.Get("err.container.name"), nameof(container));
 
-            string exchange = ExistingCertificate(containerFolder, "cert_exchange.cer");
-            string signature = ExistingCertificate(containerFolder, "cert_signature.cer");
+            bool hasExchangeKey = CertFromContainer.CheckExportable(
+                container, CertFromContainer.AT_KEYEXCHANGE).KeyFound;
+            bool hasSignatureKey = CertFromContainer.CheckExportable(
+                container, CertFromContainer.AT_SIGNATURE).KeyFound;
+            var certificates = CertificatesForPresentKeys(
+                hasExchangeKey, hasSignatureKey,
+                ExistingCertificate(containerFolder, "cert_exchange.cer"),
+                ExistingCertificate(containerFolder, "cert_signature.cer"));
+            string exchange = certificates.exchange;
+            string signature = certificates.signature;
             string tempDir = null;
             try
             {
-                if (exchange == null || signature == null)
+                if ((hasExchangeKey && exchange == null)
+                    || (hasSignatureKey && signature == null))
                 {
                     tempDir = Path.Combine(Path.GetTempPath(),
                         "cpx-cert-install-" + Guid.NewGuid().ToString("N"));
                     var extracted = CertFromContainer.SaveCerts(container, tempDir);
-                    exchange ??= extracted.exchange;
-                    signature ??= extracted.signature;
+                    certificates = CertificatesForPresentKeys(
+                        hasExchangeKey, hasSignatureKey,
+                        exchange ?? extracted.exchange,
+                        signature ?? extracted.signature);
+                    exchange = certificates.exchange;
+                    signature = certificates.signature;
                 }
 
                 var summary = new CertificateInstallSummary();
@@ -124,6 +137,12 @@ namespace CryptoProExport
         {
             string path = Path.Combine(folder, fileName);
             return File.Exists(path) ? path : null;
+        }
+
+        internal static (string exchange, string signature) CertificatesForPresentKeys(
+            bool hasExchangeKey, bool hasSignatureKey, string exchange, string signature)
+        {
+            return (hasExchangeKey ? exchange : null, hasSignatureKey ? signature : null);
         }
 
         /// <summary>Выгрузить сертификат вместе с закрытым ключом в PKCS#12.</summary>

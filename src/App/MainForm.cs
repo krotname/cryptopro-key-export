@@ -445,6 +445,10 @@ namespace CryptoProExport.App
             var installedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var c in ContainerStore.Installed())
             {
+                // Папка могла остаться после неудачной установки, хотя CSP точный
+                // HDIMAGE-контейнер не принял. Такая строка не должна скрывать рабочий
+                // одноимённый контейнер на токене.
+                if (!ContainerStore.IsVisibleToCsp(c.Name)) continue;
                 if (!installedNames.Add(c.Name)) continue;
                 AddRow("HDIMAGE", c.Name, c.Folder,
                     new CspContainerSelection { Target = CertMgr.HdImageContainer(c.Name) });
@@ -713,7 +717,7 @@ namespace CryptoProExport.App
             (CertFromContainer.CheckExportable(container, CertFromContainer.AT_KEYEXCHANGE),
              CertFromContainer.CheckExportable(container, CertFromContainer.AT_SIGNATURE));
 
-        private void DoInstall()
+        private void DoInstall(CancellationToken cancel)
         {
             string folder = AskFolder(Strings.Get("dlg.folder.container"), TextOf(_txtDest).Trim());
             if (folder == null) { Log(Strings.Get("log.cancelled")); return; }
@@ -742,7 +746,7 @@ namespace CryptoProExport.App
                 string certMgrPath = CertMgr.Locate();
                 if (certMgrPath != null)
                 {
-                    var cm = new CertMgr(certMgrPath) { Log = Log };
+                    var cm = new CertMgr(certMgrPath) { Log = Log, Cancel = cancel };
                     var linked = cm.InstallContainerCertificates(
                         folder, CertMgr.HdImageContainer(installed.Name));
                     foreach (ToolResult failure in linked.Results)
