@@ -40,6 +40,34 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void InstallCertificateArguments_KeepExactHdImageTarget()
+        {
+            string args = CertMgr.BuildInstallArguments(
+                @"C:\backup\cert_exchange.cer", @"\\.\HDIMAGE\container", signatureKey: false);
+
+            Assert.Equal(
+                "-install -file \"C:\\backup\\cert_exchange.cer\" " +
+                "-container \"\\\\.\\HDIMAGE\\container\" -silent", args);
+        }
+
+        [Theory]
+        [InlineData(true, false, "exchange.cer", "signature.cer", "exchange.cer", null)]
+        [InlineData(false, true, "exchange.cer", "signature.cer", null, "signature.cer")]
+        [InlineData(true, true, "exchange.cer", "signature.cer", "exchange.cer", "signature.cer")]
+        [InlineData(false, false, "exchange.cer", "signature.cer", null, null)]
+        public void CertificatesForPresentKeys_DropsCertificatesForMissingKeySpecs(
+            bool hasExchangeKey, bool hasSignatureKey,
+            string exchange, string signature,
+            string expectedExchange, string expectedSignature)
+        {
+            var actual = CertMgr.CertificatesForPresentKeys(
+                hasExchangeKey, hasSignatureKey, exchange, signature);
+
+            Assert.Equal(expectedExchange, actual.exchange);
+            Assert.Equal(expectedSignature, actual.signature);
+        }
+
+        [Fact]
         public void MaskPassword_HidesContainerPassword()
         {
             string args = P12Utility.BuildRepairArguments(true, false, "пароль с пробелом", true);
