@@ -94,7 +94,7 @@ jobs:
               throw error;
             }
 
-            const deleted = [];
+            const candidates = [];
             const skipped = [];
 
             for (const version of versions) {
@@ -126,17 +126,22 @@ jobs:
                 return;
               }
 
+              candidates.push({ id: version.id, digest, tags });
+            }
+
+            const deleted = [];
+            for (const candidate of candidates) {
               await github.request(
                 'DELETE /users/{username}/packages/{package_type}/{package_name}/versions/{package_version_id}',
                 {
                   username: context.repo.owner,
                   package_type: 'container',
                   package_name: packageName,
-                  package_version_id: version.id,
+                  package_version_id: candidate.id,
                   headers: { 'X-GitHub-Api-Version': '2022-11-28' },
                 },
               );
-              deleted.push(`${version.id}@${digest}: ${tags.join(', ')}`);
+              deleted.push(`${candidate.id}@${candidate.digest}: ${candidate.tags.join(', ')}`);
             }
 
             await core.summary
