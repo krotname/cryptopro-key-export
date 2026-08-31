@@ -941,10 +941,24 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
-        public void MemorySummary_IsSilentWhenTheTokenDoesNotDeclareIt()
+        public void MemorySummary_IsSilentOnlyWhenNothingAtAllIsDeclared()
         {
             using var language = Strings.Scope("ru");
             Assert.Null(Pkcs11Token.MemorySummary(new Pkcs11TokenInfo()));
+        }
+
+        [Fact]
+        public void MemorySummary_KeepsFreeSpaceWhenOnlyTotalsAreUndeclared()
+        {
+            // Поля CK_TOKEN_INFO независимы: токен вправе скрыть общий объём и назвать
+            // свободный — прятать его из-за этого нельзя (замечание Codex на PR #70).
+            using var language = Strings.Scope("ru");
+            string line = Pkcs11Token.MemorySummary(new Pkcs11TokenInfo
+            {
+                PublicMemoryFree = 40960, PrivateMemoryFree = 40960,
+            });
+
+            Assert.Equal("память ? КБ, свободно 40 КБ", line);
         }
 
         [Fact]

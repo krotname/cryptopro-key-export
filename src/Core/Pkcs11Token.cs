@@ -660,12 +660,17 @@ namespace CryptoProExport
         {
             if (info == null) throw new ArgumentNullException(nameof(info));
 
+            // Молчим, только когда не объявлено ни одно из четырёх чисел: счётчики независимы,
+            // и токен, скрывший общий объём, но назвавший свободный, должен показать свободный
+            // (замечание Codex на PR #70).
+            if (info.PublicMemoryTotal < 0 && info.PublicMemoryFree < 0
+                && info.PrivateMemoryTotal < 0 && info.PrivateMemoryFree < 0)
+                return null;
+
             if (info.PublicMemoryTotal == info.PrivateMemoryTotal
                 && info.PublicMemoryFree == info.PrivateMemoryFree)
-                return info.PublicMemoryTotal < 0
-                    ? null
-                    : Strings.Format("cli.token.memory",
-                        Kilobytes(info.PublicMemoryTotal), Kilobytes(info.PublicMemoryFree));
+                return Strings.Format("cli.token.memory",
+                    Kilobytes(info.PublicMemoryTotal), Kilobytes(info.PublicMemoryFree));
 
             return Strings.Format("cli.token.memory.split",
                 Kilobytes(info.PublicMemoryTotal), Kilobytes(info.PublicMemoryFree),
