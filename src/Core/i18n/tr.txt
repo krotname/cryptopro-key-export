@@ -24,7 +24,7 @@ tip.p12 = CryptoPro’nun p12utility aracının yolu — anahtarın dışa aktar
 tip.p12.browse = Gömülü kopya yerine başka bir p12utility.exe seçin.
 tip.dest = Sonucun konacağı yer: çıkarılan kapsayıcı klasörleri (*.key) ve sertifika dosyaları (.cer).\nDikkat: bu, özel anahtarınızın bir kopyasıdır — sır gibi saklayın.
 tip.dest.browse = Hedef klasörü seçin.
-tip.pin = Rutoken kullanıcı PIN’i.\nBoş → PIN’i sistem penceresi soracaktır (belirteçte fabrika PIN’i duruyorsa 12345678 kullanılır).\nKarakterler gizlidir; değer hiçbir yere kaydedilmez.
+tip.pin = Rutoken kullanıcı PIN’i.\nBoş → PIN’i sistem penceresi soracaktır (belirteçte fabrika PIN’i duruyorsa 12345678 kullanılır).\nKarakterler körlemesine yanlış yazmamak için görünür; yanındaki düğme onları gizler. Değer hiçbir yere kaydedilmez.
 tip.lang = Arayüzün, ipuçlarının ve iletilerin dili.\nSeçim hatırlanır ve sonraki açılışlarda uygulanır.\nKomut satırında aynısı: --lang tr
 
 # --- düğmeler ---
@@ -387,3 +387,5 @@ pins.note.puk = yönetici için bu bir PUK'tur
 pins.note.applets = diğer uygulamacıklar kendi fabrika değerlerini korur
 log.token.replaced = Okuyucudaki taşıyıcı değiştirildi; listeyi yenileyip yeniden deneyin
 log.token.state.unknown = Taşıyıcının güncel durumu okunamadı; işlem durduruldu
+tip.pin.show = PIN'i alanda göster.\nKarakterler şu anda gizli.
+tip.pin.hide = PIN'i alanda gizle.\nKarakterler şu anda görünüyor.

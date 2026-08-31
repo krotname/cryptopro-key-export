@@ -24,7 +24,7 @@ tip.p12 = Đường dẫn tới công cụ p12utility của CryptoPro — chính
 tip.p12.browse = Chọn tệp p12utility.exe khác thay cho bản tích hợp.
 tip.dest = Nơi lưu kết quả: các thư mục chứa container đã lấy ra (*.key) và tệp chứng thư (.cer).\nLưu ý: đây là bản sao khoá riêng của bạn — hãy giữ như một bí mật.
 tip.dest.browse = Chọn thư mục đích.
-tip.pin = Mã PIN người dùng của Rutoken.\nĐể trống → cửa sổ hệ thống sẽ hỏi PIN (nếu token còn PIN xuất xưởng thì dùng 12345678).\nCác ký tự bị che; giá trị không được lưu ở đâu cả.
+tip.pin = Mã PIN người dùng của Rutoken.\nĐể trống → cửa sổ hệ thống sẽ hỏi PIN (nếu token còn PIN xuất xưởng thì dùng 12345678).\nCác ký tự hiển thị để không gõ sai khi không nhìn thấy; nút bên cạnh sẽ ẩn chúng. Giá trị không được lưu ở đâu cả.
 tip.lang = Ngôn ngữ của giao diện, chú giải và thông báo.\nLựa chọn được ghi nhớ và áp dụng cho những lần chạy sau.\nTương tự từ dòng lệnh: --lang vi
 
 # --- các nút ---
@@ -387,3 +387,5 @@ pins.note.puk = với quản trị viên đây là PUK
 pins.note.applets = các applet khác giữ giá trị mặc định riêng
 log.token.replaced = Thiết bị trong đầu đọc đã bị thay; hãy làm mới danh sách và thử lại
 log.token.state.unknown = Không đọc được trạng thái hiện tại của thiết bị; thao tác đã dừng
+tip.pin.show = Hiện PIN trong ô nhập.\nHiện tại các ký tự đang bị ẩn.
+tip.pin.hide = Ẩn PIN trong ô nhập.\nHiện tại các ký tự đang hiển thị.

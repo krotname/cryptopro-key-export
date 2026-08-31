@@ -24,7 +24,7 @@ tip.p12 = Ruta a la herramienta p12utility de CryptoPro: es la que levanta la pr
 tip.p12.browse = Elegir otro archivo p12utility.exe en lugar del incorporado.
 tip.dest = Dónde se guarda el resultado: carpetas con los contenedores extraídos (*.key) y los archivos de certificado (.cer).\nAtención: es una copia de su clave privada, guárdela como un secreto.
 tip.dest.browse = Elegir la carpeta de destino.
-tip.pin = PIN de usuario del Rutoken.\nVacío → el PIN lo pedirá la ventana del sistema (y si el token conserva el PIN de fábrica, se usará 12345678).\nLos caracteres están ocultos; el valor no se guarda en ningún sitio.
+tip.pin = PIN de usuario del Rutoken.\nVacío → el PIN lo pedirá la ventana del sistema (y si el token conserva el PIN de fábrica, se usará 12345678).\nLos caracteres están visibles para no equivocarse a ciegas; el botón contiguo los oculta. El valor no se guarda en ningún sitio.
 tip.lang = Idioma de la interfaz, de las descripciones emergentes y de los mensajes.\nLa elección se recuerda y se aplica en los siguientes arranques.\nLo mismo desde la línea de comandos: --lang es
 
 # --- botones ---
@@ -387,3 +387,5 @@ pins.note.puk = para el administrador es un PUK
 pins.note.applets = los demás applets conservan sus propios valores de fábrica
 log.token.replaced = El soporte del lector fue sustituido; actualice la lista e inténtelo de nuevo
 log.token.state.unknown = No se pudo leer el estado actual del soporte; la operación se detuvo
+tip.pin.show = Mostrar el PIN en el campo.\nAhora los caracteres están ocultos.
+tip.pin.hide = Ocultar el PIN en el campo.\nAhora los caracteres están visibles.

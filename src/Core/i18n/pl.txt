@@ -24,7 +24,7 @@ tip.p12 = Ścieżka do narzędzia p12utility firmy CryptoPro — to ono zdejmuje
 tip.p12.browse = Wybierz inny plik p12utility.exe zamiast wbudowanego.
 tip.dest = Gdzie trafi wynik: foldery ze zdjętymi kontenerami (*.key) i pliki certyfikatów (.cer).\nUwaga: to kopia Twojego klucza prywatnego — trzymaj ją jak tajemnicę.
 tip.dest.browse = Wybierz folder docelowy.
-tip.pin = PIN użytkownika Rutokena.\nPuste → o PIN zapyta okno systemowe (a jeśli na tokenie jest PIN fabryczny, zostanie użyty 12345678).\nZnaki są ukryte; wartość nigdzie nie jest zapisywana.
+tip.pin = PIN użytkownika Rutokena.\nPuste → o PIN zapyta okno systemowe (a jeśli na tokenie jest PIN fabryczny, zostanie użyty 12345678).\nZnaki są widoczne, aby nie pomylić się na ślepo; przycisk obok je ukrywa. Wartość nigdzie nie jest zapisywana.
 tip.lang = Język interfejsu, podpowiedzi i komunikatów.\nWybór jest zapamiętywany i stosowany przy kolejnych uruchomieniach.\nTo samo z wiersza poleceń: --lang pl
 
 # --- przyciski ---
@@ -387,3 +387,5 @@ pins.note.puk = u administratora jest to PUK
 pins.note.applets = pozostałe aplety zachowują własne wartości fabryczne
 log.token.replaced = Nośnik w czytniku został wymieniony — odśwież listę i spróbuj ponownie
 log.token.state.unknown = Nie udało się odczytać bieżącego stanu nośnika — operację przerwano
+tip.pin.show = Pokaż PIN w polu.\nZnaki są teraz ukryte.
+tip.pin.hide = Ukryj PIN w polu.\nZnaki są teraz widoczne.

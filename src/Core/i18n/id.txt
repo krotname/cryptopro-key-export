@@ -24,7 +24,7 @@ tip.p12 = Jalur ke alat p12utility dari CryptoPro — alat inilah yang mencabut 
 tip.p12.browse = Pilih berkas p12utility.exe lain sebagai pengganti salinan bawaan.
 tip.dest = Tempat hasil disimpan: folder kontainer yang diambil (*.key) dan berkas sertifikat (.cer).\nPerhatian: ini salinan kunci privat Anda — simpan sebagai rahasia.
 tip.dest.browse = Pilih folder tujuan.
-tip.pin = PIN pengguna Rutoken.\nKosong → PIN akan diminta oleh jendela sistem (dan jika token masih memakai PIN pabrik, dipakai 12345678).\nKarakter disembunyikan; nilainya tidak disimpan di mana pun.
+tip.pin = PIN pengguna Rutoken.\nKosong → PIN akan diminta oleh jendela sistem (dan jika token masih memakai PIN pabrik, dipakai 12345678).\nKarakter terlihat agar tidak salah ketik secara buta; tombol di sebelahnya menyembunyikannya. Nilainya tidak disimpan di mana pun.
 tip.lang = Bahasa antarmuka, tooltip, dan pesan.\nPilihan diingat dan diterapkan pada peluncuran berikutnya.\nHal yang sama dari baris perintah: --lang id
 
 # --- tombol ---
@@ -387,3 +387,5 @@ pins.note.puk = bagi administrator ini adalah PUK
 pins.note.applets = applet lain memakai nilai pabriknya sendiri
 log.token.replaced = Media di pembaca diganti; segarkan daftar lalu coba lagi
 log.token.state.unknown = Status media saat ini tidak terbaca; operasi dihentikan
+tip.pin.show = Tampilkan PIN di kolom.\nSaat ini karakter disembunyikan.
+tip.pin.hide = Sembunyikan PIN di kolom.\nSaat ini karakter terlihat.
