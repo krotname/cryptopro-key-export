@@ -345,16 +345,21 @@ pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAG
 license.status.valid = Lizenz ist gültig ({0})
 license.status.invalid = Lizenz ist ungültig
 license.status.none = Keine Lizenz installiert
+license.reason.product = Lizenz wurde für ein anderes Produkt ausgestellt: {0}
+license.reason.platform = Lizenz wurde für eine andere Plattform ausgestellt: {0}
+license.reason.machine = Lizenz wurde für einen anderen Rechner ausgestellt: Fingerabdruck stimmt nicht überein
+license.reason.expired = Lizenz ist abgelaufen: {0}
+license.reason.unreadable = Datei ist nicht als Lizenz lesbar: beschädigt, verändert oder mit einem anderen Schlüssel signiert
 license.required = Dieser Vorgang erfordert eine gültige Lizenz. Installieren Sie eine Lizenzdatei (Schaltfläche „Lizenz…“ oder Befehl license <Datei>); den Fingerabdruck dieses Rechners zeigt der Befehl fingerprint.
 license.installed = Lizenz installiert und geprüft: {0}
 license.fp = Fingerabdruck dieses Rechners: {0}
 license.perpetual = unbefristet
 license.until = bis {0}
-license.filter = Lizenzdatei (*.jws)
+license.filter = Lizenzdatei (*.jws, *.license)
 cli.usage.fingerprint = Fingerabdruck dieses Rechners anzeigen (zum Erhalt einer Lizenz)
 cli.usage.license = Lizenzdatei installieren oder Status anzeigen
 btn.license = Lizenz…
-tip.license = Lizenzdatei (.jws) installieren und für diesen Rechner prüfen.\nOhne gültige Lizenz sind Vorgänge zum Export des privaten Schlüssels nicht verfügbar.\nDen Fingerabdruck dieses Rechners (für den Lizenzbezug) zeigt der Befehl fingerprint und der Programmstart.
+tip.license = Lizenzdatei (.jws, .license) installieren und für diesen Rechner prüfen.\nOhne gültige Lizenz sind Vorgänge zum Export des privaten Schlüssels nicht verfügbar.\nDen Fingerabdruck dieses Rechners (für den Lizenzbezug) zeigt der Befehl fingerprint und der Programmstart.
 dlg.license.title = Lizenzdatei auswählen
 
 # --- диагностика PC/SC ---

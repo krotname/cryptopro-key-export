@@ -345,16 +345,21 @@ pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAG
 license.status.valid = Lisans geçerli ({0})
 license.status.invalid = Lisans geçersiz
 license.status.none = Yüklü lisans yok
+license.reason.product = Lisans başka bir ürün için verilmiş: {0}
+license.reason.platform = Lisans başka bir platform için verilmiş: {0}
+license.reason.machine = Lisans başka bir makine için verilmiş: parmak izi eşleşmiyor
+license.reason.expired = Lisansın süresi doldu: {0}
+license.reason.unreadable = Dosya lisans olarak okunamıyor: bozuk, değiştirilmiş veya başka bir anahtarla imzalanmış
 license.required = Bu işlem geçerli bir lisans gerektirir. Bir lisans dosyası yükleyin («Lisans…» düğmesi veya license <dosya> komutu); bu makinenin parmak izini fingerprint komutu gösterir.
 license.installed = Lisans yüklendi ve doğrulandı: {0}
 license.fp = Bu makinenin parmak izi: {0}
 license.perpetual = süresiz
 license.until = {0} tarihine kadar
-license.filter = Lisans dosyası (*.jws)
+license.filter = Lisans dosyası (*.jws, *.license)
 cli.usage.fingerprint = bu makinenin parmak izini göster (lisans almak için)
 cli.usage.license = lisans dosyası yükle veya durumunu göster
 btn.license = Lisans…
-tip.license = Bir lisans dosyası (.jws) yükleyin ve bu makine için doğrulayın.\nGeçerli bir lisans olmadan özel anahtar dışa aktarma işlemleri kullanılamaz.\nBu makinenin parmak izini (lisans almak için) fingerprint komutu ve başlangıç gösterir.
+tip.license = Bir lisans dosyası (.jws, .license) yükleyin ve bu makine için doğrulayın.\nGeçerli bir lisans olmadan özel anahtar dışa aktarma işlemleri kullanılamaz.\nBu makinenin parmak izini (lisans almak için) fingerprint komutu ve başlangıç gösterir.
 dlg.license.title = Lisans dosyası seç
 
 # --- диагностика PC/SC ---

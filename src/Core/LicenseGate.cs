@@ -4,10 +4,12 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using KrotName.Licensing;
 using Microsoft.Win32;
 
@@ -26,14 +28,40 @@ namespace CryptoProExport
         Invalid
     }
 
+    /// <summary>
+    /// Причина отказа в лицензии — код, который переводится таблицей i18n. Сообщение верификатора
+    /// для показа не годится: оно всегда на русском (диагностика протокола), а объяснение читает
+    /// владелец на своём языке. Имеет смысл только при <see cref="LicenseState.Invalid"/>.
+    /// </summary>
+    public enum LicenseFailure
+    {
+        /// <summary>Файл не читается как лицензия: формат, подпись или чужой ключ подписи.</summary>
+        Unreadable,
+
+        /// <summary>Лицензия выдана другому продукту.</summary>
+        OtherProduct,
+
+        /// <summary>Лицензия выдана для другой платформы (частый случай — файл от Android-сборки).</summary>
+        OtherPlatform,
+
+        /// <summary>Лицензия выдана для другой машины: отпечаток не совпадает.</summary>
+        OtherMachine,
+
+        /// <summary>Срок действия лицензии истёк.</summary>
+        Expired
+    }
+
     /// <summary>Разобранный статус лицензии для показа и для гейта операций.</summary>
     public sealed class LicenseInfo
     {
-        internal LicenseInfo(LicenseState state, LicensePayload? payload = null, string? reason = null)
+        internal LicenseInfo(LicenseState state, LicensePayload? payload = null, string? reason = null,
+            LicenseFailure failure = LicenseFailure.Unreadable, string? detail = null)
         {
             State = state;
             Payload = payload;
             Reason = reason;
+            Failure = failure;
+            Detail = detail;
         }
 
         /// <summary>Состояние лицензии.</summary>
@@ -44,6 +72,12 @@ namespace CryptoProExport
 
         /// <summary>Причина отказа для <see cref="LicenseState.Invalid"/> (для лога, не для пользователя).</summary>
         public string? Reason { get; }
+
+        /// <summary>Код причины отказа; раскрывается локализованным <see cref="LicenseGate.ReasonText"/>.</summary>
+        public LicenseFailure Failure { get; }
+
+        /// <summary>Подстановка в текст причины: id продукта, код платформы или дата истечения.</summary>
+        public string? Detail { get; }
 
         /// <summary>Действительная лицензия — операции экспорта закрытого ключа разрешены.</summary>
         public bool Ok => State == LicenseState.Valid;
@@ -71,10 +105,10 @@ namespace CryptoProExport
         public const string PublicKeyB64 =
             "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHymaM2huAnl1OJezSCr2btoRUp4j3ud3KEEFmnTIjsWSrVpfSqdVlZSs5k0e39yYABbv/d6eM4eP4VGKajgPYg==";
 
-        private static readonly LicenseVerifier Verifier = new(
-            ProductId,
-            Platform.Windows,
-            new Dictionary<string, string> { [Kid] = PublicKeyB64 });
+        /// <summary>Вшитые публичные ключи подписи по kid — единственный источник доверия.</summary>
+        private static readonly Dictionary<string, string> SigningKeys = new() { [Kid] = PublicKeyB64 };
+
+        private static readonly LicenseVerifier Verifier = new(ProductId, Platform.Windows, SigningKeys);
 
         /// <summary>Файл установленной лицензии (рядом с журналами и настройками языка).</summary>
         public static string LicensePath => Path.Combine(
@@ -140,9 +174,9 @@ namespace CryptoProExport
         /// <summary>Проверить произвольную строку лицензии, ничего не устанавливая.</summary>
         public static LicenseInfo Verify(string? compactJws)
         {
+            long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             try
             {
-                long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                 // floor = 0: анти-откат времени (§2.7) не ведём — тестовые лицензии бессрочные,
                 // а против отмотки часов у term защита всё равно мягкая (ARCHITECTURE §11).
                 LicensePayload payload = Verifier.Verify(compactJws, Fingerprint(), null, now, 0);
@@ -150,7 +184,8 @@ namespace CryptoProExport
             }
             catch (LicenseException ex)
             {
-                return new LicenseInfo(LicenseState.Invalid, reason: ex.Message);
+                (LicenseFailure failure, string? detail) = Classify(compactJws, now);
+                return new LicenseInfo(LicenseState.Invalid, reason: ex.Message, failure: failure, detail: detail);
             }
         }
 
@@ -202,10 +237,103 @@ namespace CryptoProExport
         /// <summary>Локализованная строка с отпечатком этой машины (для получения лицензии).</summary>
         public static string FingerprintText() => Strings.Format("license.fp", Fingerprint());
 
+        /// <summary>
+        /// Локализованная причина отказа — то, что владелец видит в журнале и в stderr вместо
+        /// русской диагностики верификатора.
+        /// </summary>
+        public static string ReasonText(LicenseInfo info) => info.Failure switch
+        {
+            LicenseFailure.OtherProduct => Strings.Format("license.reason.product", info.Detail ?? "?"),
+            LicenseFailure.OtherPlatform => Strings.Format("license.reason.platform", info.Detail ?? "?"),
+            LicenseFailure.OtherMachine => Strings.Get("license.reason.machine"),
+            LicenseFailure.Expired => Strings.Format("license.reason.expired", info.Detail ?? "?"),
+            _ => Strings.Get("license.reason.unreadable"),
+        };
+
+        /// <summary>
+        /// Определяет причину отказа по нагрузке самого файла — только чтобы назвать её владельцу.
+        /// Прав это не даёт: решение уже принято верификатором выше, здесь файлу ничему не верят.
+        /// Чтобы подделка не объявлялась «лицензией для другой машины», файл сперва проверяется тем же
+        /// вендоренным верификатором «сам с собой»: продукт, платформа, отпечаток и время берутся из его
+        /// же нагрузки, и подпись обязана сойтись со вшитым ключом. Не сошлось — причина общая.
+        /// </summary>
+        private static (LicenseFailure Failure, string? Detail) Classify(string? compactJws, long now) =>
+            Classify(compactJws, now, SigningKeys);
+
+        /// <summary>Та же разборка причины, но с явным набором ключей подписи — для тестов.</summary>
+        internal static (LicenseFailure Failure, string? Detail) Classify(string? compactJws, long now,
+            IReadOnlyDictionary<string, string> signingKeys)
+        {
+            var unreadable = (LicenseFailure.Unreadable, (string?)null);
+            string[] parts = (compactJws ?? string.Empty).Split('.');
+            if (parts.Length != 3) return unreadable;
+
+            string? pid, plat, fp;
+            long? exp;
+            try
+            {
+                using JsonDocument doc = JsonDocument.Parse(Base64Url(parts[1]));
+                JsonElement payload = doc.RootElement;
+                if (payload.ValueKind != JsonValueKind.Object) return unreadable;
+                pid = Text(payload, "pid");
+                plat = Text(payload, "plat");
+                fp = Text(payload, "fp");
+                exp = payload.TryGetProperty("exp", out JsonElement e) && e.ValueKind == JsonValueKind.Number
+                          && e.TryGetInt64(out long seconds)
+                      ? seconds
+                      : null;
+            }
+            catch (Exception e) when (e is JsonException or FormatException)
+            {
+                return unreadable;
+            }
+
+            if (pid is null || fp is null || !Codes.TryParsePlatform(plat, out Platform platform)) return unreadable;
+
+            // Момент, в который срок этой лицензии заведомо не истёк: иначе просроченный файл
+            // не прошёл бы и проверку «сам с собой», и причина потерялась бы.
+            long probe = exp is long until && until - 1 < now ? until - 1 : now;
+            try
+            {
+                new LicenseVerifier(pid, platform, signingKeys).Verify(compactJws, fp, null, probe, 0);
+            }
+            catch (LicenseException)
+            {
+                return unreadable;
+            }
+
+            // Порядок — как в §2.5: продукт, платформа, отпечаток, срок.
+            if (!string.Equals(pid, ProductId, StringComparison.Ordinal)) return (LicenseFailure.OtherProduct, pid);
+            if (platform != Platform.Windows) return (LicenseFailure.OtherPlatform, plat);
+            if (!string.Equals(fp, Fingerprint(), StringComparison.Ordinal)) return (LicenseFailure.OtherMachine, null);
+            if (exp is long stamp && stamp + LicenseVerifier.ClockSkewSeconds <= now)
+            {
+                return (LicenseFailure.Expired, Date(stamp));
+            }
+
+            return unreadable;
+        }
+
+        /// <summary>Дата протокола, yyyy-MM-dd: инвариантная культура, иначе на персидской или
+        /// тайской локали Windows вышел бы другой календарь.</summary>
+        private static string Date(long unixSeconds) =>
+            DateTimeOffset.FromUnixTimeSeconds(unixSeconds).UtcDateTime.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        private static string? Text(JsonElement payload, string name) =>
+            payload.TryGetProperty(name, out JsonElement value) && value.ValueKind == JsonValueKind.String
+                ? value.GetString()
+                : null;
+
+        /// <summary>base64url без выравнивания — как части JWS лежат в файле (§2.2).</summary>
+        private static byte[] Base64Url(string part)
+        {
+            string b64 = part.Replace('-', '+').Replace('_', '/');
+            return Convert.FromBase64String(b64.PadRight(b64.Length + (4 - b64.Length % 4) % 4, '='));
+        }
+
         private static string TermText(LicensePayload payload) =>
             payload.Exp is long exp
-                ? Strings.Format("license.until",
-                    DateTimeOffset.FromUnixTimeSeconds(exp).UtcDateTime.ToString("yyyy-MM-dd"))
+                ? Strings.Format("license.until", Date(exp))
                 : Strings.Get("license.perpetual");
     }
 }

@@ -517,8 +517,11 @@ namespace CryptoProExport.App
                             return 0;
                         }
                         Err(Strings.Get("license.status.invalid"));
-                        // Конкретная причина — диагностика от верификатора (на русском), не локализуется.
-                        if (!string.IsNullOrEmpty(info.Reason)) Err(info.Reason);
+                        // Причина — отдельной строкой и на языке интерфейса: «недействительна» не
+                        // отличает чужую платформу от чужого отпечатка. Точное сообщение верификатора
+                        // (диагностика протокола, всегда по-русски) остаётся в файле журнала.
+                        Err(LicenseGate.ReasonText(info));
+                        if (!string.IsNullOrEmpty(info.Reason)) SessionLog.Write(info.Reason);
                         return 2;
                     }
                     default:

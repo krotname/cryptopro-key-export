@@ -345,16 +345,21 @@ pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAG
 license.status.valid = لائسنس درست ہے ({0})
 license.status.invalid = لائسنس درست نہیں ہے
 license.status.none = کوئی لائسنس نصب نہیں ہے
+license.reason.product = لائسنس کسی دوسری مصنوعات کے لیے جاری کیا گیا ہے: {0}
+license.reason.platform = لائسنس کسی دوسرے پلیٹ فارم کے لیے جاری کیا گیا ہے: {0}
+license.reason.machine = لائسنس کسی دوسری مشین کے لیے جاری کیا گیا ہے: فنگر پرنٹ مطابقت نہیں رکھتا
+license.reason.expired = لائسنس کی مدت ختم ہو گئی: {0}
+license.reason.unreadable = فائل کو لائسنس کے طور پر نہیں پڑھا جا سکا: خراب، تبدیل شدہ یا کسی دوسری کلید سے دستخط شدہ
 license.required = اس عمل کے لیے درست لائسنس درکار ہے۔ لائسنس فائل نصب کریں («لائسنس…» بٹن یا license <فائل> کمانڈ)؛ اس مشین کا فنگر پرنٹ fingerprint کمانڈ دکھاتی ہے۔
 license.installed = لائسنس نصب اور تصدیق ہو گیا: {0}
 license.fp = اس مشین کا فنگر پرنٹ: {0}
 license.perpetual = مستقل
 license.until = {0} تک
-license.filter = لائسنس فائل (*.jws)
+license.filter = لائسنس فائل (*.jws, *.license)
 cli.usage.fingerprint = اس مشین کا فنگر پرنٹ دکھائیں (لائسنس حاصل کرنے کے لیے)
 cli.usage.license = لائسنس فائل نصب کریں یا اس کی حالت دکھائیں
 btn.license = لائسنس…
-tip.license = لائسنس فائل (.jws) نصب کریں اور اس مشین کے لیے تصدیق کریں۔\nدرست لائسنس کے بغیر، نجی کلید برآمد کرنے کے عمل دستیاب نہیں ہوتے۔\nاس مشین کا فنگر پرنٹ (لائسنس حاصل کرنے کے لیے) fingerprint کمانڈ اور آغاز پر ظاہر ہوتا ہے۔
+tip.license = لائسنس فائل (.jws, .license) نصب کریں اور اس مشین کے لیے تصدیق کریں۔\nدرست لائسنس کے بغیر، نجی کلید برآمد کرنے کے عمل دستیاب نہیں ہوتے۔\nاس مشین کا فنگر پرنٹ (لائسنس حاصل کرنے کے لیے) fingerprint کمانڈ اور آغاز پر ظاہر ہوتا ہے۔
 dlg.license.title = لائسنس فائل منتخب کریں
 
 # --- диагностика PC/SC ---

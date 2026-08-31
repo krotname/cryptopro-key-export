@@ -345,16 +345,21 @@ pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAG
 license.status.valid = Licencja jest ważna ({0})
 license.status.invalid = Licencja jest nieważna
 license.status.none = Brak zainstalowanej licencji
+license.reason.product = Licencja wydana dla innego produktu: {0}
+license.reason.platform = Licencja wydana dla innej platformy: {0}
+license.reason.machine = Licencja wydana dla innego komputera: odcisk się nie zgadza
+license.reason.expired = Licencja wygasła: {0}
+license.reason.unreadable = Pliku nie da się odczytać jako licencji: uszkodzony, zmieniony lub podpisany innym kluczem
 license.required = Ta operacja wymaga ważnej licencji. Zainstaluj plik licencji (przycisk „Licencja…” lub polecenie license <plik>); odcisk tej maszyny pokazuje polecenie fingerprint.
 license.installed = Licencja zainstalowana i zweryfikowana: {0}
 license.fp = Odcisk tej maszyny: {0}
 license.perpetual = bezterminowa
 license.until = do {0}
-license.filter = Plik licencji (*.jws)
+license.filter = Plik licencji (*.jws, *.license)
 cli.usage.fingerprint = pokaż odcisk tej maszyny (do uzyskania licencji)
 cli.usage.license = zainstaluj plik licencji lub pokaż jej status
 btn.license = Licencja…
-tip.license = Zainstaluj plik licencji (.jws) i zweryfikuj go dla tej maszyny.\nBez ważnej licencji operacje eksportu klucza prywatnego są niedostępne.\nOdcisk tej maszyny (do uzyskania licencji) pokazuje polecenie fingerprint oraz uruchomienie.
+tip.license = Zainstaluj plik licencji (.jws, .license) i zweryfikuj go dla tej maszyny.\nBez ważnej licencji operacje eksportu klucza prywatnego są niedostępne.\nOdcisk tej maszyny (do uzyskania licencji) pokazuje polecenie fingerprint oraz uruchomienie.
 dlg.license.title = Wybierz plik licencji
 
 # --- диагностика PC/SC ---

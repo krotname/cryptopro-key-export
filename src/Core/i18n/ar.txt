@@ -345,16 +345,21 @@ pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAG
 license.status.valid = الترخيص صالح ({0})
 license.status.invalid = الترخيص غير صالح
 license.status.none = لا يوجد ترخيص مثبَّت
+license.reason.product = تم إصدار الترخيص لمنتج آخر: {0}
+license.reason.platform = تم إصدار الترخيص لمنصة أخرى: {0}
+license.reason.machine = تم إصدار الترخيص لجهاز آخر: البصمة غير مطابقة
+license.reason.expired = انتهت صلاحية الترخيص: {0}
+license.reason.unreadable = تعذّرت قراءة الملف كترخيص: تالف أو معدَّل أو موقَّع بمفتاح آخر
 license.required = تتطلب هذه العملية ترخيصًا صالحًا. ثبِّت ملف ترخيص (زر «الترخيص…» أو الأمر license <ملف>)؛ يعرض الأمر fingerprint بصمة هذا الجهاز.
 license.installed = تم تثبيت الترخيص والتحقق منه: {0}
 license.fp = بصمة هذا الجهاز: {0}
 license.perpetual = دائم
 license.until = حتى {0}
-license.filter = ملف ترخيص (*.jws)
+license.filter = ملف الترخيص (*.jws, *.license)
 cli.usage.fingerprint = عرض بصمة هذا الجهاز (للحصول على ترخيص)
 cli.usage.license = تثبيت ملف ترخيص أو عرض حالته
 btn.license = الترخيص…
-tip.license = ثبِّت ملف ترخيص (.jws) وتحقق منه لهذا الجهاز.\nبدون ترخيص صالح، تكون عمليات تصدير المفتاح الخاص غير متاحة.\nبصمة هذا الجهاز (للحصول على ترخيص) يعرضها الأمر fingerprint وعند بدء التشغيل.
+tip.license = ثبِّت ملف ترخيص (.jws, .license) وتحقق منه لهذا الجهاز.\nبدون ترخيص صالح، تكون عمليات تصدير المفتاح الخاص غير متاحة.\nبصمة هذا الجهاز (للحصول على ترخيص) يعرضها الأمر fingerprint وعند بدء التشغيل.
 dlg.license.title = اختيار ملف الترخيص
 
 # --- диагностика PC/SC ---
