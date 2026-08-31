@@ -561,7 +561,7 @@ namespace CryptoProExport.App
             // устройств PKCS#11 не сходилось с числом считывателей, и понять, какой носитель
             // потерялся, было нельзя. Опрос PC/SC пассивный — к карте он не подключается.
             cancel.ThrowIfCancellationRequested();
-            var pcscReaders = PcscReaders.List(Log);
+            var pcscReaders = PcscReaders.List(m => Log("[PC/SC] " + m));
             var pkcs11Readers = new List<string>();
             foreach (var t in tokens)
                 if (t?.Reader != null) pkcs11Readers.Add(t.Reader);
