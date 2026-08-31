@@ -44,6 +44,15 @@ namespace CryptoProExport.App
         private CancellationTokenSource _cancellation;
         private bool _busy;
 
+        /// <summary>
+        /// Обновлять список сразу при показе окна. Выключается только в <c>--selftest</c>
+        /// (<see cref="Program"/>): там форма закрывается сразу после показа, и фоновая задача
+        /// иначе может обратиться к уже уничтоженным элементам управления.
+        /// </summary>
+        [System.ComponentModel.Browsable(false)]
+        [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
+        public bool AutoRefreshOnShow { get; set; } = true;
+
         private sealed class TokenCertificateSelection
         {
             public string Name;
@@ -90,11 +99,16 @@ namespace CryptoProExport.App
             if (_split.Height > 200) _split.SplitterDistance = _split.Height / 2;
         }
 
-        /// <summary>После показа окна — сводка по зависимостям в лог (что вшито, чего не хватает).</summary>
+        /// <summary>
+        /// После показа окна — сводка по зависимостям в лог (что вшито, чего не хватает), а следом
+        /// сразу список носителей: раньше список был пуст, пока не нажата «Обновить», и это было
+        /// первым действием почти каждого запуска. Один <see cref="Run"/> на оба шага — иначе два
+        /// параллельных фоновых прогона делят одно поле <see cref="_busy"/> и путают статус-строку.
+        /// </summary>
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
-            Run("status.deps", () =>
+            Run("status.deps", cancel =>
             {
                 Log(Strings.Get("log.deps.header"));
                 foreach (var line in CryptoProExport.Diagnostics.Report())
@@ -104,6 +118,9 @@ namespace CryptoProExport.App
                 // Отпечаток нужен, чтобы получить лицензию, — обещан в подсказке и README, показываем сразу.
                 Log(LicenseGate.FingerprintText());
                 Log("");
+                if (!AutoRefreshOnShow) return;
+                SetStatus(Strings.Get("status.refresh"));
+                RefreshList(cancel);
             });
         }
 
@@ -114,6 +131,14 @@ namespace CryptoProExport.App
             ClientSize = new Size(880, 660);
             MinimumSize = new Size(720, 540);
             StartPosition = FormStartPosition.CenterScreen;
+            // F5 = «Обновить» из любого места окна, как в проводнике.
+            KeyPreview = true;
+            KeyDown += (_, e) =>
+            {
+                if (e.KeyCode != Keys.F5 || !_btnRefresh.Enabled) return;
+                e.Handled = true;
+                _btnRefresh.PerformClick();
+            };
 
             // Всплывающие подсказки: держим долго открытыми — тексты многострочные и объясняют шаг целиком
             _tips = new ToolTip
@@ -244,6 +269,12 @@ namespace CryptoProExport.App
             _colName = new ColumnHeader { Width = 360 };
             _colDetails = new ColumnHeader { Width = 320 };
             _lv.Columns.AddRange(new[] { _colWhere, _colName, _colDetails });
+            // Двойной клик по строке — то же самое, что кнопка «Посмотреть контейнер»:
+            // самый частый следующий шаг после того, как строка найдена в списке.
+            _lv.MouseDoubleClick += (_, __) =>
+            {
+                if (_lv.SelectedItems.Count > 0 && _btnView.Enabled) _btnView.PerformClick();
+            };
             split.Panel1.Controls.Add(_lv);
             split.Panel1.Padding = new Padding(10, 0, 10, 0);
 
@@ -295,6 +326,9 @@ namespace CryptoProExport.App
             Tip(_lblLang, "tip.lang"); Tip(_cmbLang, "tip.lang");
 
             SetButton(_btnRefresh, "btn.refresh", "tip.refresh");
+            // Автообновление и F5 подсказаны отдельным ключом, только по-русски (AGENTS п. 17):
+            // добавлять их дублем текста в двадцать уже переведённых подсказок не стали.
+            _tips.SetToolTip(_btnRefresh, _tips.GetToolTip(_btnRefresh) + "\n\n" + Strings.Get("tip.refresh.auto"));
             SetButton(_btnExport, "btn.export", "tip.export");
             SetButton(_btnExtract, "btn.extract", "tip.extract");
             SetButton(_btnFull, "btn.full", "tip.full");
@@ -318,6 +352,7 @@ namespace CryptoProExport.App
             _colName.Text = Strings.Get("col.container");
             _colDetails.Text = Strings.Get("col.details");
             Tip(_lv, "tip.list");
+            _tips.SetToolTip(_lv, _tips.GetToolTip(_lv) + "\n\n" + Strings.Get("tip.list.dblclick"));
             Tip(_txtLog, "tip.log");
 
             if (!_busy) _status.Text = Strings.Get("status.ready");

@@ -36,6 +36,7 @@ btn.help = Help
 btn.cancel = Cancel
 
 tip.refresh = Step 1. Show the list of key containers:\n  • those visible to CryptoPro CSP (including the inserted token);\n  • those found directly on connected supported tokens.\nChanges nothing — it only reads. A good place to start.
+tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
 tip.export = Step 2. Copy containers from Rutoken S / Lite, JaCarta LT and ESMART into the destination folder\n(6 *.key files per container). Reads token memory directly, bypassing the CSP,\nso it works even when export is banned. The token and its data are not modified.\nThe key in the copy stays non-exportable — that is what «Make exportable» is for.
 tip.extract = Step 3. Save the certificate of the container selected in the list into a .cer file\n(public data, extracted normally through CryptoAPI).\nRequires a selected container, an inserted token and the container being visible to the CSP.\np12utility needs that certificate in order to lift the export ban.
 tip.full = Everything in one click: copy the containers off the token → extract the certificates →\nlift the ban on exporting the private key (p12utility --cprepair --keyexport).\nResult: the destination folder holds a copy of the container with an exportable key\n(good for a backup, for moving to another machine and for conversion to PFX).\nThe original token is not modified; the original header.key of the copy is kept as header.key.backup.
@@ -51,6 +52,7 @@ col.location = Location
 col.container = Container
 col.details = Details
 tip.list = Key containers that were found.\n«Location» = CSP (visible to CryptoPro), PKCS#11/APDU, or direct carrier access.\n«Export from token» and «Make exportable» act on a selected APDU/rtCOMLite row; with no selection they scan every supported token.\nOther actions use the selected container.
+tip.list.dblclick = Двойной клик по строке равносилен кнопке «Посмотреть контейнер».
 tip.log = Execution log: p12utility commands, token steps and errors.\nThe text can be selected and copied (Ctrl+C) — useful when investigating problems.
 
 # --- status bar ---

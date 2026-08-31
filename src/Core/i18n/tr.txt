@@ -36,6 +36,7 @@ btn.help = Yardım
 btn.cancel = İptal
 
 tip.refresh = 1. adım. Anahtar kapsayıcılarının listesini göster:\n  • CryptoPro CSP’nin gördükleri (takılı belirteçtekiler dâhil);\n  • bağlı Rutoken’larda doğrudan bulunanlar.\nHiçbir şeyi değiştirmez — yalnızca okur. Başlamak için uygun düğme.
+tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
 tip.export = 2. adım. Rutoken S / Lite, JaCarta LT ve ESMART’tan kapsayıcıları hedef klasöre çıkar\n(kapsayıcı başına 6 *.key dosyası). Belirtecin belleğini CSP’yi atlayarak doğrudan okur,\nbu yüzden dışa aktarım yasağı varken de çalışır. Belirteç ve verileri değişmez.\nÇıkarılan kopyadaki anahtar hâlâ dışa aktarılamaz — onu «Dışa aktarılabilir yap» düğmesi halleder.
 tip.extract = 3. adım. Listede seçili kapsayıcının sertifikasını bir .cer dosyasına kaydet\n(açık veri, CryptoAPI üzerinden olağan biçimde çıkarılır).\nListede seçili bir kapsayıcı, takılı belirteç ve kapsayıcının CSP’ye görünür olması gerekir.\nDışa aktarım yasağını kaldırmak için p12utility’ye bu sertifika gerekir.
 tip.full = Tek tıkla her şey: kapsayıcıları belirteçten çıkar → sertifikaları çıkar →\nözel anahtarın dışa aktarım yasağını kaldır (p12utility --cprepair --keyexport).\nSonuç: hedef klasörde dışa aktarılabilir anahtara sahip bir kapsayıcı kopyası\n(yedek, taşıma ve PFX’e dönüştürme için uygundur).\nÖzgün belirteç değişmez; kopyanın asıl header.key dosyası header.key.backup olarak kalır.
@@ -51,6 +52,7 @@ col.location = Konum
 col.container = Kapsayıcı
 col.details = Ayrıntılar
 tip.list = Bulunan anahtar kapsayıcıları.\n«Konum» = CSP (CryptoPro görüyor) ya da Rutoken adı (doğrudan belirteçten okundu).\nBir satır seçin — «Sertifikayı çıkar» düğmesi seçili kapsayıcı üzerinde çalışır.
+tip.list.dblclick = Двойной клик по строке равносилен кнопке «Посмотреть контейнер».
 tip.log = Yürütme günlüğü: p12utility komutları, belirteçle çalışma adımları ve hatalar.\nMetin seçilip kopyalanabilir (Ctrl+C) — sorunları çözümlerken işe yarar.
 
 # --- durum çubuğu ---

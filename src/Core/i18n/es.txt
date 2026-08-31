@@ -36,6 +36,7 @@ btn.help = Ayuda
 btn.cancel = Cancelar
 
 tip.refresh = Paso 1. Mostrar la lista de contenedores de claves:\n  • los visibles para CryptoPro CSP (incluido el token insertado);\n  • los encontrados directamente en los Rutoken conectados.\nNo modifica nada, solo lee. Es un buen punto de partida.
+tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
 tip.export = Paso 2. Extraer los contenedores de Rutoken S / Lite, JaCarta LT y ESMART a la carpeta de destino\n(6 archivos *.key por contenedor). Lee la memoria del token directamente, sin pasar por el CSP,\npor eso funciona incluso con la exportación prohibida. Ni el token ni sus datos se modifican.\nLa clave de la copia sigue sin ser exportable: de eso se encarga «Hacer exportable».
 tip.extract = Paso 3. Guardar el certificado del contenedor seleccionado en un archivo .cer\n(datos públicos, se extraen de forma normal mediante CryptoAPI).\nHace falta un contenedor seleccionado, el token insertado y que el CSP vea el contenedor.\np12utility necesita ese certificado para levantar la prohibición de exportar.
 tip.full = Todo en un clic: extraer los contenedores del token → extraer los certificados →\nlevantar la prohibición de exportar la clave privada (p12utility --cprepair --keyexport).\nResultado: en la carpeta de destino queda una copia del contenedor con la clave exportable\n(sirve para copia de seguridad, traslado y conversión a PFX).\nEl token original no se modifica; el header.key original de la copia se guarda como header.key.backup.
@@ -51,6 +52,7 @@ col.location = Ubicación
 col.container = Contenedor
 col.details = Detalles
 tip.list = Contenedores de claves encontrados.\n«Ubicación» = CSP (visible para CryptoPro) o el nombre del Rutoken (leído directamente del token).\nSeleccione una fila: el botón «Extraer el certificado» trabaja sobre el contenedor seleccionado.
+tip.list.dblclick = Двойной клик по строке равносилен кнопке «Посмотреть контейнер».
 tip.log = Registro de ejecución: comandos de p12utility, pasos con el token y errores.\nEl texto se puede seleccionar y copiar (Ctrl+C), útil al analizar problemas.
 
 # --- barra de estado ---

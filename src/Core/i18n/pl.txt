@@ -36,6 +36,7 @@ btn.help = Pomoc
 btn.cancel = Anuluj
 
 tip.refresh = Krok 1. Pokaż listę kontenerów kluczy:\n  • widoczne dla CryptoPro CSP (także na włożonym tokenie);\n  • znalezione bezpośrednio na podłączonych Rutokenach.\nNiczego nie zmienia — tylko czyta. Od tego przycisku wygodnie zacząć.
+tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
 tip.export = Krok 2. Zdejmij kontenery z Rutoken S / Lite, JaCarta LT i ESMART do folderu docelowego\n(po 6 plików *.key na kontener). Czyta pamięć tokena bezpośrednio, z pominięciem CSP,\ndlatego działa nawet przy zakazie eksportu. Token i jego dane nie są zmieniane.\nKlucz w zdjętej kopii nadal nie jest eksportowalny — tym zajmuje się «Uczyń eksportowalnym».
 tip.extract = Krok 3. Zapisz certyfikat wybranego na liście kontenera do pliku .cer\n(dane jawne, wyodrębniane normalnie przez CryptoAPI).\nPotrzebny jest wybrany kontener, włożony token i widoczność kontenera dla CSP.\nDo zdjęcia zakazu eksportu p12utility potrzebuje właśnie tego certyfikatu.
 tip.full = Wszystko jednym kliknięciem: zdjęcie kontenerów z tokena → wyodrębnienie certyfikatów →\nzdjęcie zakazu eksportu klucza prywatnego (p12utility --cprepair --keyexport).\nWynik: w folderze docelowym kopia kontenera z eksportowalnym kluczem\n(nadaje się na kopię zapasową, przeniesienie i konwersję do PFX).\nOryginalny token nie jest zmieniany; pierwotny header.key kopii zostaje jako header.key.backup.
@@ -51,6 +52,7 @@ col.location = Położenie
 col.container = Kontener
 col.details = Szczegóły
 tip.list = Znalezione kontenery kluczy.\n«Położenie» = CSP (widoczny dla CryptoPro) albo nazwa Rutokena (odczytany wprost z tokena).\nZaznacz wiersz — przycisk «Wyodrębnij certyfikat» działa na zaznaczonym kontenerze.
+tip.list.dblclick = Двойной клик по строке равносилен кнопке «Посмотреть контейнер».
 tip.log = Dziennik wykonania: polecenia p12utility, kroki pracy z tokenem i błędy.\nTekst można zaznaczyć i skopiować (Ctrl+C) — przydaje się przy analizie problemów.
 
 # --- pasek stanu ---

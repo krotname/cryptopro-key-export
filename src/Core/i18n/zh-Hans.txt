@@ -36,6 +36,7 @@ btn.help = 帮助
 btn.cancel = 取消
 
 tip.refresh = 第 1 步。显示密钥容器列表：\n  • CryptoPro CSP 可见的容器（包括已插入的令牌）；\n  • 直接在已连接的 Rutoken 上找到的容器。\n不做任何修改 — 只读取。从这里开始最方便。
+tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
 tip.export = 第 2 步。把 Rutoken S / Lite、JaCarta LT 和 ESMART 上的容器取到目标文件夹\n（每个容器 6 个 *.key 文件）。直接读取令牌内存、绕过 CSP，\n因此即便存在导出禁令也能工作。令牌及其数据不会被修改。\n副本中的密钥仍不可导出 — 那是「设为可导出」按钮的工作。
 tip.extract = 第 3 步。把列表中所选容器的证书保存为 .cer 文件\n（公开数据，通过 CryptoAPI 正常提取）。\n需要在列表中选中容器、插入令牌，并且 CSP 能看到该容器。\np12utility 需要这份证书才能解除导出禁令。
 tip.full = 一键完成全部步骤：从令牌取出容器 → 提取证书 →\n解除私钥导出禁令（p12utility --cprepair --keyexport）。\n结果：目标文件夹中会出现一份密钥可导出的容器副本\n（可用于备份、迁移和转换为 PFX）。\n原令牌不会被修改；副本原有的 header.key 会保存为 header.key.backup。
@@ -51,6 +52,7 @@ col.location = 位置
 col.container = 容器
 col.details = 详情
 tip.list = 已找到的密钥容器。\n「位置」= CSP（CryptoPro 可见）或 Rutoken 名称（直接从令牌读取）。\n选中一行 —「提取证书」按钮会作用于所选容器。
+tip.list.dblclick = Двойной клик по строке равносилен кнопке «Посмотреть контейнер».
 tip.log = 执行日志：p12utility 命令、令牌操作步骤和错误。\n文本可以选中并复制（Ctrl+C）— 排查问题时很有用。
 
 # --- 状态栏 ---
