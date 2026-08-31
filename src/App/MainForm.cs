@@ -739,7 +739,10 @@ namespace CryptoProExport.App
             using var dlg = new OpenFileDialog
             {
                 Title = Strings.Get("dlg.license.title"),
-                Filter = Strings.Get("license.filter") + "|*.jws;*.lic;*.txt|"
+                // keytool выдаёт файл с расширением .license, приложение хранит его как .jws —
+                // маска обязана покрывать оба, иначе выданный сервером файл в диалоге не виден
+                // и владелец выбирает случайный .jws (например, от другой платформы).
+                Filter = Strings.Get("license.filter") + "|*.jws;*.license;*.lic;*.txt|"
                          + Strings.Get("files.all") + "|*.*",
                 CheckFileExists = true,
             };
@@ -751,6 +754,10 @@ namespace CryptoProExport.App
                 // Показываем итог именно этой попытки (info), а не перечитанную прежнюю лицензию:
                 // иначе отклонение выбранного файла выглядело бы как успех при уже установленной.
                 Log(LicenseGate.Describe(info));
+                // Одного «недействительна» мало: без причины владелец не отличит чужую платформу
+                // от чужого отпечатка и будет искать проблему в приложении. Текст верификатора —
+                // диагностика на русском, как и в CLI (stderr), поэтому идёт отдельной строкой.
+                if (!info.Ok && !string.IsNullOrEmpty(info.Reason)) Log("  " + info.Reason);
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
