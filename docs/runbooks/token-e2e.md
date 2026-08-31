@@ -115,18 +115,24 @@ Run "tokenfull `"<reader>`" `"$out`" <PIN> --container <технический-i
 
 ## 5. Установка в CSP и доказательство экспортируемости
 
-Обработать **каждую** полученную папку из шага 4 (для Lite/PRO — обе):
+Обработать **каждую** полученную папку из шага 4 (для Lite/PRO — обе).
+
+**Проверять именно HDIMAGE-копию по полному FQCN `\\.\HDIMAGE\<имя>`.** Токен в
+этот момент ещё подключён, а его контейнер носит **то же логическое имя**, что и
+установленная копия; голое имя `cpxt_<tag>` неоднозначно и CSP может проверить
+неэкспортируемый контейнер на токене вместо снятого на диск. `checkexport`
+принимает FQCN (проверено на HDIMAGE-контейнере).
 
 ```powershell
 # одноключевой случай (S/LT/ESMART):
-Run "install `"$out\<технический-id>`" --lang ru"          # HDIMAGE-копия, видна CSP
-Run 'checkexport cpxt_<tag> --lang ru'                     # ждём 0x0013089C И 0x0012289C
+Run "install `"$out\<технический-id>`" --lang ru"                       # HDIMAGE-копия, видна CSP
+Run 'checkexport "\\.\HDIMAGE\cpxt_<tag>" --lang ru'                    # ждём 0x0013089C И 0x0012289C
 
 # Lite/PRO — обе папки и обе CSP-копии по отдельности:
 Run "install `"$out\<технический-id>`" --lang ru"
 Run "install `"$out\<технический-id>_signature`" --lang ru"
-Run "checkexport `"cpxt_<tag> [exchange]`" --lang ru"      # ждём обмен 0x0013089C
-Run "checkexport `"cpxt_<tag> [signature]`" --lang ru"     # ждём подпись 0x0012289C
+Run 'checkexport "\\.\HDIMAGE\cpxt_<tag> [exchange]" --lang ru'         # ждём обмен 0x0013089C
+Run 'checkexport "\\.\HDIMAGE\cpxt_<tag> [signature]" --lang ru'        # ждём подпись 0x0012289C
 ```
 `…9C` — главное доказательство: запрет на экспорт снят. **Проверять обе пары.**
 `checkexport` возвращает успех и когда один тип ключа отсутствует («ключ не
@@ -143,17 +149,20 @@ CSP-копии, поэтому PFX собирается для каждой ве
 HDIMAGE-копию (имена там `[exchange]`/`[signature]`) либо адресует ещё
 подключённый неэкспортируемый контейнер токена.
 
+`topfx` тоже адресуй по HDIMAGE-FQCN — по той же причине, что `checkexport`
+(токен подключён, имя совпадает).
+
 ```powershell
 # одноключевой случай (S/LT/ESMART):
-Run "extractpfx `"$out\<технический-id>`" `"$out\<tag>.pfx`" <pfx-pass> `"`" --lang ru"     # для OpenSSL
-Run "topfx cpxt_<tag> `"$out\<tag>_cp.pfx`" <pfx-pass> --lang ru"                            # для КриптоПро (certmgr)
+Run "extractpfx `"$out\<технический-id>`" `"$out\<tag>.pfx`" <pfx-pass> `"`" --lang ru"       # для OpenSSL
+Run "topfx `"\\.\HDIMAGE\cpxt_<tag>`" `"$out\<tag>_cp.pfx`" <pfx-pass> --lang ru"              # для КриптоПро (certmgr)
 certutil -p <pfx-pass> -dump "$out\<tag>_cp.pfx" | Select-String 'Provider|Container'
 
 # Lite/PRO — обе ветви в разные файлы:
 Run "extractpfx `"$out\<технический-id>`" `"$out\<tag>_ex.pfx`" <pfx-pass> `"`" --lang ru"
 Run "extractpfx `"$out\<технический-id>_signature`" `"$out\<tag>_sg.pfx`" <pfx-pass> `"`" --lang ru"
-Run "topfx `"cpxt_<tag> [exchange]`" `"$out\<tag>_ex_cp.pfx`" <pfx-pass> --lang ru"
-Run "topfx `"cpxt_<tag> [signature]`" `"$out\<tag>_sg_cp.pfx`" <pfx-pass> --lang ru"
+Run "topfx `"\\.\HDIMAGE\cpxt_<tag> [exchange]`" `"$out\<tag>_ex_cp.pfx`" <pfx-pass> --lang ru"
+Run "topfx `"\\.\HDIMAGE\cpxt_<tag> [signature]`" `"$out\<tag>_sg_cp.pfx`" <pfx-pass> --lang ru"
 ```
 
 ## 7. Уборка (удалять ТОЛЬКО своё `cpxt_*`)
@@ -173,9 +182,14 @@ Run "topfx `"cpxt_<tag> [signature]`" `"$out\<tag>_sg_cp.pfx`" <pfx-pass> --lang
 & $csptest -keyset -deletekeyset -container "\\.\HDIMAGE\cpxt_<tag> [signature]" -provtype 80
 
 # c) сертификаты из «Личное» — ТОЛЬКО текущего тега (у Lite/PRO их два, оба с
-#    CN=cpxt_<tag>). Wildcard '*CN=cpxt_*' снёс бы и чужие/параллельные cpxt_-тесты:
-Get-ChildItem Cert:\CurrentUser\My | ? { $_.Subject -like '*CN=cpxt_<tag>,*' } |
+#    CN=cpxt_<tag>). Граница (,|$): CN бывает и с хвостом (CN=cpxt_<tag>, E=…),
+#    и без него (CN=cpxt_<tag>). Wildcard '*CN=cpxt_*' снёс бы чужие cpxt_-тесты:
+Get-ChildItem Cert:\CurrentUser\My | ? { $_.Subject -match 'CN=cpxt_<tag>(,|$)' } |
   % { Remove-Item ("Cert:\CurrentUser\My\" + $_.Thumbprint) -Force }
+
+# d) рабочая папка $out — в ней остались снятые *.key, сертификаты и PFX с
+#    ЭКСПОРТИРУЕМЫМ закрытым ключом; синтетика одноразовая, удалить целиком:
+Remove-Item $out -Recurse -Force -ErrorAction SilentlyContinue
 ```
 Затем сверить `enum_cont` с baseline из шага 0 — расхождений быть не должно.
 
