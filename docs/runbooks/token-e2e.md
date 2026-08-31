@@ -4,7 +4,7 @@ Runbook проверенного цикла регрессии для новог
 доказать, что утилита снимает неэкспортируемый закрытый ключ КриптоПро именно по
 APDU (мимо CSP), не читая боевых ключей владельца. Метод: создать **свой**
 синтетический неэкспортируемый двухключевой контейнер прямо на токене, прогнать
-`tokenfull → install → checkexport → PFX`, затем удалить только своё.
+`tokenfull → install → checkexport`, затем удалить только своё.
 
 Проверено 30.08.2026 разом на семи носителях: Рутокен S, Рутокен Lite, eToken
 PRO, два ESMART, две JaCarta LT (AGENTS.md п.43).
@@ -14,9 +14,11 @@ PRO, два ESMART, две JaCarta LT (AGENTS.md п.43).
 - **Боевые контейнеры владельца не трогать.** Работать только со своими
   контейнерами с префиксом `cpxt_`. Читающие команды (`list`, `tokenexport`,
   `tokenfull`) сам токен не изменяют, но экспорт боевого ключа на диск запрещён.
-- **До и после — снять baseline** и сверить, что состояние совпало:
+- **До и после — снять baseline** и сверить, что состояние совпало
+  (`-SimpleMatch`, иначе шаблон `\\.\` — невалидное регулярное выражение):
   ```powershell
-  & "C:\Program Files\Crypto Pro\CSP\csptest.exe" -keyset -enum_cont -verifycontext -fqcn | Select-String '\\\.\'
+  & "C:\Program Files\Crypto Pro\CSP\csptest.exe" -keyset -enum_cont -verifycontext -fqcn |
+    Select-String -SimpleMatch '\\.\'
   ```
 - **Идентифицировать целевой носитель по ATR/VID/PID, а не по имени считывателя.**
   Имена вводят в заблуждение: reader `Aladdin R.D. JaCarta LT 0` в одном сеансе —
@@ -36,6 +38,22 @@ $csptest = 'C:\Program Files\Crypto Pro\CSP\csptest.exe'
 уже установлена, `tokenfull` проходит. Если нет — `license`/`fingerprint`, выпуск
 через `keytool issue-license` в `krotname/license-server`.
 
+### Как читать вывод WinExe
+
+`.exe` — WinExe: в консоль он ничего не печатает, stdout виден **только** при
+перенаправлении в файл, и запускать его надо через `Start-Process` (из git-bash —
+`Permission denied`). Дальше по тексту используется помощник:
+
+```powershell
+function Run($a){                        # $a — аргументы CryptoProExport.exe
+  $o = [IO.Path]::GetTempFileName()
+  $p = Start-Process $exe $a -Wait -PassThru -RedirectStandardOutput $o -WindowStyle Hidden
+  Write-Host "EXIT=$($p.ExitCode)"
+  [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($o))   # приложение печатает UTF-8
+  Remove-Item $o -ErrorAction SilentlyContinue
+}
+```
+
 ### PIN известных носителей (см. `secrets.txt`, вне гита)
 
 | Носитель | PIN |
@@ -51,26 +69,27 @@ $csptest = 'C:\Program Files\Crypto Pro\CSP\csptest.exe'
 ## 2. Идентификация токенов
 
 ```powershell
-& $csptest -card -enum -v          # считыватели + ATR
-& $exe list --lang ru              # модель, APDU-бэкенд, контейнеры (redirect в файл для stdout)
+& $csptest -card -enum -v     # считыватели + ATR (csptest — консольный, печатает сразу)
+Run 'list --lang ru'          # модель, APDU-бэкенд, контейнеры (через Run — из-за WinExe)
 ```
 `list` для каждого контейнера печатает `[APDU <технический-id>] <имя>`, например
-`[APDU rutokens_0B00] cpxt_s`. **Технический id и есть селектор `--container`.**
+`[APDU rutokens_0B00] cpxt_s`. **Технический id и есть селектор `--container`**
+(матч по нему, а не по видимому имени).
 
 ## 3. Создать синтетический неэкспортируемый контейнер на токене
 
 ```powershell
 # Ключи генерируются на носителе, обе пары неэкспортируемы. Скрипт закрывает
 # модальные окна (Био ДСЧ — движением мыши SendInput, прочие — WM_COMMAND IDOK).
-pwsh token-session\make-token-container.ps1 -ContainerPath "\.\<reader>\cpxt_<tag>" -Password <PIN> -TimeoutSec 200
+pwsh token-session\make-token-container.ps1 -ContainerPath "\\.\<reader>\cpxt_<tag>" -Password <PIN> -TimeoutSec 200
 
 # Самоподписанный сертификат в контейнер. -password ОБЯЗАТЕЛЕН, иначе makecert
 # зависнет на диалоге «Аутентификация — КриптоПро CSP» (наблюдалось на ESMART).
-& $csptest -keyset -container "\.\<reader>\cpxt_<tag>" -provtype 80 -makecert -password <PIN>
+& $csptest -keyset -container "\\.\<reader>\cpxt_<tag>" -provtype 80 -makecert -password <PIN>
 ```
 Проверить, что baseline действительно неэкспортируемый (флага `CRYPT_EXPORT` нет):
 ```powershell
-& $exe checkexport cpxt_<tag> --lang ru    # ждём 0x00130098 / 0x00122898 (…98, НЕ …9C)
+Run 'checkexport cpxt_<tag> --lang ru'    # ждём 0x00130098 / 0x00122898 (…98, НЕ …9C)
 ```
 Если ключ уже `…9C` — это **экспортируемый** образец, он ничего не доказывает
 (CSP штатно копирует такой ключ с любого носителя). Годен только `…98`.
@@ -80,25 +99,48 @@ pwsh token-session\make-token-container.ps1 -ContainerPath "\.\<reader>\cpxt_<ta
 ```powershell
 $out = "<scratch>\<tag>"; New-Item -ItemType Directory -Force $out | Out-Null
 # технический id берётся из вывода list (шаг 2)
-& $exe tokenfull "<reader>" "$out" <PIN> --container <технический-id> --lang ru
+Run "tokenfull `"<reader>`" `"$out`" <PIN> --container <технический-id> --lang ru"
 ```
 Ожидаемо: `[APDU]` читает шесть `*.key`, извлекается сертификат, `p12utility
 --cprepair --keyexport` помечает ключ(и) экспортируемыми, `header.key` растёт
 ~1.3 КБ → ~3 КБ. Токен при этом **только читается**.
 
+**Раскладка результата зависит от семейства (важно для шагов 5–7):**
+- Рутокен S, JaCarta LT, ESMART — **одна** папка `<технический-id>`, оба ключа в
+  одном контейнере;
+- Рутокен Lite и eToken PRO — **две** папки: `<технический-id>` (обмен) и
+  `<технический-id>_signature` (подпись). `ExportPipeline.MakeLiteSavedContainerExportable`
+  раскладывает двухключевой контейнер на две одноключевые HDIMAGE-копии, обходя
+  дефект `p12utility 4.0.8`.
+
 ## 5. Установка в CSP и доказательство экспортируемости
 
+Обработать **каждую** полученную папку из шага 4 (для Lite/PRO — обе):
+
 ```powershell
-& $exe install "$out\<технический-id>" --lang ru     # HDIMAGE-копия, видна CSP
-& $exe checkexport cpxt_<tag> --lang ru              # ждём 0x0013089C / 0x0012289C (…9C)
+# одноключевой случай (S/LT/ESMART):
+Run "install `"$out\<технический-id>`" --lang ru"          # HDIMAGE-копия, видна CSP
+Run 'checkexport cpxt_<tag> --lang ru'                     # ждём 0x0013089C И 0x0012289C
+
+# Lite/PRO — обе папки и обе CSP-копии по отдельности:
+Run "install `"$out\<технический-id>`" --lang ru"
+Run "install `"$out\<технический-id>_signature`" --lang ru"
+Run "checkexport `"cpxt_<tag> [exchange]`" --lang ru"      # ждём обмен 0x0013089C
+Run "checkexport `"cpxt_<tag> [signature]`" --lang ru"     # ждём подпись 0x0012289C
 ```
-`…9C` на обоих ключах — главное доказательство: запрет на экспорт снят.
+`…9C` — главное доказательство: запрет на экспорт снят. **Проверять обе пары.**
+`checkexport` возвращает успех и когда один тип ключа отсутствует («ключ не
+найден»), поэтому одной проверки на split-контейнере недостаточно: для Lite/PRO
+проверяй именно обе копии, иначе E2E считается пройденным, а подписная ветка —
+нет.
 
 ## 6. PFX (обе ветки)
 
+Для split-контейнеров Lite/PRO PFX собирается из каждой папки отдельно.
+
 ```powershell
-& $exe extractpfx "$out\<технический-id>" "$out\<tag>.pfx" <pfx-pass> "" --lang ru   # для OpenSSL
-& $exe topfx cpxt_<tag> "$out\<tag>_cp.pfx" <pfx-pass> --lang ru                     # для КриптоПро (certmgr)
+Run "extractpfx `"$out\<технический-id>`" `"$out\<tag>.pfx`" <pfx-pass> `"`" --lang ru"   # для OpenSSL
+Run "topfx cpxt_<tag> `"$out\<tag>_cp.pfx`" <pfx-pass> --lang ru"                          # для КриптоПро (certmgr)
 certutil -p <pfx-pass> -dump "$out\<tag>_cp.pfx" | Select-String 'Provider|Container'
 ```
 
@@ -106,14 +148,14 @@ certutil -p <pfx-pass> -dump "$out\<tag>_cp.pfx" | Select-String 'Provider|Conta
 
 ```powershell
 # a) контейнер с токена. На смарт-картах требует интерактивный PIN даже с -password:
-& $csptest -keyset -deletekeyset -container "\.\<reader>\cpxt_<tag>" -provtype 80 -password <PIN>
+& $csptest -keyset -deletekeyset -container "\\.\<reader>\cpxt_<tag>" -provtype 80 -password <PIN>
 #    Рутокен S/Lite и одна JaCarta так удаляются; ESMART и вторая JaCarta показывают
 #    диалог «Аутентификация — КриптоПро CSP» — PIN в него вводится только SendInput
 #    (WM_SETTEXT не работает), затем Enter. CryptAcquireContext(CRYPT_DELETEKEYSET)
 #    на этих контейнерах даёт 0x8009001F — не годится, чистить через csptest.
 
-# b) HDIMAGE-копии (без PIN):
-& $csptest -keyset -deletekeyset -container "\.\HDIMAGE\cpxt_<tag>" -provtype 80
+# b) HDIMAGE-копии (без PIN). Для Lite/PRO их две: "cpxt_<tag> [exchange]" и "[signature]":
+& $csptest -keyset -deletekeyset -container "\\.\HDIMAGE\cpxt_<tag>" -provtype 80
 
 # c) сертификаты из «Личное»:
 Get-ChildItem Cert:\CurrentUser\My | ? { $_.Subject -like '*CN=cpxt_*' } |
@@ -133,7 +175,7 @@ Get-ChildItem Cert:\CurrentUser\My | ? { $_.Subject -like '*CN=cpxt_*' } |
 
 - **Селектор `--container` матчит технический `OutputName`** (`rutokens_0B00`,
   `jacartalt_0F`), а не видимое имя. При вводе имени — «Контейнер «…» не найден».
-- **stdout WinExe виден только при redirect в файл**; читать в UTF-8. `.exe` из
-  git-bash не запускается — только `Start-Process`.
-- Ветки Lite/PRO дают контейнеры `<имя> [exchange]`/`[signature]` — `checkexport`
-  каждой отдельно.
+- **stdout WinExe виден только при redirect в файл** (см. помощник `Run` в §1);
+  читать в UTF-8. `.exe` из git-bash не запускается — только `Start-Process`.
+- **FQCN контейнера — с двойным ведущим слэшем** `\\.\<reader>\<имя>`: в PowerShell
+  бэкслеш не экранирует, одинарный `\.\` адресует другой (неверный) контейнер.
