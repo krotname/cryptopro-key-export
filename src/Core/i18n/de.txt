@@ -24,7 +24,7 @@ tip.p12 = Pfad zum CryptoPro-Werkzeug p12utility — damit wird das Exportverbot
 tip.p12.browse = Eine andere p12utility.exe statt der eingebetteten wählen.
 tip.dest = Wohin das Ergebnis kommt: Ordner mit den ausgelesenen Containern (*.key) und Zertifikatsdateien (.cer).\nAchtung: Das ist eine Kopie Ihres privaten Schlüssels — bewahren Sie sie wie ein Geheimnis auf.
 tip.dest.browse = Zielordner auswählen.
-tip.pin = Benutzer-PIN des Rutoken.\nLeer → die PIN fragt das Systemfenster ab (und trägt der Token noch die Werks-PIN, wird 12345678 verwendet).\nDie Zeichen sind verborgen; der Wert wird nirgends gespeichert.
+tip.pin = Benutzer-PIN des Rutoken.\nLeer → die PIN fragt das Systemfenster ab (und trägt der Token noch die Werks-PIN, wird 12345678 verwendet).\nDie Zeichen sind sichtbar, damit man sich nicht blind vertippt; die Schaltfläche daneben verbirgt sie. Der Wert wird nirgends gespeichert.
 tip.lang = Sprache der Oberfläche, der Hinweise und der Meldungen.\nDie Wahl wird gemerkt und bei den nächsten Starts angewendet.\nDasselbe über die Befehlszeile: --lang de
 
 # --- Schaltflächen ---
@@ -387,3 +387,5 @@ pins.note.puk = beim Administrator ist das eine PUK
 pins.note.applets = die übrigen Applets behalten ihre eigenen Werkswerte
 log.token.replaced = Der Träger im Leser wurde gewechselt — Liste aktualisieren und erneut versuchen
 log.token.state.unknown = Der aktuelle Zustand des Trägers war nicht lesbar — Vorgang abgebrochen
+tip.pin.show = PIN im Feld anzeigen.\nDie Zeichen sind gerade verborgen.
+tip.pin.hide = PIN im Feld verbergen.\nDie Zeichen sind gerade sichtbar.

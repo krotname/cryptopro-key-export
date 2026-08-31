@@ -24,6 +24,7 @@ namespace CryptoProExport.App
     public sealed class MainForm : Form
     {
         private TextBox _txtP12, _txtDest, _txtPin, _txtLog;
+        private Button _btnPinReveal;
         /// <summary>Последнее подставленное программой значение PIN — чтобы отличать его от введённого.</summary>
         private string _autoFilledPin;
         /// <summary>Модель, чьё заводское значение подставлено, — для подсказки на текущем языке.</summary>
@@ -137,7 +138,10 @@ namespace CryptoProExport.App
 
             _txtP12 = new TextBox { Dock = DockStyle.Fill, Margin = new Padding(3, 4, 3, 4) };
             _txtDest = new TextBox { Dock = DockStyle.Fill, Margin = new Padding(3, 4, 3, 4) };
-            _txtPin = new TextBox { Dock = DockStyle.Fill, UseSystemPasswordChar = true, Margin = new Padding(3, 4, 3, 4) };
+            // PIN виден по умолчанию: он вводится с клавиатуры за своим столом, а вслепую
+            // владелец чаще ошибается — а ошибка здесь стоит попытки носителя. Скрыть можно
+            // кнопкой рядом, когда рядом кто-то есть.
+            _txtPin = new TextBox { Dock = DockStyle.Fill, UseSystemPasswordChar = false, Margin = new Padding(3, 4, 3, 4) };
             // Правка поля отменяет подстановку: дальше это уже введённый пользователем PIN,
             // и подпись не должна называть его заводским значением модели.
             _txtPin.TextChanged += (_, _) =>
@@ -165,7 +169,28 @@ namespace CryptoProExport.App
 
             _lblPin = MakeFieldLabel();
             settings.Controls.Add(_lblPin, 0, 2);
-            settings.Controls.Add(_txtPin, 1, 2);
+            // Кнопка живёт в одной ячейке с полем: третья колонка занята подсказкой о PIN.
+            var pinCell = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1,
+                AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                Margin = new Padding(0),
+            };
+            pinCell.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            pinCell.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            _btnPinReveal = new Button
+            {
+                AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                Dock = DockStyle.Fill, Margin = new Padding(0, 4, 3, 4),
+            };
+            _btnPinReveal.Click += (_, __) =>
+            {
+                _txtPin.UseSystemPasswordChar = !_txtPin.UseSystemPasswordChar;
+                ApplyPinRevealState();
+            };
+            pinCell.Controls.Add(_txtPin, 0, 0);
+            pinCell.Controls.Add(_btnPinReveal, 1, 0);
+            settings.Controls.Add(pinCell, 1, 2);
             _lblPinHint = MakeFieldLabel();
             _lblPinHint.ForeColor = Color.Gray;
             settings.Controls.Add(_lblPinHint, 2, 2);
@@ -268,6 +293,7 @@ namespace CryptoProExport.App
             _lblDest.Text = Strings.Get("field.dest");
             _lblPin.Text = Strings.Get("field.pin");
             _lblPinHint.Text = PinHintText();
+            ApplyPinRevealState();
             _lblLang.Text = Strings.Get("field.lang");
             _btnP12.Text = Strings.Get("common.browse");
             _btnDest.Text = Strings.Get("common.browse");
@@ -631,6 +657,18 @@ namespace CryptoProExport.App
             }
             Log(Strings.Get("log.token.state.unknown"));
             return null;
+        }
+
+        /// <summary>
+        /// Значок и подсказка кнопки показа PIN по текущему состоянию поля. Значок называет
+        /// то, что видно сейчас, а подсказка — что сделает нажатие.
+        /// </summary>
+        private void ApplyPinRevealState()
+        {
+            if (_btnPinReveal == null) return;
+            bool hidden = _txtPin.UseSystemPasswordChar;
+            _btnPinReveal.Text = hidden ? "•••" : "👁";
+            Tip(_btnPinReveal, hidden ? "tip.pin.show" : "tip.pin.hide");
         }
 
         /// <summary>
