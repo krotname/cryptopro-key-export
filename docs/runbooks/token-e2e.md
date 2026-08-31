@@ -80,10 +80,11 @@ Run 'list --lang ru'          # модель, APDU-бэкенд, контейн�
 VID/PID и, где есть, серийником — имена считывателей вводят в заблуждение.**
 
 ```powershell
-# reader ↔ USB VID/PID (+ серийник в хвосте InstanceId, напр. Rutoken S)
-Get-PnpDevice -PresentOnly |
-  ? { $_.InstanceId -match 'VID_0A89|VID_24DC|VID_072F|VID_2CE4|Rutoken|ESMART|JaCarta|Token' } |
-  Select-Object FriendlyName, InstanceId | Format-List
+# reader ↔ USB VID/PID (+ серийник в хвосте InstanceId, напр. Rutoken S) и карта ↔
+# CID. Перечисляем ПО КЛАССУ, без allowlist вендоров — иначе новый VID (например
+# eToken PRO — VID_0529) выпал бы из инвентаря ровно на новом носителе.
+Get-PnpDevice -PresentOnly -Class SmartCardReader, SmartCard |
+  Select-Object Class, FriendlyName, InstanceId | Sort-Object Class | Format-Table -Wrap
 # reader ↔ ATR — из вывода `csptest -card -enum -v` выше; серийник токена также
 # виден в дампе PKCS#11 (`token`/`list`) у моделей, которые его отдают.
 ```
