@@ -36,6 +36,7 @@ btn.help = Hilfe
 btn.cancel = Abbrechen
 
 tip.refresh = Schritt 1. Die Liste der Schlüsselcontainer anzeigen:\n  • die für CryptoPro CSP sichtbaren (auch auf dem eingesteckten Token);\n  • die direkt auf angeschlossenen Rutoken gefundenen.\nÄndert nichts — liest nur. Ein guter Startpunkt.
+tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
 tip.export = Schritt 2. Die Container von Rutoken S / Lite, JaCarta LT und ESMART in den Zielordner auslesen\n(je 6 *.key-Dateien pro Container). Liest den Tokenspeicher direkt am CSP vorbei,\ndarum funktioniert es auch bei bestehendem Exportverbot. Token und Daten bleiben unverändert.\nDer Schlüssel in der Kopie bleibt nicht exportierbar — dafür ist «Exportierbar machen» da.
 tip.extract = Schritt 3. Das Zertifikat des in der Liste gewählten Containers in eine .cer-Datei speichern\n(öffentliche Daten, werden regulär über CryptoAPI entnommen).\nNötig sind ein gewählter Container, ein eingesteckter Token und Sichtbarkeit im CSP.\np12utility braucht dieses Zertifikat, um das Exportverbot aufzuheben.
 tip.full = Alles mit einem Klick: Container vom Token auslesen → Zertifikate entnehmen →\nExportverbot des privaten Schlüssels aufheben (p12utility --cprepair --keyexport).\nErgebnis: im Zielordner liegt eine Containerkopie mit exportierbarem Schlüssel\n(taugt für Sicherung, Umzug und Umwandlung nach PFX).\nDer ursprüngliche Token bleibt unverändert; die ursprüngliche header.key der Kopie bleibt als header.key.backup erhalten.
@@ -51,6 +52,7 @@ col.location = Ort
 col.container = Container
 col.details = Details
 tip.list = Gefundene Schlüsselcontainer.\n«Ort» = CSP (für CryptoPro sichtbar) oder der Rutoken-Name (direkt vom Token gelesen).\nWählen Sie eine Zeile — die Schaltfläche «Zertifikat entnehmen» arbeitet mit dem gewählten Container.
+tip.list.dblclick = Двойной клик по строке равносилен кнопке «Посмотреть контейнер».
 tip.log = Ausführungsprotokoll: p12utility-Befehle, Arbeitsschritte am Token und Fehler.\nDer Text lässt sich markieren und kopieren (Strg+C) — nützlich bei der Fehlersuche.
 
 # --- Statusleiste ---

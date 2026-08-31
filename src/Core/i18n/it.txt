@@ -36,6 +36,7 @@ btn.help = Guida
 btn.cancel = Annulla
 
 tip.refresh = Passo 1. Mostrare l’elenco dei contenitori di chiavi:\n  • quelli visibili a CryptoPro CSP (compreso il token inserito);\n  • quelli trovati direttamente sui Rutoken collegati.\nNon modifica nulla — legge soltanto. È comodo partire da qui.
+tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
 tip.export = Passo 2. Estrarre i contenitori da Rutoken S / Lite, JaCarta LT ed ESMART nella cartella di destinazione\n(6 file *.key per contenitore). Legge la memoria del token direttamente, aggirando il CSP,\nperciò funziona anche con il divieto di esportazione. Il token e i suoi dati non vengono modificati.\nLa chiave della copia resta non esportabile — di questo si occupa il pulsante «Rendi esportabile».
 tip.extract = Passo 3. Salvare il certificato del contenitore selezionato in un file .cer\n(dati pubblici, estratti normalmente tramite CryptoAPI).\nServono un contenitore selezionato, il token inserito e la visibilità del contenitore per il CSP.\np12utility ha bisogno proprio di questo certificato per togliere il divieto di esportazione.
 tip.full = Tutto con un clic: estrarre i contenitori dal token → estrarre i certificati →\ntogliere il divieto di esportare la chiave privata (p12utility --cprepair --keyexport).\nRisultato: nella cartella di destinazione c’è una copia del contenitore con la chiave esportabile\n(adatta a backup, trasferimento e conversione in PFX).\nIl token originale non viene modificato; l’header.key originale della copia resta come header.key.backup.
@@ -51,6 +52,7 @@ col.location = Posizione
 col.container = Contenitore
 col.details = Dettagli
 tip.list = Contenitori di chiavi trovati.\n«Posizione» = CSP (visibile a CryptoPro) o il nome del Rutoken (letto direttamente dal token).\nSelezionate una riga — il pulsante «Estrai il certificato» agisce sul contenitore selezionato.
+tip.list.dblclick = Двойной клик по строке равносилен кнопке «Посмотреть контейнер».
 tip.log = Registro di esecuzione: comandi di p12utility, passi di lavoro con il token ed errori.\nIl testo si può selezionare e copiare (Ctrl+C) — utile quando si analizza un problema.
 
 # --- barra di stato ---

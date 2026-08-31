@@ -156,7 +156,7 @@ namespace CryptoProExport.App
                     }
                 }
 
-                using var f = new MainForm();
+                using var f = new MainForm { AutoRefreshOnShow = false };
                 var (tips, _) = f.CheckTooltips();
                 f.Load += (_, __) => f.BeginInvoke(new Action(f.Close));
                 f.ShowInTaskbar = false;

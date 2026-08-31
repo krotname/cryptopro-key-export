@@ -36,6 +36,7 @@ btn.help = Trợ giúp
 btn.cancel = Huỷ
 
 tip.refresh = Bước 1. Hiển thị danh sách container khoá:\n  • những cái CryptoPro CSP nhìn thấy (kể cả trên token đã cắm);\n  • những cái tìm thấy trực tiếp trên các Rutoken đang kết nối.\nKhông thay đổi gì — chỉ đọc. Bắt đầu từ nút này là tiện nhất.
+tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
 tip.export = Bước 2. Lấy các container từ Rutoken S / Lite, JaCarta LT và ESMART vào thư mục đích\n(mỗi container 6 tệp *.key). Đọc thẳng bộ nhớ token, bỏ qua CSP,\nnên vẫn chạy được khi có lệnh cấm xuất. Token và dữ liệu trên đó không bị thay đổi.\nKhoá trong bản sao vẫn chưa xuất được — việc đó do nút «Làm cho xuất được» đảm nhiệm.
 tip.extract = Bước 3. Lưu chứng thư của container được chọn trong danh sách ra tệp .cer\n(dữ liệu công khai, được lấy ra bình thường qua CryptoAPI).\nCần có container được chọn, token đã cắm và CSP nhìn thấy container.\np12utility cần đúng chứng thư này để gỡ lệnh cấm xuất.
 tip.full = Tất cả trong một cú nhấp: lấy container từ token → lấy chứng thư →\ngỡ lệnh cấm xuất khoá riêng (p12utility --cprepair --keyexport).\nKết quả: trong thư mục đích có bản sao container với khoá xuất được\n(dùng để sao lưu, chuyển máy và chuyển đổi sang PFX).\nToken gốc không bị thay đổi; tệp header.key ban đầu của bản sao được giữ lại là header.key.backup.
@@ -51,6 +52,7 @@ col.location = Vị trí
 col.container = Container
 col.details = Chi tiết
 tip.list = Các container khoá đã tìm thấy.\n«Vị trí» = CSP (CryptoPro nhìn thấy) hoặc tên Rutoken (đọc trực tiếp từ token).\nChọn một dòng — nút «Lấy chứng thư» làm việc với container được chọn.
+tip.list.dblclick = Двойной клик по строке равносилен кнопке «Посмотреть контейнер».
 tip.log = Nhật ký thực thi: các lệnh p12utility, các bước làm việc với token và lỗi.\nCó thể chọn và sao chép văn bản (Ctrl+C) — hữu ích khi phân tích sự cố.
 
 # --- thanh trạng thái ---

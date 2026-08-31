@@ -36,6 +36,7 @@ btn.help = Ajuda
 btn.cancel = Cancelar
 
 tip.refresh = Passo 1. Mostrar a lista de contentores de chaves:\n  • os visíveis para o CryptoPro CSP (incluindo o token inserido);\n  • os encontrados diretamente nos Rutoken ligados.\nNão altera nada — apenas lê. É um bom ponto de partida.
+tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
 tip.export = Passo 2. Extrair os contentores de Rutoken S / Lite, JaCarta LT e ESMART para a pasta de destino\n(6 ficheiros *.key por contentor). Lê a memória do token diretamente, contornando o CSP,\npor isso funciona mesmo com a exportação proibida. O token e os seus dados não são alterados.\nA chave da cópia continua não exportável — disso trata o botão «Tornar exportável».
 tip.extract = Passo 3. Guardar o certificado do contentor selecionado num ficheiro .cer\n(dados públicos, extraídos normalmente através da CryptoAPI).\nÉ preciso um contentor selecionado, o token inserido e o contentor visível para o CSP.\nO p12utility precisa desse certificado para levantar a proibição de exportação.
 tip.full = Tudo num clique: extrair os contentores do token → extrair os certificados →\nlevantar a proibição de exportar a chave privada (p12utility --cprepair --keyexport).\nResultado: na pasta de destino fica uma cópia do contentor com a chave exportável\n(serve para cópia de segurança, migração e conversão para PFX).\nO token original não é alterado; o header.key original da cópia fica guardado como header.key.backup.
@@ -51,6 +52,7 @@ col.location = Localização
 col.container = Contentor
 col.details = Detalhes
 tip.list = Contentores de chaves encontrados.\n«Localização» = CSP (visível para o CryptoPro) ou o nome do Rutoken (lido diretamente do token).\nSelecione uma linha — o botão «Extrair o certificado» atua sobre o contentor selecionado.
+tip.list.dblclick = Двойной клик по строке равносилен кнопке «Посмотреть контейнер».
 tip.log = Registo de execução: comandos do p12utility, passos de trabalho com o token e erros.\nO texto pode ser selecionado e copiado (Ctrl+C) — útil ao analisar problemas.
 
 # --- barra de estado ---
