@@ -113,6 +113,9 @@ if (Get-ChildItem Cert:\CurrentUser\My | ? { $_.Subject -match 'CN=cpxt_<tag>(,|
 # модальные окна (Био ДСЧ — движением мыши SendInput, прочие — WM_COMMAND IDOK).
 # Если cpxt_<tag> уже есть на самом токене — newkeyset упадёт с NTE_EXISTS (тег занят).
 pwsh token-session\make-token-container.ps1 -ContainerPath "\\.\<reader>\cpxt_<tag>" -Password <PIN> -TimeoutSec 200
+# Ненулевой выход дочернего pwsh НЕ прерывает этот скрипт сам по себе — проверяем явно,
+# иначе makecert/экспорт пойдут по уже существующему (возможно чужому) контейнеру.
+if ($LASTEXITCODE -ne 0) { throw "создание cpxt_<tag> на '<reader>' не удалось (код $LASTEXITCODE) — тег занят или ошибка носителя" }
 
 # Самоподписанный сертификат в контейнер. -password ОБЯЗАТЕЛЕН, иначе makecert
 # зависнет на диалоге «Аутентификация — КриптоПро CSP» (наблюдалось на ESMART).
