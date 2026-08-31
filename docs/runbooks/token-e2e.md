@@ -136,12 +136,24 @@ Run "checkexport `"cpxt_<tag> [signature]`" --lang ru"     # ждём подпи
 
 ## 6. PFX (обе ветки)
 
-Для split-контейнеров Lite/PRO PFX собирается из каждой папки отдельно.
+`extractpfx` работает с папкой на диске, `topfx` — с **установленной CSP-копией**
+(по её имени из шага 5). Для split-контейнеров Lite/PRO это две папки и две
+CSP-копии, поэтому PFX собирается для каждой ветви отдельно, в разные файлы —
+иначе подписной PFX не создаётся, а `topfx cpxt_<tag>` без суффикса не находит
+HDIMAGE-копию (имена там `[exchange]`/`[signature]`) либо адресует ещё
+подключённый неэкспортируемый контейнер токена.
 
 ```powershell
-Run "extractpfx `"$out\<технический-id>`" `"$out\<tag>.pfx`" <pfx-pass> `"`" --lang ru"   # для OpenSSL
-Run "topfx cpxt_<tag> `"$out\<tag>_cp.pfx`" <pfx-pass> --lang ru"                          # для КриптоПро (certmgr)
+# одноключевой случай (S/LT/ESMART):
+Run "extractpfx `"$out\<технический-id>`" `"$out\<tag>.pfx`" <pfx-pass> `"`" --lang ru"     # для OpenSSL
+Run "topfx cpxt_<tag> `"$out\<tag>_cp.pfx`" <pfx-pass> --lang ru"                            # для КриптоПро (certmgr)
 certutil -p <pfx-pass> -dump "$out\<tag>_cp.pfx" | Select-String 'Provider|Container'
+
+# Lite/PRO — обе ветви в разные файлы:
+Run "extractpfx `"$out\<технический-id>`" `"$out\<tag>_ex.pfx`" <pfx-pass> `"`" --lang ru"
+Run "extractpfx `"$out\<технический-id>_signature`" `"$out\<tag>_sg.pfx`" <pfx-pass> `"`" --lang ru"
+Run "topfx `"cpxt_<tag> [exchange]`" `"$out\<tag>_ex_cp.pfx`" <pfx-pass> --lang ru"
+Run "topfx `"cpxt_<tag> [signature]`" `"$out\<tag>_sg_cp.pfx`" <pfx-pass> --lang ru"
 ```
 
 ## 7. Уборка (удалять ТОЛЬКО своё `cpxt_*`)
@@ -154,11 +166,15 @@ certutil -p <pfx-pass> -dump "$out\<tag>_cp.pfx" | Select-String 'Provider|Conta
 #    (WM_SETTEXT не работает), затем Enter. CryptAcquireContext(CRYPT_DELETEKEYSET)
 #    на этих контейнерах даёт 0x8009001F — не годится, чистить через csptest.
 
-# b) HDIMAGE-копии (без PIN). Для Lite/PRO их две: "cpxt_<tag> [exchange]" и "[signature]":
+# b) HDIMAGE-копии (без PIN). S/LT/ESMART — одна "cpxt_<tag>";
+#    Lite/PRO — ДВЕ, "cpxt_<tag> [exchange]" и "cpxt_<tag> [signature]":
 & $csptest -keyset -deletekeyset -container "\\.\HDIMAGE\cpxt_<tag>" -provtype 80
+& $csptest -keyset -deletekeyset -container "\\.\HDIMAGE\cpxt_<tag> [exchange]" -provtype 80
+& $csptest -keyset -deletekeyset -container "\\.\HDIMAGE\cpxt_<tag> [signature]" -provtype 80
 
-# c) сертификаты из «Личное»:
-Get-ChildItem Cert:\CurrentUser\My | ? { $_.Subject -like '*CN=cpxt_*' } |
+# c) сертификаты из «Личное» — ТОЛЬКО текущего тега (у Lite/PRO их два, оба с
+#    CN=cpxt_<tag>). Wildcard '*CN=cpxt_*' снёс бы и чужие/параллельные cpxt_-тесты:
+Get-ChildItem Cert:\CurrentUser\My | ? { $_.Subject -like '*CN=cpxt_<tag>,*' } |
   % { Remove-Item ("Cert:\CurrentUser\My\" + $_.Thumbprint) -Force }
 ```
 Затем сверить `enum_cont` с baseline из шага 0 — расхождений быть не должно.
