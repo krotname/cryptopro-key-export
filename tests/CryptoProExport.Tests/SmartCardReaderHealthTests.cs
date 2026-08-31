@@ -71,14 +71,38 @@ namespace CryptoProExport.Tests
         [Fact]
         public void Describe_SummarizesHealthyReaders()
         {
+            // USB и программные считаются отдельно: драйвер Рутокена держит собственный
+            // ROOT-считыватель, за которым нет носителя, и общее число вводило в заблуждение —
+            // два вставленных токена выглядели как три устройства.
             using var language = Strings.Scope("en");
             var lines = SmartCardReaderHealth.Describe(new[]
             {
-                new SmartCardReaderStatus(),
-                new SmartCardReaderStatus(),
+                new SmartCardReaderStatus { HardwareId = @"USB\VID_0A89&PID_0030" },
+                new SmartCardReaderStatus { HardwareId = @"USB\VID_0A89&PID_0030" },
+                new SmartCardReaderStatus { HardwareId = @"ROOT\SMARTCARDREADER" },
             });
 
-            Assert.Equal("Smart-card readers (PnP): 2 PnP-present, all drivers started", Assert.Single(lines));
+            Assert.Equal("Smart-card readers (PnP): 2 USB, 1 software, all drivers started",
+                Assert.Single(lines));
+        }
+
+        [Fact]
+        public void Describe_ListsEveryReaderOnlyWhenDetailed()
+        {
+            using var language = Strings.Scope("en");
+            var statuses = new[]
+            {
+                new SmartCardReaderStatus { HardwareId = @"USB\VID_0A89&PID_0030\serial-must-not-leak" },
+                new SmartCardReaderStatus { HardwareId = @"ROOT\SMARTCARDREADER" },
+            };
+
+            Assert.Single(SmartCardReaderHealth.Describe(statuses));
+
+            var detailed = SmartCardReaderHealth.Describe(statuses, detailed: true);
+            Assert.Equal(3, detailed.Count);
+            Assert.Contains(@"USB reader USB\VID_0A89&PID_0030", detailed[1], StringComparison.Ordinal);
+            Assert.DoesNotContain("serial-must-not-leak", detailed[1], StringComparison.Ordinal);
+            Assert.Contains("software reader", detailed[2], StringComparison.Ordinal);
         }
 
         [Fact]

@@ -45,11 +45,11 @@ namespace CryptoProExport
             @"VID_[0-9A-F]{4}&PID_[0-9A-F]{4}",
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-        internal static List<string> Report()
+        internal static List<string> Report(bool detailed = false)
         {
             try
             {
-                return Describe(Enumerate());
+                return Describe(Enumerate(), detailed);
             }
             catch (Exception error)
             {
@@ -59,23 +59,50 @@ namespace CryptoProExport
             }
         }
 
-        internal static List<string> Describe(IEnumerable<SmartCardReaderStatus> statuses)
+        internal static List<string> Describe(IEnumerable<SmartCardReaderStatus> statuses,
+                                              bool detailed = false)
         {
             var pnpPresent = (statuses ?? Enumerable.Empty<SmartCardReaderStatus>()).ToList();
             if (pnpPresent.Count == 0)
                 return new List<string> { Strings.Get("diag.pnp.none") };
 
+            var lines = new List<string>();
             var problems = pnpPresent.Where(status => status.ProblemCode != 0).ToList();
             if (problems.Count == 0)
-                return new List<string> { Strings.Format("diag.pnp.ok", pnpPresent.Count) };
+            {
+                // USB и программные считыватели разделены намеренно. Одно число «присутствует N»
+                // читается как «подключено N токенов», а это неправда: драйвер Рутокена всегда
+                // держит собственный ROOT-считыватель (Aktiv Co. IFD Handler), за которым нет
+                // железа, и два вставленных токена дают три PnP-устройства.
+                int usb = pnpPresent.Count(status => SafeId(status) != null);
+                lines.Add(Strings.Format("diag.pnp.ok", usb, pnpPresent.Count - usb));
+            }
+            else
+            {
+                // Итог «все драйверы запущены» рядом со сбоем противоречил бы сам себе, поэтому
+                // при проблеме печатаются только проблемные считыватели.
+                lines.AddRange(problems.Select(status => Strings.Format(
+                    status.ProblemCode == CmProbFailedStart ? "diag.pnp.failed" : "diag.pnp.problem",
+                    SafeId(status) ?? "?",
+                    status.ProblemCode,
+                    "0x" + status.ProblemStatus.ToString("X8", System.Globalization.CultureInfo.InvariantCulture))));
+            }
 
-            return problems.Select(status => Strings.Format(
-                status.ProblemCode == CmProbFailedStart ? "diag.pnp.failed" : "diag.pnp.problem",
-                SafeHardwareId(new[] { status.HardwareId }) ?? "?",
-                status.ProblemCode,
-                "0x" + status.ProblemStatus.ToString("X8", System.Globalization.CultureInfo.InvariantCulture)))
-                .ToList();
+            if (detailed)
+                foreach (var status in pnpPresent)
+                {
+                    string id = SafeId(status);
+                    lines.Add("  " + (id == null
+                        ? Strings.Get("diag.pnp.software")
+                        : Strings.Format("diag.pnp.usb", id)));
+                }
+
+            return lines;
         }
+
+        /// <summary>VID/PID устройства или null, если USB-идентичности у него нет (ROOT, программное).</summary>
+        private static string SafeId(SmartCardReaderStatus status) =>
+            SafeHardwareId(new[] { status?.HardwareId });
 
         internal static string SafeHardwareId(IEnumerable<string> hardwareIds)
         {

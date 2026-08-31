@@ -6,7 +6,9 @@
     Собирает self-contained single-file приложение. Внутрь попадают:
       • среда .NET (запускать не нужно ничего доустанавливать);
       • p12utility.win32.exe и rtCOMLite.dll (вшиты как ресурсы, распаковываются
-        в %LOCALAPPDATA%\CryptoProExport\bundled\<версия> при первом запуске).
+        в %LOCALAPPDATA%\CryptoProExport\bundled\<версия> при первом запуске);
+      • библиотеки PKCS#11 Рутокен ЭЦП/Lite, JaCarta и ESMART — запасной путь для
+        машины без драйверов носителя (системная копия всегда приоритетнее).
     Снаружи остаётся единственная зависимость — КриптоПро CSP на целевой машине.
 
     Разрядность x86 и есть универсальная: такой exe идёт и на x64 (WOW64), и на
@@ -30,7 +32,10 @@ $root = Split-Path -Parent $PSScriptRoot
 Push-Location $root
 try {
     # 1. Проверяем, что вшиваемые зависимости на месте (без них exe соберётся, но будет неполным)
-    $required = @('tools\p12utility.win32.exe', 'tools\rtCOMLite.dll')
+    $required = @(
+        'tools\p12utility.win32.exe', 'tools\rtCOMLite.dll',
+        'tools\rtPKCS11ECP.dll', 'tools\jcPKCS11-2.dll',
+        'tools\isbc_pkcs11_main.dll', 'tools\isbc_esmart_token_mod.dll')
     $missing = $required | Where-Object { -not (Test-Path (Join-Path $root $_)) }
     if ($missing) {
         Write-Warning "Не найдены зависимости для упаковки: $($missing -join ', ')"

@@ -188,11 +188,49 @@ namespace CryptoProExport.Tests
             using var ru = Strings.Scope("ru");
             var report = Diagnostics.Report();
             Assert.Contains(report, l => l.StartsWith("Процесс:", StringComparison.Ordinal));
-            Assert.Contains(report, l => l.StartsWith("p12utility:", StringComparison.Ordinal));
-            Assert.Contains(report, l => l.StartsWith("rtCOMLite:", StringComparison.Ordinal));
+
+            // Вшитая зависимость в норме попадает в общую строку без путей, а отдельную строку
+            // получает только при отклонении (внешняя копия, нет её, системная регистрация).
+            Assert.Contains(report, l => l.StartsWith("Встроенные зависимости:", StringComparison.Ordinal)
+                                      && l.Contains("p12utility", StringComparison.Ordinal)
+                                      || l.StartsWith("p12utility:", StringComparison.Ordinal));
+            Assert.Contains(report, l => l.StartsWith("Встроенные зависимости:", StringComparison.Ordinal)
+                                      && l.Contains("rtCOMLite", StringComparison.Ordinal)
+                                      || l.StartsWith("rtCOMLite:", StringComparison.Ordinal));
+
             Assert.Contains(report, l => l.StartsWith("Считыватели смарт-карт (PnP):", StringComparison.Ordinal) ||
                                          l.StartsWith("Считыватель смарт-карт ", StringComparison.Ordinal));
+            Assert.Contains(report, l => l.StartsWith("PKCS#11:", StringComparison.Ordinal));
             Assert.Contains(report, l => l.StartsWith("КриптоПро CSP:", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public void Diagnostics_SpellsOutProviderTypeInsteadOfBareNumber()
+        {
+            // «провайдеры 80, 81, 75» читателю лога ничего не говорят: рядом с типом обязано
+            // стоять обозначение стандарта, иначе строка бесполезна.
+            using var ru = Strings.Scope("ru");
+            string csp = Diagnostics.Report().FirstOrDefault(
+                l => l.StartsWith("КриптоПро CSP:", StringComparison.Ordinal));
+            Assert.NotNull(csp);
+            if (CertFromContainer.AvailableProviders().Count == 0) return;   // CSP не установлен
+
+            Assert.Contains("ГОСТ Р 34.10", csp, StringComparison.Ordinal);
+            Assert.DoesNotContain("провайдеры 80,", csp, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void Pkcs11Libraries_AreEmbeddedForEveryVendorWithASelfContainedModule()
+        {
+            // Библиотеки трёх вендоров вшиты, чтобы смарт-карточный носитель читался и без
+            // установленных драйверов. Рутокен S сюда не входит намеренно: rtPKCS11.dll тянет
+            // rtAPIi.dll/rtLib.dll из пакета драйверов (см. BundledTools).
+            Assert.True(BundledTools.Has(BundledTools.ResourceName("rtPKCS11ECP.dll")), "Rutoken");
+            Assert.True(BundledTools.Has(BundledTools.ResourceName("jcPKCS11-2.dll")), "JaCarta");
+            Assert.True(BundledTools.Has(BundledTools.ResourceName("isbc_pkcs11_main.dll")), "ESMART");
+            Assert.True(BundledTools.Has(BundledTools.ResourceName("isbc_esmart_token_mod.dll")),
+                "ESMART backend");
+            Assert.False(BundledTools.Has(BundledTools.ResourceName("rtPKCS11.dll")), "Rutoken S");
         }
 
         [Fact]
