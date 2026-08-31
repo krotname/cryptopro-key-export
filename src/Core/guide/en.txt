@@ -168,10 +168,13 @@ interface languages fall back to the English text.
       program is holding it.
 
   Fewer PKCS#11 devices than readers
-      Not an error: readers are counted separately, while PKCS#11
-      only shows carriers whose vendor library is installed. The
-      rest are listed on a PC/SC line with the vendor name and ATR.
-      BIFIT carriers, for one, have no PKCS#11 library at all.
+      Not an error: readers are counted separately, and PKCS#11
+      shows only the carriers that at least one installed library
+      reported. The rest are listed on a PC/SC line with the vendor
+      name and ATR. The reason varies: the vendor library may be
+      missing entirely (as with BIFIT carriers) or present but
+      failing to load or to enumerate slots — its own error is then
+      written above in the same log.
 
   Wrong PIN, PIN locked
       The program spells such codes out in words. After several wrong
