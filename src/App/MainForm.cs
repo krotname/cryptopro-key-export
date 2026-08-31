@@ -568,9 +568,11 @@ namespace CryptoProExport.App
             foreach (var line in PcscReaders.CoverageLines(pcscReaders, pkcs11Readers))
                 Log("[PC/SC] " + line);
             foreach (var r in PcscReaders.Uncovered(pcscReaders, pkcs11Readers))
-                AddRow($"[PC/SC] {r.Name}", Strings.Get("common.none"),
-                       Strings.Format("cli.pcsc.row",
-                                      Strings.Get(PcscReaders.CarrierHintKey(r.Name)), r.Atr ?? "?"),
+                // В колонке контейнера — вендор носителя, а не «нет»: контейнеры КриптоПро на
+                // таком носителе быть могут (проверено на BIFIT ANGARA), просто показывает их
+                // не PKCS#11, а CSP — отдельной строкой выше.
+                AddRow($"[PC/SC] {r.Name}", Strings.Get(PcscReaders.CarrierHintKey(r.Name)),
+                       Strings.Format("cli.pcsc.row", r.Atr ?? "?"),
                        new TokenDeviceSelection());
 
             cancel.ThrowIfCancellationRequested();

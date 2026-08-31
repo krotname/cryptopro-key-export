@@ -367,10 +367,10 @@ tip.license = 安装许可证文件 (.jws, .license) 并针对本机验证。\n�
 dlg.license.title = 选择许可证文件
 
 # --- диагностика PC/SC ---
-cli.pcsc.count = 读卡器 {0} 个，其中有载体 {1} 个；PKCS#11 库显示载体的有 {2} 个 — 其余在系统中没有厂商库
+cli.pcsc.count = 读卡器 {0} 个，其中有载体 {1} 个；PKCS#11 库显示载体的有 {2} 个 — 其余的已安装库均未显示
 cli.pcsc.uncovered = 存在于 PC/SC 读卡器中但未显示为 PKCS#11 令牌的卡：
 cli.pcsc.line = {0} [{1}] — 卡已插入，ATR {2}
-cli.pcsc.row = {0}；系统中没有该载体的 PKCS#11 库；ATR {1}
+cli.pcsc.row = 已安装的 PKCS#11 库均未显示该载体；ATR {0}
 cli.pcsc.hint = 此类卡不是 PKCS#11 令牌；若也不是 CryptoPro 载体，则无可导出内容。
 carrier.jacarta = JaCarta / Aladdin
 carrier.rutoken = Rutoken

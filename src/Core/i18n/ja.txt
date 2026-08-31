@@ -367,10 +367,10 @@ tip.license = ライセンスファイル (.jws, .license) をインストール
 dlg.license.title = ライセンスファイルを選択
 
 # --- диагностика PC/SC ---
-cli.pcsc.count = リーダー {0} 台、うち媒体あり {1} 台。PKCS#11 ライブラリが媒体を示したのは {2} 台 — 残りはベンダーのライブラリがシステムにありません
+cli.pcsc.count = リーダー {0} 台、うち媒体あり {1} 台。PKCS#11 ライブラリが媒体を示したのは {2} 台 — 残りはインストール済みのどのライブラリも示しません
 cli.pcsc.uncovered = PC/SCリーダーに存在するがPKCS#11トークンとして表示されないカード:
 cli.pcsc.line = {0} [{1}] — カードあり、ATR {2}
-cli.pcsc.row = {0}。この媒体用の PKCS#11 ライブラリはシステムにありません。ATR {1}
+cli.pcsc.row = インストール済みのどの PKCS#11 ライブラリもこの媒体を示しません。ATR {0}
 cli.pcsc.hint = このようなカードはPKCS#11トークンではありません。CryptoProの媒体でもない場合、エクスポートするものはありません。
 carrier.jacarta = JaCarta / Aladdin
 carrier.rutoken = Rutoken

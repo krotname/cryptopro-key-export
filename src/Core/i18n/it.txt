@@ -367,10 +367,10 @@ tip.license = Installa un file di licenza (.jws, .license) e verificalo per ques
 dlg.license.title = Scegli il file di licenza
 
 # --- диагностика PC/SC ---
-cli.pcsc.count = lettori {0}, di cui con supporto {1}; una libreria PKCS#11 mostra il supporto per {2} — per gli altri non c'è la libreria del produttore nel sistema
+cli.pcsc.count = lettori {0}, di cui con supporto {1}; una libreria PKCS#11 mostra il supporto per {2} — gli altri non li mostra nessuna delle installate
 cli.pcsc.uncovered = Carte presenti nei lettori PC/SC ma non mostrate come token PKCS#11:
 cli.pcsc.line = {0} [{1}] — carta presente, ATR {2}
-cli.pcsc.row = {0}; nel sistema non c'è una libreria PKCS#11 per questo supporto; ATR {1}
+cli.pcsc.row = nessuna libreria PKCS#11 installata mostra questo supporto; ATR {0}
 cli.pcsc.hint = Una carta simile non è un token PKCS#11; se non è nemmeno un supporto CryptoPro, non c'è nulla da esportare.
 carrier.jacarta = JaCarta / Aladdin
 carrier.rutoken = Rutoken

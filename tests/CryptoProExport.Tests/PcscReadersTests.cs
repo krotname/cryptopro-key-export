@@ -137,8 +137,10 @@ namespace CryptoProExport.Tests
 
             var lines = PcscReaders.CoverageLines(readers, new[] { "Aktiv Rutoken lite 0" });
 
-            Assert.Equal("считывателей 3, из них с носителем 3; библиотека PKCS#11 показала "
-                         + "носитель у 1 — для остальных вендорной библиотеки в системе нет",
+            // Сводка не утверждает, что библиотеки нет: модуль бывает установлен и при этом
+            // не грузится или не перечисляет слоты (замечание Codex на PR #72).
+            Assert.Equal("считывателей 3, из них с носителем 3; носитель показала библиотека "
+                         + "PKCS#11 у 1 — остальных не показала ни одна из установленных",
                          lines[0]);
             Assert.Contains(lines, l => l.Contains("BIFIT ANGARA 0", StringComparison.Ordinal));
             Assert.Contains(lines, l => l.Contains("BIFIT iBank2Key 0", StringComparison.Ordinal));

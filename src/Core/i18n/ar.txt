@@ -367,10 +367,10 @@ tip.license = ثبِّت ملف ترخيص (.jws, .license) وتحقق منه ل
 dlg.license.title = اختيار ملف الترخيص
 
 # --- диагностика PC/SC ---
-cli.pcsc.count = القارئات {0}، منها بوسيط {1}؛ أظهرت مكتبة PKCS#11 الوسيط في {2} — أما البقية فلا توجد لها مكتبة مُصنِّع في النظام
+cli.pcsc.count = القارئات {0}، منها بوسيط {1}؛ أظهرت مكتبة PKCS#11 الوسيط في {2} — أما البقية فلا تظهرها أي من المكتبات المثبَّتة
 cli.pcsc.uncovered = بطاقات موجودة في قارئات PC/SC لكنها لا تظهر كرمز PKCS#11:
 cli.pcsc.line = {0} [{1}] — البطاقة موجودة، ATR {2}
-cli.pcsc.row = {0}؛ لا توجد في النظام مكتبة PKCS#11 لهذا الوسيط؛ ATR {1}
+cli.pcsc.row = لا تُظهر أي مكتبة PKCS#11 مثبَّتة هذا الوسيط؛ ATR {0}
 cli.pcsc.hint = هذه البطاقة ليست رمز PKCS#11؛ وإذا لم تكن أيضًا وسيط CryptoPro، فلا يوجد ما يمكن تصديره.
 carrier.jacarta = JaCarta / Aladdin
 carrier.rutoken = Rutoken
