@@ -50,11 +50,13 @@ $csptest = 'C:\Program Files\Crypto Pro\CSP\csptest.exe'
 
 ```powershell
 function Run($a){                        # $a — аргументы CryptoProExport.exe
-  $o = [IO.Path]::GetTempFileName()
-  $p = Start-Process $exe $a -Wait -PassThru -RedirectStandardOutput $o -WindowStyle Hidden
+  $o = [IO.Path]::GetTempFileName(); $e = [IO.Path]::GetTempFileName()
+  $p = Start-Process $exe $a -Wait -PassThru -RedirectStandardOutput $o -RedirectStandardError $e -WindowStyle Hidden
   Write-Host "EXIT=$($p.ExitCode)"
-  [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($o))   # приложение печатает UTF-8
-  Remove-Item $o -ErrorAction SilentlyContinue
+  [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($o))          # stdout, UTF-8
+  $err = [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($e))   # stderr — туда идут
+  if ($err) { Write-Host "STDERR: $err" }                              # ошибки (Err/Console.Error)
+  Remove-Item $o, $e -ErrorAction SilentlyContinue
 }
 ```
 
@@ -105,7 +107,10 @@ VID/PID — и подставлять именно её во все команд
 # в enum_cont не «немеет» (в отличие от токен-ридеров, см. §7), проверка надёжна.
 $csp = & $csptest -keyset -enum_cont -verifycontext -fqcn 2>&1
 foreach ($n in @("cpxt_<tag>", "cpxt_<tag> [exchange]", "cpxt_<tag> [signature]")) {
-  if ($csp -match [regex]::Escape("\HDIMAGE\$n")) { throw "HDIMAGE уже содержит '$n' — выбери другой тег" }
+  # \<имя> в конце FQCN на ЛЮБОМ носителе (HDIMAGE ИЛИ соседний токен): tokenfull/
+  # SaveCerts открывает контейнер по голому логическому имени, поэтому одноимённый
+  # контейнер на другом токене увёл бы сертификат/PFX не туда.
+  if ($csp -match ([regex]::Escape("\$n") + '\s*$')) { throw "контейнер '$n' уже есть на одном из носителей — выбери другой тег" }
 }
 # И сертификат: прерванный прогон мог оставить cert CN=cpxt_<tag> без контейнера,
 # тогда чистка по subject (§7c) снесла бы чужой. Резервируем и это пространство имён.
@@ -124,6 +129,9 @@ if ($LASTEXITCODE -ne 0) { throw "создание cpxt_<tag> на '<reader>' н
 # Самоподписанный сертификат в контейнер. -password ОБЯЗАТЕЛЕН, иначе makecert
 # зависнет на диалоге «Аутентификация — КриптоПро CSP» (наблюдалось на ESMART).
 & $csptest -keyset -container "\\.\<reader>\cpxt_<tag>" -provtype 80 -makecert -password <PIN>
+# Без сертификата checkexport всё равно покажет …98 (ключи есть), и прогон дошёл бы
+# до провала tokenfull/PFX. Прерываемся сразу, если makecert не отработал:
+if ($LASTEXITCODE -ne 0) { throw "makecert для cpxt_<tag> не удался (код $LASTEXITCODE) — неверный PIN или незакрытый диалог" }
 ```
 Проверить, что baseline действительно неэкспортируемый (флага `CRYPT_EXPORT` нет):
 ```powershell
