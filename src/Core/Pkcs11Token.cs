@@ -94,6 +94,15 @@ namespace CryptoProExport
         public bool CapabilitiesKnown;
         public RutokenCapabilityProfile CapabilityProfile;
 
+        /// <summary>Объём памяти токена для публичных объектов, байт; -1 — не объявлен.</summary>
+        public long PublicMemoryTotal = -1;
+        /// <summary>Свободная память для публичных объектов, байт; -1 — не объявлена.</summary>
+        public long PublicMemoryFree = -1;
+        /// <summary>Объём памяти токена для приватных объектов, байт; -1 — не объявлен.</summary>
+        public long PrivateMemoryTotal = -1;
+        /// <summary>Свободная память для приватных объектов, байт; -1 — не объявлена.</summary>
+        public long PrivateMemoryFree = -1;
+
         /// <summary>PIN пользователя заводской (флаг CKF_USER_PIN_TO_BE_CHANGED) — узнаётся без попытки входа.</summary>
         public bool PinDefault;
         /// <summary>Счётчик попыток PIN на исходе (CKF_USER_PIN_COUNT_LOW).</summary>
@@ -137,8 +146,11 @@ namespace CryptoProExport
     /// конкретного ключа можно утверждать только когда такой объект действительно найден;
     /// модель токена и набор механизмов не заменяют проверку объекта.
     ///
-    /// Библиотеки берутся из системы (ставятся с драйвером носителя), а не вшиваются: они большие
-    /// и обновляются вместе с драйвером. Если ни одной нет — класс молча сообщает о недоступности.
+    /// Библиотека берётся прежде всего из системы (ставится с драйвером носителя): она обновляется
+    /// вместе с драйвером и всегда соответствует ему по версии. Если системной нет, в ход идёт
+    /// вшитая копия из <see cref="BundledTools"/> — она позволяет прочитать смарт-карточный
+    /// носитель на машине без установленных драйверов. Если нет ни той, ни другой — класс молча
+    /// сообщает о недоступности.
     /// </summary>
     [SupportedOSPlatform("windows")]
     public static class Pkcs11Token
@@ -192,6 +204,12 @@ namespace CryptoProExport
                 if (!string.IsNullOrEmpty(path) && seen.Add(path))
                     yield return path;
 
+            // Вшитая копия идёт последней и распаковывается только если сюда дошли:
+            // перебор прерывается на первом полном наборе (см. AvailableLibraries).
+            string bundled = BundledCandidate(dll);
+            if (!string.IsNullOrEmpty(bundled) && seen.Add(bundled))
+                yield return bundled;
+
             IEnumerable<string> Paths()
             {
                 yield return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), dll);
@@ -221,6 +239,29 @@ namespace CryptoProExport
                     yield return Path.Combine(pf, "Aktiv Co", "Rutoken", dll);
                 }
             }
+        }
+
+        /// <summary>
+        /// Вшитая копия библиотеки, распакованная в кэш, — последний кандидат: системная всегда
+        /// приоритетнее, потому что идёт в комплекте с драйвером и соответствует ему по версии.
+        /// Возвращает null, если библиотека не вшита, не распаковалась или не совпала по
+        /// разрядности с процессом (вшитые копии 32-битные, как и rtCOMLite).
+        ///
+        /// Распаковка ленивая: перебор кандидатов доходит сюда только тогда, когда системной
+        /// копии нет, поэтому на машине с драйверами эти мегабайты на диск не попадают.
+        /// </summary>
+        internal static string BundledCandidate(string dll)
+        {
+            string path = BundledTools.TryExtract(BundledTools.ResourceName(dll), dll, out _);
+            if (path == null) return null;
+
+            // ESMART без backend-модуля рядом не инициализируется — распаковываем пару целиком,
+            // и только потом отдаём entry module кандидатом (полноту проверит IsLibraryComplete).
+            if (string.Equals(dll, EsmartDll, StringComparison.OrdinalIgnoreCase))
+                BundledTools.TryExtract(BundledTools.ResourceName(EsmartCompanionDll),
+                                        EsmartCompanionDll, out _);
+
+            return RegFreeCom.MatchesProcess(path, out _) ? path : null;
         }
 
         /// <summary>
@@ -586,9 +627,60 @@ namespace CryptoProExport
                 : "?";
             string ecdsa = info.CapabilitiesKnown ? (info.HardwareEcdsa ? "+" : "−") : "?";
             string gost = info.CapabilitiesKnown ? (info.HardwareGost ? "+" : "−") : "?";
-            return Strings.Format("cli.token.capabilities", info.Hardware ?? "?", count,
+            string line = Strings.Format("cli.token.capabilities", info.Hardware ?? "?", count,
                 CapabilityProfileName(info.CapabilityProfile), rsa, ecdsa, gost);
+
+            // Объём памяти читается из тех же метаданных, что и версии, — без PIN и без сессии.
+            string memory = MemorySummary(info);
+            return memory == null ? line : line + "; " + memory;
         }
+
+        /// <summary>
+        /// Байты из CK_TOKEN_INFO. Маркер CK_UNAVAILABLE_INFORMATION (все биты CK_ULONG) значит
+        /// «токен объёма не сообщает», а не «памяти столько»: его нельзя показывать числом.
+        /// Разрядность CK_ULONG зависит от платформы, поэтому неизвестным считается и
+        /// 32-битный, и 64-битный вариант маркера. -1 — не объявлено.
+        /// </summary>
+        internal static long Memory(ulong value) =>
+            value == uint.MaxValue || value > long.MaxValue ? -1 : (long)value;
+
+        /// <summary>
+        /// Строка с объёмом памяти токена или null, если он не объявлен.
+        ///
+        /// PKCS#11 даёт два счётчика — для публичных и для приватных объектов — и не сообщает,
+        /// один это пул или два. Поэтому счётчики только показываются, а не складываются и не
+        /// объявляются общим пулом: сумма завысила бы объём у токена с одним пулом, а показ
+        /// одной пары занизил бы его у токена с двумя. Совпали (Рутокен ЭЦП отдаёт именно так,
+        /// проверено 31.08.2026 на двух носителях) — печатается одна пара тех же чисел; разошлись —
+        /// обе, каждая со своей подписью.
+        ///
+        /// Чистая функция: покрыта тестами без обращения к железу.
+        /// </summary>
+        public static string MemorySummary(Pkcs11TokenInfo info)
+        {
+            if (info == null) throw new ArgumentNullException(nameof(info));
+
+            // Молчим, только когда не объявлено ни одно из четырёх чисел: счётчики независимы,
+            // и токен, скрывший общий объём, но назвавший свободный, должен показать свободный
+            // (замечание Codex на PR #70).
+            if (info.PublicMemoryTotal < 0 && info.PublicMemoryFree < 0
+                && info.PrivateMemoryTotal < 0 && info.PrivateMemoryFree < 0)
+                return null;
+
+            if (info.PublicMemoryTotal == info.PrivateMemoryTotal
+                && info.PublicMemoryFree == info.PrivateMemoryFree)
+                return Strings.Format("cli.token.memory",
+                    Kilobytes(info.PublicMemoryTotal), Kilobytes(info.PublicMemoryFree));
+
+            return Strings.Format("cli.token.memory.split",
+                Kilobytes(info.PublicMemoryTotal), Kilobytes(info.PublicMemoryFree),
+                Kilobytes(info.PrivateMemoryTotal), Kilobytes(info.PrivateMemoryFree));
+        }
+
+        /// <summary>Байты в килобайтах с округлением; «?» — объём не объявлен.</summary>
+        private static string Kilobytes(long bytes) => bytes < 0
+            ? "?"
+            : ((bytes + 512) / 1024).ToString(System.Globalization.CultureInfo.InvariantCulture);
 
         /// <summary>Локализованное состояние PIN (без траты попыток входа).</summary>
         public static string PinState(Pkcs11TokenInfo info) => Strings.Get(
@@ -768,6 +860,11 @@ namespace CryptoProExport
                         info.Hardware = ti.HardwareVersion;
                         info.Firmware = ti.FirmwareVersion;
                         info.Kind = Classify(info.Model, info.Manufacturer);
+
+                        info.PublicMemoryTotal = Memory(ti.TotalPublicMemory);
+                        info.PublicMemoryFree = Memory(ti.FreePublicMemory);
+                        info.PrivateMemoryTotal = Memory(ti.TotalPrivateMemory);
+                        info.PrivateMemoryFree = Memory(ti.FreePrivateMemory);
 
                         var f = ti.TokenFlags;
                         info.PinDefault = f.UserPinToBeChanged;

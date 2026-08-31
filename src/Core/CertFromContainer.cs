@@ -27,6 +27,25 @@ namespace CryptoProExport
             (75u, "Crypto-Pro GOST R 34.10-2001 Cryptographic Service Provider"),        // ГОСТ-2001
         };
 
+        /// <summary>
+        /// Обозначение алгоритма по типу провайдера — для отчёта о зависимостях: голое число
+        /// («провайдеры 80, 81, 75») читателю лога ничего не говорит. Текст переводится вместе
+        /// с остальным отчётом: это наша диагностика, а не название продукта вендора
+        /// (замечание Codex на PR #70). Неизвестный тип возвращается числом — выдумывать за
+        /// него алгоритм нельзя.
+        /// </summary>
+        public static string ProviderAlgorithm(uint type) => type switch
+        {
+            80u => Strings.Format("csp.alg.2012", 256),
+            81u => Strings.Format("csp.alg.2012", 512),
+            75u => Strings.Get("csp.alg.2001"),
+            _ => type.ToString(CultureInfo.InvariantCulture),
+        };
+
+        /// <summary>Тип провайдера с расшифровкой: «80 — ГОСТ Р 34.10-2012, 256 бит».</summary>
+        public static string DescribeProvider(uint type) =>
+            type.ToString(CultureInfo.InvariantCulture) + " — " + ProviderAlgorithm(type);
+
         /// <summary>Ключ обмена (AT_KEYEXCHANGE).</summary>
         public const uint AT_KEYEXCHANGE = 1;
         /// <summary>Ключ подписи (AT_SIGNATURE).</summary>

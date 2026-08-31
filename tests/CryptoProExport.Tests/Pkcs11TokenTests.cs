@@ -826,10 +826,169 @@ namespace CryptoProExport.Tests
             var candidates = Pkcs11Token.LibraryCandidates("isbc_pkcs11_main.dll").ToArray();
             string windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows)
                 .TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            // Кэш вшитых зависимостей — не «случайная прикладная копия»: этот файл положили в
+            // сборку мы сами, и он распакован нами же. Всё остальное вне %WINDIR% запрещено.
+            string bundled = BundledTools.CacheDir.TrimEnd(Path.DirectorySeparatorChar)
+                + Path.DirectorySeparatorChar;
 
             Assert.NotEmpty(candidates);
             Assert.All(candidates, candidate => Assert.True(
-                candidate.StartsWith(windows, StringComparison.OrdinalIgnoreCase), candidate));
+                candidate.StartsWith(windows, StringComparison.OrdinalIgnoreCase)
+                || candidate.StartsWith(bundled, StringComparison.OrdinalIgnoreCase), candidate));
+        }
+
+        [Fact]
+        public void BundledCandidate_IsAbsentForTheVendorModuleThatNeedsItsDriverPackage()
+        {
+            // Рутокен S не вшит намеренно: rtPKCS11.dll импортирует rtAPIi.dll/rtLib.dll из
+            // пакета драйверов, а сам носитель без драйвера Aktiv не появляется и в PC/SC.
+            Assert.Null(Pkcs11Token.BundledCandidate("rtPKCS11.dll"));
+        }
+
+        [Fact]
+        public void BundledCandidate_UnpacksEsmartBackendNextToItsEntryModule()
+        {
+            // Один isbc_pkcs11_main.dll без backend-модуля рядом не даёт рабочей диагностики,
+            // поэтому пара обязана распаковываться целиком — независимо от разрядности процесса
+            // (сам кандидат в x64 отбрасывается, но файлы на месте должны быть оба).
+            Pkcs11Token.BundledCandidate("isbc_pkcs11_main.dll");
+
+            Assert.True(File.Exists(Path.Combine(BundledTools.CacheDir, "isbc_pkcs11_main.dll")));
+            Assert.True(File.Exists(Path.Combine(BundledTools.CacheDir, "isbc_esmart_token_mod.dll")));
+        }
+
+        [Fact]
+        public void BundledCandidate_IsRejectedWhenItsBitnessDoesNotMatchTheProcess()
+        {
+            // Вшитые копии 32-битные: в x64-процессе они кандидатами быть не должны, иначе
+            // перечисление уходило бы в заведомо провальную загрузку библиотеки.
+            string candidate = Pkcs11Token.BundledCandidate("rtPKCS11ECP.dll");
+            if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
+                Assert.NotNull(candidate);
+            else
+                Assert.Null(candidate);
+        }
+
+        [Theory]
+        [InlineData(0xFFFFFFFFUL)]                  // CK_UNAVAILABLE_INFORMATION, CK_ULONG 32 бита
+        [InlineData(0xFFFFFFFFFFFFFFFFUL)]          // тот же маркер там, где CK_ULONG 64-битный
+        public void Memory_TreatsUnavailableInformationAsUnknown(ulong raw)
+        {
+            Assert.Equal(-1, Pkcs11Token.Memory(raw));
+        }
+
+        [Fact]
+        public void Memory_KeepsRealValue()
+        {
+            Assert.Equal(131072, Pkcs11Token.Memory(131072));
+        }
+
+        [Fact]
+        public void MemorySummary_ReportsSharedPoolOnce()
+        {
+            // Рутокен ЭЦП отдаёт одинаковые пары public/private — это один пул, и складывать
+            // их нельзя: 128 КБ превратились бы в 256 КБ. Числа сняты с живого носителя.
+            using var language = Strings.Scope("ru");
+            string line = Pkcs11Token.MemorySummary(new Pkcs11TokenInfo
+            {
+                PublicMemoryTotal = 131072, PublicMemoryFree = 86720,
+                PrivateMemoryTotal = 131072, PrivateMemoryFree = 86720,
+            });
+
+            Assert.Equal("память 128 КБ, свободно 85 КБ", line);
+        }
+
+        [Fact]
+        public void MemorySummary_ShowsBothCountersWhenTheyDiffer()
+        {
+            // Складывать счётчики нельзя: PKCS#11 не сообщает, один это пул или два, и сумма
+            // завысила бы объём общего пула (замечание Codex на PR #70). Показываем как есть.
+            using var language = Strings.Scope("en");
+            string line = Pkcs11Token.MemorySummary(new Pkcs11TokenInfo
+            {
+                PublicMemoryTotal = 32768, PublicMemoryFree = 16384,
+                PrivateMemoryTotal = 65536, PrivateMemoryFree = 32768,
+            });
+
+            Assert.Equal("memory: public 32 KB (free 16), private 64 KB (free 32)", line);
+        }
+
+        [Fact]
+        public void MemorySummary_DoesNotHalveTwoEquallySizedPools()
+        {
+            // Равные счётчики печатаются одной парой тех же чисел — это не заявление о том,
+            // что пул один, и ничего не теряет.
+            using var language = Strings.Scope("en");
+            string line = Pkcs11Token.MemorySummary(new Pkcs11TokenInfo
+            {
+                PublicMemoryTotal = 65536, PublicMemoryFree = 32768,
+                PrivateMemoryTotal = 65536, PrivateMemoryFree = 32768,
+            });
+
+            Assert.Equal("memory 64 KB, free 32 KB", line);
+        }
+
+        [Fact]
+        public void MemorySummary_ShowsWhatIsKnownWhenOnlyOneCounterIsDeclared()
+        {
+            using var language = Strings.Scope("en");
+            string line = Pkcs11Token.MemorySummary(new Pkcs11TokenInfo
+            {
+                PublicMemoryTotal = 65536, PublicMemoryFree = 32768,
+            });
+
+            Assert.Equal("memory: public 64 KB (free 32), private ? KB (free ?)", line);
+        }
+
+        [Fact]
+        public void MemorySummary_IsSilentOnlyWhenNothingAtAllIsDeclared()
+        {
+            using var language = Strings.Scope("ru");
+            Assert.Null(Pkcs11Token.MemorySummary(new Pkcs11TokenInfo()));
+        }
+
+        [Fact]
+        public void MemorySummary_KeepsFreeSpaceWhenOnlyTotalsAreUndeclared()
+        {
+            // Поля CK_TOKEN_INFO независимы: токен вправе скрыть общий объём и назвать
+            // свободный — прятать его из-за этого нельзя (замечание Codex на PR #70).
+            using var language = Strings.Scope("ru");
+            string line = Pkcs11Token.MemorySummary(new Pkcs11TokenInfo
+            {
+                PublicMemoryFree = 40960, PrivateMemoryFree = 40960,
+            });
+
+            Assert.Equal("память ? КБ, свободно 40 КБ", line);
+        }
+
+        [Fact]
+        public void MemorySummary_ShowsQuestionMarkForUndeclaredFreeSpace()
+        {
+            using var language = Strings.Scope("ru");
+            string line = Pkcs11Token.MemorySummary(new Pkcs11TokenInfo
+            {
+                PublicMemoryTotal = 65536, PrivateMemoryTotal = 65536,
+            });
+
+            Assert.Equal("память 64 КБ, свободно ? КБ", line);
+        }
+
+        [Fact]
+        public void CapabilitySummary_AppendsMemoryOnlyWhenKnown()
+        {
+            using var language = Strings.Scope("ru");
+            var withMemory = new Pkcs11TokenInfo
+            {
+                Hardware = "67.04", MechanismCount = 70, CapabilitiesKnown = true,
+                PublicMemoryTotal = 131072, PublicMemoryFree = 86720,
+                PrivateMemoryTotal = 131072, PrivateMemoryFree = 86720,
+            };
+
+            Assert.EndsWith("; память 128 КБ, свободно 85 КБ",
+                Pkcs11Token.CapabilitySummary(withMemory), StringComparison.Ordinal);
+            Assert.DoesNotContain("память",
+                Pkcs11Token.CapabilitySummary(new Pkcs11TokenInfo { Hardware = "20.05" }),
+                StringComparison.Ordinal);
         }
 
         [Fact]

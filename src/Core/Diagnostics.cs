@@ -19,32 +19,47 @@ namespace CryptoProExport
             var asm = typeof(Diagnostics).Assembly.GetName();
             lines.Add(Strings.Format("diag.process", RegFreeCom.Name(RuntimeInformation.ProcessArchitecture), asm.Version));
 
-            // 1. p12utility — вшит
-            string p12 = P12Utility.Resolve();
-            lines.Add(p12 == null
-                ? Strings.Get("diag.p12.missing")
-                : Strings.Format("diag.p12.found",
-                    Strings.Get(IsBundled(p12) ? "diag.copy.bundled" : "diag.copy.external"), p12));
-            if (detailed) lines.AddRange(P12Utility.DescribeSource());
+            // 1–2. Вшитые зависимости. Все они распаковываются в один кэш, поэтому в кратком
+            //       отчёте идут одной строкой без путей: путь тут ничего не решает и только
+            //       мешает читать. Полные пути и происхождение каждой — в detailed (команда deps).
+            //       Отдельной строкой остаётся лишь то, что отличается от нормы: внешняя копия,
+            //       отсутствие или системная регистрация вместо вшитой.
+            var bundled = new List<string>();
+            var notes = new List<string>();
 
-            // 2. rtCOMLite — вшит, грузится без регистрации (только в 32-битном процессе)
-            lines.Add(Strings.Format("diag.rtcom", RutokenExporter.SourceSummary()));
+            string p12 = P12Utility.Resolve();
+            if (p12 == null) notes.Add(Strings.Get("diag.p12.missing"));
+            else if (IsBundled(p12)) bundled.Add(BundledTools.P12UtilityFileName);
+            else notes.Add(Strings.Format("diag.p12.found", Strings.Get("diag.copy.external"), p12));
+
+            // rtCOMLite грузится без регистрации и только в 32-битном процессе.
+            if (RutokenExporter.UsesBundledCopy()) bundled.Add(BundledTools.RtComLiteFileName);
+            else notes.Add(Strings.Format("diag.rtcom", RutokenExporter.SourceSummary()));
             if (RuntimeInformation.ProcessArchitecture != Architecture.X86)
-                lines.Add("  " + Strings.Get("diag.rtcom.warn"));
-            if (detailed) lines.AddRange(RutokenExporter.DescribeSource());
+                notes.Add("  " + Strings.Get("diag.rtcom.warn"));
+
+            if (bundled.Count > 0)
+                lines.Add(Strings.Format("diag.bundled", string.Join(", ", bundled)));
+            lines.AddRange(notes);
+            if (detailed)
+            {
+                lines.AddRange(P12Utility.DescribeSource());
+                lines.AddRange(RutokenExporter.DescribeSource());
+            }
 
             // 2a. PnP — failed-start reader исчезает из PC/SC и PKCS#11, хотя остаётся PnP-present.
             //     Показываем безопасные VID/PID без полного Instance ID (его хвост бывает серийником).
-            lines.AddRange(SmartCardReaderHealth.Report());
+            lines.AddRange(SmartCardReaderHealth.Report(detailed));
 
             // 2b. PKCS#11 — путь для смарт-карточных носителей (где rtCOMLite файлы не отдаёт).
-            //     Библиотеки берутся из системы (драйверы носителей), не вшиваются. Их может быть
-            //     несколько: каждая показывает только своего вендора. В detailed — перечень токенов.
+            //     Библиотека берётся из системы (драйвер носителя), а если её там нет — из вшитой
+            //     копии. Их может быть несколько: каждая показывает только своего вендора.
+            //     В detailed — перечень токенов.
             var p11 = Pkcs11Token.AvailableLibraries();
             lines.Add(Strings.Format("diag.pkcs11", p11.Count == 0
                 ? Strings.Get("diag.pkcs11.missing")
-                : Strings.Format("diag.pkcs11.found",
-                    string.Join("; ", p11.Select(l => l.Vendor + " — " + l.Path)))));
+                : Strings.Format("diag.pkcs11.found", string.Join("; ", p11.Select(l =>
+                    l.Vendor + " — " + (IsBundled(l.Path) ? Strings.Get("diag.copy.bundled") : l.Path))))));
             List<Pkcs11TokenInfo> pkcs11Tokens = null;
             if (detailed && p11.Count > 0)
             {
@@ -94,13 +109,16 @@ namespace CryptoProExport
             }
 
             // 3. КриптоПро CSP — единственная внешняя зависимость, вшить нельзя
+            //     Тип провайдера печатается с расшифровкой: голые «80, 81, 75» читателю лога
+            //     ничего не говорят, а это и есть ответ на вопрос «какой ГОСТ поддержан».
             var provs = CertFromContainer.AvailableProviders();
             lines.Add(provs.Count > 0
-                ? Strings.Format("diag.csp.ok", string.Join(", ", provs))
+                ? Strings.Format("diag.csp.ok",
+                    string.Join("; ", provs.Select(CertFromContainer.DescribeProvider)))
                 : Strings.Get("diag.csp.missing"));
             if (detailed)
                 foreach (var (type, name) in CertFromContainer.Providers)
-                    lines.Add("  " + Strings.Format("diag.prov", type,
+                    lines.Add("  " + Strings.Format("diag.prov", CertFromContainer.DescribeProvider(type),
                         Strings.Get(provs.Contains(type) ? "diag.prov.yes" : "diag.prov.no"), name));
 
             return lines;

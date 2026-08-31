@@ -13,6 +13,15 @@ namespace CryptoProExport
     internal sealed class SmartCardReaderStatus
     {
         public string HardwareId { get; set; }
+
+        /// <summary>
+        /// Имя шины из DEVPKEY_Device_EnumeratorName: <c>USB</c>, <c>PCI</c>, <c>ROOT</c>, <c>SWD</c>…
+        /// Это и есть признак «железо или программное устройство»; отсутствие USB VID/PID таким
+        /// признаком не является — считыватель бывает и на PCI, PCMCIA, ACPI. Строка короткая
+        /// и серийного номера не содержит, в отличие от полного Instance ID.
+        /// </summary>
+        public string Enumerator { get; set; }
+
         public uint ProblemCode { get; set; }
         public uint ProblemStatus { get; set; }
     }
@@ -41,15 +50,26 @@ namespace CryptoProExport
         private static readonly DevPropKey ProblemStatus = new DevPropKey(
             new Guid("4340A6C5-93FA-4706-972C-7B648008A5A7"), 12);
 
+        // DEVPKEY_Device_EnumeratorName — короткое имя шины без хвоста Instance ID.
+        private static readonly DevPropKey EnumeratorName = new DevPropKey(
+            new Guid("A45C254E-DF1C-4EFD-8020-67D146A850E0"), 24);
+
+        /// <summary>
+        /// Шины программного перечисления: за таким «считывателем» нет отдельного носителя.
+        /// ROOT — root-enumerated устройство (например, IFD Handler драйвера Рутокен),
+        /// SWD — software device. Всё остальное (USB, PCI, PCMCIA, ACPI…) считается железом.
+        /// </summary>
+        private static readonly string[] SoftwareBuses = { "ROOT", "SWD" };
+
         private static readonly Regex VidPid = new Regex(
             @"VID_[0-9A-F]{4}&PID_[0-9A-F]{4}",
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-        internal static List<string> Report()
+        internal static List<string> Report(bool detailed = false)
         {
             try
             {
-                return Describe(Enumerate());
+                return Describe(Enumerate(), detailed);
             }
             catch (Exception error)
             {
@@ -59,23 +79,70 @@ namespace CryptoProExport
             }
         }
 
-        internal static List<string> Describe(IEnumerable<SmartCardReaderStatus> statuses)
+        internal static List<string> Describe(IEnumerable<SmartCardReaderStatus> statuses,
+                                              bool detailed = false)
         {
             var pnpPresent = (statuses ?? Enumerable.Empty<SmartCardReaderStatus>()).ToList();
             if (pnpPresent.Count == 0)
                 return new List<string> { Strings.Get("diag.pnp.none") };
 
+            var lines = new List<string>();
             var problems = pnpPresent.Where(status => status.ProblemCode != 0).ToList();
             if (problems.Count == 0)
-                return new List<string> { Strings.Format("diag.pnp.ok", pnpPresent.Count) };
+            {
+                // Аппаратные и программные считыватели разделены намеренно. Одно число
+                // «присутствует N» читается как «подключено N токенов», а это неправда: драйвер
+                // Рутокена всегда держит собственный ROOT-считыватель (Aktiv Co. IFD Handler),
+                // за которым нет железа, и два вставленных токена дают три PnP-устройства.
+                int software = pnpPresent.Count(IsSoftware);
+                lines.Add(Strings.Format("diag.pnp.ok", pnpPresent.Count - software, software));
+            }
+            else
+            {
+                // Итог «все драйверы запущены» рядом со сбоем противоречил бы сам себе, поэтому
+                // при проблеме печатаются только проблемные считыватели.
+                lines.AddRange(problems.Select(status => Strings.Format(
+                    status.ProblemCode == CmProbFailedStart ? "diag.pnp.failed" : "diag.pnp.problem",
+                    SafeId(status) ?? "?",
+                    status.ProblemCode,
+                    "0x" + status.ProblemStatus.ToString("X8", System.Globalization.CultureInfo.InvariantCulture))));
+            }
 
-            return problems.Select(status => Strings.Format(
-                status.ProblemCode == CmProbFailedStart ? "diag.pnp.failed" : "diag.pnp.problem",
-                SafeHardwareId(new[] { status.HardwareId }) ?? "?",
-                status.ProblemCode,
-                "0x" + status.ProblemStatus.ToString("X8", System.Globalization.CultureInfo.InvariantCulture)))
-                .ToList();
+            if (detailed) lines.AddRange(pnpPresent.Select(status => "  " + Detail(status)));
+            return lines;
         }
+
+        /// <summary>Строка одного считывателя в подробном отчёте.</summary>
+        private static string Detail(SmartCardReaderStatus status)
+        {
+            string bus = Bus(status);
+            if (IsSoftware(status)) return Strings.Format("diag.pnp.software", bus);
+
+            // У USB-считывателя показываем VID/PID: по ним устройство и опознают. У железа на
+            // других шинах безопасного короткого идентификатора нет — называем саму шину.
+            string id = SafeId(status);
+            return id == null
+                ? Strings.Format("diag.pnp.bus", bus)
+                : Strings.Format("diag.pnp.usb", id);
+        }
+
+        /// <summary>
+        /// Программно перечисленное устройство. Считается по имени шины, а не по отсутствию
+        /// USB VID/PID: считыватель бывает и на PCI, PCMCIA, ACPI, и он вполне физический
+        /// (замечание Codex на PR #70). Шину не прочитали — считаем железом, чтобы не выдать
+        /// настоящий считыватель за виртуальный.
+        /// </summary>
+        internal static bool IsSoftware(SmartCardReaderStatus status) =>
+            status?.Enumerator != null
+            && SoftwareBuses.Contains(status.Enumerator.Trim(), StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>Имя шины для отчёта; «?» — свойство недоступно.</summary>
+        private static string Bus(SmartCardReaderStatus status) =>
+            string.IsNullOrWhiteSpace(status?.Enumerator) ? "?" : status.Enumerator.Trim();
+
+        /// <summary>VID/PID устройства или null, если USB-идентичности у него нет.</summary>
+        private static string SafeId(SmartCardReaderStatus status) =>
+            SafeHardwareId(new[] { status?.HardwareId });
 
         internal static string SafeHardwareId(IEnumerable<string> hardwareIds)
         {
@@ -110,6 +177,7 @@ namespace CryptoProExport
                     result.Add(new SmartCardReaderStatus
                     {
                         HardwareId = SafeHardwareId(GetStringList(infoSet, ref device, HardwareIds)),
+                        Enumerator = GetString(infoSet, ref device, EnumeratorName),
                         ProblemCode = GetRequiredUInt32(infoSet, ref device, ProblemCode),
                         ProblemStatus = GetUInt32(infoSet, ref device, ProblemStatus),
                     });
@@ -131,6 +199,14 @@ namespace CryptoProExport
             if (bytes == null || bytes.Length < 2) return Array.Empty<string>();
             return Encoding.Unicode.GetString(bytes)
                 .Split(new[] { '\0' }, StringSplitOptions.RemoveEmptyEntries);
+        }
+
+        private static string GetString(IntPtr infoSet, ref SpDevInfoData device, DevPropKey key)
+        {
+            byte[] bytes = GetProperty(infoSet, ref device, key);
+            if (bytes == null || bytes.Length < 2) return null;
+            string value = Encoding.Unicode.GetString(bytes).TrimEnd('\0');
+            return value.Length == 0 ? null : value;
         }
 
         private static uint GetUInt32(IntPtr infoSet, ref SpDevInfoData device, DevPropKey key)

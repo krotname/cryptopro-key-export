@@ -277,11 +277,21 @@ namespace CryptoProExport
         }
 
         /// <summary>Короткая сводка: откуда будет взят rtCOMLite (без обращения к токену).</summary>
-        public static string SourceSummary()
+        /// <summary>
+        /// Будет ли использована вшитая копия rtCOMLite. Нужна отчёту о зависимостях: обычный
+        /// случай («вшита и подходит») он показывает одной общей строкой без путей, а отдельную
+        /// строку тратит только на отклонения — системную регистрацию или недоступность.
+        /// </summary>
+        public static bool UsesBundledCopy()
         {
             string dll = BundledTools.TryExtract(
                 BundledTools.RtComLiteResource, BundledTools.RtComLiteFileName, out _);
-            if (dll != null && RegFreeCom.MatchesProcess(dll, out _))
+            return dll != null && RegFreeCom.MatchesProcess(dll, out _);
+        }
+
+        public static string SourceSummary()
+        {
+            if (UsesBundledCopy())
                 return Strings.Get("diag.rtcom.bundled");
             if (Type.GetTypeFromProgID(ProgId, throwOnError: false) != null)
                 return Strings.Get("diag.rtcom.system");
