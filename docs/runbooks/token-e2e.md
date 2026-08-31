@@ -76,6 +76,21 @@ Run 'list --lang ru'          # модель, APDU-бэкенд, контейн�
 `[APDU rutokens_0B00] cpxt_s`. **Технический id и есть селектор `--container`**
 (матч по нему, а не по видимому имени).
 
+**Обязательно (AGENTS §19–21): до любой записи сопоставить выбранный reader с
+VID/PID и, где есть, серийником — имена считывателей вводят в заблуждение.**
+
+```powershell
+# reader ↔ USB VID/PID (+ серийник в хвосте InstanceId, напр. Rutoken S)
+Get-PnpDevice -PresentOnly |
+  ? { $_.InstanceId -match 'VID_0A89|VID_24DC|VID_072F|VID_2CE4|Rutoken|ESMART|JaCarta|Token' } |
+  Select-Object FriendlyName, InstanceId | Format-List
+# reader ↔ ATR — из вывода `csptest -card -enum -v` выше; серийник токена также
+# виден в дампе PKCS#11 (`token`/`list`) у моделей, которые его отдают.
+```
+Зафиксировать точную строку reader (например `Aktiv Co. ruToken 0`), её ATR и
+VID/PID — и подставлять именно её во все команды §3–§7. Если рядом два похожих
+носителя (две JaCarta LT!), различать по ATR/VID/PID, а не по имени.
+
 ## 3. Создать синтетический неэкспортируемый контейнер на токене
 
 ```powershell
@@ -97,7 +112,12 @@ Run 'checkexport cpxt_<tag> --lang ru'    # ждём 0x00130098 / 0x00122898 (�
 ## 4. Снять контейнер по APDU и снять запрет (ядро теста)
 
 ```powershell
-$out = "<scratch>\<tag>"; New-Item -ItemType Directory -Force $out | Out-Null
+# $out должен быть СВЕЖИМ и принадлежать только этому прогону: §7 в конце делает
+# Remove-Item $out -Recurse -Force, поэтому переиспользование занятого пути стёрло
+# бы чужие файлы. Падаем, если путь уже существует.
+$out = "<scratch>\<tag>"
+if (Test-Path $out) { throw "$out уже существует — выбери свежий путь для прогона" }
+New-Item -ItemType Directory $out | Out-Null
 # технический id берётся из вывода list (шаг 2)
 Run "tokenfull `"<reader>`" `"$out`" <PIN> --container <технический-id> --lang ru"
 ```
