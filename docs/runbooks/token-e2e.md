@@ -95,8 +95,18 @@ VID/PID — и подставлять именно её во все команд
 ## 3. Создать синтетический неэкспортируемый контейнер на токене
 
 ```powershell
+# Тег обязан быть свободен ВО ВСЕХ пространствах имён HDIMAGE. Иначе install (§5)
+# создаст вторую физическую папку с тем же логическим именем, и уборка (§7) не
+# отличит твою копию от чужой — снесёт чужой контейнер с закрытым ключом. HDIMAGE
+# в enum_cont не «немеет» (в отличие от токен-ридеров, см. §7), проверка надёжна.
+$csp = & $csptest -keyset -enum_cont -verifycontext -fqcn 2>&1
+foreach ($n in @("cpxt_<tag>", "cpxt_<tag> [exchange]", "cpxt_<tag> [signature]")) {
+  if ($csp -match [regex]::Escape("\HDIMAGE\$n")) { throw "HDIMAGE уже содержит '$n' — выбери другой тег" }
+}
+
 # Ключи генерируются на носителе, обе пары неэкспортируемы. Скрипт закрывает
 # модальные окна (Био ДСЧ — движением мыши SendInput, прочие — WM_COMMAND IDOK).
+# Если cpxt_<tag> уже есть на самом токене — newkeyset упадёт с NTE_EXISTS (тег занят).
 pwsh token-session\make-token-container.ps1 -ContainerPath "\\.\<reader>\cpxt_<tag>" -Password <PIN> -TimeoutSec 200
 
 # Самоподписанный сертификат в контейнер. -password ОБЯЗАТЕЛЕН, иначе makecert
@@ -221,6 +231,19 @@ Get-ChildItem Cert:\CurrentUser\My | ? { $_.Subject -match 'CN=cpxt_<tag>(,|$)' 
 Remove-Item $out -Recurse -Force -ErrorAction SilentlyContinue
 ```
 Затем сверить `enum_cont` с baseline из шага 0 — расхождений быть не должно.
+
+**Одного `enum_cont` для приёмки мало (AGENTS п.31): под contention или после
+холодного сброса он молча печатает только HDIMAGE, выходит с кодом 0, и
+before/after ложно совпадают, хотя `cpxt_<tag>` остался на токене.** Поэтому
+проверить целевой токен-контейнер напрямую — он должен **отсутствовать**:
+
+```powershell
+Run "checkexport `"\\.\<reader>\cpxt_<tag>`" --lang ru"   # ждём код 2 «нет контейнера/ключа»
+```
+И убедиться, что целевой reader реально опрашивался: прогон `enum_cont` занимает
+~1.5–2 с (а не ~0.1 с), и другие боевые контейнеры этого reader снова на месте.
+Если reader «онемел» — холодный сброс карты (PC/SC `SCARD_UNPOWER_CARD` или
+переподключение), подождать секунду и повторить проверку.
 
 ## Особенности по семействам (грабли, уже наступавшие)
 
