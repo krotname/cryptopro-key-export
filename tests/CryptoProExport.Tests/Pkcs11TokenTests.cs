@@ -899,8 +899,10 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
-        public void MemorySummary_AddsUpGenuinelySeparatePools()
+        public void MemorySummary_ShowsBothCountersWhenTheyDiffer()
         {
+            // Складывать счётчики нельзя: PKCS#11 не сообщает, один это пул или два, и сумма
+            // завысила бы объём общего пула (замечание Codex на PR #70). Показываем как есть.
             using var language = Strings.Scope("en");
             string line = Pkcs11Token.MemorySummary(new Pkcs11TokenInfo
             {
@@ -908,7 +910,34 @@ namespace CryptoProExport.Tests
                 PrivateMemoryTotal = 65536, PrivateMemoryFree = 32768,
             });
 
-            Assert.Equal("memory 96 KB, free 48 KB", line);
+            Assert.Equal("memory: public 32 KB (free 16), private 64 KB (free 32)", line);
+        }
+
+        [Fact]
+        public void MemorySummary_DoesNotHalveTwoEquallySizedPools()
+        {
+            // Равные счётчики печатаются одной парой тех же чисел — это не заявление о том,
+            // что пул один, и ничего не теряет.
+            using var language = Strings.Scope("en");
+            string line = Pkcs11Token.MemorySummary(new Pkcs11TokenInfo
+            {
+                PublicMemoryTotal = 65536, PublicMemoryFree = 32768,
+                PrivateMemoryTotal = 65536, PrivateMemoryFree = 32768,
+            });
+
+            Assert.Equal("memory 64 KB, free 32 KB", line);
+        }
+
+        [Fact]
+        public void MemorySummary_ShowsWhatIsKnownWhenOnlyOneCounterIsDeclared()
+        {
+            using var language = Strings.Scope("en");
+            string line = Pkcs11Token.MemorySummary(new Pkcs11TokenInfo
+            {
+                PublicMemoryTotal = 65536, PublicMemoryFree = 32768,
+            });
+
+            Assert.Equal("memory: public 64 KB (free 32), private ? KB (free ?)", line);
         }
 
         [Fact]

@@ -117,7 +117,7 @@ namespace CryptoProExport
                     string.Join("; ", provs.Select(CertFromContainer.DescribeProvider)))
                 : Strings.Get("diag.csp.missing"));
             if (detailed)
-                foreach (var (type, name, _) in CertFromContainer.Providers)
+                foreach (var (type, name) in CertFromContainer.Providers)
                     lines.Add("  " + Strings.Format("diag.prov", CertFromContainer.DescribeProvider(type),
                         Strings.Get(provs.Contains(type) ? "diag.prov.yes" : "diag.prov.no"), name));
 

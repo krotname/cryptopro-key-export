@@ -19,29 +19,28 @@ namespace CryptoProExport
     [SupportedOSPlatform("windows")]
     public static class CertFromContainer
     {
-        // Типы провайдеров КриптоПро. Третье поле — короткое обозначение алгоритма для отчёта:
-        // голое число («провайдеры 80, 81, 75») ничего не говорит тому, кто читает лог.
-        // Обозначения стандартов не переводятся, как и названия провайдеров рядом.
-        public static readonly (uint type, string name, string algorithm)[] Providers =
+        // Типы провайдеров КриптоПро
+        public static readonly (uint type, string name)[] Providers =
         {
-            (80u, "Crypto-Pro GOST R 34.10-2012 Cryptographic Service Provider",
-                  "ГОСТ Р 34.10-2012, 256 бит"),
-            (81u, "Crypto-Pro GOST R 34.10-2012 Strong Cryptographic Service Provider",
-                  "ГОСТ Р 34.10-2012, 512 бит"),
-            (75u, "Crypto-Pro GOST R 34.10-2001 Cryptographic Service Provider",
-                  "ГОСТ Р 34.10-2001"),
+            (80u, "Crypto-Pro GOST R 34.10-2012 Cryptographic Service Provider"),        // ГОСТ-2012 256
+            (81u, "Crypto-Pro GOST R 34.10-2012 Strong Cryptographic Service Provider"), // ГОСТ-2012 512
+            (75u, "Crypto-Pro GOST R 34.10-2001 Cryptographic Service Provider"),        // ГОСТ-2001
         };
 
         /// <summary>
-        /// Обозначение алгоритма по типу провайдера — для отчёта о зависимостях. Неизвестный тип
-        /// возвращается числом: выдумывать за него алгоритм нельзя.
+        /// Обозначение алгоритма по типу провайдера — для отчёта о зависимостях: голое число
+        /// («провайдеры 80, 81, 75») читателю лога ничего не говорит. Текст переводится вместе
+        /// с остальным отчётом: это наша диагностика, а не название продукта вендора
+        /// (замечание Codex на PR #70). Неизвестный тип возвращается числом — выдумывать за
+        /// него алгоритм нельзя.
         /// </summary>
-        public static string ProviderAlgorithm(uint type)
+        public static string ProviderAlgorithm(uint type) => type switch
         {
-            foreach (var (known, _, algorithm) in Providers)
-                if (known == type) return algorithm;
-            return type.ToString(CultureInfo.InvariantCulture);
-        }
+            80u => Strings.Format("csp.alg.2012", 256),
+            81u => Strings.Format("csp.alg.2012", 512),
+            75u => Strings.Get("csp.alg.2001"),
+            _ => type.ToString(CultureInfo.InvariantCulture),
+        };
 
         /// <summary>Тип провайдера с расшифровкой: «80 — ГОСТ Р 34.10-2012, 256 бит».</summary>
         public static string DescribeProvider(uint type) =>
@@ -85,7 +84,7 @@ namespace CryptoProExport
         {
             var result = new List<ContainerRef>();
             var seen = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var (type, name, _) in Providers)
+            foreach (var (type, name) in Providers)
             {
                 if (!CryptAcquireContext(out IntPtr hProv, null, name, type, CRYPT_VERIFYCONTEXT))
                     continue;
@@ -120,7 +119,7 @@ namespace CryptoProExport
         public static List<uint> AvailableProviders()
         {
             var list = new List<uint>();
-            foreach (var (type, name, _) in Providers)
+            foreach (var (type, name) in Providers)
             {
                 if (!CryptAcquireContext(out IntPtr hProv, null, name, type, CRYPT_VERIFYCONTEXT)) continue;
                 CryptReleaseContext(hProv, 0);
@@ -201,7 +200,7 @@ namespace CryptoProExport
         public static ExportCheck CheckExportable(string container, uint keySpec = AT_KEYEXCHANGE)
         {
             var result = new ExportCheck();
-            foreach (var (type, name, _) in Providers)
+            foreach (var (type, name) in Providers)
             {
                 if (!CryptAcquireContext(out IntPtr hProv, container, name, type, CRYPT_SILENT))
                     continue;
@@ -233,7 +232,7 @@ namespace CryptoProExport
         /// <summary>Подобрать провайдер и извлечь оба сертификата (обмена/подписи) по имени контейнера.</summary>
         public static ExtractedCerts Extract(string container)
         {
-            foreach (var (type, name, _) in Providers)
+            foreach (var (type, name) in Providers)
             {
                 var ex = ExtractCert(container, name, type, AT_KEYEXCHANGE);
                 var sg = ExtractCert(container, name, type, AT_SIGNATURE);

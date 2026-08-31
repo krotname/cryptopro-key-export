@@ -645,12 +645,14 @@ namespace CryptoProExport
             value == uint.MaxValue || value > long.MaxValue ? -1 : (long)value;
 
         /// <summary>
-        /// Строка «память N КБ, свободно M КБ» или null, если объём не объявлен.
+        /// Строка с объёмом памяти токена или null, если он не объявлен.
         ///
-        /// PKCS#11 описывает память для публичных и приватных объектов отдельно. Рутокен ЭЦП
-        /// отдаёт обе пары одинаковыми — это один общий пул (проверено 31.08.2026 на двух
-        /// носителях), и складывать их нельзя, иначе объём удвоится. Разные пары означают
-        /// действительно раздельные непересекающиеся пулы, и тогда они суммируются.
+        /// PKCS#11 даёт два счётчика — для публичных и для приватных объектов — и не сообщает,
+        /// один это пул или два. Поэтому счётчики только показываются, а не складываются и не
+        /// объявляются общим пулом: сумма завысила бы объём у токена с одним пулом, а показ
+        /// одной пары занизил бы его у токена с двумя. Совпали (Рутокен ЭЦП отдаёт именно так,
+        /// проверено 31.08.2026 на двух носителях) — печатается одна пара тех же чисел; разошлись —
+        /// обе, каждая со своей подписью.
         ///
         /// Чистая функция: покрыта тестами без обращения к железу.
         /// </summary>
@@ -658,19 +660,17 @@ namespace CryptoProExport
         {
             if (info == null) throw new ArgumentNullException(nameof(info));
 
-            bool shared = info.PublicMemoryTotal == info.PrivateMemoryTotal
-                       && info.PublicMemoryFree == info.PrivateMemoryFree;
-            long total = shared ? info.PublicMemoryTotal
-                                : Add(info.PublicMemoryTotal, info.PrivateMemoryTotal);
-            long free = shared ? info.PublicMemoryFree
-                               : Add(info.PublicMemoryFree, info.PrivateMemoryFree);
+            if (info.PublicMemoryTotal == info.PrivateMemoryTotal
+                && info.PublicMemoryFree == info.PrivateMemoryFree)
+                return info.PublicMemoryTotal < 0
+                    ? null
+                    : Strings.Format("cli.token.memory",
+                        Kilobytes(info.PublicMemoryTotal), Kilobytes(info.PublicMemoryFree));
 
-            return total < 0 ? null : Strings.Format("cli.token.memory", Kilobytes(total), Kilobytes(free));
+            return Strings.Format("cli.token.memory.split",
+                Kilobytes(info.PublicMemoryTotal), Kilobytes(info.PublicMemoryFree),
+                Kilobytes(info.PrivateMemoryTotal), Kilobytes(info.PrivateMemoryFree));
         }
-
-        /// <summary>Сумма двух объёмов, где -1 означает «не объявлено» и в сумму не входит.</summary>
-        private static long Add(long first, long second) =>
-            first < 0 ? second : second < 0 ? first : first + second;
 
         /// <summary>Байты в килобайтах с округлением; «?» — объём не объявлен.</summary>
         private static string Kilobytes(long bytes) => bytes < 0

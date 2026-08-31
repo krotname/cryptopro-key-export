@@ -220,6 +220,34 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void ProviderAlgorithm_IsTranslatedLikeTheRestOfTheReport()
+        {
+            // Расшифровку пишем мы, а не вендор, поэтому она обязана переводиться: в английском
+            // отчёте не должно оставаться русских «бит» (замечание Codex на PR #70).
+            using (var ru = Strings.Scope("ru"))
+                Assert.Equal("80 — ГОСТ Р 34.10-2012, 256 бит", CertFromContainer.DescribeProvider(80));
+
+            using (var en = Strings.Scope("en"))
+            {
+                Assert.Equal("81 — GOST R 34.10-2012, 512 bit", CertFromContainer.DescribeProvider(81));
+                Assert.Equal("75 — GOST R 34.10-2001", CertFromContainer.DescribeProvider(75));
+            }
+
+            // Неизвестный тип остаётся числом: алгоритм за него не выдумывается.
+            Assert.Equal("99", CertFromContainer.ProviderAlgorithm(99));
+        }
+
+        [Fact]
+        public void ProviderAlgorithm_CoversEveryKnownProviderType()
+        {
+            // Добавили провайдер в таблицу и забыли расшифровку — тип вернётся голым числом.
+            using var ru = Strings.Scope("ru");
+            Assert.All(CertFromContainer.Providers, p => Assert.NotEqual(
+                p.type.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                CertFromContainer.ProviderAlgorithm(p.type)));
+        }
+
+        [Fact]
         public void Pkcs11Libraries_AreEmbeddedForEveryVendorWithASelfContainedModule()
         {
             // Библиотеки трёх вендоров вшиты, чтобы смарт-карточный носитель читался и без

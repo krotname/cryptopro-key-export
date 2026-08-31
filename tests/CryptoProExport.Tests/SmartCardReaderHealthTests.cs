@@ -71,19 +71,49 @@ namespace CryptoProExport.Tests
         [Fact]
         public void Describe_SummarizesHealthyReaders()
         {
-            // USB и программные считаются отдельно: драйвер Рутокена держит собственный
-            // ROOT-считыватель, за которым нет носителя, и общее число вводило в заблуждение —
-            // два вставленных токена выглядели как три устройства.
+            // Железо и программные устройства считаются отдельно: драйвер Рутокена держит
+            // собственный ROOT-считыватель, за которым нет носителя, и общее число вводило в
+            // заблуждение — два вставленных токена выглядели как три устройства.
             using var language = Strings.Scope("en");
             var lines = SmartCardReaderHealth.Describe(new[]
             {
-                new SmartCardReaderStatus { HardwareId = @"USB\VID_0A89&PID_0030" },
-                new SmartCardReaderStatus { HardwareId = @"USB\VID_0A89&PID_0030" },
-                new SmartCardReaderStatus { HardwareId = @"ROOT\SMARTCARDREADER" },
+                new SmartCardReaderStatus { Enumerator = "USB", HardwareId = @"USB\VID_0A89&PID_0030" },
+                new SmartCardReaderStatus { Enumerator = "USB", HardwareId = @"USB\VID_0A89&PID_0030" },
+                new SmartCardReaderStatus { Enumerator = "ROOT", HardwareId = @"ROOT\SMARTCARDREADER" },
             });
 
-            Assert.Equal("Smart-card readers (PnP): 2 USB, 1 software, all drivers started",
+            Assert.Equal("Smart-card readers (PnP): 2 hardware, 1 software, all drivers started",
                 Assert.Single(lines));
+        }
+
+        [Fact]
+        public void Describe_CountsNonUsbReaderAsHardware()
+        {
+            // Считыватель на PCI, PCMCIA или ACPI — физический, хотя USB VID/PID у него нет.
+            // Раньше он попадал в программные, и отчёт врал про состав железа (замечание
+            // Codex на PR #70). Признак — шина, а не наличие USB-идентификатора.
+            using var language = Strings.Scope("en");
+            var lines = SmartCardReaderHealth.Describe(new[]
+            {
+                new SmartCardReaderStatus { Enumerator = "PCI" },
+                new SmartCardReaderStatus { Enumerator = "ROOT" },
+            }, detailed: true);
+
+            Assert.Equal("Smart-card readers (PnP): 1 hardware, 1 software, all drivers started", lines[0]);
+            Assert.Contains("reader on bus PCI", lines[1], StringComparison.Ordinal);
+            Assert.Contains("software reader (bus ROOT", lines[2], StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void Describe_CountsReaderWithUnknownBusAsHardware()
+        {
+            // Свойство шины прочитать не удалось — считаем железом: выдать настоящий
+            // считыватель за виртуальный хуже, чем не назвать шину.
+            using var language = Strings.Scope("en");
+            var lines = SmartCardReaderHealth.Describe(new[] { new SmartCardReaderStatus() }, detailed: true);
+
+            Assert.Equal("Smart-card readers (PnP): 1 hardware, 0 software, all drivers started", lines[0]);
+            Assert.Contains("reader on bus ?", lines[1], StringComparison.Ordinal);
         }
 
         [Fact]
@@ -92,8 +122,12 @@ namespace CryptoProExport.Tests
             using var language = Strings.Scope("en");
             var statuses = new[]
             {
-                new SmartCardReaderStatus { HardwareId = @"USB\VID_0A89&PID_0030\serial-must-not-leak" },
-                new SmartCardReaderStatus { HardwareId = @"ROOT\SMARTCARDREADER" },
+                new SmartCardReaderStatus
+                {
+                    Enumerator = "USB",
+                    HardwareId = @"USB\VID_0A89&PID_0030\serial-must-not-leak",
+                },
+                new SmartCardReaderStatus { Enumerator = "ROOT", HardwareId = @"ROOT\SMARTCARDREADER" },
             };
 
             Assert.Single(SmartCardReaderHealth.Describe(statuses));
