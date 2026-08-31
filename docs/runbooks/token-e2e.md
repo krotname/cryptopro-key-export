@@ -110,6 +110,14 @@ Run 'checkexport cpxt_<tag> --lang ru'    # ждём 0x00130098 / 0x00122898 (�
 Если ключ уже `…9C` — это **экспортируемый** образец, он ничего не доказывает
 (CSP штатно копирует такой ключ с любого носителя). Годен только `…98`.
 
+**Перечитать `list` после создания — технический id появляется только сейчас.**
+`list` из §2 снимался до §3, нового контейнера в нём ещё нет. Прогнать заново и
+взять `[APDU <технический-id>]` строки `cpxt_<tag>` — этот id пойдёт в `--container`
+на шаге 4 (у eToken PRO селектор обязателен и строго технический):
+```powershell
+Run 'list --lang ru'    # найти строку "[APDU <технический-id>] cpxt_<tag>"
+```
+
 ## 4. Снять контейнер по APDU и снять запрет (ядро теста)
 
 ```powershell
@@ -219,7 +227,7 @@ Remove-Item $out -Recurse -Force -ErrorAction SilentlyContinue
 | Носитель | Бэкенд | Раскладка результата | Заметки |
 |---|---|---|---|
 | Рутокен S | `RutokenSApdu` | одна папка, оба ключа | `rtCOMLite` не использовать |
-| Рутокен Lite | `RutokenLiteApdu` | **две** папки `_exchange`/`_signature` | контейнеры = DF-индексы `lite_XX` |
+| Рутокен Lite | `RutokenLiteApdu` | **две** папки: базовая `<id>` (обмен) + `<id>_signature` | контейнеры = DF-индексы `lite_XX` |
 | eToken PRO | `JaCartaProApdu` | **две** папки | `--container` обязателен, только технический `jacartapro_XX` |
 | JaCarta LT | `JaCartaLtApdu` | одна папка, оба ключа | несколько контейнеров различаются байтом Type в таблице объектов (0x03, 0x0E…) — см. AGENTS п.43 |
 | ESMART (оба) | `EsmartApdu` | одна папка | `makecert`/`deletekeyset` показывают PIN-диалог; нужен `-password`/SendInput |
