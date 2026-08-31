@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -61,6 +62,8 @@ namespace CryptoProExport.Tests
 
             var info = LicenseGate.Verify(jws);
             Assert.Equal(LicenseState.Invalid, info.State);
+            Assert.Equal(LicenseFailureCode.InvalidSignature, info.Failure.Code);
+            Assert.Null(info.Failure.Detail);
         }
 
         [Fact]
@@ -105,19 +108,19 @@ namespace CryptoProExport.Tests
 
         [Theory]
         // Тот самый случай владельца: файл выдан Android-сборке, а открывают его в Windows.
-        [InlineData("cryptoexport", "android", null, LicenseFailure.OtherPlatform, "android")]
-        [InlineData("androidexport", "windows", null, LicenseFailure.OtherProduct, "androidexport")]
-        [InlineData("cryptoexport", "windows", Expired, LicenseFailure.Expired, "2023-11-14")]
+        [InlineData("cryptoexport", "android", null, LicenseFailureCode.OtherPlatform, "android")]
+        [InlineData("androidexport", "windows", null, LicenseFailureCode.OtherProduct, "androidexport")]
+        [InlineData("cryptoexport", "windows", Expired, LicenseFailureCode.Expired, "2023-11-14")]
         public void Classify_NamesWhatIsWrongWithTheFile(string pid, string plat, long? until,
-            LicenseFailure expected, string detail)
+            LicenseFailureCode expected, string detail)
         {
             using var signer = ECDsa.Create(ECCurve.NamedCurves.nistP256);
             string jws = BuildLicense(signer, LicenseGate.Kid, pid, plat, LicenseGate.Fingerprint(), until);
 
-            var (failure, actual) = LicenseGate.Classify(jws, Now, Keys(signer));
+            LicenseFailureInfo failure = LicenseGate.Classify(jws, Now, Keys(signer));
 
-            Assert.Equal(expected, failure);
-            Assert.Equal(detail, actual);
+            Assert.Equal(expected, failure.Code);
+            Assert.Equal(detail, failure.Detail);
         }
 
         [Fact]
@@ -126,25 +129,37 @@ namespace CryptoProExport.Tests
             using var signer = ECDsa.Create(ECCurve.NamedCurves.nistP256);
             string jws = BuildLicense(signer, LicenseGate.Kid, "cryptoexport", "windows", Fp, null);
 
-            var (failure, detail) = LicenseGate.Classify(jws, Now, Keys(signer));
+            LicenseFailureInfo failure = LicenseGate.Classify(jws, Now, Keys(signer));
 
-            Assert.Equal(LicenseFailure.OtherMachine, failure);
-            Assert.Null(detail);
+            Assert.Equal(LicenseFailureCode.OtherMachine, failure.Code);
+            Assert.Null(failure.Detail);
         }
 
         [Fact]
-        public void Classify_DoesNotTrustAnUnsignedClaim()
+        public void Classify_ReportsInvalidSignatureWithoutTrustingPayloadClaims()
         {
             // Нагрузка заявляет чужую платформу, но подписана ключом, которого нет среди доверенных:
-            // причина обязана остаться общей, иначе подделка получала бы осмысленное объяснение.
+            // её поля не классифицируются, а безопасный код говорит только о провале подписи.
             using var stranger = ECDsa.Create(ECCurve.NamedCurves.nistP256);
             string jws = BuildLicense(stranger, LicenseGate.Kid, "cryptoexport", "android", LicenseGate.Fingerprint(), null);
 
-            var (failure, detail) = LicenseGate.Classify(jws, Now,
+            LicenseFailureInfo failure = LicenseGate.Classify(jws, Now,
                 new Dictionary<string, string> { [LicenseGate.Kid] = LicenseGate.PublicKeyB64 });
 
-            Assert.Equal(LicenseFailure.Unreadable, failure);
-            Assert.Null(detail);
+            Assert.Equal(LicenseFailureCode.InvalidSignature, failure.Code);
+            Assert.Null(failure.Detail);
+        }
+
+        [Fact]
+        public void Classify_ReportsUnknownSigningKeyWithoutExposingKid()
+        {
+            using var signer = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+            string jws = BuildLicense(signer, "retired-key", "cryptoexport", "windows", Fp, null);
+
+            LicenseFailureInfo failure = LicenseGate.Classify(jws, Now, Keys(signer));
+
+            Assert.Equal(LicenseFailureCode.InvalidSignature, failure.Code);
+            Assert.Null(failure.Detail);
         }
 
         [Theory]
@@ -154,23 +169,50 @@ namespace CryptoProExport.Tests
         [InlineData("a.b.c")]
         public void Verify_ReportsGarbageAsUnreadable(string bad)
         {
-            Assert.Equal(LicenseFailure.Unreadable, LicenseGate.Verify(bad).Failure);
+            Assert.Equal(LicenseFailureCode.Unreadable, LicenseGate.Verify(bad).Failure.Code);
         }
 
         [Fact]
         public void ReasonText_IsLocalizedAndNotTheVerifierMessage()
         {
             using var scope = Strings.Scope("ja");
-            foreach (LicenseFailure failure in Enum.GetValues<LicenseFailure>())
+            foreach (LicenseFailureCode code in Enum.GetValues<LicenseFailureCode>())
             {
-                var info = new LicenseInfo(LicenseState.Invalid, reason: "подпись лицензии неверна",
-                    failure: failure, detail: "x");
+                var info = new LicenseInfo(LicenseState.Invalid,
+                    verifierDiagnostic: "подпись лицензии неверна",
+                    failure: new LicenseFailureInfo(code, "x"));
                 string text = LicenseGate.ReasonText(info);
 
                 Assert.False(string.IsNullOrWhiteSpace(text));
                 Assert.DoesNotContain("[!", text);
-                Assert.NotEqual(info.Reason, text);
+                Assert.NotEqual(info.VerifierDiagnostic, text);
             }
+        }
+
+        [Fact]
+        public void SignatureReason_IsTranslatedInAllTwentyLanguages()
+        {
+            string russian = Strings.Table("ru")["license.reason.signature"];
+            foreach (string language in Strings.Available)
+            {
+                string value = Strings.Table(language)["license.reason.signature"];
+                Assert.False(string.IsNullOrWhiteSpace(value));
+                if (language != "ru") Assert.NotEqual(russian, value);
+            }
+        }
+
+        [Fact]
+        public void GuiAndCli_KeepVerifierDiagnosticOutOfVisibleOutput()
+        {
+            string gui = File.ReadAllText(RepoFile("src", "App", "MainForm.cs"));
+            Assert.Contains("Log(\"  \" + LicenseGate.ReasonText(info));", gui, StringComparison.Ordinal);
+            Assert.Contains("SessionLog.Write(\"  \" + info.VerifierDiagnostic);", gui, StringComparison.Ordinal);
+            Assert.DoesNotContain("Log(\"  \" + info.VerifierDiagnostic", gui, StringComparison.Ordinal);
+
+            string cli = File.ReadAllText(RepoFile("src", "App", "Cli.cs"));
+            Assert.Contains("Err(LicenseGate.ReasonText(info));", cli, StringComparison.Ordinal);
+            Assert.Contains("SessionLog.Write(info.VerifierDiagnostic);", cli, StringComparison.Ordinal);
+            Assert.DoesNotContain("Err(info.VerifierDiagnostic", cli, StringComparison.Ordinal);
         }
 
         /// <summary>Момент проверки в тестах и просроченный срок из прошлого (2023-11-14).</summary>
@@ -180,6 +222,19 @@ namespace CryptoProExport.Tests
 
         private static Dictionary<string, string> Keys(ECDsa signer) =>
             new() { [LicenseGate.Kid] = Convert.ToBase64String(signer.ExportSubjectPublicKeyInfo()) };
+
+        private static string RepoFile(params string[] parts)
+        {
+            var dir = new DirectoryInfo(AppContext.BaseDirectory);
+            while (dir != null && !File.Exists(Path.Combine(dir.FullName, "CryptoProExport.slnx")))
+                dir = dir.Parent;
+            Assert.NotNull(dir);
+
+            string path = dir!.FullName;
+            foreach (string part in parts) path = Path.Combine(path, part);
+            Assert.True(File.Exists(path), "Не найден файл " + path);
+            return path;
+        }
 
         /// <summary>Собирает compact JWS ES256 (PROTOCOL §2) тестовым ключом.</summary>
         private static string BuildLicense(ECDsa signer, string kid, string pid, string plat, string fp, bool expNull) =>

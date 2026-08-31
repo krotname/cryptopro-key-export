@@ -768,7 +768,8 @@ namespace CryptoProExport.App
                 if (!info.Ok)
                 {
                     Log("  " + LicenseGate.ReasonText(info));
-                    if (!string.IsNullOrEmpty(info.Reason)) SessionLog.Write("  " + info.Reason);
+                    if (!string.IsNullOrEmpty(info.VerifierDiagnostic))
+                        SessionLog.Write("  " + info.VerifierDiagnostic);
                 }
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
