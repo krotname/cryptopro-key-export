@@ -19,28 +19,22 @@ namespace CryptoProExport
             var asm = typeof(Diagnostics).Assembly.GetName();
             lines.Add(Strings.Format("diag.process", RegFreeCom.Name(RuntimeInformation.ProcessArchitecture), asm.Version));
 
-            // 1–2. Вшитые зависимости. Все они распаковываются в один кэш, поэтому в кратком
-            //       отчёте идут одной строкой без путей: путь тут ничего не решает и только
-            //       мешает читать. Полные пути и происхождение каждой — в detailed (команда deps).
-            //       Отдельной строкой остаётся лишь то, что отличается от нормы: внешняя копия,
-            //       отсутствие или системная регистрация вместо вшитой.
-            var bundled = new List<string>();
-            var notes = new List<string>();
-
+            // 1–2. Вшитые зависимости. В норме о них не пишется ничего: строка «всё вшито,
+            //       ставить ничего не нужно» ничего не проверяла и была шумом ровно в том
+            //       случае, когда всё в порядке. Наличие компонента теперь проверяется там, где
+            //       он нужен (ComponentCheck), а сюда попадает только отклонение от нормы:
+            //       внешняя копия, отсутствие или системная регистрация вместо вшитой.
+            //       Полные пути и происхождение каждой — в detailed (команда deps).
             string p12 = P12Utility.Resolve();
-            if (p12 == null) notes.Add(Strings.Get("diag.p12.missing"));
-            else if (IsBundled(p12)) bundled.Add(BundledTools.P12UtilityFileName);
-            else notes.Add(Strings.Format("diag.p12.found", Strings.Get("diag.copy.external"), p12));
+            if (p12 == null) lines.Add(Strings.Get("diag.p12.missing"));
+            else if (!IsBundled(p12))
+                lines.Add(Strings.Format("diag.p12.found", Strings.Get("diag.copy.external"), p12));
 
             // rtCOMLite грузится без регистрации и только в 32-битном процессе.
-            if (RutokenExporter.UsesBundledCopy()) bundled.Add(BundledTools.RtComLiteFileName);
-            else notes.Add(Strings.Format("diag.rtcom", RutokenExporter.SourceSummary()));
+            if (!RutokenExporter.UsesBundledCopy())
+                lines.Add(Strings.Format("diag.rtcom", RutokenExporter.SourceSummary()));
             if (RuntimeInformation.ProcessArchitecture != Architecture.X86)
-                notes.Add("  " + Strings.Get("diag.rtcom.warn"));
-
-            if (bundled.Count > 0)
-                lines.Add(Strings.Format("diag.bundled", string.Join(", ", bundled)));
-            lines.AddRange(notes);
+                lines.Add("  " + Strings.Get("diag.rtcom.warn"));
             if (detailed)
             {
                 lines.AddRange(P12Utility.DescribeSource());
@@ -98,14 +92,7 @@ namespace CryptoProExport
                 var readers = new List<string>();
                 foreach (var t in pkcs11Tokens ?? new List<Pkcs11TokenInfo>())
                     if (t?.Reader != null) readers.Add(t.Reader);
-                var uncovered = PcscReaders.Uncovered(pcsc, readers);
-                if (uncovered.Count > 0)
-                {
-                    lines.Add(Strings.Get("cli.pcsc.uncovered"));
-                    foreach (var r in uncovered)
-                        lines.Add("  " + Strings.Format("cli.pcsc.line",
-                            r.Name, Strings.Get(PcscReaders.CarrierHintKey(r.Name)), r.Atr ?? "?"));
-                }
+                lines.AddRange(PcscReaders.CoverageLines(pcsc, readers));
             }
 
             // 3. КриптоПро CSP — единственная внешняя зависимость, вшить нельзя

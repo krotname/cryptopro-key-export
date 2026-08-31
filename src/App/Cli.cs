@@ -548,14 +548,14 @@ namespace CryptoProExport.App
             var pcsc = PcscReaders.List(m => Out("[PC/SC] " + m));
             var readers = new List<string>();
             foreach (var t in tokens) if (t?.Reader != null) readers.Add(t.Reader);
-            var uncovered = PcscReaders.Uncovered(pcsc, readers);
-            if (uncovered.Count == 0) return;
 
-            Out(Strings.Get("cli.pcsc.uncovered"));
-            foreach (var r in uncovered)
-                Out("  " + Strings.Format("cli.pcsc.line",
-                    r.Name, Strings.Get(PcscReaders.CarrierHintKey(r.Name)), r.Atr ?? "?"));
-            Out("  " + Strings.Get("cli.pcsc.hint"));
+            // Сводка печатается всегда: расхождение «устройств PKCS#11 семь, а считывателей
+            // восемь» без неё выглядело ошибкой приложения, хотя считаются разные вещи.
+            var lines = PcscReaders.CoverageLines(pcsc, readers);
+            if (lines.Count == 0) return;
+            foreach (var line in lines) Out("[PC/SC] " + line);
+            if (PcscReaders.Uncovered(pcsc, readers).Count > 0)
+                Out("  " + Strings.Get("cli.pcsc.hint"));
         }
 
         /// <summary>

@@ -167,6 +167,15 @@ interface languages fall back to the English text.
       The token is not inserted, its drivers are missing, or another
       program is holding it.
 
+  Fewer PKCS#11 devices than readers
+      Not an error: readers are counted separately, and PKCS#11
+      shows only the carriers that at least one installed library
+      reported. The rest are listed on a PC/SC line with the vendor
+      name and ATR. The reason varies: the vendor library may be
+      missing entirely (as with BIFIT carriers) or present but
+      failing to load or to enumerate slots — its own error is then
+      written above in the same log.
+
   Wrong PIN, PIN locked
       The program spells such codes out in words. After several wrong
       attempts the PIN gets locked — the token administrator unlock

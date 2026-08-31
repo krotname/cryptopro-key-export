@@ -67,6 +67,19 @@ namespace CryptoProExport
             }
         }
 
+        /// <summary>
+        /// Компоненты полного цикла. Простому <c>export</c> они не нужны, поэтому проверка стоит
+        /// здесь, а не в конструкторе: сборка без вшитых утилит обязана хотя бы снять файловый
+        /// контейнер. Снятие запрета выполняет p12utility, а работает она поверх КриптоПро CSP —
+        /// без него и сертификат из контейнера через CryptoAPI не достать. Без явной проверки
+        /// отказ приходил бы кодом изнутри запущенного процесса.
+        /// </summary>
+        private void RequireFullCycle()
+        {
+            if (P12 == null) throw new ComponentMissingException(RequiredComponent.P12Utility);
+            ComponentCheck.Require(RequiredComponent.CryptoProCsp);
+        }
+
         /// <summary>Снять все контейнеры со всех токенов в подпапки destParent. Возвращает прочитанные контейнеры и пути.</summary>
         public List<(RutokenContainer container, string folder)> ExportFromTokens(string destParent, string userPin = null)
         {
@@ -182,8 +195,7 @@ namespace CryptoProExport
             string destParent, string certExchange = null, string certSignature = null,
             string userPin = null, string containerPassword = null)
         {
-            if (P12 == null)
-                throw new FileNotFoundException(Strings.Get("err.p12.unavailable"));
+            RequireFullCycle();
 
             var result = new ExportPipelineResult();
             foreach (var (container, folder) in ExportFromTokens(destParent, userPin))
@@ -203,8 +215,7 @@ namespace CryptoProExport
             string certExchange = null, string certSignature = null,
             string containerPassword = null)
         {
-            if (P12 == null)
-                throw new FileNotFoundException(Strings.Get("err.p12.unavailable"));
+            RequireFullCycle();
             var saved = ExportContainer(container, destParent);
             return CompleteOne(saved.container, saved.folder,
                 certExchange, certSignature, containerPassword);
@@ -216,8 +227,7 @@ namespace CryptoProExport
             string userPin = null, string certExchange = null, string certSignature = null,
             string containerPassword = null)
         {
-            if (P12 == null)
-                throw new FileNotFoundException(Strings.Get("err.p12.unavailable"));
+            RequireFullCycle();
             var saved = ExportLiteContainer(token, selected, destParent, userPin);
             return CompleteOne(saved.container, saved.folder,
                 certExchange, certSignature, containerPassword, normalizeLite: true);
@@ -229,8 +239,7 @@ namespace CryptoProExport
             string userPin = null, string certExchange = null, string certSignature = null,
             string containerPassword = null)
         {
-            if (P12 == null)
-                throw new FileNotFoundException(Strings.Get("err.p12.unavailable"));
+            RequireFullCycle();
             var saved = ExportDirectContainer(token, selected, destParent, userPin);
             return CompleteOne(saved.container, saved.folder,
                 certExchange, certSignature, containerPassword,
