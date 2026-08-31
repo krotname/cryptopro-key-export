@@ -340,6 +340,11 @@ pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAG
 license.status.valid = ライセンスは有効です（{0}）
 license.status.invalid = ライセンスは無効です
 license.status.none = ライセンスがインストールされていません
+license.reason.product = ライセンスは別の製品向けに発行されています: {0}
+license.reason.platform = ライセンスは別のプラットフォーム向けに発行されています: {0}
+license.reason.machine = ライセンスは別のマシン向けに発行されています: フィンガープリントが一致しません
+license.reason.expired = ライセンスの有効期限が切れています: {0}
+license.reason.unreadable = ファイルをライセンスとして読み取れません: 破損、改変、または別の鍵で署名されています
 license.required = この操作には有効なライセンスが必要です。ライセンスファイルをインストールしてください（「ライセンス…」ボタンまたは license <ファイル> コマンド）。このマシンのフィンガープリントは fingerprint コマンドで表示されます。
 license.installed = ライセンスをインストールし検証しました: {0}
 license.fp = このマシンのフィンガープリント: {0}
@@ -349,7 +354,7 @@ license.filter = ライセンスファイル (*.jws, *.license)
 cli.usage.fingerprint = このマシンのフィンガープリントを表示（ライセンス取得用）
 cli.usage.license = ライセンスファイルをインストール、または状態を表示
 btn.license = ライセンス…
-tip.license = ライセンスファイル (.jws) をインストールし、このマシン用に検証します。\n有効なライセンスがないと、秘密鍵のエクスポート操作は利用できません。\nこのマシンのフィンガープリント（ライセンス取得用）は fingerprint コマンドと起動時に表示されます。
+tip.license = ライセンスファイル (.jws, .license) をインストールし、このマシン用に検証します。\n有効なライセンスがないと、秘密鍵のエクスポート操作は利用できません。\nこのマシンのフィンガープリント（ライセンス取得用）は fingerprint コマンドと起動時に表示されます。
 dlg.license.title = ライセンスファイルを選択
 
 # --- диагностика PC/SC ---

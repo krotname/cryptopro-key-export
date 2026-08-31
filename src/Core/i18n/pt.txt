@@ -340,6 +340,11 @@ pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAG
 license.status.valid = A licença é válida ({0})
 license.status.invalid = A licença não é válida
 license.status.none = Nenhuma licença instalada
+license.reason.product = Licença emitida para outro produto: {0}
+license.reason.platform = Licença emitida para outra plataforma: {0}
+license.reason.machine = Licença emitida para outra máquina: a impressão digital não coincide
+license.reason.expired = Licença expirada: {0}
+license.reason.unreadable = O ficheiro não é legível como licença: danificado, alterado ou assinado com outra chave
 license.required = Esta operação requer uma licença válida. Instale um arquivo de licença (botão «Licença…» ou comando license <arquivo>); a impressão digital desta máquina é mostrada pelo comando fingerprint.
 license.installed = Licença instalada e verificada: {0}
 license.fp = Impressão digital desta máquina: {0}
@@ -349,7 +354,7 @@ license.filter = Ficheiro de licença (*.jws, *.license)
 cli.usage.fingerprint = mostrar a impressão digital desta máquina (para obter uma licença)
 cli.usage.license = instalar um arquivo de licença ou mostrar seu status
 btn.license = Licença…
-tip.license = Instalar um arquivo de licença (.jws) e verificá-lo para esta máquina.\nSem uma licença válida, as operações de exportação da chave privada ficam indisponíveis.\nA impressão digital desta máquina (para obter uma licença) é mostrada pelo comando fingerprint e na inicialização.
+tip.license = Instalar um arquivo de licença (.jws, .license) e verificá-lo para esta máquina.\nSem uma licença válida, as operações de exportação da chave privada ficam indisponíveis.\nA impressão digital desta máquina (para obter uma licença) é mostrada pelo comando fingerprint e na inicialização.
 dlg.license.title = Escolher arquivo de licença
 
 # --- диагностика PC/SC ---

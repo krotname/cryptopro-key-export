@@ -340,6 +340,11 @@ pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAG
 license.status.valid = مجوز معتبر است ({0})
 license.status.invalid = مجوز نامعتبر است
 license.status.none = هیچ مجوزی نصب نشده است
+license.reason.product = مجوز برای محصول دیگری صادر شده است: {0}
+license.reason.platform = مجوز برای پلتفرم دیگری صادر شده است: {0}
+license.reason.machine = مجوز برای دستگاه دیگری صادر شده است: اثر انگشت مطابقت ندارد
+license.reason.expired = مدت اعتبار مجوز به پایان رسیده است: {0}
+license.reason.unreadable = فایل به‌عنوان مجوز خوانده نمی‌شود: آسیب‌دیده، تغییریافته یا با کلید دیگری امضا شده است
 license.required = این عملیات به مجوز معتبر نیاز دارد. یک فایل مجوز نصب کنید (دکمه «مجوز…» یا فرمان license <فایل>)؛ اثر انگشت این دستگاه را فرمان fingerprint نشان می‌دهد.
 license.installed = مجوز نصب و تأیید شد: {0}
 license.fp = اثر انگشت این دستگاه: {0}
@@ -349,7 +354,7 @@ license.filter = پروندهٔ مجوز (*.jws, *.license)
 cli.usage.fingerprint = نمایش اثر انگشت این دستگاه (برای دریافت مجوز)
 cli.usage.license = نصب فایل مجوز یا نمایش وضعیت آن
 btn.license = مجوز…
-tip.license = یک فایل مجوز (.jws) نصب کنید و برای این دستگاه تأیید کنید.\nبدون مجوز معتبر، عملیات صدور کلید خصوصی در دسترس نیست.\nاثر انگشت این دستگاه (برای دریافت مجوز) را فرمان fingerprint و هنگام شروع نشان می‌دهد.
+tip.license = یک فایل مجوز (.jws, .license) نصب کنید و برای این دستگاه تأیید کنید.\nبدون مجوز معتبر، عملیات صدور کلید خصوصی در دسترس نیست.\nاثر انگشت این دستگاه (برای دریافت مجوز) را فرمان fingerprint و هنگام شروع نشان می‌دهد.
 dlg.license.title = انتخاب فایل مجوز
 
 # --- диагностика PC/SC ---

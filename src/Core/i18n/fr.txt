@@ -340,6 +340,11 @@ pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAG
 license.status.valid = La licence est valide ({0})
 license.status.invalid = La licence n’est pas valide
 license.status.none = Aucune licence installée
+license.reason.product = Licence délivrée pour un autre produit : {0}
+license.reason.platform = Licence délivrée pour une autre plateforme : {0}
+license.reason.machine = Licence délivrée pour une autre machine : l’empreinte ne correspond pas
+license.reason.expired = Licence expirée : {0}
+license.reason.unreadable = Le fichier n’est pas lisible comme licence : endommagé, modifié ou signé avec une autre clé
 license.required = Cette opération nécessite une licence valide. Installez un fichier de licence (bouton « Licence… » ou commande license <fichier>) ; l’empreinte de cette machine est affichée par la commande fingerprint.
 license.installed = Licence installée et vérifiée : {0}
 license.fp = Empreinte de cette machine : {0}
@@ -349,7 +354,7 @@ license.filter = Fichier de licence (*.jws, *.license)
 cli.usage.fingerprint = afficher l’empreinte de cette machine (pour obtenir une licence)
 cli.usage.license = installer un fichier de licence ou afficher son état
 btn.license = Licence…
-tip.license = Installer un fichier de licence (.jws) et le vérifier pour cette machine.\nSans licence valide, les opérations d’export de la clé privée sont indisponibles.\nL’empreinte de cette machine (pour obtenir une licence) est affichée par la commande fingerprint et au démarrage.
+tip.license = Installer un fichier de licence (.jws, .license) et le vérifier pour cette machine.\nSans licence valide, les opérations d’export de la clé privée sont indisponibles.\nL’empreinte de cette machine (pour obtenir une licence) est affichée par la commande fingerprint et au démarrage.
 dlg.license.title = Choisir le fichier de licence
 
 # --- диагностика PC/SC ---

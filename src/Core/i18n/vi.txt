@@ -340,6 +340,11 @@ pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAG
 license.status.valid = Giấy phép hợp lệ ({0})
 license.status.invalid = Giấy phép không hợp lệ
 license.status.none = Chưa cài đặt giấy phép
+license.reason.product = Giấy phép được cấp cho sản phẩm khác: {0}
+license.reason.platform = Giấy phép được cấp cho nền tảng khác: {0}
+license.reason.machine = Giấy phép được cấp cho máy khác: dấu vân không khớp
+license.reason.expired = Giấy phép đã hết hạn: {0}
+license.reason.unreadable = Tệp không đọc được như giấy phép: hỏng, bị sửa đổi hoặc được ký bằng khóa khác
 license.required = Thao tác này cần giấy phép hợp lệ. Hãy cài đặt tệp giấy phép (nút «Giấy phép…» hoặc lệnh license <tệp>); dấu vân của máy này được hiển thị bằng lệnh fingerprint.
 license.installed = Đã cài đặt và xác minh giấy phép: {0}
 license.fp = Dấu vân của máy này: {0}
@@ -349,7 +354,7 @@ license.filter = Tệp giấy phép (*.jws, *.license)
 cli.usage.fingerprint = hiển thị dấu vân của máy này (để nhận giấy phép)
 cli.usage.license = cài đặt tệp giấy phép hoặc hiển thị trạng thái
 btn.license = Giấy phép…
-tip.license = Cài đặt tệp giấy phép (.jws) và xác minh cho máy này.\nKhông có giấy phép hợp lệ, các thao tác xuất khóa riêng sẽ không khả dụng.\nDấu vân của máy này (để nhận giấy phép) được hiển thị bằng lệnh fingerprint và khi khởi động.
+tip.license = Cài đặt tệp giấy phép (.jws, .license) và xác minh cho máy này.\nKhông có giấy phép hợp lệ, các thao tác xuất khóa riêng sẽ không khả dụng.\nDấu vân của máy này (để nhận giấy phép) được hiển thị bằng lệnh fingerprint và khi khởi động.
 dlg.license.title = Chọn tệp giấy phép
 
 # --- диагностика PC/SC ---

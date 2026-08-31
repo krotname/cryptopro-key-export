@@ -755,9 +755,14 @@ namespace CryptoProExport.App
                 // иначе отклонение выбранного файла выглядело бы как успех при уже установленной.
                 Log(LicenseGate.Describe(info));
                 // Одного «недействительна» мало: без причины владелец не отличит чужую платформу
-                // от чужого отпечатка и будет искать проблему в приложении. Текст верификатора —
-                // диагностика на русском, как и в CLI (stderr), поэтому идёт отдельной строкой.
-                if (!info.Ok && !string.IsNullOrEmpty(info.Reason)) Log("  " + info.Reason);
+                // от чужого отпечатка и будет искать проблему в приложении. Причина идёт отдельной
+                // строкой и на языке интерфейса; точное сообщение верификатора (диагностика
+                // протокола, всегда по-русски) остаётся в файле журнала.
+                if (!info.Ok)
+                {
+                    Log("  " + LicenseGate.ReasonText(info));
+                    if (!string.IsNullOrEmpty(info.Reason)) SessionLog.Write("  " + info.Reason);
+                }
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {

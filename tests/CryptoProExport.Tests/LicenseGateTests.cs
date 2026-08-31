@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -100,12 +101,96 @@ namespace CryptoProExport.Tests
             Assert.Throws<LicenseException>(() => verifier.Verify(tampered, Fp, null, 1765000000, 0));
         }
 
+        // ---------- причина отказа: код вместо русской диагностики верификатора ----------
+
+        [Theory]
+        // Тот самый случай владельца: файл выдан Android-сборке, а открывают его в Windows.
+        [InlineData("cryptoexport", "android", null, LicenseFailure.OtherPlatform, "android")]
+        [InlineData("androidexport", "windows", null, LicenseFailure.OtherProduct, "androidexport")]
+        [InlineData("cryptoexport", "windows", Expired, LicenseFailure.Expired, "2023-11-14")]
+        public void Classify_NamesWhatIsWrongWithTheFile(string pid, string plat, long? until,
+            LicenseFailure expected, string detail)
+        {
+            using var signer = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+            string jws = BuildLicense(signer, LicenseGate.Kid, pid, plat, LicenseGate.Fingerprint(), until);
+
+            var (failure, actual) = LicenseGate.Classify(jws, Now, Keys(signer));
+
+            Assert.Equal(expected, failure);
+            Assert.Equal(detail, actual);
+        }
+
+        [Fact]
+        public void Classify_NamesOtherMachine()
+        {
+            using var signer = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+            string jws = BuildLicense(signer, LicenseGate.Kid, "cryptoexport", "windows", Fp, null);
+
+            var (failure, detail) = LicenseGate.Classify(jws, Now, Keys(signer));
+
+            Assert.Equal(LicenseFailure.OtherMachine, failure);
+            Assert.Null(detail);
+        }
+
+        [Fact]
+        public void Classify_DoesNotTrustAnUnsignedClaim()
+        {
+            // Нагрузка заявляет чужую платформу, но подписана ключом, которого нет среди доверенных:
+            // причина обязана остаться общей, иначе подделка получала бы осмысленное объяснение.
+            using var stranger = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+            string jws = BuildLicense(stranger, LicenseGate.Kid, "cryptoexport", "android", LicenseGate.Fingerprint(), null);
+
+            var (failure, detail) = LicenseGate.Classify(jws, Now,
+                new Dictionary<string, string> { [LicenseGate.Kid] = LicenseGate.PublicKeyB64 });
+
+            Assert.Equal(LicenseFailure.Unreadable, failure);
+            Assert.Null(detail);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("не.лицензия")]
+        [InlineData("a.b.c")]
+        public void Verify_ReportsGarbageAsUnreadable(string bad)
+        {
+            Assert.Equal(LicenseFailure.Unreadable, LicenseGate.Verify(bad).Failure);
+        }
+
+        [Fact]
+        public void ReasonText_IsLocalizedAndNotTheVerifierMessage()
+        {
+            using var scope = Strings.Scope("ja");
+            foreach (LicenseFailure failure in Enum.GetValues<LicenseFailure>())
+            {
+                var info = new LicenseInfo(LicenseState.Invalid, reason: "подпись лицензии неверна",
+                    failure: failure, detail: "x");
+                string text = LicenseGate.ReasonText(info);
+
+                Assert.False(string.IsNullOrWhiteSpace(text));
+                Assert.DoesNotContain("[!", text);
+                Assert.NotEqual(info.Reason, text);
+            }
+        }
+
+        /// <summary>Момент проверки в тестах и просроченный срок из прошлого (2023-11-14).</summary>
+        private const long Now = 1765000000;
+
+        private const long Expired = 1700000000;
+
+        private static Dictionary<string, string> Keys(ECDsa signer) =>
+            new() { [LicenseGate.Kid] = Convert.ToBase64String(signer.ExportSubjectPublicKeyInfo()) };
+
         /// <summary>Собирает compact JWS ES256 (PROTOCOL §2) тестовым ключом.</summary>
-        private static string BuildLicense(ECDsa signer, string kid, string pid, string plat, string fp, bool expNull)
+        private static string BuildLicense(ECDsa signer, string kid, string pid, string plat, string fp, bool expNull) =>
+            BuildLicense(signer, kid, pid, plat, fp, expNull ? null : 1900000000L);
+
+        /// <summary>То же, но со своим сроком: <c>null</c> — бессрочная, иначе term до этой отметки.</summary>
+        private static string BuildLicense(ECDsa signer, string kid, string pid, string plat, string fp, long? until)
         {
             string header = "{\"alg\":\"ES256\",\"typ\":\"JWT\",\"kid\":\"" + kid + "\"}";
-            string exp = expNull ? "null" : "1900000000";
-            string typ = expNull ? "perpetual" : "term";
+            string exp = until is long stamp ? stamp.ToString(CultureInfo.InvariantCulture) : "null";
+            string typ = until is null ? "perpetual" : "term";
             string payload =
                 "{\"v\":1,\"lid\":\"L\",\"aid\":\"A\",\"pid\":\"" + pid + "\",\"typ\":\"" + typ +
                 "\",\"plat\":\"" + plat + "\",\"iat\":1765000000,\"exp\":" + exp + ",\"fp\":\"" + fp +
