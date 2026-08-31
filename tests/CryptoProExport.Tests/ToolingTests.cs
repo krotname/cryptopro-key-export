@@ -163,6 +163,51 @@ namespace CryptoProExport.Tests
         }
 
         [Theory]
+        // Нумерация SCARD_W_* сверена с winerror.h и системными сообщениями Windows
+        // (31.08.2026): 6B — неверный PIN, 6C — PIN заблокирован. До правки таблица была
+        // сдвинута и на заблокированном PIN писала «неверный PIN-код».
+        [InlineData(unchecked((int)0x8010006B), "неверный PIN")]
+        [InlineData(unchecked((int)0x8010006C), "заблокирован")]
+        [InlineData(unchecked((int)0x80100065), "ATR")]
+        public void CryptoErrors_MatchesTheWindowsScardNumbering(int code, string expectedFragment)
+        {
+            Assert.Contains(expectedFragment, CryptoErrors.Describe(code));
+        }
+
+        [Fact]
+        public void ComponentCheck_ExplainsEveryComponentInTheCurrentLanguage()
+        {
+            using var ru = Strings.Scope("ru");
+            foreach (RequiredComponent component in Enum.GetValues<RequiredComponent>())
+            {
+                string text = ComponentCheck.Explain(component);
+                Assert.False(string.IsNullOrWhiteSpace(text));
+                Assert.DoesNotContain(Strings.MissingMarkerStart, text, StringComparison.Ordinal);
+            }
+        }
+
+        [Fact]
+        public void ComponentCheck_MissingListsExactlyTheAbsentOnes()
+        {
+            // Проверка обязана быть безопасной: сама она не бросает, а Require превращает
+            // отсутствие в ComponentMissingException с уже готовым объяснением.
+            var absent = ComponentCheck.Missing(Enum.GetValues<RequiredComponent>());
+            foreach (RequiredComponent component in Enum.GetValues<RequiredComponent>())
+            {
+                bool present = ComponentCheck.IsPresent(component);
+                Assert.Equal(!present, absent.Contains(component));
+                if (present) ComponentCheck.Require(component);
+                else
+                {
+                    var error = Assert.Throws<ComponentMissingException>(
+                        () => ComponentCheck.Require(component));
+                    Assert.Equal(component, error.Component);
+                    Assert.Equal(ComponentCheck.Explain(component), error.Message);
+                }
+            }
+        }
+
+        [Theory]
         [InlineData(unchecked((int)0x8010006C), "PIN")]
         [InlineData(unchecked((int)0x80090016), "контейнер")]
         [InlineData(unchecked((int)0x8009000B), "экспортируемым")]
@@ -189,14 +234,13 @@ namespace CryptoProExport.Tests
             var report = Diagnostics.Report();
             Assert.Contains(report, l => l.StartsWith("Процесс:", StringComparison.Ordinal));
 
-            // Вшитая зависимость в норме попадает в общую строку без путей, а отдельную строку
-            // получает только при отклонении (внешняя копия, нет её, системная регистрация).
-            Assert.Contains(report, l => l.StartsWith("Встроенные зависимости:", StringComparison.Ordinal)
-                                      && l.Contains("p12utility", StringComparison.Ordinal)
-                                      || l.StartsWith("p12utility:", StringComparison.Ordinal));
-            Assert.Contains(report, l => l.StartsWith("Встроенные зависимости:", StringComparison.Ordinal)
-                                      && l.Contains("rtCOMLite", StringComparison.Ordinal)
-                                      || l.StartsWith("rtCOMLite:", StringComparison.Ordinal));
+            // Вшитая зависимость в норме не упоминается вовсе: отдельную строку получает
+            // только отклонение (внешняя копия, нет её, системная регистрация). Наличие
+            // компонента проверяет ComponentCheck там, где он нужен, а не строка в журнале.
+            Assert.DoesNotContain(report, l => l.Contains("Встроенные зависимости", StringComparison.Ordinal));
+            Assert.True(ComponentCheck.IsPresent(RequiredComponent.P12Utility)
+                        ^ report.Any(l => l.StartsWith("p12utility:", StringComparison.Ordinal)
+                                          && l.Contains("НЕ НАЙДЕН", StringComparison.Ordinal)));
 
             Assert.Contains(report, l => l.StartsWith("Считыватели смарт-карт (PnP):", StringComparison.Ordinal) ||
                                          l.StartsWith("Считыватель смарт-карт ", StringComparison.Ordinal));

@@ -399,11 +399,32 @@ namespace CryptoProExport.Tests
 
             string summary = Pkcs11Token.CapabilitySummary(info);
 
-            Assert.Contains("RSA HW keygen up to ? bit", summary, StringComparison.Ordinal);
+            Assert.Contains("RSA HW keygen ?", summary, StringComparison.Ordinal);
             Assert.Contains("ECDSA HW ?", summary, StringComparison.Ordinal);
             Assert.Contains("GOST HW ?", summary, StringComparison.Ordinal);
             Assert.DoesNotContain("ECDSA HW −", summary, StringComparison.Ordinal);
             Assert.DoesNotContain("GOST HW −", summary, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void CapabilityProfileText_SeparatesUnreadFromInconclusive()
+        {
+            // «Не определился» — это два разных ответа: механизмы не отдали вовсе или отдали,
+            // но поколения (оно есть только у Рутокен ЭЦП) по ним не видно.
+            using var scope = Strings.Scope("ru");
+            string unread = Pkcs11Token.CapabilityProfileText(new Pkcs11TokenInfo
+            {
+                CapabilitiesKnown = false, CapabilityProfile = RutokenCapabilityProfile.Unknown,
+            });
+            string inconclusive = Pkcs11Token.CapabilityProfileText(new Pkcs11TokenInfo
+            {
+                CapabilitiesKnown = true, CapabilityProfile = RutokenCapabilityProfile.Unknown,
+            });
+
+            Assert.NotEqual(unread, inconclusive);
+            Assert.Equal(Strings.Get("cap.profile.unread"), unread);
+            Assert.Equal(Pkcs11Token.CapabilityProfileName(RutokenCapabilityProfile.Unknown), inconclusive);
+            Assert.DoesNotContain(Strings.MissingMarkerStart, unread, StringComparison.Ordinal);
         }
 
         [Theory]
@@ -895,7 +916,7 @@ namespace CryptoProExport.Tests
                 PrivateMemoryTotal = 131072, PrivateMemoryFree = 86720,
             });
 
-            Assert.Equal("память 128 КБ, свободно 85 КБ", line);
+            Assert.Equal("память: 128 КБ, свободно 85 КБ", line);
         }
 
         [Fact]
@@ -910,7 +931,7 @@ namespace CryptoProExport.Tests
                 PrivateMemoryTotal = 65536, PrivateMemoryFree = 32768,
             });
 
-            Assert.Equal("memory: public 32 KB (free 16), private 64 KB (free 32)", line);
+            Assert.Equal("memory: public — 32 KB, free 16 KB; private — 64 KB, free 32 KB", line);
         }
 
         [Fact]
@@ -925,7 +946,7 @@ namespace CryptoProExport.Tests
                 PrivateMemoryTotal = 65536, PrivateMemoryFree = 32768,
             });
 
-            Assert.Equal("memory 64 KB, free 32 KB", line);
+            Assert.Equal("memory: 64 KB, free 32 KB", line);
         }
 
         [Fact]
@@ -937,7 +958,52 @@ namespace CryptoProExport.Tests
                 PublicMemoryTotal = 65536, PublicMemoryFree = 32768,
             });
 
-            Assert.Equal("memory: public 64 KB (free 32), private ? KB (free ?)", line);
+            Assert.Equal("memory: public — 64 KB, free 32 KB; private — not reported by the token", line);
+        }
+
+        [Theory]
+        // Носители БИФИТ опознаются и без своей библиотеки PKCS#11 — по имени считывателя.
+        [InlineData("BIFIT ANGARA 0")]
+        [InlineData("BIFIT iBank2Key 0")]
+        [InlineData("MS_KEY K")]
+        [InlineData("iBank2Key")]
+        public void Classify_RecognizesBifitCarriers(string text)
+        {
+            Assert.Equal(RutokenKind.Bifit, Pkcs11Token.Classify(text));
+            Assert.Equal("BIFIT", Pkcs11Token.KindName(RutokenKind.Bifit));
+        }
+
+        [Fact]
+        public void Classify_BareAngaraIsNotEnoughForBifit()
+        {
+            // Модуль esmart_token_angara_mod.dll в системе показывает, что «АНГАРА» носят обе
+            // линейки. Без явного маркера вендора носитель остаётся неопознанным, а ESMART
+            // ANGARA обязан оставаться ESMART.
+            Assert.Equal(RutokenKind.Unknown, Pkcs11Token.Classify("ANGARA 0"));
+            Assert.Equal(RutokenKind.Esmart, Pkcs11Token.Classify("ESMART Token ANGARA 0"));
+        }
+
+        [Fact]
+        public void SmartCardReaders_KeepsBifitAwayFromTheFileWalk()
+        {
+            var set = Pkcs11Token.SmartCardReaders(new List<Pkcs11TokenInfo>
+            {
+                new Pkcs11TokenInfo { Reader = "BIFIT ANGARA 0", Kind = RutokenKind.Bifit },
+            });
+            Assert.Contains("BIFIT ANGARA 0", set);
+        }
+
+        [Fact]
+        public void MemorySummary_SaysNothingIsReportedForOnePoolOnly()
+        {
+            using var language = Strings.Scope("ru");
+            string line = Pkcs11Token.MemorySummary(new Pkcs11TokenInfo
+            {
+                PrivateMemoryTotal = 65536, PrivateMemoryFree = 32768,
+            });
+
+            Assert.Equal("память: публичная — токен не сообщает; приватная — 64 КБ, свободно 32 КБ",
+                         line);
         }
 
         [Fact]
@@ -958,19 +1024,22 @@ namespace CryptoProExport.Tests
                 PublicMemoryFree = 40960, PrivateMemoryFree = 40960,
             });
 
-            Assert.Equal("память ? КБ, свободно 40 КБ", line);
+            Assert.Equal("память: свободно 40 КБ (общий объём токен не сообщает)", line);
         }
 
         [Fact]
-        public void MemorySummary_ShowsQuestionMarkForUndeclaredFreeSpace()
+        public void MemorySummary_SaysWhoDoesNotReportFreeSpace()
         {
+            // Прежний «свободно ? КБ» читался как сбой приложения. Причина в носителе: оба
+            // ESMART отдают CK_UNAVAILABLE_INFORMATION вместо числа (31.08.2026), и величину
+            // надо называть несообщённой, а не прятать за знаком вопроса.
             using var language = Strings.Scope("ru");
             string line = Pkcs11Token.MemorySummary(new Pkcs11TokenInfo
             {
                 PublicMemoryTotal = 65536, PrivateMemoryTotal = 65536,
             });
 
-            Assert.Equal("память 64 КБ, свободно ? КБ", line);
+            Assert.Equal("память: 64 КБ (свободный объём токен не сообщает)", line);
         }
 
         [Fact]
@@ -984,7 +1053,7 @@ namespace CryptoProExport.Tests
                 PrivateMemoryTotal = 131072, PrivateMemoryFree = 86720,
             };
 
-            Assert.EndsWith("; память 128 КБ, свободно 85 КБ",
+            Assert.EndsWith("; память: 128 КБ, свободно 85 КБ",
                 Pkcs11Token.CapabilitySummary(withMemory), StringComparison.Ordinal);
             Assert.DoesNotContain("память",
                 Pkcs11Token.CapabilitySummary(new Pkcs11TokenInfo { Hardware = "20.05" }),

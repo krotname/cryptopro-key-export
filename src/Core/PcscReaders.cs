@@ -205,6 +205,54 @@ namespace CryptoProExport
         }
 
         /// <summary>
+        /// Почему число устройств PKCS#11 не сходится с числом считывателей.
+        ///
+        /// Это разные величины, и раньше их печатали рядом без единого связывающего слова:
+        /// PnP считает <b>считыватели</b>, а PKCS#11 показывает <b>носители, у которых в системе
+        /// есть библиотека вендора</b>. Носитель без такой библиотеки (проверено 31.08.2026 на
+        /// BIFIT ANGARA и BIFIT iBank2Key) физически стоит в считывателе, виден в PC/SC и, если
+        /// его ATR знаком КриптоПро, работает через CSP — но в перечне PKCS#11 его нет вовсе,
+        /// и разница в счётчиках выглядела как ошибка приложения.
+        ///
+        /// Возвращает готовые строки журнала: сводку и перечень непокрытых носителей. Пустой
+        /// список — когда считывателей нет вообще.
+        ///
+        /// Чистая функция: покрыта тестами без обращения к железу.
+        /// </summary>
+        public static List<string> CoverageLines(IEnumerable<PcscReader> readers,
+                                                 IEnumerable<string> pkcs11Readers)
+        {
+            var all = new List<PcscReader>();
+            foreach (var r in readers ?? Array.Empty<PcscReader>())
+                if (r != null && !string.IsNullOrEmpty(r.Name)) all.Add(r);
+
+            var lines = new List<string>();
+            if (all.Count == 0) return lines;
+
+            var covered = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var name in pkcs11Readers ?? Array.Empty<string>())
+                if (!string.IsNullOrEmpty(name)) covered.Add(name.Trim());
+
+            int withCard = 0;
+            int shown = 0;
+            foreach (var r in all)
+            {
+                if (r.CardPresent) withCard++;
+                if (covered.Contains(r.Name.Trim())) shown++;
+            }
+            lines.Add(Strings.Format("cli.pcsc.count", all.Count, withCard, shown));
+
+            var uncovered = Uncovered(all, covered);
+            if (uncovered.Count == 0) return lines;
+
+            lines.Add(Strings.Get("cli.pcsc.uncovered"));
+            foreach (var r in uncovered)
+                lines.Add("  " + Strings.Format("cli.pcsc.line",
+                    r.Name, Strings.Get(CarrierHintKey(r.Name)), r.Atr ?? "?"));
+            return lines;
+        }
+
+        /// <summary>
         /// Ключ локализованной подсказки о вендоре по имени считывателя. Только для сообщения
         /// диагностики — не влияет на выбор пути снятия ключа. Имена вендоров в значениях — торговые
         /// марки, не переводятся; переводится лишь слово «неизвестный носитель».
@@ -218,6 +266,9 @@ namespace CryptoProExport
             if (n.Contains("rutoken") || n.Contains("aktiv")) return "carrier.rutoken";
             if (n.Contains("esmart") || n.Contains("isbc")) return "carrier.esmart";
             if (n.Contains("etoken") || n.Contains("safenet")) return "carrier.etoken";
+            // БИФИТ проверяется после ESMART: «ANGARA» носят обе линейки, и точное
+            // свидетельство ESMART должно сработать первым.
+            if (Pkcs11Token.HasBifitEvidence(n)) return "carrier.bifit";
             return "carrier.unknown";
         }
     }

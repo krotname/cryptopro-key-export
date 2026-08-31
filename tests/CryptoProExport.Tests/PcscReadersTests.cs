@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
@@ -102,12 +103,76 @@ namespace CryptoProExport.Tests
             Assert.Equal(expected, PcscReaders.CarrierHintKey(reader));
         }
 
+        [Theory]
+        [InlineData("BIFIT ANGARA 0")]
+        [InlineData("BIFIT iBank2Key 0")]
+        [InlineData("MS_KEY K 0")]
+        public void CarrierHintKey_NamesBifitCarriers(string reader)
+        {
+            // Оба носителя стоят в PC/SC, но своей библиотеки PKCS#11 в системе не имеют —
+            // без имени вендора строка в журнале была бы «неизвестный носитель».
+            Assert.Equal("carrier.bifit", PcscReaders.CarrierHintKey(reader));
+        }
+
+        [Fact]
+        public void CarrierHintKey_EsmartAngaraStaysEsmart()
+        {
+            // «ANGARA» носят обе линейки: ESMART Token ANGARA и БИФИТ MS_KEY K «АНГАРА».
+            // Точное свидетельство ESMART обязано сработать первым.
+            Assert.Equal("carrier.esmart", PcscReaders.CarrierHintKey("ESMART Token ANGARA 0"));
+        }
+
+        // ---------- CoverageLines ----------
+
+        [Fact]
+        public void CoverageLines_ExplainsWhyPkcs11CountIsSmaller()
+        {
+            using var language = Strings.Scope("ru");
+            var readers = new List<PcscReader>
+            {
+                new PcscReader { Name = "Aktiv Rutoken lite 0", CardPresent = true, Atr = "3B 8B" },
+                new PcscReader { Name = "BIFIT ANGARA 0", CardPresent = true, Atr = "3B 9E" },
+                new PcscReader { Name = "BIFIT iBank2Key 0", CardPresent = true, Atr = "3B 98" },
+            };
+
+            var lines = PcscReaders.CoverageLines(readers, new[] { "Aktiv Rutoken lite 0" });
+
+            Assert.Equal("считывателей 3, из них с носителем 3; библиотека PKCS#11 показала "
+                         + "носитель у 1 — для остальных вендорной библиотеки в системе нет",
+                         lines[0]);
+            Assert.Contains(lines, l => l.Contains("BIFIT ANGARA 0", StringComparison.Ordinal));
+            Assert.Contains(lines, l => l.Contains("BIFIT iBank2Key 0", StringComparison.Ordinal));
+            Assert.DoesNotContain(lines, l => l.Contains("Rutoken lite", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public void CoverageLines_SilentWithoutReaders()
+        {
+            Assert.Empty(PcscReaders.CoverageLines(null, null));
+            Assert.Empty(PcscReaders.CoverageLines(new List<PcscReader>(), new[] { "any" }));
+        }
+
+        [Fact]
+        public void CoverageLines_CountsOnlyTheSummaryWhenEverythingIsCovered()
+        {
+            using var language = Strings.Scope("en");
+            var readers = new List<PcscReader>
+            {
+                new PcscReader { Name = "Aktiv Rutoken lite 0", CardPresent = true, Atr = "3B 8B" },
+            };
+
+            var lines = PcscReaders.CoverageLines(readers, new[] { "Aktiv Rutoken lite 0" });
+
+            Assert.Single(lines);
+            Assert.DoesNotContain(Strings.MissingMarkerStart, lines[0], StringComparison.Ordinal);
+        }
+
         [Fact]
         public void CarrierHintKey_AllHintsHaveLocalizedValues()
         {
             // Каждый ключ подсказки должен существовать в таблице строк (иначе в выводе появится
             // маркер отсутствующего перевода). Проверяем на эталонном языке.
-            foreach (var reader in new[] { "JaCarta", "Rutoken", "ESMART", "eToken", "ACS" })
+            foreach (var reader in new[] { "JaCarta", "Rutoken", "ESMART", "eToken", "BIFIT", "ACS" })
             {
                 string key = PcscReaders.CarrierHintKey(reader);
                 string value = Strings.Get(key);

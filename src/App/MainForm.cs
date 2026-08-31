@@ -23,7 +23,7 @@ namespace CryptoProExport.App
     [SupportedOSPlatform("windows")]
     public sealed class MainForm : Form
     {
-        private TextBox _txtP12, _txtDest, _txtPin, _txtLog;
+        private TextBox _txtDest, _txtPin, _txtLog;
         private Button _btnPinReveal;
         /// <summary>Последнее подставленное программой значение PIN — чтобы отличать его от введённого.</summary>
         private string _autoFilledPin;
@@ -32,8 +32,8 @@ namespace CryptoProExport.App
         private ListView _lv;
         private SplitContainer _split;
         private ColumnHeader _colWhere, _colName, _colDetails;
-        private Label _lblP12, _lblDest, _lblPin, _lblPinHint, _lblLang;
-        private Button _btnP12, _btnDest;
+        private Label _lblDest, _lblPin, _lblPinHint, _lblLang;
+        private Button _btnDest;
         private Button _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnInstall, _btnView, _btnPfx, _btnExtractKey, _btnExtractPfx, _btnLicense, _btnLogs, _btnHelp;
         private Button _btnCancel;
         private Button[] _actionButtons;
@@ -79,7 +79,6 @@ namespace CryptoProExport.App
         {
             BuildUi();
             ApplyTexts();
-            _txtP12.Text = P12Utility.Locate() ?? "";
             _txtDest.Text = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "RutokenExport");
         }
@@ -128,7 +127,7 @@ namespace CryptoProExport.App
             // русского оригинала, и жёсткие размеры обрезали бы надписи.
             var settings = new TableLayoutPanel
             {
-                Dock = DockStyle.Top, ColumnCount = 3, RowCount = 4,
+                Dock = DockStyle.Top, ColumnCount = 3, RowCount = 3,
                 Padding = new Padding(10, 10, 10, 4),
                 AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
             };
@@ -136,7 +135,6 @@ namespace CryptoProExport.App
             settings.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             settings.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
-            _txtP12 = new TextBox { Dock = DockStyle.Fill, Margin = new Padding(3, 4, 3, 4) };
             _txtDest = new TextBox { Dock = DockStyle.Fill, Margin = new Padding(3, 4, 3, 4) };
             // PIN виден по умолчанию: он вводится с клавиатуры за своим столом, а вслепую
             // владелец чаще ошибается — а ошибка здесь стоит попытки носителя. Скрыть можно
@@ -152,23 +150,19 @@ namespace CryptoProExport.App
                 if (_lblPinHint != null) _lblPinHint.Text = PinHintText();
             };
 
-            _lblP12 = MakeFieldLabel();
-            settings.Controls.Add(_lblP12, 0, 0);
-            settings.Controls.Add(_txtP12, 1, 0);
-            _btnP12 = new Button { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Fill };
-            _btnP12.Click += (_, __) => PickFile(_txtP12,
-                "p12utility|p12utility*.exe|" + Strings.Get("files.all") + "|*.*");
-            settings.Controls.Add(_btnP12, 2, 0);
-
+            // Поля пути к p12utility в окне нет: копия утилиты вшита и распаковывается сама,
+            // а внешнюю, если она лежит рядом с приложением, находит P12Utility.Locate().
+            // Пустое поле с подписью «указывать ничего не нужно» только занимало первую строку
+            // окна и заставляло разбираться, что это за файл.
             _lblDest = MakeFieldLabel();
-            settings.Controls.Add(_lblDest, 0, 1);
-            settings.Controls.Add(_txtDest, 1, 1);
+            settings.Controls.Add(_lblDest, 0, 0);
+            settings.Controls.Add(_txtDest, 1, 0);
             _btnDest = new Button { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Fill };
             _btnDest.Click += (_, __) => PickFolder(_txtDest);
-            settings.Controls.Add(_btnDest, 2, 1);
+            settings.Controls.Add(_btnDest, 2, 0);
 
             _lblPin = MakeFieldLabel();
-            settings.Controls.Add(_lblPin, 0, 2);
+            settings.Controls.Add(_lblPin, 0, 1);
             // Кнопка живёт в одной ячейке с полем: третья колонка занята подсказкой о PIN.
             var pinCell = new TableLayoutPanel
             {
@@ -190,13 +184,13 @@ namespace CryptoProExport.App
             };
             pinCell.Controls.Add(_txtPin, 0, 0);
             pinCell.Controls.Add(_btnPinReveal, 1, 0);
-            settings.Controls.Add(pinCell, 1, 2);
+            settings.Controls.Add(pinCell, 1, 1);
             _lblPinHint = MakeFieldLabel();
             _lblPinHint.ForeColor = Color.Gray;
-            settings.Controls.Add(_lblPinHint, 2, 2);
+            settings.Controls.Add(_lblPinHint, 2, 1);
 
             _lblLang = MakeFieldLabel();
-            settings.Controls.Add(_lblLang, 0, 3);
+            settings.Controls.Add(_lblLang, 0, 2);
             _cmbLang = new ComboBox
             {
                 DropDownStyle = ComboBoxStyle.DropDownList,
@@ -205,7 +199,7 @@ namespace CryptoProExport.App
             foreach (string code in Strings.Available) _cmbLang.Items.Add(new LanguageChoice(code));
             SelectCurrentLanguage();
             _cmbLang.SelectedIndexChanged += (_, __) => OnLanguagePicked();
-            settings.Controls.Add(_cmbLang, 1, 3);
+            settings.Controls.Add(_cmbLang, 1, 2);
 
             // --- Панель кнопок ---
             var buttons = new FlowLayoutPanel
@@ -289,17 +283,13 @@ namespace CryptoProExport.App
             RightToLeft = rtl ? RightToLeft.Yes : RightToLeft.No;
             RightToLeftLayout = rtl;
 
-            _lblP12.Text = Strings.Get("field.p12");
             _lblDest.Text = Strings.Get("field.dest");
             _lblPin.Text = Strings.Get("field.pin");
             _lblPinHint.Text = PinHintText();
             ApplyPinRevealState();
             _lblLang.Text = Strings.Get("field.lang");
-            _btnP12.Text = Strings.Get("common.browse");
             _btnDest.Text = Strings.Get("common.browse");
-            _txtP12.PlaceholderText = Strings.Get("field.p12.placeholder");
 
-            Tip(_lblP12, "tip.p12"); Tip(_txtP12, "tip.p12"); Tip(_btnP12, "tip.p12.browse");
             Tip(_lblDest, "tip.dest"); Tip(_txtDest, "tip.dest"); Tip(_btnDest, "tip.dest.browse");
             Tip(_lblPin, "tip.pin"); Tip(_txtPin, "tip.pin"); Tip(_lblPinHint, "tip.pin");
             Tip(_lblLang, "tip.lang"); Tip(_cmbLang, "tip.lang");
@@ -458,7 +448,6 @@ namespace CryptoProExport.App
                 Check(c.GetType().Name, c.Text);
                 Check(c.GetType().Name + ".Tip", _tips.GetToolTip(c));
             });
-            Check("Placeholder", _txtP12.PlaceholderText);
             return bad;
         }
 
@@ -567,6 +556,22 @@ namespace CryptoProExport.App
                            "PKCS#11 · " + Pkcs11Token.CapabilityProfileName(t.CapabilityProfile),
                            new TokenDeviceSelection());
             }
+
+            // Считыватель без библиотеки PKCS#11 иначе исчезал бы из окна совсем: число
+            // устройств PKCS#11 не сходилось с числом считывателей, и понять, какой носитель
+            // потерялся, было нельзя. Опрос PC/SC пассивный — к карте он не подключается.
+            cancel.ThrowIfCancellationRequested();
+            var pcscReaders = PcscReaders.List(Log);
+            var pkcs11Readers = new List<string>();
+            foreach (var t in tokens)
+                if (t?.Reader != null) pkcs11Readers.Add(t.Reader);
+            foreach (var line in PcscReaders.CoverageLines(pcscReaders, pkcs11Readers))
+                Log("[PC/SC] " + line);
+            foreach (var r in PcscReaders.Uncovered(pcscReaders, pkcs11Readers))
+                AddRow($"[PC/SC] {r.Name}", Strings.Get("common.none"),
+                       Strings.Format("cli.pcsc.row",
+                                      Strings.Get(PcscReaders.CarrierHintKey(r.Name)), r.Atr ?? "?"),
+                       new TokenDeviceSelection());
 
             cancel.ThrowIfCancellationRequested();
             try
@@ -781,7 +786,7 @@ namespace CryptoProExport.App
                 Log(Strings.Get("log.export.directonly"));
                 return;
             }
-            var pipe = new ExportPipeline(NullIfEmpty(TextOf(_txtP12))) { Log = Log, Cancel = cancel };
+            var pipe = new ExportPipeline() { Log = Log, Cancel = cancel };
             int saved;
             if (selected?.Apdu != null)
             {
@@ -865,7 +870,7 @@ namespace CryptoProExport.App
                 Strings.Get("dlg.confirm.title"));
             if (confirm != DialogResult.OK) { Log(Strings.Get("log.cancelled.user")); return; }
 
-            var pipe = new ExportPipeline(NullIfEmpty(TextOf(_txtP12))) { Log = Log, Cancel = cancel };
+            var pipe = new ExportPipeline() { Log = Log, Cancel = cancel };
             ExportPipelineResult result;
             if (selected?.Apdu != null)
             {
@@ -1237,13 +1242,6 @@ namespace CryptoProExport.App
         {
             if (InvokeRequired) { BeginInvoke(new Action(() => AppendLog(msg))); return; }
             _txtLog.AppendText(msg + Environment.NewLine);
-        }
-
-        private void PickFile(TextBox target, string filter)
-        {
-            using var d = new OpenFileDialog { Filter = filter };
-            if (File.Exists(target.Text)) d.FileName = target.Text;
-            if (d.ShowDialog(this) == DialogResult.OK) target.Text = d.FileName;
         }
 
         private void PickFolder(TextBox target)

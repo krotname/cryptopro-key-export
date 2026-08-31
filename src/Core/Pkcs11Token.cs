@@ -29,6 +29,14 @@ namespace CryptoProExport
         JaCartaPro,
         /// <summary>ESMART Token: пассивный CSP-раздел читается прямым APDU.</summary>
         Esmart,
+        /// <summary>
+        /// Носитель БИФИТ (MS_KEY K / «АНГАРА», iBank2Key). Своей библиотеки PKCS#11 в системе
+        /// нет, поэтому такой носитель виден только через PC/SC и, если его ATR знаком
+        /// КриптоПро, через CSP. Прямого APDU у приложения для него нет — семейство заведено,
+        /// чтобы носитель честно попадал в перечень и никогда не уходил в файловый обход
+        /// rtCOMLite.
+        /// </summary>
+        Bifit,
         /// <summary>Другой токен (неподдержанный профиль JaCarta, eToken…) — безопасного пути нет.</summary>
         Other,
         /// <summary>Модель не опознана.</summary>
@@ -379,6 +387,11 @@ namespace CryptoProExport
             if (HasEsmartEvidence(model))
                 return RutokenKind.Esmart;
 
+            // БИФИТ проверяется сразу за ESMART: у семейства «АНГАРА» имя пересекается с
+            // ESMART Token ANGARA, и первым должно сработать более точное свидетельство ESMART.
+            if (HasBifitEvidence(model))
+                return RutokenKind.Bifit;
+
             // У апплета PRO на eToken PRO строка модели слишком общая: ровно "PRO". Поддержанный
             // профиль разрешаем только в точной паре со штатным manufacturerID; похожие
             // Aladdin/PRO-строки остаются Other/Unknown и никогда не получают этот APDU.
@@ -406,7 +419,8 @@ namespace CryptoProExport
             // оставляем неопознанным намеренно — иначе носитель попал бы в файловый обход
             // rtCOMLite как Рутокен S (см. RutokenExporter.ShouldWalk).
             RutokenKind byManufacturer = ClassifyText(manufacturer);
-            return byManufacturer == RutokenKind.Esmart || byManufacturer == RutokenKind.Other
+            return byManufacturer == RutokenKind.Esmart || byManufacturer == RutokenKind.Bifit
+                || byManufacturer == RutokenKind.Other
                 ? byManufacturer : RutokenKind.Unknown;
         }
 
@@ -446,7 +460,24 @@ namespace CryptoProExport
         {
             string value = (text ?? string.Empty).Trim().ToLowerInvariant();
             return value.Contains("jacarta") || value.Contains("aladdin")
-                || value.Contains("etoken") || value.Contains("esmart");
+                || value.Contains("etoken") || value.Contains("esmart")
+                || HasBifitEvidence(value);
+        }
+
+        /// <summary>
+        /// Свидетельство носителя БИФИТ. Слово «АНГАРА» само по себе намеренно не признаётся:
+        /// оно есть и у ESMART Token ANGARA (в системе лежит модуль
+        /// <c>esmart_token_angara_mod.dll</c>), поэтому нужен явный маркер вендора или модели.
+        ///
+        /// Чистая функция: покрыта тестами без обращения к железу.
+        /// </summary>
+        internal static bool HasBifitEvidence(string text)
+        {
+            string value = (text ?? string.Empty).Trim().ToLowerInvariant();
+            if (value.Length == 0) return false;
+            if (value.Contains("bifit") || value.Contains("бифит")) return true;
+            return value.Contains("ibank2key") || value.Contains("ibank 2 key")
+                || value.Contains("ms_key") || value.Contains("mskey") || value.Contains("ms key");
         }
 
         private static bool HasEsmartEvidence(string text)
@@ -528,6 +559,7 @@ namespace CryptoProExport
             string m = text.Trim().ToLowerInvariant();
 
             if (m.Contains("esmart") || m.Contains("isbc")) return RutokenKind.Esmart;
+            if (HasBifitEvidence(m)) return RutokenKind.Bifit;
             if (m.Contains("ecp") || m.Contains("эцп")) return RutokenKind.RutokenEcp;
             if (m.Contains("lite")) return RutokenKind.RutokenLite;
             // «Rutoken S», «Rutoken» без уточнения, «Рутокен S» — файловая память.
@@ -563,6 +595,7 @@ namespace CryptoProExport
                     || t.Kind == RutokenKind.RutokenEcp || t.Kind == RutokenKind.RutokenLite
                     || t.Kind == RutokenKind.JaCartaLt || t.Kind == RutokenKind.JaCartaPro
                     || t.Kind == RutokenKind.Esmart
+                    || t.Kind == RutokenKind.Bifit
                     || t.Kind == RutokenKind.Other
                     || HasUnsafeForeignFileWalkEvidence(t.Model))
                     set.Add(t.Reader);
@@ -577,6 +610,7 @@ namespace CryptoProExport
             if (kind == RutokenKind.JaCartaLt) return "JaCarta LT";
             if (kind == RutokenKind.JaCartaPro) return "eToken PRO (Java) / PRO";
             if (kind == RutokenKind.Esmart) return "ESMART";
+            if (kind == RutokenKind.Bifit) return "BIFIT";
             return Strings.Get(kind switch
             {
                 RutokenKind.RutokenS => "kind.rutoken.s",
@@ -613,6 +647,20 @@ namespace CryptoProExport
             _ => "cap.profile.unknown",
         });
 
+        /// <summary>
+        /// Профиль возможностей словами. «Не определился» — это два разных случая, и раньше
+        /// оба печатались одинаково: список механизмов вовсе не прочитан (носитель его не отдал)
+        /// либо прочитан, но по нему поколение не восстанавливается. Второе — норма для чужих
+        /// вендоров: поколение 2.x/3.0 существует только у Рутокен ЭЦП.
+        /// </summary>
+        public static string CapabilityProfileText(Pkcs11TokenInfo info)
+        {
+            if (info == null) throw new ArgumentNullException(nameof(info));
+            return info.CapabilitiesKnown
+                ? CapabilityProfileName(info.CapabilityProfile)
+                : Strings.Get("cap.profile.unread");
+        }
+
         /// <summary>Одна безопасная строка диагностики возможностей без PIN и серийного номера.</summary>
         public static string CapabilitySummary(Pkcs11TokenInfo info)
         {
@@ -620,15 +668,18 @@ namespace CryptoProExport
             string count = info.MechanismCount >= 0
                 ? info.MechanismCount.ToString(System.Globalization.CultureInfo.InvariantCulture)
                 : "?";
+            // «RSA HW keygen до — бит» читалось как обрывок строки: разряд подставляется только
+            // когда он объявлен, иначе печатается сам признак отсутствия.
             string rsa = info.CapabilitiesKnown
                 ? info.HardwareRsaMaxBits > 0
-                    ? info.HardwareRsaMaxBits.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                    : "—"
+                    ? Strings.Format("cli.token.rsa.bits",
+                        info.HardwareRsaMaxBits.ToString(System.Globalization.CultureInfo.InvariantCulture))
+                    : "−"
                 : "?";
             string ecdsa = info.CapabilitiesKnown ? (info.HardwareEcdsa ? "+" : "−") : "?";
             string gost = info.CapabilitiesKnown ? (info.HardwareGost ? "+" : "−") : "?";
             string line = Strings.Format("cli.token.capabilities", info.Hardware ?? "?", count,
-                CapabilityProfileName(info.CapabilityProfile), rsa, ecdsa, gost);
+                CapabilityProfileText(info), rsa, ecdsa, gost);
 
             // Объём памяти читается из тех же метаданных, что и версии, — без PIN и без сессии.
             string memory = MemorySummary(info);
@@ -670,17 +721,34 @@ namespace CryptoProExport
             if (info.PublicMemoryTotal == info.PrivateMemoryTotal
                 && info.PublicMemoryFree == info.PrivateMemoryFree)
                 return Strings.Format("cli.token.memory",
-                    Kilobytes(info.PublicMemoryTotal), Kilobytes(info.PublicMemoryFree));
+                    Side(info.PublicMemoryTotal, info.PublicMemoryFree));
 
             return Strings.Format("cli.token.memory.split",
-                Kilobytes(info.PublicMemoryTotal), Kilobytes(info.PublicMemoryFree),
-                Kilobytes(info.PrivateMemoryTotal), Kilobytes(info.PrivateMemoryFree));
+                Side(info.PublicMemoryTotal, info.PublicMemoryFree),
+                Side(info.PrivateMemoryTotal, info.PrivateMemoryFree));
         }
 
-        /// <summary>Байты в килобайтах с округлением; «?» — объём не объявлен.</summary>
-        private static string Kilobytes(long bytes) => bytes < 0
-            ? "?"
-            : ((bytes + 512) / 1024).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        /// <summary>
+        /// Одна пара «объём / свободно» словами.
+        ///
+        /// Раньше нечисло печаталось знаком вопроса («свободно ? КБ»), и строка читалась как
+        /// сбой приложения. На деле это ответ носителя: часть моделей (оба ESMART, проверено
+        /// 31.08.2026) отдаёт в CK_TOKEN_INFO маркер CK_UNAVAILABLE_INFORMATION вместо числа, и
+        /// другого источника свободного объёма в PKCS#11 нет — ни сложить, ни оценить его не из
+        /// чего. Поэтому недостающая величина называется прямо: её не сообщает токен.
+        /// </summary>
+        private static string Side(long total, long free)
+        {
+            if (total >= 0 && free >= 0)
+                return Strings.Format("cli.token.memory.side", Kilobytes(total), Kilobytes(free));
+            if (total >= 0) return Strings.Format("cli.token.memory.side.nofree", Kilobytes(total));
+            if (free >= 0) return Strings.Format("cli.token.memory.side.nototal", Kilobytes(free));
+            return Strings.Get("cli.token.memory.side.none");
+        }
+
+        /// <summary>Байты в килобайтах с округлением. Вызывается только для объявленных величин.</summary>
+        private static string Kilobytes(long bytes) =>
+            ((bytes + 512) / 1024).ToString(System.Globalization.CultureInfo.InvariantCulture);
 
         /// <summary>Локализованное состояние PIN (без траты попыток входа).</summary>
         public static string PinState(Pkcs11TokenInfo info) => Strings.Get(
