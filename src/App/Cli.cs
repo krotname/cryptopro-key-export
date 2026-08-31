@@ -521,7 +521,8 @@ namespace CryptoProExport.App
                         // отличает чужую платформу от чужого отпечатка. Точное сообщение верификатора
                         // (диагностика протокола, всегда по-русски) остаётся в файле журнала.
                         Err(LicenseGate.ReasonText(info));
-                        if (!string.IsNullOrEmpty(info.Reason)) SessionLog.Write(info.Reason);
+                        if (!string.IsNullOrEmpty(info.VerifierDiagnostic))
+                            SessionLog.Write(info.VerifierDiagnostic);
                         return 2;
                     }
                     default:
