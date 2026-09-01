@@ -30,6 +30,9 @@ namespace CryptoProExport.App
         /// <summary>Модель, чьё заводское значение подставлено, — для подсказки на текущем языке.</summary>
         private string _autoFilledModel;
         private ListView _lv;
+        /// <summary>Объяснение пустого списка поверх него самого; null-ключ — скрыт.</summary>
+        private Label _lblEmpty;
+        private string _emptyHintKey;
         private SplitContainer _split;
         private ColumnHeader _colWhere, _colBackend, _colName, _colDetails;
         /// <summary>Колонка, по которой отсортирован список; -1 — исходный порядок обхода.</summary>
@@ -373,6 +376,17 @@ namespace CryptoProExport.App
             // по самим кнопкам, а не по сообщению в журнале после нажатия.
             _lv.SelectedIndexChanged += (_, __) => UpdateRowActions();
             split.Panel1.Controls.Add(_lv);
+            // Пустой список раньше не объяснял себя ничем: причина уходила только в журнал,
+            // а журнал теперь свёрнут (ROADMAP, P2, п. 7). Подпись перекрывает список целиком
+            // и появляется, только когда показывать в нём нечего.
+            _lblEmpty = new Label
+            {
+                Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter,
+                AutoSize = false, ForeColor = Color.Gray, Visible = false,
+                Padding = new Padding(24),
+            };
+            split.Panel1.Controls.Add(_lblEmpty);
+            _lblEmpty.BringToFront();
             split.Panel1.Padding = new Padding(10, 0, 10, 0);
 
             _txtLog = new TextBox
@@ -475,6 +489,7 @@ namespace CryptoProExport.App
             _tips.SetToolTip(_btnFull, _tips.GetToolTip(_btnFull) + ecpBoundary);
 
             ApplyColumnHeaders();
+            ApplyEmptyHint();
             Tip(_lv, "tip.list");
             _tips.SetToolTip(_lv, _tips.GetToolTip(_lv) + "\n\n" + Strings.Get("tip.list.dblclick")
                                   + "\n\n" + Strings.Get("tip.list.columns"));
@@ -697,6 +712,9 @@ namespace CryptoProExport.App
             // строками нового носителя ещё до конца обхода, и прерванное обновление (отмена,
             // ошибка) оставило бы в поле PIN уже вынутого токена — он ушёл бы дальше как явный.
             ClearAutoFilledPin();
+            // Прежнее объяснение снимаем сразу: пока обход идёт, оно относилось бы к старому
+            // состоянию, а прерванное обновление оставило бы его на пустом списке навсегда.
+            SetEmptyHint(null);
             Invoke(() => { _lv.Items.Clear(); _rowSeq = 0; });
             Log(Strings.Get("status.refresh"));
 
@@ -824,6 +842,7 @@ namespace CryptoProExport.App
             }
             catch (Exception e) { Log(Strings.Format("log.tokens.unavailable", e.Message)); }
             SuggestFactoryPin(tokens);
+            SetEmptyHint(pcscReaders.Count);
             Log(Strings.Get("log.done"));
         }
 
@@ -1574,6 +1593,39 @@ namespace CryptoProExport.App
             _lv.ListViewItemSorter = new RowComparer(_sortColumn, _sortDesc);
             _lv.Sort();
             ApplyColumnHeaders();
+        }
+
+        /// <summary>
+        /// Объяснить пустой список в нём самом. Причин ровно две, и они разные по действию:
+        /// либо считывателей нет вовсе — тогда носитель надо вставить, — либо считыватель
+        /// есть, а прочитать его нечем: библиотеки PKCS#11 для этого носителя не нашлось.
+        /// Раньше и то и другое было видно только в журнале, а он теперь свёрнут по умолчанию.
+        /// </summary>
+        private void SetEmptyHint(int? readers)
+        {
+            if (InvokeRequired) { BeginInvoke(new Action(() => SetEmptyHint(readers))); return; }
+            _emptyHintKey = readers == null ? null : ListEmptyHint.KeyFor(_lv.Items.Count, readers.Value);
+            ApplyEmptyHint();
+        }
+
+        /// <summary>
+        /// Самопроверка для --selftest: показать объяснение пустого списка, чтобы его текст
+        /// попал в общую проверку переводов. Обе причины проверяются на каждом языке — иначе
+        /// пропавший ключ был бы виден только на машине без единого считывателя.
+        /// </summary>
+        internal void PreviewEmptyHint(int? readers)
+        {
+            _emptyHintKey = readers == null ? null : ListEmptyHint.KeyFor(0, readers.Value);
+            ApplyEmptyHint();
+        }
+
+        /// <summary>Показать объяснение на действующем языке — и после смены языка тоже.</summary>
+        private void ApplyEmptyHint()
+        {
+            if (_lblEmpty == null) return;
+            _lblEmpty.Text = _emptyHintKey == null ? string.Empty : Strings.Get(_emptyHintKey);
+            _lblEmpty.Visible = _emptyHintKey != null;
+            if (_lblEmpty.Visible) _lblEmpty.BringToFront();
         }
 
         /// <summary>Заголовки колонок с отметкой сортировки на текущей.</summary>
