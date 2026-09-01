@@ -86,6 +86,28 @@ namespace CryptoProExport.Tests
         }
 
         /// <summary>
+        /// Сорвавшийся обход — это «неизвестно», а не «пусто». У Рутокен Lite и JaCarta LT
+        /// контейнеры КриптоПро видны только прямым APDU, и его ошибка не доказывает, что
+        /// контейнеров нет (замечание Codex на PR #83). Ошибка перекрывает остальные причины.
+        /// </summary>
+        [Theory]
+        [InlineData(0, 0)]
+        [InlineData(1, 0)]
+        [InlineData(1, 1)]
+        public void FailedScan_IsNotAnEmptyCarrier(int carriers, int pkcs11Tokens)
+        {
+            Assert.Equal(ListEmptyHint.ScanFailedKey,
+                         ListEmptyHint.KeyFor(0, carriers, pkcs11Tokens, scanFailed: true));
+        }
+
+        /// <summary>Найденный контейнер объяснять не нужно даже после сорвавшегося обхода.</summary>
+        [Fact]
+        public void FailedScan_DoesNotExplainAListWithContainers()
+        {
+            Assert.Null(ListEmptyHint.KeyFor(1, 1, 1, scanFailed: true));
+        }
+
+        /// <summary>
         /// Что считать строкой с контейнером. Устройство без контейнера и сертификат-сирота
         /// (AGENTS п. 30) список наполняют, но показывать по-прежнему нечего — иначе объяснение
         /// подавлялось бы как раз там, где оно и нужно (замечание Codex на PR #83).
@@ -119,6 +141,7 @@ namespace CryptoProExport.Tests
                              ListEmptyHint.NoReaderKey,
                              ListEmptyHint.NoLibraryKey,
                              ListEmptyHint.NoContainerKey,
+                             ListEmptyHint.ScanFailedKey,
                          })
                 {
                     string text = Strings.Get(key);

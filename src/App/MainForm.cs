@@ -723,6 +723,10 @@ namespace CryptoProExport.App
             // состоянию, а прерванное обновление оставило бы его на пустом списке навсегда.
             SetEmptyHint(null);
             Invoke(() => { _lv.Items.Clear(); _rowSeq = 0; });
+            // Сорвавшийся опрос нельзя выдавать за «контейнеров нет»: у Рутокен Lite и
+            // JaCarta LT контейнеры КриптоПро видны только прямым APDU, и его ошибка означает
+            // «неизвестно», а не «пусто» (замечание Codex на PR #83).
+            bool scanFailed = false;
             Log(Strings.Get("status.refresh"));
 
             // HDIMAGE-копия и исходный токен часто имеют одно логическое имя. Показываем
@@ -802,6 +806,7 @@ namespace CryptoProExport.App
                     }
                     catch (Exception e)
                     {
+                        scanFailed = true;
                         Log("[APDU] " + Strings.Format("log.tokens.unavailable", e.Message));
                     }
                 }
@@ -847,7 +852,11 @@ namespace CryptoProExport.App
                            c.ContainerName ?? Strings.Get("log.container.unnamed"),
                            Strings.Format("log.container.files", c.TokenDir, c.Files.Count), c);
             }
-            catch (Exception e) { Log(Strings.Format("log.tokens.unavailable", e.Message)); }
+            catch (Exception e)
+            {
+                scanFailed = true;
+                Log(Strings.Format("log.tokens.unavailable", e.Message));
+            }
             SuggestFactoryPin(tokens);
             // Считаем носители, а не считыватели: пустой слот — это «вставьте носитель», а не
             // «нет библиотеки». Строку в списке PcscReaders.Uncovered даёт тоже только по
@@ -855,7 +864,7 @@ namespace CryptoProExport.App
             // (замечание Codex на PR #83).
             int carriers = 0;
             foreach (var r in pcscReaders) if (r != null && r.CardPresent) carriers++;
-            SetEmptyHint(carriers, tokens.Count);
+            SetEmptyHint(carriers, tokens.Count, scanFailed);
             Log(Strings.Get("log.done"));
         }
 
@@ -1622,16 +1631,20 @@ namespace CryptoProExport.App
         /// показалось (замечание Codex на PR #83). Что именно написать, решает
         /// <see cref="ListEmptyHint"/>: причин три и действия у них разные.
         /// </summary>
-        private void SetEmptyHint(int? carriers, int pkcs11Tokens = 0)
+        private void SetEmptyHint(int? carriers, int pkcs11Tokens = 0, bool scanFailed = false)
         {
-            if (InvokeRequired) { BeginInvoke(new Action(() => SetEmptyHint(carriers, pkcs11Tokens))); return; }
+            if (InvokeRequired)
+            {
+                BeginInvoke(new Action(() => SetEmptyHint(carriers, pkcs11Tokens, scanFailed)));
+                return;
+            }
             if (carriers == null) { _emptyHintKey = null; ApplyEmptyHint(); return; }
 
             int containers = 0;
             foreach (ListViewItem row in _lv.Items)
                 if (ListEmptyHint.IsContainerRow(RowKind(row.Tag))) containers++;
 
-            _emptyHintKey = ListEmptyHint.KeyFor(containers, carriers.Value, pkcs11Tokens);
+            _emptyHintKey = ListEmptyHint.KeyFor(containers, carriers.Value, pkcs11Tokens, scanFailed);
             ApplyEmptyHint();
         }
 

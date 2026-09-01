@@ -107,7 +107,8 @@ namespace CryptoProExport.App
             // показываем прямо здесь — их текст попадёт в общую проверку ниже.
             foreach (string key in new[]
                      {
-                         ListEmptyHint.NoReaderKey, ListEmptyHint.NoLibraryKey, ListEmptyHint.NoContainerKey,
+                         ListEmptyHint.NoReaderKey, ListEmptyHint.NoLibraryKey,
+                         ListEmptyHint.NoContainerKey, ListEmptyHint.ScanFailedKey,
                      })
             {
                 form.PreviewEmptyHint(key);
