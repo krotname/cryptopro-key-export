@@ -65,10 +65,12 @@ tip.cancel = Interromper a operação em curso.\nO trabalho para no passo mais p
 
 # --- lista de contentores e registo ---
 col.location = Localização
+col.backend = Способ чтения
 col.container = Contentor
 col.details = Detalhes
-tip.list = Contentores de chaves encontrados.\n«Localização» = CSP (visível para o CryptoPro) ou o nome do Rutoken (lido diretamente do token).\nSelecione uma linha — o botão «Extrair o certificado» atua sobre o contentor selecionado.
+tip.list = Contentores de chaves encontrados.\nSelecione uma linha — o botão «Extrair o certificado» atua sobre o contentor selecionado.
 tip.list.dblclick = Двойной клик по строке равносилен кнопке «Посмотреть контейнер».
+tip.list.columns = «Расположение» — где носитель: имя считывателя, HDIMAGE или прочерк,\nесли КриптоПро видит контейнер, но не сообщает устройство. «Способ чтения» —\nчем строка прочитана: CSP, PKCS#11, APDU, PC/SC или rtCOMLite.\nКлик по заголовку сортирует по колонке: по возрастанию, по убыванию и обратно\nв порядок обхода носителей.
 hint.need.row = Сейчас недоступно: в списке не выбрана строка.\nВыберите строку контейнера, с которым нужно работать.
 hint.row.device = Сейчас недоступно: в выделенной строке только устройство, контейнера в ней нет.\nВыберите строку с именем контейнера.
 hint.row.csp = Сейчас недоступно: контейнер этой строки читается через КриптоПро CSP, а не напрямую с носителя.\nВыберите строку [APDU] или rtCOMLite либо снимите выделение, чтобы обойти все поддерживаемые носители.\nПрава ключей выбранной строки показывает «Посмотреть контейнер».

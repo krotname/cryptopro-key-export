@@ -110,6 +110,13 @@ interface languages fall back to the English text.
   step ended, and the whole window goes to the list. "Show log"
   expands the full text and remembers the height you left it at.
 
+  The list has four columns. "Location" is where the carrier is: the
+  reader name, HDIMAGE, or a dash when CryptoPro sees the container but
+  does not say on which device. "How it is read" is the backend: CSP,
+  PKCS#11, APDU, PC/SC or rtCOMLite. Then the container name and the
+  details. Clicking a header sorts by that column: ascending, descending,
+  and back to the order the carriers were walked in.
+
   Every button has a tooltip — hold the cursor over it. A button that
   does not fit the selected row is greyed out, and its own tooltip
   says why.
