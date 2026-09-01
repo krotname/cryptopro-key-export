@@ -35,6 +35,12 @@ btn.logs = Nhật ký
 btn.help = Trợ giúp
 btn.cancel = Huỷ
 
+# --- подписи рядов кнопок (только по-русски, AGENTS п. 17) ---
+group.list = Список:
+group.steps = Шаги:
+group.result = Результат:
+group.service = Служебное:
+
 tip.refresh = Bước 1. Hiển thị danh sách container khoá:\n  • những cái CryptoPro CSP nhìn thấy (kể cả trên token đã cắm);\n  • những cái tìm thấy trực tiếp trên các Rutoken đang kết nối.\nKhông thay đổi gì — chỉ đọc. Bắt đầu từ nút này là tiện nhất.
 tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
 tip.export = Bước 2. Lấy các container từ Rutoken S / Lite, JaCarta LT và ESMART vào thư mục đích\n(mỗi container 6 tệp *.key). Đọc thẳng bộ nhớ token, bỏ qua CSP,\nnên vẫn chạy được khi có lệnh cấm xuất. Token và dữ liệu trên đó không bị thay đổi.\nKhoá trong bản sao vẫn chưa xuất được — việc đó do nút «Làm cho xuất được» đảm nhiệm.

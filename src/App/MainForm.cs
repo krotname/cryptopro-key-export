@@ -45,6 +45,10 @@ namespace CryptoProExport.App
         /// к первой, а смена языка оставила бы прежнюю.
         /// </summary>
         private readonly Dictionary<Button, string> _baseTips = new();
+        /// <summary>Лента кнопок целиком — по ней считается ширина окна, при которой группы не рвутся.</summary>
+        private FlowLayoutPanel _buttons;
+        /// <summary>Группы кнопок: подпись, её ключ перевода и состав. Подписи расставляет <see cref="ApplyTexts"/>.</summary>
+        private (Label Caption, string Key, Button[] Buttons)[] _buttonGroups;
         /// <summary>Выключенная кнопка, чью подсказку показали вручную (см. <see cref="ShowDisabledTip"/>).</summary>
         private Button _disabledTipOn;
         private ComboBox _cmbLang;
@@ -242,8 +246,15 @@ namespace CryptoProExport.App
             _cmbLang.SelectedIndexChanged += (_, __) => OnLanguagePicked();
             settings.Controls.Add(_cmbLang, 1, 2);
 
-            // --- Панель кнопок ---
-            var buttons = new FlowLayoutPanel
+            // --- Панель кнопок: четыре группы по смыслу ---
+            // Сплошная лента из тринадцати кнопок не показывала порядок работы (ROADMAP, P2, п. 3):
+            // рядом стояли шаг конвейера, выгрузка результата и «Справка». Теперь каждая группа
+            // начинается со своей подписи и с новой строки: список → шаги → результат → служебное.
+            // Панель осталась одна: вложенные AutoSize-контейнеры (TableLayoutPanel с
+            // FlowLayoutPanel внутри) зацикливают раскладку — окно строится бесконечно, --selftest
+            // не завершается. Перенос делает SetFlowBreak на последней кнопке группы, а внутри
+            // группы кнопки по-прежнему текут: переводы длиннее русского оригинала.
+            var buttons = _buttons = new FlowLayoutPanel
             {
                 Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 WrapContents = true, Padding = new Padding(10, 4, 10, 4),
@@ -263,6 +274,10 @@ namespace CryptoProExport.App
             _btnHelp = MakeButton((_, __) => Guide.Show(this));
             _btnCancel = MakeButton((_, __) => CancelCurrent());
             _btnCancel.Enabled = false;
+            // Отмена относится не к группе, а к тому, что идёт прямо сейчас. Она стоит последней
+            // в служебном ряду, но с отбивкой слева — чтобы не читалась как ещё одно служебное
+            // действие рядом со «Справкой».
+            _btnCancel.Margin = new Padding(24, 0, 8, 4);
             _actionButtons = new[]
             {
                 _btnRefresh, _btnExport, _btnExtract, _btnFull,
@@ -279,8 +294,15 @@ namespace CryptoProExport.App
                 (_btnView, RowAction.ViewContainer),
                 (_btnPfx, RowAction.ExportPfx),
             };
-            buttons.Controls.AddRange(_actionButtons);
-            buttons.Controls.Add(_btnCancel);
+            // Порядок групп — порядок работы: сначала найти носитель и посмотреть контейнер,
+            // потом шаги снятия, потом файл-результат, и лишь затем служебное.
+            _buttonGroups = new[]
+            {
+                AddButtonRow(buttons, "group.list", _btnRefresh, _btnView),
+                AddButtonRow(buttons, "group.steps", _btnExport, _btnExtract, _btnFull, _btnInstall),
+                AddButtonRow(buttons, "group.result", _btnPfx, _btnExtractKey, _btnExtractPfx),
+                AddButtonRow(buttons, "group.service", _btnLicense, _btnLogs, _btnHelp, _btnCancel),
+            };
             // Подсказка выключенной кнопки: Windows не шлёт мыши сообщения выключенному окну,
             // поэтому ToolTip сам её не покажет — а причина отказа нужна именно там. Сообщения
             // выключенного ребёнка достаются родителю, по ним и показываем подсказку вручную.
@@ -360,6 +382,19 @@ namespace CryptoProExport.App
             Tip(_lblPin, "tip.pin"); Tip(_txtPin, "tip.pin"); Tip(_lblPinHint, "tip.pin");
             Tip(_lblLang, "tip.lang"); Tip(_cmbLang, "tip.lang");
 
+            // Подписи групп выравниваются по самой длинной из них: иначе кнопки начинались бы
+            // с разного отступа и колонка групп читалась бы хуже сплошной ленты. MinimumSize,
+            // а не фиксированная ширина: подпись всё так же меряется по своему тексту, а на
+            // смене языка запас пересчитывается заново (в другом языке длиннее другая строка).
+            int captions = 0;
+            foreach (var (label, key, _) in _buttonGroups)
+            {
+                label.MinimumSize = Size.Empty;
+                label.Text = Strings.Get(key);
+                captions = Math.Max(captions, label.PreferredWidth);
+            }
+            foreach (var (label, _, _) in _buttonGroups) label.MinimumSize = new Size(captions, 0);
+
             SetButton(_btnRefresh, "btn.refresh", "tip.refresh");
             // Автообновление и F5 подсказаны отдельным ключом, только по-русски (AGENTS п. 17):
             // добавлять их дублем текста в двадцать уже переведённых подсказок не стали.
@@ -394,6 +429,9 @@ namespace CryptoProExport.App
             // приписываем причину отказа: после смены языка она должна быть на новом языке.
             foreach (var (button, _) in _rowButtons) _baseTips[button] = _tips.GetToolTip(button);
             UpdateRowActions();
+
+            // Надписи кнопок только что сменились — ширина групп вместе с ними.
+            FitButtonGroups();
 
             if (!_busy) _status.Text = Strings.Get("status.ready");
         }
@@ -458,6 +496,54 @@ namespace CryptoProExport.App
             AutoSize = true, TextAlign = ContentAlignment.MiddleLeft,
             Anchor = AnchorStyles.Left, Margin = new Padding(3, 8, 8, 8),
         };
+
+        /// <summary>
+        /// Группа кнопок в общей ленте: подпись, свои кнопки и перенос строки после последней —
+        /// так следующая группа всегда начинается с новой строки, а внутри группы кнопки текут
+        /// сами (на длинных переводах группа переносится, жёсткая ширина обрезала бы надписи).
+        /// Возвращает группу — текст подписи расставляет <see cref="ApplyTexts"/> по действующему языку.
+        /// </summary>
+        private (Label Caption, string Key, Button[] Buttons) AddButtonRow(
+            FlowLayoutPanel host, string captionKey, params Button[] items)
+        {
+            var caption = MakeFieldLabel();
+            // Серый: это подпись группы, а не ещё одна надпись, спорящая с кнопками.
+            caption.ForeColor = Color.Gray;
+            host.Controls.Add(caption);
+            host.Controls.AddRange(items);
+            host.SetFlowBreak(items[items.Length - 1], true);
+            return (caption, captionKey, items);
+        }
+
+        /// <summary>
+        /// Расширить окно так, чтобы самая длинная группа кнопок помещалась в одну строку.
+        /// Иначе перенос внутри группы уводит её хвост под подпись, и колонка кнопок ломается —
+        /// а именно её ради порядка работы и заводили. Ширина считается по фактическим размерам:
+        /// они зависят и от языка (переводы длиннее русского), и от масштаба экрана (на 150 %
+        /// прежние 880 точек уже не вмещали ряд «Шаги»). Окно только расширяется, не выходит за
+        /// рабочую область экрана и уже достаточную ширину — в том числе выбранную пользователем
+        /// или развёрнутое окно — не меняет.
+        /// </summary>
+        private void FitButtonGroups()
+        {
+            if (_buttons == null || _buttonGroups == null) return;
+
+            static int Span(Control c) => c.PreferredSize.Width + c.Margin.Horizontal;
+
+            int need = 0;
+            foreach (var (caption, _, items) in _buttonGroups)
+            {
+                int row = Span(caption);
+                foreach (Button b in items) row += Span(b);
+                need = Math.Max(need, row);
+            }
+            need += _buttons.Padding.Horizontal;
+
+            int frame = Width - ClientSize.Width;
+            int limit = Screen.FromControl(this).WorkingArea.Width - frame;
+            int target = Math.Min(need, limit);
+            if (ClientSize.Width < target) ClientSize = new Size(target, ClientSize.Height);
+        }
 
         /// <summary>Кнопки растягиваются под текст: длина надписи зависит от языка.</summary>
         private Button MakeButton(EventHandler onClick)

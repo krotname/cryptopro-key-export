@@ -81,18 +81,29 @@ interface languages fall back to the English text.
 
 4. BUTTONS
 ------------------------------------------------------------------
-  Refresh list          show the containers (CSP + tokens)
-  Export from token     copy an S/Lite file-backed container
-  Extract certificate   save the .cer of the selected container
-  Make exportable       the whole cycle for a file container
-  View container        details and whether the export ban is lifted
-  Install into CryptoPro  put an extracted folder into the CSP store
-  Export to PFX         write the container out as .pfx
-  Extract key (PEM)     the private key as PKCS#8/PEM, no CSP
-  Build PFX (no CSP)    a .pfx from the container folder, for OpenSSL
-  License               install a license (.jws) and verify it
-  Log                   open the folder with the program logs
-  Help                  this window
+  The buttons are laid out in groups; the caption on the left of each
+  row says what the row is for.
+
+  List:
+    Refresh list          show the containers (CSP + tokens)
+    View container        details and whether the export ban is lifted
+
+  Steps (this is the order of the work):
+    Export from token     copy an S/Lite file-backed container
+    Extract certificate   save the .cer of the selected container
+    Make exportable       the whole cycle for a file container
+    Install into CryptoPro  put an extracted folder into the CSP store
+
+  Result:
+    Export to PFX         write the container out as .pfx
+    Extract key (PEM)     the private key as PKCS#8/PEM, no CSP
+    Build PFX (no CSP)    a .pfx from the container folder, for OpenSSL
+
+  Service:
+    License               install a license (.jws) and verify it
+    Log                   open the folder with the program logs
+    Help                  this window
+    Cancel                stop the operation that is running
 
   Every button has a tooltip — hold the cursor over it. A button that
   does not fit the selected row is greyed out, and its own tooltip

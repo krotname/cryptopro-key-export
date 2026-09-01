@@ -35,6 +35,12 @@ btn.logs = Protokoll
 btn.help = Hilfe
 btn.cancel = Abbrechen
 
+# --- подписи рядов кнопок (только по-русски, AGENTS п. 17) ---
+group.list = Список:
+group.steps = Шаги:
+group.result = Результат:
+group.service = Служебное:
+
 tip.refresh = Schritt 1. Die Liste der Schlüsselcontainer anzeigen:\n  • die für CryptoPro CSP sichtbaren (auch auf dem eingesteckten Token);\n  • die direkt auf angeschlossenen Rutoken gefundenen.\nÄndert nichts — liest nur. Ein guter Startpunkt.
 tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
 tip.export = Schritt 2. Die Container von Rutoken S / Lite, JaCarta LT und ESMART in den Zielordner auslesen\n(je 6 *.key-Dateien pro Container). Liest den Tokenspeicher direkt am CSP vorbei,\ndarum funktioniert es auch bei bestehendem Exportverbot. Token und Daten bleiben unverändert.\nDer Schlüssel in der Kopie bleibt nicht exportierbar — dafür ist «Exportierbar machen» da.

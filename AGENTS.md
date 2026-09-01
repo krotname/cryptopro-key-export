@@ -36,7 +36,7 @@
 ## Сборка и тесты
 ```bash
 dotnet build CryptoProExport.slnx -c Release -warnaserror   # 0 ошибок, 0 предупреждений
-dotnet test  CryptoProExport.slnx -c Release --no-build     # 506 тестов xunit
+dotnet test  CryptoProExport.slnx -c Release --no-build     # 641 тест xunit
 ```
 Тесты покрывают чистую логику: кодеки cp1251/cp866, `name.key`, аргументы p12utility,
 разбор разрядности PE, наличие вшитых зависимостей, `ContainerStore` (во временной папке —
@@ -772,6 +772,27 @@ GitHub Actions **работает** (`.github/workflows/ci.yml`). Прежнее
     Читать нужно `SendMessage(WM_GETTEXT)`: его система маршалит между процессами.
     Доступность кнопок при этом снимается через UI Automation, причём список окна — это
     `ControlType.Table` (класс `WindowsForms10.SysListView32.…`), а не `List`.
+46. **Три грабли раскладки окна, найденные при разбиении кнопок на группы (01.09.2026).**
+    - **Вложенные `AutoSize`-контейнеры зацикливают раскладку.** Группы сперва собрали как
+      `TableLayoutPanel` (`AutoSize`) с `FlowLayoutPanel` (`AutoSize` + `WrapContents`,
+      `Dock = Fill`) в ячейке: ширина ряда зависит от переноса, перенос — от ширины,
+      LayoutEngine крутится вечно. Внешне это не исключение, а зависший процесс — окно не
+      появляется, `--selftest` не завершается и снимается только `Kill`. Лечение: одна панель
+      на все группы, а группу отделяет `SetFlowBreak` на её последней кнопке.
+    - **Ширина окна числом рассчитана на масштаб 100 %.** При 150 % (DPI 144) кнопки растут
+      вместе со шрифтом, а `ClientSize = 880` — нет, поэтому самая длинная группа («Шаги»)
+      переносилась и её хвост вставал под подпись, ломая колонку. Считать нужно по факту:
+      `MainForm.FitButtonGroups` складывает `PreferredSize` + `Margin` подписи и кнопок группы
+      и расширяет окно, не выходя за `Screen.WorkingArea` и не трогая уже достаточную ширину.
+    - **GUI на машине владельца проверяется только портативной сборкой.** Обычный
+      framework-dependent exe из `src/App/bin/Release/net10.0-windows` — x86
+      (`PlatformTarget`), а x86 .NET 10 Desktop Runtime здесь не установлен (есть 6.0 и 8.0,
+      x64 — вплоть до 10.0). Apphost при этом не падает и ничего не печатает: он висит на
+      старте, загрузив только `ucrtbase`/`msvcrt`/`RPCRT4`, и любой запуск (`--selftest`,
+      `deps`, `help`) выглядит зависанием без вывода. Рабочий путь — `pwsh build\publish.ps1`
+      (self-contained single-file, сам прогоняет `--selftest`), логика — через `dotnet test`.
+      Запуск через `dotnet <dll>` не спасает: x64-хост отвергает x86-сборку
+      (`FileLoadException: assembly architecture is not compatible`).
 
 ## Git-процесс
 - Приватный репозиторий `krotname/cryptopro-key-export`, ветка `main`.
