@@ -35,6 +35,12 @@ btn.logs = Günlük
 btn.help = Yardım
 btn.cancel = İptal
 
+# --- подписи рядов кнопок (только по-русски, AGENTS п. 17) ---
+group.list = Список:
+group.steps = Шаги:
+group.result = Результат:
+group.service = Служебное:
+
 tip.refresh = 1. adım. Anahtar kapsayıcılarının listesini göster:\n  • CryptoPro CSP’nin gördükleri (takılı belirteçtekiler dâhil);\n  • bağlı Rutoken’larda doğrudan bulunanlar.\nHiçbir şeyi değiştirmez — yalnızca okur. Başlamak için uygun düğme.
 tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
 tip.export = 2. adım. Rutoken S / Lite, JaCarta LT ve ESMART’tan kapsayıcıları hedef klasöre çıkar\n(kapsayıcı başına 6 *.key dosyası). Belirtecin belleğini CSP’yi atlayarak doğrudan okur,\nbu yüzden dışa aktarım yasağı varken de çalışır. Belirteç ve verileri değişmez.\nÇıkarılan kopyadaki anahtar hâlâ dışa aktarılamaz — onu «Dışa aktarılabilir yap» düğmesi halleder.

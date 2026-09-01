@@ -35,6 +35,12 @@ btn.logs = Log
 btn.help = Help
 btn.cancel = Cancel
 
+# --- подписи рядов кнопок (только по-русски, AGENTS п. 17) ---
+group.list = Список:
+group.steps = Шаги:
+group.result = Результат:
+group.service = Служебное:
+
 tip.refresh = Step 1. Show the list of key containers:\n  • those visible to CryptoPro CSP (including the inserted token);\n  • those found directly on connected supported tokens.\nChanges nothing — it only reads. A good place to start.
 tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
 tip.export = Step 2. Copy containers from Rutoken S / Lite, JaCarta LT and ESMART into the destination folder\n(6 *.key files per container). Reads token memory directly, bypassing the CSP,\nso it works even when export is banned. The token and its data are not modified.\nThe key in the copy stays non-exportable — that is what «Make exportable» is for.

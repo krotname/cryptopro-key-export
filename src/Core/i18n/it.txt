@@ -35,6 +35,12 @@ btn.logs = Registro
 btn.help = Guida
 btn.cancel = Annulla
 
+# --- подписи рядов кнопок (только по-русски, AGENTS п. 17) ---
+group.list = Список:
+group.steps = Шаги:
+group.result = Результат:
+group.service = Служебное:
+
 tip.refresh = Passo 1. Mostrare l’elenco dei contenitori di chiavi:\n  • quelli visibili a CryptoPro CSP (compreso il token inserito);\n  • quelli trovati direttamente sui Rutoken collegati.\nNon modifica nulla — legge soltanto. È comodo partire da qui.
 tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
 tip.export = Passo 2. Estrarre i contenitori da Rutoken S / Lite, JaCarta LT ed ESMART nella cartella di destinazione\n(6 file *.key per contenitore). Legge la memoria del token direttamente, aggirando il CSP,\nperciò funziona anche con il divieto di esportazione. Il token e i suoi dati non vengono modificati.\nLa chiave della copia resta non esportabile — di questo si occupa il pulsante «Rendi esportabile».

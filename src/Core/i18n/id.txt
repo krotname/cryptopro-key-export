@@ -35,6 +35,12 @@ btn.logs = Log
 btn.help = Bantuan
 btn.cancel = Batal
 
+# --- подписи рядов кнопок (только по-русски, AGENTS п. 17) ---
+group.list = Список:
+group.steps = Шаги:
+group.result = Результат:
+group.service = Служебное:
+
 tip.refresh = Langkah 1. Tampilkan daftar kontainer kunci:\n  • yang terlihat oleh CryptoPro CSP (termasuk pada token yang terpasang);\n  • yang ditemukan langsung pada Rutoken yang terhubung.\nTidak mengubah apa pun — hanya membaca. Tombol yang nyaman untuk memulai.
 tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
 tip.export = Langkah 2. Ambil kontainer dari Rutoken S / Lite, JaCarta LT, dan ESMART ke folder tujuan\n(6 berkas *.key per kontainer). Membaca memori token secara langsung, melewati CSP,\nsehingga tetap bekerja meski ekspor dilarang. Token dan datanya tidak diubah.\nKunci pada salinan tetap tidak dapat diekspor — itu tugas tombol «Jadikan dapat diekspor».
