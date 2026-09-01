@@ -117,10 +117,11 @@ interface languages fall back to the English text.
   details. Clicking a header sorts by that column: ascending, descending,
   and back to the order the carriers were walked in.
 
-  When there is nothing to show, the list says why: either no reader was
-  found at all — insert the carrier and press "Refresh list" — or a reader
-  is there but no PKCS#11 library for it, which means the vendor drivers
-  are missing.
+  When the list holds no containers, it says why. There are three reasons:
+  no carrier at all — insert one and press "Refresh list"; a carrier is
+  inserted but no PKCS#11 library was found for it, so the vendor drivers
+  are missing; or the carrier was read and holds no containers. When the
+  devices themselves are listed, the explanation sits as a strip below them.
 
   Every button has a tooltip — hold the cursor over it. A button that
   does not fit the selected row is greyed out, and its own tooltip

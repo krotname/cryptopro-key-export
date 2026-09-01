@@ -33,6 +33,8 @@ namespace CryptoProExport.App
         /// <summary>Объяснение пустого списка поверх него самого; null-ключ — скрыт.</summary>
         private Label _lblEmpty;
         private string _emptyHintKey;
+        /// <summary>Идёт пересчёт высоты полосы — чтобы присвоение высоты не вызвало его снова.</summary>
+        private bool _sizingHint;
         private SplitContainer _split;
         private ColumnHeader _colWhere, _colBackend, _colName, _colDetails;
         /// <summary>Колонка, по которой отсортирован список; -1 — исходный порядок обхода.</summary>
@@ -383,10 +385,15 @@ namespace CryptoProExport.App
             {
                 Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter,
                 AutoSize = false, ForeColor = Color.Gray, Visible = false,
-                Padding = new Padding(24),
+                BackColor = SystemColors.Control, Padding = new Padding(16, 10, 16, 10),
             };
             split.Panel1.Controls.Add(_lblEmpty);
-            _lblEmpty.BringToFront();
+            // SendToBack, а не BringToFront: WinForms раскладывает пристыкованных детей от
+            // последнего к первому, поэтому Dock=Fill списка должен разбираться последним —
+            // иначе полоса просто легла бы поверх нижних строк, не подвинув их.
+            _lblEmpty.SendToBack();
+            // Ширина полосы меняется вместе с окном, а с ней и число строк переноса.
+            split.Panel1.ClientSizeChanged += (_, __) => SizeEmptyHint();
             split.Panel1.Padding = new Padding(10, 0, 10, 0);
 
             _txtLog = new TextBox
@@ -848,7 +855,7 @@ namespace CryptoProExport.App
             // (замечание Codex на PR #83).
             int carriers = 0;
             foreach (var r in pcscReaders) if (r != null && r.CardPresent) carriers++;
-            SetEmptyHint(carriers);
+            SetEmptyHint(carriers, tokens.Count);
             Log(Strings.Get("log.done"));
         }
 
@@ -1602,36 +1609,79 @@ namespace CryptoProExport.App
         }
 
         /// <summary>
-        /// Объяснить пустой список в нём самом. Причин ровно две, и они разные по действию:
-        /// либо считывателей нет вовсе — тогда носитель надо вставить, — либо считыватель
-        /// есть, а прочитать его нечем: библиотеки PKCS#11 для этого носителя не нашлось.
-        /// Раньше и то и другое было видно только в журнале, а он теперь свёрнут по умолчанию.
+        /// Объяснить в самом списке, почему в нём нет ни одного контейнера. Считаются именно
+        /// контейнерные строки: строка «только устройство» список наполняет, но показывать в
+        /// нём всё равно нечего, — а по общему числу строк объяснение никогда бы и не
+        /// показалось (замечание Codex на PR #83). Что именно написать, решает
+        /// <see cref="ListEmptyHint"/>: причин три и действия у них разные.
         /// </summary>
-        private void SetEmptyHint(int? carriers)
+        private void SetEmptyHint(int? carriers, int pkcs11Tokens = 0)
         {
-            if (InvokeRequired) { BeginInvoke(new Action(() => SetEmptyHint(carriers))); return; }
-            _emptyHintKey = carriers == null ? null : ListEmptyHint.KeyFor(_lv.Items.Count, carriers.Value);
+            if (InvokeRequired) { BeginInvoke(new Action(() => SetEmptyHint(carriers, pkcs11Tokens))); return; }
+            if (carriers == null) { _emptyHintKey = null; ApplyEmptyHint(); return; }
+
+            int containers = 0;
+            foreach (ListViewItem row in _lv.Items)
+                if (row.Tag != null && row.Tag is not TokenDeviceSelection) containers++;
+
+            _emptyHintKey = ListEmptyHint.KeyFor(containers, carriers.Value, pkcs11Tokens);
             ApplyEmptyHint();
         }
 
         /// <summary>
-        /// Самопроверка для --selftest: показать объяснение пустого списка, чтобы его текст
-        /// попал в общую проверку переводов. Обе причины проверяются на каждом языке — иначе
-        /// пропавший ключ был бы виден только на машине без единого считывателя.
+        /// Самопроверка для --selftest: показать объяснение, чтобы его текст попал в общую
+        /// проверку переводов. Все причины проверяются на каждом языке — иначе пропавший ключ
+        /// был бы виден только на машине без единого носителя.
         /// </summary>
-        internal void PreviewEmptyHint(int? carriers)
+        internal void PreviewEmptyHint(string key)
         {
-            _emptyHintKey = carriers == null ? null : ListEmptyHint.KeyFor(0, carriers.Value);
+            _emptyHintKey = key;
             ApplyEmptyHint();
         }
 
-        /// <summary>Показать объяснение на действующем языке — и после смены языка тоже.</summary>
+        /// <summary>
+        /// Показать объяснение на действующем языке — и после смены языка тоже. Пустой список
+        /// подпись занимает целиком: показывать там больше нечего. Если строки устройств есть,
+        /// она встаёт полосой под ними — сами устройства видеть нужно, они и есть половина
+        /// ответа на вопрос «почему пусто».
+        /// </summary>
         private void ApplyEmptyHint()
         {
             if (_lblEmpty == null) return;
             _lblEmpty.Text = _emptyHintKey == null ? string.Empty : Strings.Get(_emptyHintKey);
             _lblEmpty.Visible = _emptyHintKey != null;
-            if (_lblEmpty.Visible) _lblEmpty.BringToFront();
+            if (!_lblEmpty.Visible) { _lv.Visible = true; return; }
+
+            // Пустой список подпись занимает целиком — сам список тогда прячем, показывать
+            // в нём нечего и его заголовки только мешали бы читать объяснение. Если строки
+            // устройств есть, они остаются на месте, а подпись встаёт полосой под ними.
+            bool wholeList = _lv.Items.Count == 0;
+            _lblEmpty.Dock = wholeList ? DockStyle.Fill : DockStyle.Bottom;
+            _lv.Visible = !wholeList;
+            SizeEmptyHint();
+        }
+
+        /// <summary>
+        /// Высота полосы с объяснением: текст переносится по ширине панели, и сколько строк
+        /// получится, известно только после замера. AutoSize не годится (меряет без переноса
+        /// и перекрывает список), а пересчёт защищён флагом: присвоение высоты само вызывает
+        /// раскладку, и без него получилась бы та же петля, что от вложенных AutoSize-панелей
+        /// (AGENTS п. 46).
+        /// </summary>
+        private void SizeEmptyHint()
+        {
+            if (_sizingHint || _lblEmpty == null || !_lblEmpty.Visible) return;
+            if (_lblEmpty.Dock != DockStyle.Bottom) return;
+
+            _sizingHint = true;
+            try
+            {
+                var panel = _split.Panel1;
+                int width = Math.Max(160, panel.ClientSize.Width - panel.Padding.Horizontal);
+                int height = _lblEmpty.GetPreferredSize(new Size(width, 0)).Height;
+                if (_lblEmpty.Height != height) _lblEmpty.Height = height;
+            }
+            finally { _sizingHint = false; }
         }
 
         /// <summary>Заголовки колонок с отметкой сортировки на текущей.</summary>
