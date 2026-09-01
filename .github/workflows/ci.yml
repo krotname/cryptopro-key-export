@@ -96,14 +96,21 @@ jobs:
           $log = "$env:RUNNER_TEMP/deps.txt"
           $p = Start-Process publish/CryptoProExport.exe 'deps --lang ru' -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput $log
           $text = [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($log))
-          $text
+
+          # В лог CI печатаем отчёт без строк с именами контейнеров: подробный deps
+          # перечисляет контейнеры найденных PKCS#11-токенов, а их метки у боевого ключа
+          # содержат ФИО и ИНН владельца (у Diagnostics это единственные строки с отступом
+          # в четыре пробела — сам отчёт и его подпункты идут с нулём и двумя). На
+          # самопроверку это не влияет: маркер ниже — про CSP, а не про токены.
+          ($text -split "`r?`n" | ForEach-Object {
+            if ($_ -match '^ {4}\S') { '    [строка про контейнер скрыта]' } else { $_ }
+          }) -join "`n"
           if ($p.ExitCode -ne $want) { throw "Ожидался код $want, получен $($p.ExitCode)" }
 
           # Отчёт обязан сходиться с кодом, иначе «CSP НЕ НАЙДЕН» и нулевой код
           # прошли бы вместе. Сверяем по строке про сам CSP, а не по именам
           # провайдеров: подробный отчёт перечисляет все три известных провайдера
-          # в любом случае, помечая каждый «есть»/«нет». Имён контейнеров с ФИО
-          # в deps нет вообще — в лог CI попадать нечему.
+          # в любом случае, помечая каждый «есть»/«нет».
           $marker = if ($providers -gt 0) { 'КриптоПро CSP: установлен' } else { 'НЕ НАЙДЕН' }
           if ($text -notmatch [regex]::Escape($marker)) { throw "В отчёте нет строки «$marker»" }
 

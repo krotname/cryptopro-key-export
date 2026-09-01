@@ -78,6 +78,27 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void BackupHeader_KeepsTheFirstCopyOnRepeatedRuns()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "cpx-backup-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            try
+            {
+                string header = Path.Combine(dir, "header.key");
+                File.WriteAllBytes(header, new byte[] { 1, 1, 1 });
+
+                P12Utility.BackupHeader(header);
+                File.WriteAllBytes(header, new byte[] { 2, 2, 2 });   // как после --cprepair
+                P12Utility.BackupHeader(header);
+
+                // Бэкап — единственный путь назад: второй прогон не должен подменить
+                // оригинал результатом первого.
+                Assert.Equal(new byte[] { 1, 1, 1 }, File.ReadAllBytes(header + ".backup"));
+            }
+            finally { Directory.Delete(dir, recursive: true); }
+        }
+
+        [Fact]
         public void MaskPassword_LeavesArgumentsWithoutPasswordAlone()
         {
             string args = P12Utility.BuildRepairArguments(true, false, null, false);

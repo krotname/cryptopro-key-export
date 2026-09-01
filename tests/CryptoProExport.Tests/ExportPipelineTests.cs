@@ -22,6 +22,28 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void NameWithSuffix_FitsNameKeyEvenForTheLongestContainerName()
+        {
+            string tooLong = new string('и', NameKey.MaxNameLength);
+
+            string exchange = ExportPipeline.NameWithSuffix(tooLong, " [exchange]");
+            string signature = ExportPipeline.NameWithSuffix(tooLong, " [signature]");
+
+            Assert.EndsWith(" [exchange]", exchange);
+            Assert.EndsWith(" [signature]", signature);
+            // Раньше здесь падало «имя слишком длинное», и весь экспорт возвращал неудачу
+            Assert.Equal(exchange, NameKey.Parse(NameKey.Build(exchange)));
+            Assert.Equal(signature, NameKey.Parse(NameKey.Build(signature)));
+        }
+
+        [Fact]
+        public void NameWithSuffix_LeavesShortNamesAsIs()
+        {
+            Assert.Equal("Андрей ФНС [exchange]",
+                ExportPipeline.NameWithSuffix("Андрей ФНС", " [exchange]"));
+        }
+
+        [Fact]
         public void HasCertificateForPresentKey_RequiresMatchingPresentPair()
         {
             var exchangeOnly = new RutokenContainer();

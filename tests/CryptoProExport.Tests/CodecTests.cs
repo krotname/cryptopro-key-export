@@ -38,6 +38,40 @@ namespace CryptoProExport.Tests
         }
 
         [Theory]
+        [InlineData("ООО «Ромашка» — обмен")]   // кавычки-ёлочки и тире: типовое имя от УЦ
+        [InlineData("Мороз ІІ ступеня 30° № 7")]
+        [InlineData("Ґудзик ў Єдиному")]
+        public void Cp1251_RoundTripsPunctuationAndNeighbourAlphabets(string text)
+        {
+            byte[] bytes = Cp1251.GetBytes(text);
+            Assert.Equal(text.Length, bytes.Length);
+            Assert.DoesNotContain((byte)'?', bytes);   // ничего не потерялось по дороге
+            Assert.Equal(text, Cp1251.GetString(bytes, 0, bytes.Length));
+        }
+
+        [Theory]
+        [InlineData(0x84, '„')]
+        [InlineData(0x97, '—')]
+        [InlineData(0xA0, ' ')]   // неразрывный пробел
+        [InlineData(0xAB, '«')]
+        [InlineData(0xAD, '­')]   // мягкий перенос
+        [InlineData(0xB0, '°')]
+        [InlineData(0xBB, '»')]
+        public void Cp1251_MapsHighTableBothWays(int b, char expected)
+        {
+            Assert.Equal(expected.ToString(), Cp1251.GetString(new[] { (byte)b }, 0, 1));
+            Assert.Equal((byte)b, Cp1251.GetBytes(expected.ToString())[0]);
+        }
+
+        [Fact]
+        public void Cp1251_UndefinedByteDecodesToQuestionMark()
+        {
+            // 0x98 в cp1251 не занят; заменяющий символ обратно в него превращаться не должен
+            Assert.Equal("?", Cp1251.GetString(new byte[] { 0x98 }, 0, 1));
+            Assert.Equal((byte)'?', Cp1251.GetBytes("�")[0]);
+        }
+
+        [Theory]
         [InlineData(0x80, 'А')]
         [InlineData(0x9F, 'Я')]
         [InlineData(0xA0, 'а')]
