@@ -206,11 +206,21 @@ namespace CryptoProExport
         }
 
         /// <summary>Перечислить и прочитать все контейнеры со всех подключённых Рутокенов.</summary>
+        /// <summary>
+        /// Обход начался: контекст rtCOMLite создан, и дальше шла работа с носителями. Нужно,
+        /// чтобы отличить «компонента нет вовсе» — на x64/ARM64 без зарегистрированного
+        /// rtCOMLite это норма, и обход при этом не начинался — от ошибки уже начатого обхода,
+        /// после которой пустой перечень контейнеров ничего не доказывает (замечание Codex
+        /// на PR #83).
+        /// </summary>
+        public bool Started { get; private set; }
+
         public List<RutokenContainer> ReadAllContainers()
         {
             Cancel.ThrowIfCancellationRequested();
             var result = new List<RutokenContainer>();
             dynamic ctx = CreateContext();
+            Started = true;
             Log(Strings.Get("token.connect"));
             try
             {

@@ -41,6 +41,8 @@ namespace CryptoProExport
         private const uint SCARD_STATE_PRESENT = 0x0020;
         private const int SCARD_ATR_LENGTH = 36;
         private const uint SCARD_S_SUCCESS = 0;
+        /// <summary>Считывателей нет — это норма, а не сбой опроса.</summary>
+        private const uint SCARD_E_NO_READERS_AVAILABLE = 0x8010002E;
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         private struct SCARD_READERSTATE
@@ -72,10 +74,20 @@ namespace CryptoProExport
         /// при любой ошибке (нет службы смарт-карт, нет считывателей, сбой winscard) пишет причину
         /// в <paramref name="log"/> и возвращает то, что удалось собрать (возможно, пустой список).
         /// </summary>
-        public static List<PcscReader> List(Action<string> log = null)
+        public static List<PcscReader> List(Action<string> log = null) => List(log, out _);
+
+        /// <summary>
+        /// То же перечисление, но с признаком полноты: <paramref name="complete"/> равен
+        /// <c>false</c>, если опрос сорвался (нет контекста, winscard вернул ошибку, упало
+        /// исключение). Пустой список тогда не означает «носителей нет» — он означает
+        /// «неизвестно», и звать вставить носитель по нему нельзя (замечание Codex на PR #83).
+        /// Отсутствие считывателей ошибкой не считается: это обычное состояние машины.
+        /// </summary>
+        public static List<PcscReader> List(Action<string> log, out bool complete)
         {
             log ??= _ => { };
             var result = new List<PcscReader>();
+            complete = true;
 
             IntPtr ctx = IntPtr.Zero;
             try
@@ -86,10 +98,12 @@ namespace CryptoProExport
                     // Служба смарт-карт может быть остановлена — это не ошибка приложения,
                     // просто «карт нет». Код полезен в диагностике.
                     log(Strings.Format("pcsc.contextfail", "0x" + rv.ToString("X8")));
+                    complete = false;
                     return result;
                 }
 
-                string[] names = ListReaderNames(ctx, log);
+                string[] names = ListReaderNames(ctx, log, out bool namesComplete);
+                complete &= namesComplete;
                 if (names.Length == 0) return result;
 
                 var states = new SCARD_READERSTATE[names.Length];
@@ -108,6 +122,7 @@ namespace CryptoProExport
                     // Состояния всё равно частично заполнены; но честнее сообщить о сбое, чем
                     // выдать неполную картину за полную.
                     log(Strings.Format("pcsc.statusfail", "0x" + sc.ToString("X8")));
+                    complete = false;
                 }
 
                 foreach (var st in states)
@@ -121,8 +136,16 @@ namespace CryptoProExport
                     });
                 }
             }
-            catch (DllNotFoundException e) { log(Strings.Format("pcsc.contextfail", e.Message)); }
-            catch (Exception e) { log(Strings.Format("pcsc.statusfail", e.Message)); }
+            catch (DllNotFoundException e)
+            {
+                complete = false;
+                log(Strings.Format("pcsc.contextfail", e.Message));
+            }
+            catch (Exception e)
+            {
+                complete = false;
+                log(Strings.Format("pcsc.statusfail", e.Message));
+            }
             finally
             {
                 if (ctx != IntPtr.Zero) { try { SCardReleaseContext(ctx); } catch { } }
@@ -131,23 +154,37 @@ namespace CryptoProExport
             return result;
         }
 
-        private static string[] ListReaderNames(IntPtr ctx, Action<string> log)
+        private static string[] ListReaderNames(IntPtr ctx, Action<string> log, out bool complete)
         {
+            complete = true;
             uint len = 0;
             uint rv = SCardListReaders(ctx, null, null, ref len);
-            // SCARD_E_NO_READERS_AVAILABLE (0x8010002E) — считывателей нет, это норма, не ошибка.
-            if (rv != SCARD_S_SUCCESS || len == 0) return Array.Empty<string>();
+            if (rv != SCARD_S_SUCCESS || len == 0)
+            {
+                // Считывателей нет — норма; любая другая ошибка означает, что список не получен,
+                // и пустота не доказана (замечание Codex на PR #83).
+                complete = rv == SCARD_S_SUCCESS || IsNoReaders(rv);
+                if (!complete) log(Strings.Format("pcsc.statusfail", "0x" + rv.ToString("X8")));
+                return Array.Empty<string>();
+            }
 
             var buf = new char[len];
             rv = SCardListReaders(ctx, null, buf, ref len);
             if (rv != SCARD_S_SUCCESS)
             {
+                complete = IsNoReaders(rv);
                 log(Strings.Format("pcsc.statusfail", "0x" + rv.ToString("X8")));
                 return Array.Empty<string>();
             }
 
             return SplitMultiString(buf, (int)len);
         }
+
+        /// <summary>
+        /// «Считывателей нет» — обычное состояние машины, а не сбой опроса. Отдельно от прочих
+        /// кодов: по ним пустой список означает «неизвестно», а не «носителей нет».
+        /// </summary>
+        internal static bool IsNoReaders(uint rv) => rv == SCARD_E_NO_READERS_AVAILABLE;
 
         /// <summary>Разобрать двойной-нуль-терминированный список строк (multi-string) winscard в массив имён.</summary>
         internal static string[] SplitMultiString(char[] buffer, int length)

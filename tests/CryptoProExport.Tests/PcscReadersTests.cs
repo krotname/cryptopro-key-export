@@ -182,5 +182,20 @@ namespace CryptoProExport.Tests
                     $"нет перевода для {key}");
             }
         }
+        /// <summary>
+        /// «Считывателей нет» — обычное состояние машины, а не сбой опроса. Любой другой код
+        /// winscard означает, что список не получен, и пустота не доказана: звать вставить
+        /// носитель по такому опросу нельзя (замечание Codex на PR #83).
+        /// </summary>
+        [Theory]
+        [InlineData(0x8010002Eu, true)]    // SCARD_E_NO_READERS_AVAILABLE
+        [InlineData(0x8010001Du, false)]   // SCARD_E_NO_SERVICE
+        [InlineData(0x80100017u, false)]   // SCARD_E_READER_UNAVAILABLE
+        [InlineData(0x00000000u, false)]   // успех — отдельная ветка, «нет считывателей» не он
+        public void NoReaders_IsTheOnlyNormalFailure(uint code, bool normal)
+        {
+            Assert.Equal(normal, PcscReaders.IsNoReaders(code));
+        }
+
     }
 }

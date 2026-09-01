@@ -829,7 +829,10 @@ namespace CryptoProExport.App
             // устройств PKCS#11 не сходилось с числом считывателей, и понять, какой носитель
             // потерялся, было нельзя. Опрос PC/SC пассивный — к карте он не подключается.
             cancel.ThrowIfCancellationRequested();
-            var pcscReaders = PcscReaders.List(m => Log("[PC/SC] " + m));
+            // Сбой опроса PC/SC оставляет пустой список — но это «неизвестно», а не «носителей
+            // нет»: звать вставить носитель по нему нельзя (замечание Codex на PR #83).
+            var pcscReaders = PcscReaders.List(m => Log("[PC/SC] " + m), out bool pcscComplete);
+            if (!pcscComplete) scanFailed = true;
             var pkcs11Readers = new List<string>();
             foreach (var t in tokens)
                 if (t?.Reader != null) pkcs11Readers.Add(t.Reader);
@@ -845,14 +848,14 @@ namespace CryptoProExport.App
                        new TokenDeviceSelection());
 
             cancel.ThrowIfCancellationRequested();
+            var exp = new RutokenExporter
+            {
+                Log = m => Log("[rtCOMLite] " + m),
+                Cancel = cancel,
+                SkipReaders = Pkcs11Token.SmartCardReaders(tokens),
+            };
             try
             {
-                var exp = new RutokenExporter
-                {
-                    Log = m => Log("[rtCOMLite] " + m),
-                    Cancel = cancel,
-                    SkipReaders = Pkcs11Token.SmartCardReaders(tokens),
-                };
                 foreach (var c in exp.ReadAllContainers())
                     AddRow(Strings.Format("log.container.token", c.TokenName), "rtCOMLite",
                            c.ContainerName ?? Strings.Get("log.container.unnamed"),
@@ -863,7 +866,10 @@ namespace CryptoProExport.App
                 // Недоступность самого rtCOMLite неполным обходом не считается: это legacy-путь,
                 // и на x64/ARM64 без зарегистрированного компонента CreateContext падает всегда,
                 // ещё не дойдя ни до одного носителя. Иначе «опрос не завершился» показывалось бы
-                // и на машине вовсе без носителей (замечание Codex на PR #83).
+                // и на машине вовсе без носителей. А вот ошибка уже начатого обхода — неполный
+                // обход: контекст создан, носители пошли, и пустота больше не доказана
+                // (замечания Codex на PR #83).
+                if (exp.Started) scanFailed = true;
                 Log(Strings.Format("log.tokens.unavailable", e.Message));
             }
             SuggestFactoryPin(tokens);
