@@ -12,21 +12,43 @@ namespace CryptoProExport.Tests
         [Fact]
         public void NonEmptyList_IsNotExplained()
         {
-            Assert.Null(ListEmptyHint.KeyFor(rows: 1, readers: 0));
-            Assert.Null(ListEmptyHint.KeyFor(rows: 13, readers: 8));
+            Assert.Null(ListEmptyHint.KeyFor(rows: 1, carriers: 0));
+            Assert.Null(ListEmptyHint.KeyFor(rows: 13, carriers: 8));
         }
 
         [Fact]
-        public void EmptyListWithoutReaders_AsksToInsertCarrier()
+        public void EmptyListWithoutCarriers_AsksToInsertOne()
         {
-            Assert.Equal(ListEmptyHint.NoReaderKey, ListEmptyHint.KeyFor(rows: 0, readers: 0));
+            Assert.Equal(ListEmptyHint.NoReaderKey, ListEmptyHint.KeyFor(rows: 0, carriers: 0));
+        }
+
+        /// <summary>
+        /// Пустой считыватель — это «вставьте носитель», а не «нет библиотеки»: считыватель
+        /// виден системе всегда, но строки в списке не даёт, потому что PcscReaders.Uncovered
+        /// пропускает считыватель без карты (замечание Codex на PR #83). Поэтому на вход и
+        /// идёт число носителей, а не считывателей.
+        /// </summary>
+        [Fact]
+        public void EmptySlot_IsNotBlamedOnTheLibrary()
+        {
+            var readers = new[]
+            {
+                new PcscReader { Name = "Aktiv Rutoken ECP 0", CardPresent = false },
+                new PcscReader { Name = "BIFIT ANGARA 0", CardPresent = false },
+            };
+            var rows = PcscReaders.Uncovered(readers, new string[0]);
+            Assert.Empty(rows);
+
+            int carriers = 0;
+            foreach (var r in readers) if (r.CardPresent) carriers++;
+            Assert.Equal(ListEmptyHint.NoReaderKey, ListEmptyHint.KeyFor(rows.Count, carriers));
         }
 
         [Fact]
-        public void EmptyListWithReaders_BlamesTheMissingLibrary()
+        public void EmptyListWithCarriers_BlamesTheMissingLibrary()
         {
-            Assert.Equal(ListEmptyHint.NoLibraryKey, ListEmptyHint.KeyFor(rows: 0, readers: 1));
-            Assert.Equal(ListEmptyHint.NoLibraryKey, ListEmptyHint.KeyFor(rows: 0, readers: 8));
+            Assert.Equal(ListEmptyHint.NoLibraryKey, ListEmptyHint.KeyFor(rows: 0, carriers: 1));
+            Assert.Equal(ListEmptyHint.NoLibraryKey, ListEmptyHint.KeyFor(rows: 0, carriers: 8));
         }
 
         /// <summary>

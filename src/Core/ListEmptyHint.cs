@@ -12,18 +12,22 @@ namespace CryptoProExport
     /// </summary>
     public static class ListEmptyHint
     {
-        /// <summary>Ни одного считывателя: носитель не вставлен или PC/SC его не видит.</summary>
+        /// <summary>Носителя нет: считыватель пуст, не подключён или PC/SC его не видит.</summary>
         public const string NoReaderKey = "list.empty.noreader";
 
-        /// <summary>Считыватель есть, но читать его нечем: библиотеки PKCS#11 не нашлось.</summary>
+        /// <summary>Носитель вставлен, но читать его нечем: библиотеки PKCS#11 не нашлось.</summary>
         public const string NoLibraryKey = "list.empty.nolibrary";
 
         /// <summary>
         /// Ключ объяснения или <c>null</c>, если объяснять нечего — в списке есть строки.
-        /// Отрицательные значения на вход не приходят, но и на них ответ осмысленный:
-        /// строк нет и считывателей нет.
+        ///
+        /// Считать нужно именно <b>носители</b> (считыватели со вставленной картой), а не
+        /// считыватели: пустой слот PC/SC виден системе всегда, но строки в списке не даёт
+        /// (<c>PcscReaders.Uncovered</c> пропускает считыватель без карты), и по числу
+        /// считывателей пустой слот объяснялся бы «нет библиотеки» вместо «вставьте носитель»
+        /// (замечание Codex на PR #83).
         /// </summary>
-        public static string KeyFor(int rows, int readers) =>
-            rows > 0 ? null : readers > 0 ? NoLibraryKey : NoReaderKey;
+        public static string KeyFor(int rows, int carriers) =>
+            rows > 0 ? null : carriers > 0 ? NoLibraryKey : NoReaderKey;
     }
 }

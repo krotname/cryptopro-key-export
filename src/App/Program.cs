@@ -105,14 +105,14 @@ namespace CryptoProExport.App
             // Объяснение пустого списка показывается только там, где ни одного носителя нет
             // (ROADMAP, P2, п. 7). Чтобы пропавший перевод не ждал такой машины, оба состояния
             // показываем прямо здесь — их текст попадёт в общую проверку ниже.
-            foreach (int readers in new[] { 0, 1 })
+            foreach (int carriers in new[] { 0, 1 })
             {
-                form.PreviewEmptyHint(readers);
+                form.PreviewEmptyHint(carriers);
                 var lost = form.MissingTranslations();
                 if (lost.Count > 0)
                 {
                     Console.Error.WriteLine($"SELFTEST FAIL [{language}, {stage}]: нет переводов "
-                                            + $"объяснения пустого списка (считывателей {readers}): "
+                                            + $"объяснения пустого списка (носителей {carriers}): "
                                             + string.Join(", ", lost.Take(10)));
                     return false;
                 }

@@ -842,7 +842,13 @@ namespace CryptoProExport.App
             }
             catch (Exception e) { Log(Strings.Format("log.tokens.unavailable", e.Message)); }
             SuggestFactoryPin(tokens);
-            SetEmptyHint(pcscReaders.Count);
+            // Считаем носители, а не считыватели: пустой слот — это «вставьте носитель», а не
+            // «нет библиотеки». Строку в списке PcscReaders.Uncovered даёт тоже только по
+            // вставленной карте, поэтому иначе пустой считыватель объяснялся бы неверно
+            // (замечание Codex на PR #83).
+            int carriers = 0;
+            foreach (var r in pcscReaders) if (r != null && r.CardPresent) carriers++;
+            SetEmptyHint(carriers);
             Log(Strings.Get("log.done"));
         }
 
@@ -1601,10 +1607,10 @@ namespace CryptoProExport.App
         /// есть, а прочитать его нечем: библиотеки PKCS#11 для этого носителя не нашлось.
         /// Раньше и то и другое было видно только в журнале, а он теперь свёрнут по умолчанию.
         /// </summary>
-        private void SetEmptyHint(int? readers)
+        private void SetEmptyHint(int? carriers)
         {
-            if (InvokeRequired) { BeginInvoke(new Action(() => SetEmptyHint(readers))); return; }
-            _emptyHintKey = readers == null ? null : ListEmptyHint.KeyFor(_lv.Items.Count, readers.Value);
+            if (InvokeRequired) { BeginInvoke(new Action(() => SetEmptyHint(carriers))); return; }
+            _emptyHintKey = carriers == null ? null : ListEmptyHint.KeyFor(_lv.Items.Count, carriers.Value);
             ApplyEmptyHint();
         }
 
@@ -1613,9 +1619,9 @@ namespace CryptoProExport.App
         /// попал в общую проверку переводов. Обе причины проверяются на каждом языке — иначе
         /// пропавший ключ был бы виден только на машине без единого считывателя.
         /// </summary>
-        internal void PreviewEmptyHint(int? readers)
+        internal void PreviewEmptyHint(int? carriers)
         {
-            _emptyHintKey = readers == null ? null : ListEmptyHint.KeyFor(0, readers.Value);
+            _emptyHintKey = carriers == null ? null : ListEmptyHint.KeyFor(0, carriers.Value);
             ApplyEmptyHint();
         }
 
