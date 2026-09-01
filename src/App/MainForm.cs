@@ -37,6 +37,16 @@ namespace CryptoProExport.App
         private Button _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnInstall, _btnView, _btnPfx, _btnExtractKey, _btnExtractPfx, _btnLicense, _btnLogs, _btnHelp;
         private Button _btnCancel;
         private Button[] _actionButtons;
+        /// <summary>Кнопки, доступность которых зависит от выделенной строки, и их действия.</summary>
+        private (Button Button, RowAction Action)[] _rowButtons;
+        /// <summary>
+        /// Подсказка кнопки без причины отказа. Причина приписывается к ней на лету, поэтому
+        /// исходный текст нужно помнить: иначе повторное обновление приписало бы вторую причину
+        /// к первой, а смена языка оставила бы прежнюю.
+        /// </summary>
+        private readonly Dictionary<Button, string> _baseTips = new();
+        /// <summary>Выключенная кнопка, чью подсказку показали вручную (см. <see cref="ShowDisabledTip"/>).</summary>
+        private Button _disabledTipOn;
         private ComboBox _cmbLang;
         private ToolTip _tips;
         private ToolStripStatusLabel _status;
@@ -58,6 +68,12 @@ namespace CryptoProExport.App
             public string Name;
             public string Serial;
             public byte[] Certificate;
+            /// <summary>
+            /// Сертификат-сирота без парного объекта контейнера (AGENTS п. 30). Имя такой
+            /// строки — метка сертификата, а не контейнера: отдавать его CryptoAPI или
+            /// certmgr нельзя, они разрешили бы его в посторонний одноимённый контейнер CSP.
+            /// </summary>
+            public bool CertificateOnly;
         }
 
         private sealed class ApduContainerSelection
@@ -252,8 +268,24 @@ namespace CryptoProExport.App
                 _btnRefresh, _btnExport, _btnExtract, _btnFull,
                 _btnView, _btnInstall, _btnPfx, _btnExtractKey, _btnExtractPfx, _btnLicense, _btnLogs, _btnHelp,
             };
+            // Остальные семь кнопок к выделению безразличны: «Обновить» перечитывает весь список,
+            // «Установить», «Извлечь ключ» и «Собрать PFX» спрашивают папку диалогом, а
+            // «Лицензия», «Журнал» и «Справка» к носителям вообще не обращаются.
+            _rowButtons = new[]
+            {
+                (_btnExport, RowAction.Export),
+                (_btnFull, RowAction.MakeExportable),
+                (_btnExtract, RowAction.ExtractCert),
+                (_btnView, RowAction.ViewContainer),
+                (_btnPfx, RowAction.ExportPfx),
+            };
             buttons.Controls.AddRange(_actionButtons);
             buttons.Controls.Add(_btnCancel);
+            // Подсказка выключенной кнопки: Windows не шлёт мыши сообщения выключенному окну,
+            // поэтому ToolTip сам её не покажет — а причина отказа нужна именно там. Сообщения
+            // выключенного ребёнка достаются родителю, по ним и показываем подсказку вручную.
+            buttons.MouseMove += (_, e) => ShowDisabledTip(buttons, e.Location);
+            buttons.MouseLeave += (_, __) => ShowDisabledTip(buttons, new Point(-1, -1));
 
             // --- Список + лог ---
             // SplitterDistance выставляется в OnLoad: до раскладки высота панели ещё не известна,
@@ -275,6 +307,9 @@ namespace CryptoProExport.App
             {
                 if (_lv.SelectedItems.Count > 0 && _btnView.Enabled) _btnView.PerformClick();
             };
+            // Половина действий работает не с каждой строкой. Что именно доступно сейчас, видно
+            // по самим кнопкам, а не по сообщению в журнале после нажатия.
+            _lv.SelectedIndexChanged += (_, __) => UpdateRowActions();
             split.Panel1.Controls.Add(_lv);
             split.Panel1.Padding = new Padding(10, 0, 10, 0);
 
@@ -354,6 +389,11 @@ namespace CryptoProExport.App
             Tip(_lv, "tip.list");
             _tips.SetToolTip(_lv, _tips.GetToolTip(_lv) + "\n\n" + Strings.Get("tip.list.dblclick"));
             Tip(_txtLog, "tip.log");
+
+            // Запоминаем подсказки в готовом виде (вместе с приписками про ЭЦП) и заново
+            // приписываем причину отказа: после смены языка она должна быть на новом языке.
+            foreach (var (button, _) in _rowButtons) _baseTips[button] = _tips.GetToolTip(button);
+            UpdateRowActions();
 
             if (!_busy) _status.Text = Strings.Get("status.ready");
         }
@@ -555,6 +595,7 @@ namespace CryptoProExport.App
                                Name = c.Name,
                                Serial = t.Serial,
                                Certificate = c.Certificate,
+                               CertificateOnly = c.CertificateOnly,
                            });
                     hasDirectRow = true;
                 }
@@ -931,6 +972,7 @@ namespace CryptoProExport.App
             ContainerSelection selected = SelectedContainer();
             string container = selected?.Target;
             if (container == null) { Log(Strings.Get("log.need.container")); return; }
+            if (IsCertificateOnly(selected)) { Log(Strings.Get("hint.row.certonly")); return; }
             var (ex, sg) = CheckExportability(container);
             Log(Strings.Format("log.check.container", container));
             Log("  " + Strings.Get("col.location") + ": " + selected.Location);
@@ -998,6 +1040,7 @@ namespace CryptoProExport.App
             ContainerSelection selected = SelectedContainer();
             string container = selected?.Target;
             if (container == null) { Log(Strings.Get("log.need.container")); return; }
+            if (IsCertificateOnly(selected)) { Log(Strings.Get("hint.row.certonly")); return; }
 
             string exe = CertMgr.Locate();
             if (exe == null) { Log(Strings.Get("log.pfx.nocertmgr")); return; }
@@ -1217,6 +1260,9 @@ namespace CryptoProExport.App
             if (InvokeRequired) { BeginInvoke(new Action(() => SetBusy(busy, title))); return; }
             _busy = busy;
             foreach (var b in _actionButtons) b.Enabled = !busy;
+            // Занятость гасит всё, выделение — только своё подмножество. Второй проход после
+            // общего нужен и на входе, и на выходе: список мог обновиться самой операцией.
+            UpdateRowActions();
             _btnCancel.Enabled = busy;
             _cmbLang.Enabled = !busy;
             _progress.Visible = busy;
@@ -1228,6 +1274,77 @@ namespace CryptoProExport.App
         {
             if (InvokeRequired) { BeginInvoke(new Action(() => SetStatus(text))); return; }
             _status.Text = text;
+        }
+
+        /// <summary>
+        /// Погасить кнопки, которым выделенная строка не подходит, и написать причину в их же
+        /// подсказках. Раньше все кнопки были активны всегда, а несовпадение строки и действия
+        /// выяснялось уже после нажатия — сообщением в журнале (ROADMAP, P2, п. 2).
+        ///
+        /// Сама проверка в <c>Do*</c> остаётся: строку читает фоновая задача, и между нажатием
+        /// и выполнением выделение успевает смениться. Здесь только видимость запрета.
+        /// </summary>
+        private void UpdateRowActions()
+        {
+            if (InvokeRequired) { BeginInvoke(new Action(UpdateRowActions)); return; }
+            SelectedRow row = CurrentRow();
+            foreach (var (button, action) in _rowButtons)
+            {
+                string reason = ActionAvailability.ReasonKey(action, row);
+                button.Enabled = !_busy && reason == null;
+                string tip = _baseTips.TryGetValue(button, out string known) ? known : _tips.GetToolTip(button);
+                _tips.SetToolTip(button, reason == null ? tip : tip + "\n\n" + Strings.Get(reason));
+            }
+        }
+
+        /// <summary>
+        /// За строкой стоит сертификат-сирота: контейнера с таким именем на носителе нет.
+        /// Кнопка на такой строке погашена, но строку читает фоновая задача уже после
+        /// нажатия — выделение успевает смениться, поэтому проверка нужна и здесь.
+        /// </summary>
+        private static bool IsCertificateOnly(ContainerSelection selected) =>
+            selected?.Token != null && selected.Token.CertificateOnly;
+
+        /// <summary>Тип выделенной строки — всё, что нужно знать о ней для доступности кнопок.</summary>
+        private SelectedRow CurrentRow()
+        {
+            if (_lv.SelectedItems.Count == 0) return SelectedRow.None;
+            return _lv.SelectedItems[0].Tag switch
+            {
+                CspContainerSelection => SelectedRow.Csp,
+                ApduContainerSelection => SelectedRow.Apdu,
+                RutokenContainer => SelectedRow.Direct,
+                // Сертификат прочитан при обновлении списка: пустое поле здесь означает, что
+                // извлекать нечего, и это видно до нажатия, а не после попытки. Сертификат-сирота
+                // выделен отдельно: контейнера за ним нет вовсе, адресовать по имени нечего.
+                TokenCertificateSelection t => t.CertificateOnly ? SelectedRow.TokenCertificateOnly
+                    : t.Certificate != null ? SelectedRow.TokenWithCert : SelectedRow.TokenWithoutCert,
+                // TokenDeviceSelection и любая строка без своего Tag: контейнера в ней нет.
+                _ => SelectedRow.Device,
+            };
+        }
+
+        /// <summary>
+        /// Показать подсказку выключенной кнопки. Windows не доставляет выключенному окну
+        /// сообщений мыши, поэтому <see cref="ToolTip"/> сам её не покажет, а причина отказа
+        /// нужна именно там, где кнопка. Сообщения при этом приходят родителю — по ним и
+        /// определяем, над какой погашенной кнопкой стоит курсор.
+        /// </summary>
+        private void ShowDisabledTip(Control host, Point at)
+        {
+            Button target = null;
+            foreach (Control c in host.Controls)
+                if (c is Button b && !b.Enabled && b.Bounds.Contains(at)) { target = b; break; }
+
+            // Пока курсор на той же кнопке, ничего не трогаем: повторный Show моргал бы окном.
+            if (ReferenceEquals(target, _disabledTipOn)) return;
+            _disabledTipOn = target;
+            _tips.Hide(host);
+            if (target == null) return;
+
+            string text = _tips.GetToolTip(target);
+            if (!string.IsNullOrEmpty(text))
+                _tips.Show(text, host, target.Left, target.Bottom + 4, _tips.AutoPopDelay);
         }
 
         private void AddRow(string where, string name, string details, object tag = null)
