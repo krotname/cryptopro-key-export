@@ -33,6 +33,22 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void OurExceptions_DoNotLeakTheDotNetParameterSuffix()
+        {
+            // Сообщения нашего кода уходят пользователю как есть (AGENTS п. 17), а .NET
+            // дописывает к ArgumentException «(Parameter 'name')» — в консоли это выглядело
+            // как «ОШИБКА: … (Parameter 'folder')». paramName мы больше не передаём.
+            var empty = Assert.Throws<ArgumentException>(() => NameKey.Build(""));
+            var tooLong = Assert.Throws<ArgumentException>(
+                () => NameKey.Build(new string('и', NameKey.MaxNameLength + 1)));
+
+            Assert.DoesNotContain("Parameter", empty.Message, StringComparison.Ordinal);
+            Assert.DoesNotContain("Parameter", tooLong.Message, StringComparison.Ordinal);
+            Assert.Null(empty.ParamName);
+            Assert.Null(tooLong.ParamName);
+        }
+
+        [Fact]
         public void AllFoundKeysExportable_RejectsMixedContainer()
         {
             var exchange = new CertFromContainer.ExportCheck { KeyFound = true, Exportable = true };

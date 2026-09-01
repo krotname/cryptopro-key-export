@@ -135,7 +135,7 @@ namespace CryptoProExport
             string destination = Path.GetFullPath(outDir).TrimEnd(
                 Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             string parent = Path.GetDirectoryName(destination)
-                ?? throw new ArgumentException(Strings.Format("err.folder.notlike", outDir), nameof(outDir));
+                ?? throw new ArgumentException(Strings.Format("err.folder.notlike", outDir));
             Directory.CreateDirectory(parent);
             string leaf = Path.GetFileName(destination);
             string nonce = Guid.NewGuid().ToString("N");

@@ -205,9 +205,9 @@ namespace CryptoProExport
             string store = Path.GetFullPath(storeDir ?? HdImageDir);
             string parent = Path.GetDirectoryName(full);
             if (!string.Equals(parent, store, StringComparison.OrdinalIgnoreCase))
-                throw new ArgumentException(Strings.Format("err.folder.outside", folder), nameof(folder));
+                throw new ArgumentException(Strings.Format("err.folder.outside", folder));
             if (!LooksLikeContainer(full))
-                throw new ArgumentException(Strings.Format("err.folder.notlike", folder), nameof(folder));
+                throw new ArgumentException(Strings.Format("err.folder.notlike", folder));
 
             string[] nested = Directory.GetDirectories(full);
             if (nested.Length != 0)

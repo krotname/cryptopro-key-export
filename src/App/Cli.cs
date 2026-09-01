@@ -249,7 +249,8 @@ namespace CryptoProExport.App
                             return 2;
                         }
                         if (!DirectTokenApdu.Supports(token.Kind))
-                            throw new ArgumentException(Pkcs11Token.KindName(token.Kind), nameof(reader));
+                            throw new ArgumentException(Strings.Format("err.reader.unsupported",
+                                reader, Pkcs11Token.KindName(token.Kind)));
 
                         var pipeline = new ExportPipeline { Log = Out };
                         List<DirectTokenContainerRef> containers = pipeline.Direct.ListContainers(token);
@@ -296,7 +297,8 @@ namespace CryptoProExport.App
                             return 2;
                         }
                         if (!DirectTokenApdu.Supports(token.Kind))
-                            throw new ArgumentException(Pkcs11Token.KindName(token.Kind), nameof(reader));
+                            throw new ArgumentException(Strings.Format("err.reader.unsupported",
+                                reader, Pkcs11Token.KindName(token.Kind)));
 
                         var pipeline = new ExportPipeline { Log = Out };
                         List<DirectTokenContainerRef> containers = pipeline.Direct.ListContainers(token);
@@ -434,7 +436,8 @@ namespace CryptoProExport.App
                             .Find(t => string.Equals(t.Reader, reader, StringComparison.OrdinalIgnoreCase));
                         RutokenKind readerKind = Pkcs11Token.ResolveReaderKind(reader, tok);
                         if (readerKind != RutokenKind.RutokenLite)
-                            throw new ArgumentException(Pkcs11Token.KindName(readerKind), nameof(reader));
+                            throw new ArgumentException(Strings.Format("err.reader.unsupported",
+                                reader, Pkcs11Token.KindName(readerKind)));
 
                         var lite = new RutokenLiteApdu { Log = Out };
                         var containers = lite.ListContainers(reader);
@@ -528,6 +531,13 @@ namespace CryptoProExport.App
                             Out(LicenseGate.StatusText());
                             Out(LicenseGate.FingerprintText());
                             return LicenseGate.IsLicensed() ? 0 : 2;
+                        }
+                        if (!File.Exists(args[1]))
+                        {
+                            // Иначе наружу уходило системное «Could not find a part of the
+                            // path …» — по-английски и про путь, а не про лицензию.
+                            Err(Strings.Format("err.license.notfound", args[1]));
+                            return 3;
                         }
                         var info = LicenseGate.Install(args[1]);
                         if (info.Ok)

@@ -26,10 +26,10 @@ namespace CryptoProExport
         /// <summary>Собрать содержимое name.key для заданного имени.</summary>
         public static byte[] Build(string name)
         {
-            if (string.IsNullOrEmpty(name)) throw new ArgumentException(Strings.Get("err.name.empty"), nameof(name));
+            if (string.IsNullOrEmpty(name)) throw new ArgumentException(Strings.Get("err.name.empty"));
             byte[] text = Cp1251.GetBytes(name);
             if (text.Length > MaxNameLength)
-                throw new ArgumentException(Strings.Format("err.name.toolong", MaxNameLength), nameof(name));
+                throw new ArgumentException(Strings.Format("err.name.toolong", MaxNameLength));
 
             var result = new byte[4 + text.Length];
             result[0] = 0x30;
