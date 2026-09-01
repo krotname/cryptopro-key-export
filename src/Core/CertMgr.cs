@@ -81,7 +81,7 @@ namespace CryptoProExport
             if (string.IsNullOrWhiteSpace(containerFolder))
                 throw new ArgumentException(nameof(containerFolder));
             if (string.IsNullOrWhiteSpace(container))
-                throw new ArgumentException(Strings.Get("err.container.name"), nameof(container));
+                throw new ArgumentException(Strings.Get("err.container.name"));
 
             bool hasExchangeKey = CertFromContainer.CheckExportable(
                 container, CertFromContainer.AT_KEYEXCHANGE).KeyFound;
@@ -166,7 +166,7 @@ namespace CryptoProExport
             string container, string destPfx, string password, bool signatureKey = false, string certPath = null)
         {
             if (string.IsNullOrWhiteSpace(container))
-                throw new ArgumentException(Strings.Get("err.container.name"), nameof(container));
+                throw new ArgumentException(Strings.Get("err.container.name"));
 
             var check = CertFromContainer.CheckExportable(
                 container, signatureKey ? CertFromContainer.AT_SIGNATURE : CertFromContainer.AT_KEYEXCHANGE);
