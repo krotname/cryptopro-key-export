@@ -156,6 +156,8 @@ namespace CryptoProExport
         /// <summary>Результат проверки «снят ли запрет на экспорт закрытого ключа».</summary>
         public sealed class ExportCheck
         {
+            /// <summary>Контейнер открылся хотя бы одним провайдером — сам контейнер существует.</summary>
+            public bool ContainerOpened;
             /// <summary>Контейнер найден и в нём есть ключ такого типа.</summary>
             public bool KeyFound;
             /// <summary>Ключ помечен экспортируемым (в KP_PERMISSIONS взведён CRYPT_EXPORT).</summary>
@@ -204,6 +206,10 @@ namespace CryptoProExport
             {
                 if (!CryptAcquireContext(out IntPtr hProv, container, name, type, CRYPT_SILENT))
                     continue;
+                // Контейнер открылся: дальше «ключа нет» — это именно про ключ, а не про
+                // опечатку в имени. Без этого различия checkexport на несуществующем имени
+                // отвечал «ключ не найден», и владелец читал это как «ключа больше нет».
+                result.ContainerOpened = true;
                 try
                 {
                     if (!CryptGetUserKey(hProv, keySpec, out IntPtr hKey))
@@ -227,6 +233,23 @@ namespace CryptoProExport
                 finally { CryptReleaseContext(hProv, 0); }
             }
             return result;
+        }
+
+        /// <summary>
+        /// Контейнер с таким именем открывается хотя бы одним провайдером. Нужен, чтобы отличить
+        /// «такого контейнера нет» от «контейнер есть, но сертификата (ключа) в нём нет»: обе
+        /// ситуации выглядели одинаково — «нет», хотя лечатся по-разному.
+        /// </summary>
+        public static bool ContainerExists(string container)
+        {
+            foreach (var (type, name) in Providers)
+            {
+                if (!CryptAcquireContext(out IntPtr hProv, container, name, type, CRYPT_SILENT))
+                    continue;
+                CryptReleaseContext(hProv, 0);
+                return true;
+            }
+            return false;
         }
 
         /// <summary>Подобрать провайдер и извлечь оба сертификата (обмена/подписи) по имени контейнера.</summary>

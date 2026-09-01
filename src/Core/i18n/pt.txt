@@ -208,6 +208,7 @@ tool.cancelled = {0} parado por cancelamento
 err.certmgr.notfound = certmgr não encontrado
 err.container.name = Nome do contentor não indicado
 err.container.nokey = O contentor «{0}» não foi encontrado ou não tem chave do tipo necessário
+err.container.missing = Контейнер «{0}» не найден. Проверьте имя (список даёт команда list) и вставлен ли носитель.
 err.container.exportable = O contentor já é exportável
 err.key.locked = A chave privada não é exportável — levante primeiro a proibição («{0}»). {1}
 err.cert.extract = Não foi possível extrair o certificado do contentor

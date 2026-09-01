@@ -186,6 +186,13 @@ namespace CryptoProExport.App
                     case "extractcert":
                     {
                         if (args.Length < 3) { Usage(); return 1; }
+                        // Сначала сам контейнер: иначе опечатка в имени давала «Обмен: нет,
+                        // Подпись: нет» — то же, что у настоящего контейнера без сертификатов.
+                        if (!CertFromContainer.ContainerExists(args[1]))
+                        {
+                            Err(Strings.Format("err.container.missing", args[1]));
+                            return 2;
+                        }
                         var (ex, sg) = CertFromContainer.SaveCerts(args[1], args[2]);
                         Out(Strings.Format("cli.cert.exchange", ex ?? Strings.Get("common.none")));
                         Out(Strings.Format("cli.cert.sign", sg ?? Strings.Get("common.none")));
@@ -196,6 +203,14 @@ namespace CryptoProExport.App
                         if (args.Length < 2) { Usage(); return 1; }
                         var ex = CertFromContainer.CheckExportable(args[1], CertFromContainer.AT_KEYEXCHANGE);
                         var sg = CertFromContainer.CheckExportable(args[1], CertFromContainer.AT_SIGNATURE);
+                        // Контейнер не открылся ни одним провайдером — это не «ключ не найден»,
+                        // а «нет такого контейнера»: чаще всего опечатка в имени или носитель
+                        // не вставлен. Прежний ответ читался как «ключ пропал».
+                        if (!ex.ContainerOpened && !sg.ContainerOpened)
+                        {
+                            Err(Strings.Format("err.container.missing", args[1]));
+                            return 2;
+                        }
                         Out(Strings.Format("cli.check.exchange", ex));
                         Out(Strings.Format("cli.check.sign", sg));
                         // 2 — проверять нечего (нет контейнера/ключа), 3 — ключ есть, но запрет не снят

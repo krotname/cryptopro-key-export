@@ -208,6 +208,7 @@ tool.cancelled = أُوقف {0} بسبب الإلغاء
 err.certmgr.notfound = لم يُعثر على certmgr
 err.container.name = لم يُحدَّد اسم الحاوية
 err.container.nokey = لم يُعثر على الحاوية «{0}» أو لا تحوي مفتاحًا من النوع المطلوب
+err.container.missing = Контейнер «{0}» не найден. Проверьте имя (список даёт команда list) и вставлен ли носитель.
 err.container.exportable = الحاوية قابلة للتصدير بالفعل
 err.key.locked = المفتاح الخاص غير قابل للتصدير — ارفع الحظر أولًا («{0}»). {1}
 err.cert.extract = تعذّر استخراج الشهادة من الحاوية

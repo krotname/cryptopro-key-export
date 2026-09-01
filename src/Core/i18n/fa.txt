@@ -208,6 +208,7 @@ tool.cancelled = {0} به سبب لغو متوقف شد
 err.certmgr.notfound = certmgr یافت نشد
 err.container.name = نام ظرف داده نشده است
 err.container.nokey = ظرف «{0}» یافت نشد یا کلیدی از نوع لازم ندارد
+err.container.missing = Контейнер «{0}» не найден. Проверьте имя (список даёт команда list) и вставлен ли носитель.
 err.container.exportable = ظرف از قبل قابل صدور است
 err.key.locked = کلید خصوصی برون‌بری‌پذیر نیست — نخست ممنوعیت را بردارید («{0}»). {1}
 err.cert.extract = گواهی از ظرف بیرون کشیده نشد

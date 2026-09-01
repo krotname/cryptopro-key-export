@@ -208,6 +208,7 @@ tool.cancelled = {0} dihentikan karena pembatalan
 err.certmgr.notfound = certmgr tidak ditemukan
 err.container.name = Nama kontainer tidak diberikan
 err.container.nokey = Kontainer «{0}» tidak ditemukan atau tidak memuat kunci dengan tipe yang diperlukan
+err.container.missing = Контейнер «{0}» не найден. Проверьте имя (список даёт команда list) и вставлен ли носитель.
 err.container.exportable = Kontainer sudah dapat diekspor
 err.key.locked = Kunci privat tidak dapat diekspor — cabut dulu larangannya («{0}»). {1}
 err.cert.extract = Sertifikat tidak dapat diambil dari kontainer

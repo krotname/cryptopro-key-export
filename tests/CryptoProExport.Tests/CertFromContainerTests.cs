@@ -46,6 +46,50 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void ContainerExists_IsFalseForAnInventedName()
+        {
+            // Промах по имени — единственный случай, воспроизводимый без CSP и токена.
+            // Он же и был перепутан: «нет такого контейнера» выглядело как «ключа нет».
+            Assert.False(CertFromContainer.ContainerExists(
+                "контейнер, которого нет " + Guid.NewGuid().ToString("N")));
+        }
+
+        [Fact]
+        public void CheckExportable_ReportsThatTheContainerNeverOpened()
+        {
+            var check = CertFromContainer.CheckExportable(
+                "контейнер, которого нет " + Guid.NewGuid().ToString("N"));
+
+            Assert.False(check.ContainerOpened);
+            Assert.False(check.KeyFound);
+        }
+
+        [Fact]
+        public void Cli_AsksAboutTheContainerBeforeReportingMissingKeys()
+        {
+            // Порядок важен: сообщение «ключ не найден» имеет смысл только для контейнера,
+            // который открылся. Проверяем проводку, потому что сам вызов требует CSP.
+            string cli = File.ReadAllText(RepoFile("src", "App", "Cli.cs"));
+
+            Assert.Contains("CertFromContainer.ContainerExists(args[1])", cli, StringComparison.Ordinal);
+            Assert.Contains("!ex.ContainerOpened && !sg.ContainerOpened", cli, StringComparison.Ordinal);
+            Assert.Contains("err.container.missing", cli, StringComparison.Ordinal);
+        }
+
+        private static string RepoFile(params string[] parts)
+        {
+            var dir = new DirectoryInfo(AppContext.BaseDirectory);
+            while (dir != null && !File.Exists(Path.Combine(dir.FullName, "CryptoProExport.slnx")))
+                dir = dir.Parent;
+            Assert.NotNull(dir);
+
+            string path = dir!.FullName;
+            foreach (string part in parts) path = Path.Combine(path, part);
+            Assert.True(File.Exists(path), "Не найден файл " + path);
+            return path;
+        }
+
+        [Fact]
         public void AllFoundKeysExportable_AcceptsTwoExportableKeysButRejectsReadError()
         {
             var exchange = new CertFromContainer.ExportCheck { KeyFound = true, Exportable = true };

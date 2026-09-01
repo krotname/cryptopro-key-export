@@ -208,6 +208,7 @@ tool.cancelled = {0} iptal nedeniyle durduruldu
 err.certmgr.notfound = certmgr bulunamadı
 err.container.name = Kapsayıcı adı verilmedi
 err.container.nokey = «{0}» kapsayıcısı bulunamadı ya da gerekli türde anahtar içermiyor
+err.container.missing = Контейнер «{0}» не найден. Проверьте имя (список даёт команда list) и вставлен ли носитель.
 err.container.exportable = Kapsayıcı zaten dışa aktarılabilir
 err.key.locked = Özel anahtar dışa aktarılamaz — önce yasağı kaldırın («{0}»). {1}
 err.cert.extract = Sertifika kapsayıcıdan çıkarılamadı
