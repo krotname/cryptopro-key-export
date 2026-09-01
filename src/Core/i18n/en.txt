@@ -65,10 +65,12 @@ tip.cancel = Interrupt the current operation.\nWork stops at the nearest step: a
 
 # --- container list and log ---
 col.location = Location
+col.backend = Способ чтения
 col.container = Container
 col.details = Details
-tip.list = Key containers that were found.\n«Location» = CSP (visible to CryptoPro), PKCS#11/APDU, or direct carrier access.\n«Export from token» and «Make exportable» act on a selected APDU/rtCOMLite row; with no selection they scan every supported token.\nOther actions use the selected container.
+tip.list = Key containers that were found.\n«Export from token» and «Make exportable» act on a selected APDU/rtCOMLite row; with no selection they scan every supported token.\nOther actions use the selected container.
 tip.list.dblclick = Двойной клик по строке равносилен кнопке «Посмотреть контейнер».
+tip.list.columns = «Расположение» — где носитель: имя считывателя, HDIMAGE или прочерк,\nесли КриптоПро видит контейнер, но не сообщает устройство. «Способ чтения» —\nчем строка прочитана: CSP, PKCS#11, APDU, PC/SC или rtCOMLite.\nКлик по заголовку сортирует по колонке: по возрастанию, по убыванию и обратно\nв порядок обхода носителей.
 hint.need.row = Сейчас недоступно: в списке не выбрана строка.\nВыберите строку контейнера, с которым нужно работать.
 hint.row.device = Сейчас недоступно: в выделенной строке только устройство, контейнера в ней нет.\nВыберите строку с именем контейнера.
 hint.row.csp = Сейчас недоступно: контейнер этой строки читается через КриптоПро CSP, а не напрямую с носителя.\nВыберите строку [APDU] или rtCOMLite либо снимите выделение, чтобы обойти все поддерживаемые носители.\nПрава ключей выбранной строки показывает «Посмотреть контейнер».

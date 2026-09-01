@@ -31,7 +31,12 @@ namespace CryptoProExport.App
         private string _autoFilledModel;
         private ListView _lv;
         private SplitContainer _split;
-        private ColumnHeader _colWhere, _colName, _colDetails;
+        private ColumnHeader _colWhere, _colBackend, _colName, _colDetails;
+        /// <summary>Колонка, по которой отсортирован список; -1 — исходный порядок обхода.</summary>
+        private int _sortColumn = -1;
+        private bool _sortDesc;
+        /// <summary>Номер строки в порядке обхода — по нему список возвращается к исходному виду.</summary>
+        private int _rowSeq;
         private Label _lblDest, _lblPin, _lblPinHint, _lblLang;
         private Button _btnDest;
         private Button _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnInstall, _btnView, _btnPfx, _btnExtractKey, _btnLicense, _btnLogs, _btnHelp;
@@ -103,6 +108,8 @@ namespace CryptoProExport.App
             public string Name;
             public string Target;
             public string Location;
+            /// <summary>Способ чтения строки: CSP, PKCS#11, APDU, PC/SC, rtCOMLite.</summary>
+            public string Backend;
             public string Details;
             public bool IsCsp;
             public TokenCertificateSelection Token;
@@ -343,10 +350,19 @@ namespace CryptoProExport.App
                 Dock = DockStyle.Fill, View = View.Details, FullRowSelect = true,
                 GridLines = true, MultiSelect = false, HideSelection = false,
             };
-            _colWhere = new ColumnHeader { Width = 150 };
-            _colName = new ColumnHeader { Width = 360 };
-            _colDetails = new ColumnHeader { Width = 320 };
-            _lv.Columns.AddRange(new[] { _colWhere, _colName, _colDetails });
+            // «Расположение» держало сразу два разных сведения — устройство и способ чтения
+            // («[PKCS#11] Aktiv Rutoken ECP 00 00 [Рутокен ЭЦП]»). Сортировать по ним было
+            // нельзя, а именно этого от списка и хочется (ROADMAP, P2, п. 6). Теперь это две
+            // колонки: где носитель и чем строка прочитана.
+            // Ширины подобраны по фактическому содержимому на машине владельца: имя
+            // считывателя с семейством («Aktiv Rutoken ECP 0 [Рутокен ЭЦП]») длиннее прежней
+            // колонки, а «Способ чтения» должен вмещать и свой заголовок, и отметку сортировки.
+            _colWhere = new ColumnHeader { Width = 280 };
+            _colBackend = new ColumnHeader { Width = 160 };
+            _colName = new ColumnHeader { Width = 300 };
+            _colDetails = new ColumnHeader { Width = 280 };
+            _lv.Columns.AddRange(new[] { _colWhere, _colBackend, _colName, _colDetails });
+            _lv.ColumnClick += (_, e) => SortByColumn(e.Column);
             // Двойной клик по строке — то же самое, что кнопка «Посмотреть контейнер»:
             // самый частый следующий шаг после того, как строка найдена в списке.
             _lv.MouseDoubleClick += (_, __) =>
@@ -458,11 +474,10 @@ namespace CryptoProExport.App
             _tips.SetToolTip(_btnExport, _tips.GetToolTip(_btnExport) + ecpBoundary);
             _tips.SetToolTip(_btnFull, _tips.GetToolTip(_btnFull) + ecpBoundary);
 
-            _colWhere.Text = Strings.Get("col.location");
-            _colName.Text = Strings.Get("col.container");
-            _colDetails.Text = Strings.Get("col.details");
+            ApplyColumnHeaders();
             Tip(_lv, "tip.list");
-            _tips.SetToolTip(_lv, _tips.GetToolTip(_lv) + "\n\n" + Strings.Get("tip.list.dblclick"));
+            _tips.SetToolTip(_lv, _tips.GetToolTip(_lv) + "\n\n" + Strings.Get("tip.list.dblclick")
+                                  + "\n\n" + Strings.Get("tip.list.columns"));
             Tip(_txtLog, "tip.log");
 
             // Запоминаем подсказки в готовом виде (вместе с приписками про ЭЦП) и заново
@@ -682,7 +697,7 @@ namespace CryptoProExport.App
             // строками нового носителя ещё до конца обхода, и прерванное обновление (отмена,
             // ошибка) оставило бы в поле PIN уже вынутого токена — он ушёл бы дальше как явный.
             ClearAutoFilledPin();
-            Invoke(() => _lv.Items.Clear());
+            Invoke(() => { _lv.Items.Clear(); _rowSeq = 0; });
             Log(Strings.Get("status.refresh"));
 
             // HDIMAGE-копия и исходный токен часто имеют одно логическое имя. Показываем
@@ -696,13 +711,16 @@ namespace CryptoProExport.App
                 // одноимённый контейнер на токене.
                 if (!ContainerStore.IsVisibleToCsp(c.Name)) continue;
                 if (!installedNames.Add(c.Name)) continue;
-                AddRow("HDIMAGE", c.Name, c.Folder,
+                AddRow("HDIMAGE", Strings.Get("log.container.csp"), c.Name, c.Folder,
                     new CspContainerSelection { Target = CertMgr.HdImageContainer(c.Name) });
             }
             foreach (var c in CertFromContainer.EnumContainers())
             {
                 if (installedNames.Contains(c.Name)) continue;
-                AddRow(Strings.Get("log.container.csp"), c.Name,
+                // Носитель здесь неизвестен по существу: PP_ENUMCONTAINERS отдаёт только имя
+                // контейнера, а на каком устройстве он лежит — нет. Прочерк честнее выдуманного
+                // «HDIMAGE»: контейнер может быть и на токене, и в реестре.
+                AddRow("—", Strings.Get("log.container.csp"), c.Name,
                        Strings.Format("log.container.provider", c.ProvType),
                        new CspContainerSelection { Target = c.Name });
             }
@@ -725,7 +743,7 @@ namespace CryptoProExport.App
                 bool hasDirectRow = false;
                 foreach (var c in t.Containers)
                 {
-                    AddRow($"[PKCS#11] {t.Reader} [{Pkcs11Token.KindName(t.Kind)}]",
+                    AddRow($"{t.Reader} [{Pkcs11Token.KindName(t.Kind)}]", "PKCS#11",
                            c.Name ?? Strings.Get("log.container.unnamed"),
                            "PKCS#11 · " + Strings.Get(c.CertificateOnly ? "common.certonly"
                                                       : c.Certificate != null ? "common.present" : "common.none"),
@@ -750,7 +768,7 @@ namespace CryptoProExport.App
                             { Log = m => Log("[APDU] " + m), Cancel = cancel };
                         foreach (var c in direct.ListContainers(t))
                         {
-                            AddRow($"[APDU] {t.Reader} [{Pkcs11Token.KindName(t.Kind)}]",
+                            AddRow($"{t.Reader} [{Pkcs11Token.KindName(t.Kind)}]", "APDU",
                                    c.Name ?? Strings.Get("log.container.unnamed"),
                                    $"APDU · {Strings.Format("cli.token.pin", Pkcs11Token.PinState(t))}",
                                    new ApduContainerSelection { Token = t, Container = c });
@@ -766,7 +784,7 @@ namespace CryptoProExport.App
                 // Пустой PKCS#11-слот всё равно показываем: пользователь должен видеть все
                 // подключённые устройства, а не только те, где драйвер отдал публичный объект.
                 if (!hasDirectRow)
-                    AddRow($"[PKCS#11] {t.Reader} [{Pkcs11Token.KindName(t.Kind)}]",
+                    AddRow($"{t.Reader} [{Pkcs11Token.KindName(t.Kind)}]", "PKCS#11",
                            Strings.Get("common.none"),
                            "PKCS#11 · " + Pkcs11Token.CapabilityProfileName(t.CapabilityProfile),
                            new TokenDeviceSelection());
@@ -786,7 +804,7 @@ namespace CryptoProExport.App
                 // В колонке контейнера — вендор носителя, а не «нет»: контейнеры КриптоПро на
                 // таком носителе быть могут (проверено на BIFIT ANGARA), просто показывает их
                 // не PKCS#11, а CSP — отдельной строкой выше.
-                AddRow($"[PC/SC] {r.Name}", Strings.Get(PcscReaders.CarrierHintKey(r.Name)),
+                AddRow(r.Name, "PC/SC", Strings.Get(PcscReaders.CarrierHintKey(r.Name)),
                        Strings.Format("cli.pcsc.row", r.Atr ?? "?"),
                        new TokenDeviceSelection());
 
@@ -800,7 +818,7 @@ namespace CryptoProExport.App
                     SkipReaders = Pkcs11Token.SmartCardReaders(tokens),
                 };
                 foreach (var c in exp.ReadAllContainers())
-                    AddRow(Strings.Format("log.container.token", c.TokenName),
+                    AddRow(Strings.Format("log.container.token", c.TokenName), "rtCOMLite",
                            c.ContainerName ?? Strings.Get("log.container.unnamed"),
                            Strings.Format("log.container.files", c.TokenDir, c.Files.Count), c);
             }
@@ -1115,12 +1133,14 @@ namespace CryptoProExport.App
             var (ex, sg) = CheckExportability(container);
             Log(Strings.Format("log.check.container", container));
             Log("  " + Strings.Get("col.location") + ": " + selected.Location);
+            Log("  " + Strings.Get("col.backend") + ": " + selected.Backend);
             Log("  " + Strings.Get("col.details") + ": " + selected.Details);
             Log("  " + Strings.Format("log.check.exchange", ex));
             Log("  " + Strings.Format("log.check.sign", sg));
 
             string text = Strings.Format("log.check.container", container) + Environment.NewLine
                         + Strings.Get("col.location") + ": " + selected.Location + Environment.NewLine
+                        + Strings.Get("col.backend") + ": " + selected.Backend + Environment.NewLine
                         + Strings.Get("col.details") + ": " + selected.Details + Environment.NewLine
                         + Environment.NewLine
                         + Strings.Format("log.check.exchange", ex) + Environment.NewLine
@@ -1522,10 +1542,80 @@ namespace CryptoProExport.App
                 _tips.Show(text, host, target.Left, target.Bottom + 4, _tips.AutoPopDelay);
         }
 
-        private void AddRow(string where, string name, string details, object tag = null)
+        /// <summary>
+        /// Строка списка: где носитель, чем она прочитана, имя контейнера и подробности.
+        /// Устройство и способ чтения — разные колонки (ROADMAP, P2, п. 6): по ним сортируют
+        /// порознь. Имя строки — её номер в порядке обхода: по нему список возвращается к
+        /// исходному виду, когда сортировку снимают.
+        /// </summary>
+        private void AddRow(string where, string how, string name, string details, object tag = null)
         {
-            if (InvokeRequired) { BeginInvoke(new Action(() => AddRow(where, name, details, tag))); return; }
-            _lv.Items.Add(new ListViewItem(new[] { where, name, details }) { Tag = tag });
+            if (InvokeRequired) { BeginInvoke(new Action(() => AddRow(where, how, name, details, tag))); return; }
+            _lv.Items.Add(new ListViewItem(new[] { where, how, name, details })
+            {
+                Tag = tag,
+                Name = _rowSeq++.ToString("D5", System.Globalization.CultureInfo.InvariantCulture),
+            });
+        }
+
+        /// <summary>
+        /// Отсортировать список по колонке. Три состояния по кругу: по возрастанию, по убыванию
+        /// и назад в порядок обхода носителей — он сам по себе осмыслен (сначала контейнеры CSP,
+        /// потом каждый носитель со своими строками), и терять его насовсем не хочется.
+        /// Сортировка переживает «Обновить»: сравниватель остаётся на списке, и новые строки
+        /// встают на свои места сразу.
+        /// </summary>
+        private void SortByColumn(int column)
+        {
+            if (column == _sortColumn && _sortDesc) { _sortColumn = -1; _sortDesc = false; }
+            else if (column == _sortColumn) _sortDesc = true;
+            else { _sortColumn = column; _sortDesc = false; }
+
+            _lv.ListViewItemSorter = new RowComparer(_sortColumn, _sortDesc);
+            _lv.Sort();
+            ApplyColumnHeaders();
+        }
+
+        /// <summary>Заголовки колонок с отметкой сортировки на текущей.</summary>
+        private void ApplyColumnHeaders()
+        {
+            string Mark(int index, string key)
+            {
+                string text = Strings.Get(key);
+                return index == _sortColumn ? text + (_sortDesc ? " ▼" : " ▲") : text;
+            }
+
+            _colWhere.Text = Mark(0, "col.location");
+            _colBackend.Text = Mark(1, "col.backend");
+            _colName.Text = Mark(2, "col.container");
+            _colDetails.Text = Mark(3, "col.details");
+        }
+
+        /// <summary>
+        /// Сравниватель строк списка. Равные значения колонки оставляет в порядке обхода:
+        /// иначе одинаковые «PKCS#11» перемешивались бы при каждой сортировке, и найти
+        /// прежнюю строку было бы нельзя.
+        /// </summary>
+        private sealed class RowComparer : System.Collections.IComparer
+        {
+            private readonly int _column;
+            private readonly bool _desc;
+
+            public RowComparer(int column, bool desc) { _column = column; _desc = desc; }
+
+            public int Compare(object x, object y)
+            {
+                var a = (ListViewItem)x;
+                var b = (ListViewItem)y;
+                int order = 0;
+                if (_column >= 0 && _column < a.SubItems.Count && _column < b.SubItems.Count)
+                {
+                    order = string.Compare(a.SubItems[_column].Text, b.SubItems[_column].Text,
+                                           StringComparison.CurrentCultureIgnoreCase);
+                    if (_desc) order = -order;
+                }
+                return order != 0 ? order : string.CompareOrdinal(a.Name, b.Name);
+            }
         }
 
         /// <summary>
@@ -1551,10 +1641,11 @@ namespace CryptoProExport.App
             var csp = item.Tag as CspContainerSelection;
             return new ContainerSelection
             {
-                Name = deviceOnly ? null : item.SubItems[1].Text,
-                Target = deviceOnly ? null : csp?.Target ?? item.SubItems[1].Text,
+                Name = deviceOnly ? null : item.SubItems[2].Text,
+                Target = deviceOnly ? null : csp?.Target ?? item.SubItems[2].Text,
                 Location = item.SubItems[0].Text,
-                Details = item.SubItems[2].Text,
+                Backend = item.SubItems[1].Text,
+                Details = item.SubItems[3].Text,
                 IsCsp = item.Tag is CspContainerSelection,
                 Token = item.Tag as TokenCertificateSelection,
                 Apdu = item.Tag as ApduContainerSelection,
