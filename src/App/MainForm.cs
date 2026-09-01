@@ -539,10 +539,16 @@ namespace CryptoProExport.App
             }
             need += _buttons.Padding.Horizontal;
 
+            Rectangle area = Screen.FromControl(this).WorkingArea;
             int frame = Width - ClientSize.Width;
-            int limit = Screen.FromControl(this).WorkingArea.Width - frame;
-            int target = Math.Min(need, limit);
-            if (ClientSize.Width < target) ClientSize = new Size(target, ClientSize.Height);
+            int target = Math.Min(need, area.Width - frame);
+            if (ClientSize.Width >= target) return;
+
+            ClientSize = new Size(target, ClientSize.Height);
+            // Окно у правого края экрана: расти вправо ему некуда, поэтому сдвигаем влево —
+            // иначе как раз правые кнопки группы уехали бы за рабочую область (замечание
+            // Codex на PR #78). Ширина уже ограничена шириной области, так что места хватит.
+            if (Right > area.Right) Left = Math.Max(area.Left, area.Right - Width);
         }
 
         /// <summary>Кнопки растягиваются под текст: длина надписи зависит от языка.</summary>
