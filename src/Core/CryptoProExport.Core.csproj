@@ -6,7 +6,7 @@
     <AssemblyName>CryptoProExport.Core</AssemblyName>
     <RootNamespace>CryptoProExport</RootNamespace>
     <LangVersion>latest</LangVersion>
-    <Version>1.5.2</Version>
+    <Version>1.7.0</Version>
     <!-- позволяет собирать библиотеку для Windows на Linux-сборщике -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
@@ -40,6 +40,30 @@
     <EmbeddedResource Include="..\..\tools\rtCOMLite.dll"
                       Condition="Exists('..\..\tools\rtCOMLite.dll')">
       <LogicalName>CryptoProExport.Tools.rtCOMLite.dll</LogicalName>
+    </EmbeddedResource>
+    <!--
+      Библиотеки PKCS#11 вендоров — запасной путь для машины без установленных драйверов
+      носителя (Pkcs11Token.LibraryCandidates: системная копия всегда идёт первой). Копии x86,
+      как и rtCOMLite: разрядность сборки по умолчанию x86, в x64-процессе вшитый кандидат
+      отбрасывается по несовпадению разрядности. Рутокен S (rtPKCS11.dll) не вшит намеренно —
+      он импортирует rtAPIi.dll/rtLib.dll из пакета драйверов, без которого носитель всё
+      равно не появится в PC/SC.
+    -->
+    <EmbeddedResource Include="..\..\tools\rtPKCS11ECP.dll"
+                      Condition="Exists('..\..\tools\rtPKCS11ECP.dll')">
+      <LogicalName>CryptoProExport.Tools.rtPKCS11ECP.dll</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\tools\jcPKCS11-2.dll"
+                      Condition="Exists('..\..\tools\jcPKCS11-2.dll')">
+      <LogicalName>CryptoProExport.Tools.jcPKCS11-2.dll</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\tools\isbc_pkcs11_main.dll"
+                      Condition="Exists('..\..\tools\isbc_pkcs11_main.dll')">
+      <LogicalName>CryptoProExport.Tools.isbc_pkcs11_main.dll</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\tools\isbc_esmart_token_mod.dll"
+                      Condition="Exists('..\..\tools\isbc_esmart_token_mod.dll')">
+      <LogicalName>CryptoProExport.Tools.isbc_esmart_token_mod.dll</LogicalName>
     </EmbeddedResource>
     <!--
       Руководство пользователя: тоже внутрь сборки, снаружи файлов быть не должно.

@@ -82,6 +82,8 @@ namespace CryptoProExport.Tests
         [InlineData("extractcert")]
         [InlineData("checkexport")]
         [InlineData("export")]
+        [InlineData("tokenexport")]
+        [InlineData("tokenfull")]
         [InlineData("keyexport")]
         [InlineData("install")]
         [InlineData("installed")]
@@ -128,6 +130,17 @@ namespace CryptoProExport.Tests
             string guide = GuideText.For(language);
             Assert.Contains(@"%LOCALAPPDATA%\CryptoProExport\logs", guide, StringComparison.Ordinal);
             Assert.Contains(language == "ru" ? "закрытый ключ" : "private key", guide, StringComparison.Ordinal);
+        }
+
+        [Theory]
+        [InlineData("ru", "Рутокен ЭЦП", "аппаратный ключ не копируется")]
+        [InlineData("en", "Rutoken ECP", "hardware key is not")]
+        public void Guide_StatesRutokenEcpHardwareBoundary(string language, string tokenName,
+            string phrase)
+        {
+            string guide = GuideText.For(language);
+            Assert.Contains(tokenName, guide, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains(phrase, guide, StringComparison.OrdinalIgnoreCase);
         }
 
         [Theory]

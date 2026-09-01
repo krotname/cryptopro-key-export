@@ -14,21 +14,30 @@ on:
 env:
   PORTABLE_RID: win-x86
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Сборка, тесты, портативный exe
-    # Windows-job'ы идут на собственном раннере правообладателя
+    # PR владельца и доверенные push/tag jobs идут на раннере правообладателя;
+    # fork, Dependabot и PR других акторов — на одноразовом GitHub-hosted.
     # (adler-white-1w-cryptopro). Переменная репозитория CI_RUNS_ON_WINDOWS
     # временно переводит их на другой раннер, когда собственный недоступен:
     # например ["windows-latest"]. Она отдельная от CI_RUNS_ON, потому что
     # та переключает Linux-job релиза и значения у них несовместимы.
+    if: ${{ github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == github.repository_owner && github.actor == github.repository_owner && github.triggering_actor == github.repository_owner) }}
     runs-on: ${{ fromJSON(vars.CI_RUNS_ON_WINDOWS || '["self-hosted","windows","adler-white-1w","cryptopro"]') }}
     timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
     outputs:
       sha256: ${{ steps.portable.outputs.sha256 }}
       version: ${{ steps.portable.outputs.version }}
+      artifact_digest: ${{ steps.portable_artifact.outputs.digest }}
 
-    steps:
+    steps: &build_steps
       - uses: actions/checkout@v4
 
       - name: Установить .NET
@@ -166,20 +175,46 @@ jobs:
           }
           if ($bad) { throw "Коды возврата разошлись с контрактом: $($bad -join '; ')" }
 
-      - name: Выложить портативный exe
-        uses: actions/upload-artifact@v4
+      - name: Сохранить портативный exe в приватном GHCR
+        id: portable_artifact
+        if: ${{ github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == github.repository_owner && github.actor == github.repository_owner && github.triggering_actor == github.repository_owner) }}
+        uses: ./.github/actions/publish-ci-artifact
         with:
           name: CryptoProExport-portable-${{ env.PORTABLE_RID }}
           path: |
             publish/CryptoProExport.exe
             publish/CryptoProExport.exe.sha256
-          retention-days: 30
+          if-no-files-found: error
+          retention-days: '7'
+          token: ${{ github.token }}
+          package-id: ${{ vars.CI_ARTIFACT_PACKAGE_ID }}
+
+      - name: Однодневный fallback для внешнего pull request
+        if: ${{ github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name != github.repository || github.event.pull_request.user.login != github.repository_owner || github.actor != github.repository_owner || github.triggering_actor != github.repository_owner) }}
+        uses: actions/upload-artifact@v4
+        continue-on-error: true
+        with:
+          name: CryptoProExport-portable-${{ env.PORTABLE_RID }}
+          path: |
+            publish/CryptoProExport.exe
+            publish/CryptoProExport.exe.sha256
+          retention-days: 1
+
+  build-untrusted:
+    name: Сборка, тесты, портативный exe (недоверенный PR)
+    if: ${{ github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name != github.repository || github.event.pull_request.user.login != github.repository_owner || github.actor != github.repository_owner || github.triggering_actor != github.repository_owner) }}
+    runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps: *build_steps
 
   # Другие архитектуры собираем, чтобы ловить регрессии компиляции.
   # Портативной сборкой остаётся x86 — только в ней работает вшитый rtCOMLite.
   architectures:
     name: Сборка под ${{ matrix.rid }}
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON_WINDOWS || '["self-hosted","windows","adler-white-1w","cryptopro"]') }}
+    # Для pull request действует та же изоляция от постоянного раннера.
+    runs-on: ${{ fromJSON(github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name != github.repository || github.event.pull_request.user.login != github.repository_owner || github.actor != github.repository_owner || github.triggering_actor != github.repository_owner) && '["windows-latest"]' || (vars.CI_RUNS_ON_WINDOWS || '["self-hosted","windows","adler-white-1w","cryptopro"]')) }}
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -212,12 +247,81 @@ jobs:
     runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","linux","adler"]') }}
     permissions:
       contents: write
+      packages: read
 
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Установить ORAS 1.3.3
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d
         with:
-          name: CryptoProExport-portable-win-x86
-          path: dist
+          version: 1.3.3
+
+      - name: Скачать портативную сборку по digest
+        shell: bash
+        env:
+          ARTIFACT_DIGEST: ${{ needs.build.outputs.artifact_digest }}
+          GHCR_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          [[ "${ARTIFACT_DIGEST}" =~ ^sha256:[0-9a-f]{64}$ ]] || {
+            echo 'Некорректный или пустой digest сборки' >&2
+            exit 1
+          }
+
+          pull_dir="$(mktemp -d)"
+          extract_dir="$(mktemp -d)"
+          registry_config="${pull_dir}/registry.json"
+          cleanup() {
+            oras logout ghcr.io --registry-config "${registry_config}" >/dev/null 2>&1 || true
+            rm -rf -- "${pull_dir}" "${extract_dir}"
+          }
+          trap cleanup EXIT
+
+          printf '%s' "${GHCR_TOKEN}" | oras login ghcr.io \
+            --username "${GITHUB_ACTOR}" \
+            --password-stdin \
+            --registry-config "${registry_config}"
+
+          reference="ghcr.io/${GITHUB_REPOSITORY,,}-ci-artifacts@${ARTIFACT_DIGEST}"
+          oras pull "${reference}" --output "${pull_dir}" --registry-config "${registry_config}"
+
+          archive="$(python3 - "${pull_dir}/manifest.json" "${GITHUB_REPOSITORY}" "${GITHUB_SHA}" <<'PY'
+          import hashlib
+          import json
+          import pathlib
+          import sys
+          import tarfile
+
+          manifest_path = pathlib.Path(sys.argv[1])
+          expected_repository = sys.argv[2]
+          expected_commit = sys.argv[3]
+          manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+          archive_name = manifest['archive']
+          if pathlib.PurePosixPath(archive_name).name != archive_name:
+              raise SystemExit('Unsafe archive name in OCI manifest')
+          if manifest['repository'] != expected_repository:
+              raise SystemExit('OCI repository metadata mismatch')
+          if manifest['commit'] != expected_commit:
+              raise SystemExit('OCI source commit mismatch')
+          archive_path = manifest_path.parent / archive_name
+          actual = hashlib.sha256(archive_path.read_bytes()).hexdigest()
+          if actual != manifest['archiveSha256']:
+              raise SystemExit('OCI payload SHA-256 mismatch')
+          with tarfile.open(archive_path, mode='r:gz') as tar:
+              for member in tar.getmembers():
+                  member_path = pathlib.PurePosixPath(member.name)
+                  if member_path.is_absolute() or '..' in member_path.parts:
+                      raise SystemExit(f'Unsafe archive member path: {member.name}')
+                  if not (member.isfile() or member.isdir()):
+                      raise SystemExit(f'Unsafe archive member type: {member.name}')
+          print(archive_name)
+          PY
+          )"
+
+          tar -xzf "${pull_dir}/${archive}" -C "${extract_dir}"
+          install -d dist
+          cp "${extract_dir}/publish/CryptoProExport.exe" dist/
+          cp "${extract_dir}/publish/CryptoProExport.exe.sha256" dist/
 
       # Публикуем через REST API, а не через gh CLI: на собственном раннере gh не
       # установлен, и job падал на каждом теге с «gh: command not found» (релиз v1.3.1

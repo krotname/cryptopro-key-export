@@ -1,10 +1,11 @@
 CryptoPro Key Export — manual
 ==================================================================
 
-The program copies a CryptoPro key container off a Rutoken, lifts the
-ban on exporting the private key and writes the result out as PKCS#12
-(.pfx). It is meant for the owner of the keys: backup, migration to
-another machine, conversion.
+The program copies a file-backed CryptoPro container off a supported
+token, lifts the private-key export ban and writes PKCS#12 (.pfx). A
+Rutoken ECP hardware key is not copied: only diagnostics and public
+certificates, when present, are available for ECP. It is meant for the
+owner of the keys: backup, migration or conversion.
 
 Everything needed lives inside the exe. The only separate requirement
 is CryptoPro CSP — a licensed product that cannot be embedded.
@@ -18,11 +19,16 @@ interface languages fall back to the English text.
 1. WHAT YOU NEED ON THE MACHINE
 ------------------------------------------------------------------
   * Windows with CryptoPro CSP installed (tested on 5.0 R2).
-  * To read from a token — a Rutoken S / Lite. A Rutoken ECP 2.0 with
-    a hardware non-extractable key cannot be exported this way: the
-    key never physically leaves the chip.
-  * Nothing to download: p12utility and rtCOMLite are embedded in the
-    program and unpack themselves on first use.
+  * Private-key operations need a license (.jws). This machine's
+    fingerprint for obtaining one is shown by the fingerprint command.
+  * To read from a token — Rutoken S / Lite, JaCarta LT / PRO or ESMART.
+    A Rutoken
+    ECP 2.0 with a hardware non-extractable key cannot be exported
+    this way: the key never physically leaves the chip.
+  * Install the vendor driver/client for the exact token. It supplies
+    the PC/SC reader and PKCS#11 metadata used for safe routing.
+  * No helper utilities to download: p12utility and rtCOMLite are
+    embedded and unpack themselves on first use.
 
   Check readiness: the «Refresh list» button or the command
   CryptoProExport.exe deps
@@ -30,20 +36,29 @@ interface languages fall back to the English text.
 
 2. HOW TO WORK: THE KEY IS STILL ON THE TOKEN
 ------------------------------------------------------------------
-  1) Insert the Rutoken.
-  2) «Refresh list» — the program shows the containers visible to
-     CryptoPro and the ones found on the tokens.
-  3) Fill in the «Destination folder» — the files land there.
-  4) «Make exportable» — one click does everything:
-       copies the containers off the token (6 *.key per container),
+  1) Insert a supported token.
+  2) «Refresh list» shows its type, capabilities, CryptoPro containers
+     and public certificates. For Rutoken ECP this is the boundary:
+     its hardware private key is not copied.
+  3) For a file-backed token row, fill in «Destination folder».
+  4) «Make exportable» then does everything in one click:
+       copies the container off the token (6 *.key files),
        extracts the certificates through CryptoAPI,
        lifts the ban on exporting the private key.
      The original token is not modified.
-  5) «Check key» — confirm that the ban is really gone.
+  5) «View container» — see its details and both key permissions.
   6) «Export to PFX» — get a .pfx with the private key.
 
-  PIN: leave the field empty and the system window will ask for it.
-  If the token still has the factory PIN, 12345678 is used.
+  PIN: enter the PIN of the selected token. The program uses a factory
+  PIN automatically only when the driver confirms that state:
+  12345678 for Rutoken and ESMART, 1234567890 for JaCarta LT.
+  One entered PIN is never sent to several readers: select an APDU row
+  or use tokenexport/tokenfull with the exact reader name.
+  eToken PRO (Java) / PRO also requires --container jacartapro_XX. Copy
+  technical id from the [APDU ...] line printed by list. A container
+  name is never used for selection; only the exact index is read.
+  Global export/full are blocked before protected reads with PRO attached:
+  use an addressed command or select the exact APDU row in the GUI.
 
 
 3. HOW TO WORK: THE CONTAINER IS ALREADY IN A FOLDER
@@ -52,10 +67,11 @@ interface languages fall back to the English text.
 
   1) «Install into CryptoPro» — pick the container folder. It is
      copied into the CSP store and the program verifies that
-     CryptoPro really sees the container.
-  2) «Refresh list» — the container shows up in the list.
+     CryptoPro really sees it. A discovered certificate is bound
+     specifically to the HDIMAGE copy.
+  2) «Refresh list» — the HDIMAGE copy gets its own row.
   3) «Extract certificate», then «Make exportable».
-  4) «Check key» and «Export to PFX».
+  4) «View container» and «Export to PFX».
 
   About the container name: CryptoPro matches the name against the
   contents, so renaming a copy does not always work. If it fails,
@@ -65,36 +81,69 @@ interface languages fall back to the English text.
 
 4. BUTTONS
 ------------------------------------------------------------------
-  Refresh list          show the containers (CSP + tokens)
-  Export from token     copy containers to disk, ban left in place
-  Extract certificate   save the .cer of the selected container
-  Make exportable       the whole cycle in one click
-  Check key             is the export ban lifted
-  Install into CryptoPro  put an extracted folder into the CSP store
-  Export to PFX         write the container out as .pfx
-  Extract key (PEM)     the private key as PKCS#8/PEM, no CSP
-  Build PFX (no CSP)    a .pfx from the container folder, for OpenSSL
-  Log                   open the folder with the program logs
-  Help                  this window
+  The buttons are laid out in groups; the caption on the left of each
+  row says what the row is for.
 
-  Every button has a tooltip — hold the cursor over it.
+  List:
+    Refresh list          show the containers (CSP + tokens)
+    View container        details and whether the export ban is lifted
 
-  Two buttons produce a .pfx, and the files are DIFFERENT. "Export to
-  PFX" goes through CryptoPro's certmgr, and CryptoPro will take that
-  file back. "Build PFX (no CSP)" builds the file on its own, without
-  CryptoPro — but CryptoPro will NOT import it: it is meant for
-  OpenSSL and other software. For a backup you plan to restore into
-  CryptoPro, take the first one.
+  Steps (this is the order of the work):
+    Export from token     copy an S/Lite file-backed container
+    Extract certificate   save the .cer of the selected container
+    Make exportable       the whole cycle for a file container
+    Install into CryptoPro  put an extracted folder into the CSP store
+
+  Result:
+    Save to PFX...        build a .pfx; the dialog asks which way
+    Extract key (PEM)     the private key as PKCS#8/PEM, no CSP
+
+  Service:
+    License               install a license (.jws) and verify it
+    Show log              expand the log pane at the bottom
+    Log                   open the folder with the program logs
+    Help                  this window
+    Cancel                stop the operation that is running
+
+  The log pane at the bottom starts collapsed: the status bar is
+  normally enough — it shows what is running and how the previous
+  step ended, and the whole window goes to the list. "Show log"
+  expands the full text and remembers the height you left it at.
+
+  The list has four columns. "Location" is where the carrier is: the
+  reader name, HDIMAGE, or a dash when CryptoPro sees the container but
+  does not say on which device. "How it is read" is the backend: CSP,
+  PKCS#11, APDU, PC/SC or rtCOMLite. Then the container name and the
+  details. Clicking a header sorts by that column: ascending, descending,
+  and back to the order the carriers were walked in.
+
+  Every button has a tooltip — hold the cursor over it. A button that
+  does not fit the selected row is greyed out, and its own tooltip
+  says why.
+
+  "Save to PFX..." asks which file you need, and the files are
+  DIFFERENT. "Export to PFX" goes through CryptoPro's certmgr, and
+  CryptoPro will take that file back; it works on the row selected in
+  the list. "Build PFX (no CSP)" builds the file on its own from the
+  extracted container folder — but CryptoPro will NOT import it: it is
+  meant for OpenSSL and other software. For a backup you plan to
+  restore into CryptoPro, take the first one. The dialog spells the
+  difference out next to each button, and a way that is not available
+  right now is greyed out with the reason beside it.
 
 
 5. COMMAND LINE
 ------------------------------------------------------------------
   deps                                check the dependencies
   list                                list the containers
-  token [folder]                      diagnose the token (PKCS#11)
+  token [folder]                      type/capabilities/certificates
   extractcert <container> <folder>    extract the .cer
   checkexport <container>             check the export ban
   export <folder> [pin]               copy containers off tokens
+  tokenexport <reader> <dir> [pin] [--container <id>]
+                                      copy from the selected token
+  tokenfull <reader> <dir> [pin] [--container <id>]
+                                      token + all remaining steps
   keyexport <folder> <cert.cer> [pw]  lift the export ban
   install <folder> [name]             install a container into CSP
   installed                           show installed containers
@@ -104,9 +153,15 @@ interface languages fall back to the English text.
   extractpfx <folder> <file.pfx> <pw> build a PKCS#12 for OpenSSL;
                                       then [container-pw] [cert.cer]
   liteexport <reader> <dir> [pin]     read a Lite container by APDU + recover
-  full <folder> [cert.cer] [pin]      off the token + all the rest
+  full <folder> [cert.cer] [pin]      file-backed Rutoken S cycle
+  pins                                factory PIN codes of carriers
+  fingerprint                         this machine's fingerprint
+  license [file|status]               install a license or show status
   help                                this manual
   --lang <code>                       interface language
+
+  export/full do not copy a Rutoken ECP hardware private key. The
+  token command remains safe diagnostics for ECP.
 
   Exit codes: 0 — success, 1 — bad arguments, 2 — not done in
   substance (no CSP, container not found or not visible), 3 —
@@ -116,8 +171,8 @@ interface languages fall back to the English text.
   2 — no key was found in the container, 3 — at least one found key
   is still locked or its permissions could not be read.
 
-  For export and full, code 2 means "no container was taken off".
-  A partially completed full returns 3. For token, code 2 means that
+  For export, full and tokenfull, code 2 means "no container was taken off".
+  A partially completed full or tokenfull returns 3. For token, code 2 means
   no token was found or no certificate was available for the requested
   output folder. A script should treat only 0 as success.
 
@@ -140,6 +195,15 @@ interface languages fall back to the English text.
       The token is not inserted, its drivers are missing, or another
       program is holding it.
 
+  Fewer PKCS#11 devices than readers
+      Not an error: readers are counted separately, and PKCS#11
+      shows only the carriers that at least one installed library
+      reported. The rest are listed on a PC/SC line with the vendor
+      name and ATR. The reason varies: the vendor library may be
+      missing entirely (as with BIFIT carriers) or present but
+      failing to load or to enumerate slots — its own error is then
+      written above in the same log.
+
   Wrong PIN, PIN locked
       The program spells such codes out in words. After several wrong
       attempts the PIN gets locked — the token administrator unlock
@@ -153,6 +217,10 @@ interface languages fall back to the English text.
       The ban is still in place — press «Make exportable». For a
       container taken off a token this is done on the copy in the
       destination folder, not on the token itself.
+
+  «Container is already exportable»
+      The ban does not need to be lifted again. View the container or
+      continue with export to PFX.
 
   Logs of every run: %LOCALAPPDATA%\CryptoProExport\logs
   Passwords are never written there. That file is handy to attach to

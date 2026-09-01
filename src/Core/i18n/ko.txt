@@ -13,18 +13,14 @@ common.none = 없음
 files.all = 모든 파일
 
 # --- 설정 패널 ---
-field.p12 = p12utility.exe:
-field.p12.placeholder = 내장 사본 — 아무것도 지정할 필요 없음
 field.dest = 대상 폴더:
 field.pin = PIN(선택):
 field.pin.hint = 비우면 → 입력 창
 field.lang = 인터페이스 언어:
 
-tip.p12 = CryptoPro의 p12utility 도구 경로 — 키 내보내기 금지를 푸는 것이 바로 이 도구입니다.\n비워 두세요. 도구 사본이 이미 프로그램에 들어 있고 스스로 풀립니다.\np12utility의 다른 버전이 필요할 때만 입력하세요.
-tip.p12.browse = 내장 사본 대신 다른 p12utility.exe를 선택합니다.
 tip.dest = 결과를 둘 곳: 꺼낸 컨테이너 폴더(*.key)와 인증서 파일(.cer).\n주의: 이것은 개인 키의 사본입니다 — 비밀로 보관하세요.
 tip.dest.browse = 대상 폴더를 선택합니다.
-tip.pin = Rutoken 사용자 PIN.\n비우면 → 시스템 창이 PIN을 묻습니다(토큰에 공장 출하 PIN이 남아 있으면 12345678이 쓰입니다).\n글자는 가려지며, 값은 어디에도 저장되지 않습니다.
+tip.pin = Rutoken 사용자 PIN.\n비우면 → 시스템 창이 PIN을 묻습니다(토큰에 공장 출하 PIN이 남아 있으면 12345678이 쓰입니다).\n보이지 않는 상태에서 잘못 입력하지 않도록 글자는 표시됩니다. 옆 버튼으로 가릴 수 있으며, 값은 어디에도 저장되지 않습니다.
 tip.lang = 인터페이스, 도움말 풍선, 메시지의 언어.\n선택은 기억되어 다음 실행부터 적용됩니다.\n명령줄에서도 같습니다: --lang ko
 
 # --- 단추 ---
@@ -32,29 +28,55 @@ btn.refresh = 목록 새로 고침
 btn.export = 토큰에서 내보내기
 btn.extract = 인증서 꺼내기
 btn.full = 내보내기 가능하게 만들기
-btn.check = 키 확인
+btn.check = 컨테이너 보기
 btn.install = CryptoPro에 설치
 btn.pfx = PFX로 내보내기
 btn.logs = 로그
+btn.logpane.show = Показать журнал
+btn.logpane.hide = Скрыть журнал
 btn.help = 도움말
 btn.cancel = 취소
 
+# --- подписи рядов кнопок (только по-русски, AGENTS п. 17) ---
+group.list = Список:
+group.steps = Шаги:
+group.result = Результат:
+group.service = Служебное:
+
+# --- выбор способа .pfx (только по-русски, AGENTS п. 17) ---
+btn.pfx.choice = Сохранить в PFX…
+tip.pfx.choice = Собрать файл .pfx с закрытым ключом. Способа два, и файлы получаются разные —\nвыбор со всеми пояснениями появится по нажатию:\n  • через КриптоПро (certmgr) — такой файл КриптоПро потом примет обратно;\n  • без КриптоПро, из папки снятого контейнера — для OpenSSL и других программ.
+dlg.pfx.choice.title = Сохранить в PFX
+dlg.pfx.choice.prompt = Оба способа дают файл .pfx с закрытым ключом, но это разные файлы. Выберите нужный.
+dlg.pfx.choice.csp = Такой файл КриптоПро потом примет обратно — берите его, если .pfx нужен как резервная копия ключа для КриптоПро.
+
 tip.refresh = 1단계. 키 컨테이너 목록을 표시합니다:\n  • CryptoPro CSP가 보는 것(꽂혀 있는 토큰의 것 포함);\n  • 연결된 Rutoken에서 직접 찾은 것.\n아무것도 바꾸지 않고 읽기만 합니다. 여기서 시작하면 편합니다.
-tip.export = 2단계. 연결된 모든 Rutoken에서 컨테이너를 대상 폴더로 꺼냅니다\n(컨테이너당 *.key 파일 6개). CSP를 거치지 않고 토큰 메모리를 직접 읽으므로\n내보내기 금지가 걸려 있어도 동작합니다. 토큰과 그 안의 자료는 바뀌지 않습니다.\n꺼낸 사본의 키는 여전히 내보낼 수 없습니다 — 그 일은 「내보내기 가능하게 만들기」가 합니다.
+tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
+tip.export = 2단계. Rutoken S / Lite, JaCarta LT 및 ESMART에서 컨테이너를 대상 폴더로 꺼냅니다\n(컨테이너당 *.key 파일 6개). CSP를 거치지 않고 토큰 메모리를 직접 읽으므로\n내보내기 금지가 걸려 있어도 동작합니다. 토큰과 그 안의 자료는 바뀌지 않습니다.\n꺼낸 사본의 키는 여전히 내보낼 수 없습니다 — 그 일은 「내보내기 가능하게 만들기」가 합니다.
 tip.extract = 3단계. 목록에서 선택한 컨테이너의 인증서를 .cer 파일로 저장합니다\n(공개 자료이며 CryptoAPI를 통해 정상적으로 꺼냅니다).\n목록에서 선택한 컨테이너, 꽂힌 토큰, CSP가 컨테이너를 보는 상태가 필요합니다.\n내보내기 금지를 풀려면 p12utility에 바로 이 인증서가 필요합니다.
 tip.full = 한 번의 클릭으로 전부: 토큰에서 컨테이너 꺼내기 → 인증서 꺼내기 →\n개인 키의 내보내기 금지 풀기(p12utility --cprepair --keyexport).\n결과: 대상 폴더에 내보낼 수 있는 키를 가진 컨테이너 사본이 생깁니다\n(백업, 이전, PFX 변환에 쓸 수 있습니다).\n원래 토큰은 바뀌지 않으며, 사본의 원래 header.key는 header.key.backup으로 남습니다.
-tip.check = 목록에서 선택한 컨테이너를 확인합니다: 개인 키의 내보내기 금지가 풀렸는지.\n프로그램은 키 권한(KP_PERMISSIONS)을 읽을 뿐, 키 자체는 절대 내보내지 않습니다.\n이렇게 「내보내기 가능하게 만들기」가 실제로 통했는지 확인합니다.
+tip.check = 선택한 컨테이너의 이름, 위치, 세부 정보와 두 키의 권한을 표시합니다.\n프로그램은 키 권한(KP_PERMISSIONS)을 읽을 뿐, 키 자체는 절대 내보내지 않습니다.\n이렇게 「내보내기 가능하게 만들기」가 실제로 통했는지 확인합니다.
 tip.install = 토큰에서 꺼낸 컨테이너 폴더(*.key 파일 6개)를 CryptoPro에 설치합니다 —\n즉 CSP 저장소로 복사합니다. 그 뒤 컨테이너가 목록에 나타나고 토큰 없이도\n동작합니다: 인증서를 꺼내거나 PFX로 내보낼 수 있습니다.\n이름 변경은 필수가 아닙니다. CryptoPro는 이름을 컨테이너 내용과 대조하므로\n이름을 바꾼 사본을 항상 받아들이지는 않습니다. 프로그램이 결과를 확인해\nCSP가 정말 컨테이너를 보았는지 알려 줍니다.
-tip.pfx = 목록에서 선택한 컨테이너를 PKCS#12(.pfx) 파일로 내보냅니다 — 인증서와\n개인 키를 함께, 다른 시스템으로 옮기기 위한 것입니다.\n필요 조건: 내보내기 금지가 이미 풀려 있을 것(「키 확인」이 「내보내기 가능」으로 표시)\n그리고 CryptoPro CSP가 설치되어 있을 것(그 certmgr를 사용합니다).\n.pfx 암호는 따로 묻습니다.
+tip.pfx = 목록에서 선택한 컨테이너를 PKCS#12(.pfx) 파일로 내보냅니다 — 인증서와\n개인 키를 함께, 다른 시스템으로 옮기기 위한 것입니다.\n필요 조건: 내보내기 금지가 이미 풀려 있을 것(「컨테이너 보기」가 「내보내기 가능」으로 표시)\n그리고 CryptoPro CSP가 설치되어 있을 것(그 certmgr를 사용합니다).\n.pfx 암호는 따로 묻습니다.
 tip.logs = 프로그램 작업 로그가 있는 폴더를 엽니다.\n실행할 때마다 별도의 파일이 기록됩니다 — 잘 안 되었을 때\n질문에 첨부하기 좋습니다. 암호는 로그에 남지 않습니다.
+tip.logpane = Развернуть или свернуть журнал внизу окна.\nПо умолчанию он свёрнут: в строке состояния видно, что идёт сейчас и чем\nзакончился предыдущий шаг, а списку достаётся всё окно. Полный текст нужен\nпри разборе — тогда журнал и разворачивают.\nСоседняя кнопка «Журнал» открывает папку с файлами прошлых запусков.
 tip.help = 내장 설명서: 어디서 시작할지, 각 단추가 무엇을 하는지,\n콘솔 모드 명령과 흔한 오류에 대한 설명.\n프로그램 안에 있습니다 — 인터넷도 외부 파일도 필요 없습니다.
 tip.cancel = 진행 중인 작업을 중단합니다.\n작업은 가장 가까운 단계에서 멈춥니다. 토큰 호출이나 이미 시작된 CryptoPro\n유틸리티는 먼저 끝내야 하며, 그때 실행 중인 유틸리티는 강제로 종료됩니다.\n이미 저장된 파일은 그대로 남습니다.
 
 # --- 컨테이너 목록과 로그 ---
 col.location = 위치
+col.backend = Способ чтения
 col.container = 컨테이너
 col.details = 세부 정보
-tip.list = 발견된 키 컨테이너.\n「위치」= CSP(CryptoPro가 봄) 또는 Rutoken 이름(토큰에서 직접 읽음).\n행을 선택하세요 — 「인증서 꺼내기」 단추는 선택한 컨테이너에 대해 동작합니다.
+tip.list = 발견된 키 컨테이너.\n행을 선택하세요 — 「인증서 꺼내기」 단추는 선택한 컨테이너에 대해 동작합니다.
+tip.list.dblclick = Двойной клик по строке равносилен кнопке «Посмотреть контейнер».
+tip.list.columns = «Расположение» — где носитель: имя считывателя, HDIMAGE или прочерк,\nесли КриптоПро видит контейнер, но не сообщает устройство. «Способ чтения» —\nчем строка прочитана: CSP, PKCS#11, APDU, PC/SC или rtCOMLite.\nКлик по заголовку сортирует по колонке: по возрастанию, по убыванию и обратно\nв порядок обхода носителей.
+hint.need.row = Сейчас недоступно: в списке не выбрана строка.\nВыберите строку контейнера, с которым нужно работать.
+hint.row.device = Сейчас недоступно: в выделенной строке только устройство, контейнера в ней нет.\nВыберите строку с именем контейнера.
+hint.row.csp = Сейчас недоступно: контейнер этой строки читается через КриптоПро CSP, а не напрямую с носителя.\nВыберите строку [APDU] или rtCOMLite либо снимите выделение, чтобы обойти все поддерживаемые носители.\nПрава ключей выбранной строки показывает «Посмотреть контейнер».
+hint.row.pkcs11 = Сейчас недоступно: строка PKCS#11 показывает только публичные объекты носителя, файлов контейнера через неё не видно.\nВыберите строку [APDU] или rtCOMLite либо снимите выделение, чтобы обойти все поддерживаемые носители.
+hint.row.certonly = Сейчас недоступно: в выделенной строке только сертификат — парного контейнера КриптоПро на носителе для него нет.\nВыберите строку с именем контейнера; сам сертификат сохраняет «Извлечь сертификат».
+hint.cert.none = Сейчас недоступно: в выделенной строке сертификата нет — PKCS#11 показывает «нет».\nВыберите строку, в которой сертификат есть.
 tip.log = 실행 로그: p12utility 명령, 토큰 작업 단계, 오류.\n텍스트는 선택해 복사할 수 있습니다(Ctrl+C) — 문제를 분석할 때 유용합니다.
 
 # --- 상태 표시줄 ---
@@ -129,6 +151,8 @@ diag.rtcom.system = 시스템에 등록된 구성 요소
 diag.rtcom.missing = 사용할 수 없음
 diag.rtcom.warn = 주의: 내장 사본은 32비트라 이 프로세스에 올라가지 않습니다 — 구성 요소를 설치하지 않고 Rutoken을 쓰려면 x86 이식형 빌드를 사용하세요
 diag.csp.ok = CryptoPro CSP: 설치됨, 공급자 {0}
+csp.alg.2012 = GOST R 34.10-2012, {0}비트
+csp.alg.2001 = GOST R 34.10-2001
 diag.csp.missing = CryptoPro CSP: 찾지 못함 — CryptoPro CSP를 설치하세요(유일한 외부 의존성입니다)
 diag.prov = {0}: {1} — {2}
 diag.prov.yes = 사용 가능
@@ -158,7 +182,10 @@ pipe.keyexport.fail = 「{0}」의 keyexport 오류: {1} {2}
 token.connect = 스마트카드 서비스에 연결하는 중…
 token.found = 찾은 장치 수: {0}
 token.open = 토큰을 여는 중: {0}
-token.skip.smartcard = {0} 건너뜀: 스마트카드 토큰, 컨테이너 파일 메모리 없음
+token.skip.smartcard = {0} 건너뜀: 스마트카드형 Rutoken(Lite/ECP)이며 rtCOMLite 파일 메모리가 없습니다. Lite 컨테이너는 직접 APDU로 읽고, ECP 하드웨어 키는 아예 복사하지 않습니다
+token.skip.covered = {0} 건너뜀: 이 매체는 위에서 PKCS#11/APDU로 이미 읽었으며 rtCOMLite 파일 순회로 더할 것이 없습니다
+token.skip.foreign = {0} 건너뜀: Rutoken이 아니며, rtCOMLite 파일 메모리는 Rutoken S API라 다른 제조사 카드에는 적용되지 않습니다
+token.skip.direct = {0} 건너뜀: Rutoken S는 직접 APDU로 읽습니다. 비어 있지 않은 매체에서 rtCOMLite는 Unsupported function을 반환하거나 프로세스를 무너뜨립니다
 token.rtcom.loadfail = 내장 rtCOMLite를 불러오지 못했습니다({0}). 시스템에 등록된 것을 시도합니다
 token.rtcom.mismatch = 내장 rtCOMLite가 맞지 않습니다({0}). 시스템에 등록된 것을 시도합니다
 token.rtcom.extractfail = 내장 rtCOMLite를 풀지 못했습니다({0}). 시스템에 등록된 것을 시도합니다
@@ -181,6 +208,7 @@ tool.cancelled = 취소로 인해 {0}이(가) 중지되었습니다
 err.certmgr.notfound = certmgr를 찾지 못했습니다
 err.container.name = 컨테이너 이름이 지정되지 않았습니다
 err.container.nokey = 컨테이너 「{0}」을(를) 찾지 못했거나 필요한 종류의 키가 없습니다
+err.container.exportable = 컨테이너는 이미 내보낼 수 있습니다
 err.key.locked = 개인 키를 내보낼 수 없습니다 — 먼저 금지를 푸세요(「{0}」). {1}
 err.cert.extract = 컨테이너에서 인증서를 꺼내지 못했습니다
 err.pfx.missing = certmgr는 성공이라고 했지만 파일이 만들어지지 않았습니다: {0}
@@ -250,11 +278,12 @@ cli.lang.missing = --lang에는 언어 코드가 필요합니다. 사용할 수 
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = 있음
 common.certonly = 인증서만
-pkcs11.nolib = PKCS#11 라이브러리를 찾을 수 없습니다(rtPKCS11ECP.dll, jcPKCS11-2.dll) — Rutoken 드라이버 또는 JaCarta Unified Client를 설치하세요
+pkcs11.nolib = PKCS#11 라이브러리를 찾을 수 없습니다(rtPKCS11ECP.dll, jcPKCS11-2.dll, isbc_pkcs11_main.dll) — Rutoken 드라이버, JaCarta Unified Client 또는 ESMART PKI Client를 설치하세요
 pkcs11.loadfail = PKCS#11 라이브러리를 불러오지 못했습니다: {0}
 pkcs11.enumfail = PKCS#11 슬롯을 열거하지 못했습니다: {0}
 pkcs11.tokenfail = 토큰 «{0}»: {1}
 pkcs11.readfail = 토큰 객체를 읽지 못했습니다: {0}
+pkcs11.capfail = PKCS#11 기능 프로필을 읽지 못했습니다: {0}
 kind.rutoken.s = Rutoken S (파일 메모리)
 kind.rutoken.lite = Rutoken Lite (스마트카드)
 kind.rutoken.ecp = Rutoken ECP (스마트카드)
@@ -276,6 +305,19 @@ cli.list.pkcs11 = 토큰 (PKCS#11):
 cli.token.none = PKCS#11 토큰을 찾을 수 없습니다 (토큰이 삽입되어 있고 Rutoken 드라이버가 설치되었는지 확인하세요).
 cli.token.line = {0}: {1} [{2}], 일련번호 {3}, 펌웨어 {4}
 cli.token.pin = PIN: {0}
+cap.profile.unknown = 메커니즘으로는 Rutoken ECP 세대를 판별할 수 없습니다
+cap.profile.unread = 메커니즘 목록을 읽지 못했습니다 — 세대 판별 불가
+cap.profile.ecp2 = 메커니즘이 Rutoken ECP 2.x와 같습니다
+cap.profile.ecp3 = 메커니즘이 Rutoken ECP 3.0과 같습니다
+cli.token.capabilities = 하드웨어 {0}, 메커니즘 {1}, {2}, RSA HW 키 생성 {3}, ECDSA HW {4}, GOST HW {5}
+cli.token.rsa.bits = 최대 {0}비트
+cli.token.memory = 메모리: {0}
+cli.token.memory.split = 메모리: 공개 — {0}, 비공개 — {1}
+cli.token.memory.side = {0} KB, 여유 {1} KB
+cli.token.memory.side.nofree = {0} KB (여유 용량을 토큰이 알리지 않음)
+cli.token.memory.side.nototal = 여유 {0} KB (전체 용량을 토큰이 알리지 않음)
+cli.token.memory.side.none = 토큰이 알리지 않음
+token.boundary.ecp = Rutoken ECP의 하드웨어 개인 키는 복사되지 않습니다. 진단과 존재하는 공개 인증서만 사용할 수 있습니다.
 cli.token.container = 컨테이너 «{0}», 인증서: {1}
 cli.token.certonly = 인증서 «{0}» (CryptoPro 컨테이너 없음)
 cli.token.cert.saved = CSP 없이 인증서 저장됨: {0}
@@ -319,9 +361,78 @@ err.pfx.nocert = 컨테이너에도 인자에도 인증서가 없습니다 — .
 err.pfx.badcert = 인증서 파일을 256비트 GOST 키의 X.509로 읽지 못했습니다
 err.pfx.certmismatch = 인증서가 다른 키의 것입니다: 공개 키가 일치하지 않습니다
 cli.usage.liteexport = APDU로 Rutoken Lite 컨테이너를 읽고 키를 복구합니다(CSP 불필요)
+cli.usage.tokenexport = 선택한 지원 토큰의 컨테이너를 디스크로 복사합니다
+cli.usage.tokenfull = 선택한 토큰에서 꺼내기 + 자동 .cer + keyexport
 err.lite.none = {0}에서 APDU로 CryptoPro 컨테이너를 찾을 수 없습니다
 err.lite.pin = 카드가 PIN을 거부했습니다({0}). PIN을 확인하세요. 추측은 허용되지 않습니다
-log.export.directonly = The selected row does not expose a readable private-key container. Select an APDU/rtCOMLite row, or clear the selection to scan all Rutoken S devices.
+err.direct.pin.scope = 하나의 PIN을 여러 리더에 보낼 수 없습니다. 정확한 리더를 선택하세요
+log.export.directonly = The selected row does not expose a readable private-key container. Select an APDU/rtCOMLite row, or clear the selection to scan all supported tokens.
 dlg.confirm.full.selected = Only the selected hardware container will be copied, its certificates extracted, and the key export ban lifted.\n\nContinue?
 pipe.lite.normalized = Lite container «{0}» converted to the HDIMAGE file format
 pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAGE format: {1}
+
+# --- лицензирование ---
+license.status.valid = 라이선스가 유효합니다 ({0})
+license.status.invalid = 라이선스가 유효하지 않습니다
+license.status.none = 설치된 라이선스가 없습니다
+license.reason.product = 다른 제품용으로 발급된 라이선스입니다: {0}
+license.reason.platform = 다른 플랫폼용으로 발급된 라이선스입니다: {0}
+license.reason.machine = 다른 컴퓨터용으로 발급된 라이선스입니다: 지문이 일치하지 않습니다
+license.reason.expired = 라이선스가 만료되었습니다: {0}
+license.reason.unreadable = 파일을 라이선스로 읽을 수 없습니다. 파일이 손상되었거나 형식이 올바르지 않습니다
+license.reason.signature = 라이선스 서명을 확인할 수 없습니다. 서명이 유효하지 않거나 알 수 없는 서명 키입니다
+license.required = 이 작업에는 유효한 라이선스가 필요합니다. 라이선스 파일을 설치하세요(「라이선스…」 버튼 또는 license <파일> 명령). 이 컴퓨터의 지문은 fingerprint 명령으로 표시됩니다.
+license.installed = 라이선스가 설치되고 확인되었습니다: {0}
+license.fp = 이 컴퓨터의 지문: {0}
+license.perpetual = 영구
+license.until = {0}까지
+license.filter = 라이선스 파일 (*.jws, *.license)
+cli.usage.fingerprint = 이 컴퓨터의 지문 표시(라이선스 취득용)
+cli.usage.license = 라이선스 파일 설치 또는 상태 표시
+btn.license = 라이선스…
+tip.license = 라이선스 파일(.jws, .license)을 설치하고 이 컴퓨터에 대해 확인합니다.\n유효한 라이선스가 없으면 개인 키 내보내기 작업을 사용할 수 없습니다.\n이 컴퓨터의 지문(라이선스 취득용)은 fingerprint 명령과 시작 시 표시됩니다.
+dlg.license.title = 라이선스 파일 선택
+
+# --- диагностика PC/SC ---
+cli.pcsc.count = 리더 {0}개, 매체 있음 {1}개, PKCS#11 라이브러리가 매체를 보여준 것은 {2}개 — 나머지는 설치된 어떤 라이브러리도 보여주지 않습니다
+cli.pcsc.uncovered = PC/SC 리더에 있지만 PKCS#11 토큰으로 표시되지 않는 카드:
+cli.pcsc.line = {0} [{1}] — 카드 있음, ATR {2}
+cli.pcsc.row = 설치된 어떤 PKCS#11 라이브러리도 이 매체를 보여주지 않습니다, ATR {0}
+cli.pcsc.hint = 이러한 카드는 PKCS#11 토큰이 아닙니다. CryptoPro 매체도 아니라면 내보낼 것이 없습니다.
+carrier.jacarta = JaCarta / Aladdin
+carrier.rutoken = Rutoken
+carrier.esmart = ESMART
+carrier.bifit = BIFIT (MS_KEY K / iBank2Key)
+carrier.etoken = eToken / SafeNet
+carrier.unknown = 알 수 없는 매체
+pcsc.contextfail = PC/SC: 스마트 카드 서비스에 연결할 수 없습니다 ({0})
+pcsc.statusfail = PC/SC: 리더 상태를 읽을 수 없습니다 ({0})
+diag.pnp.none = 스마트카드 리더(PnP): PnP-present 장치가 없습니다
+diag.pnp.ok = 스마트카드 리더(PnP): 하드웨어 {0}개, 소프트웨어 {1}개, 모든 드라이버 실행 중
+diag.pnp.usb = USB 리더 {0}
+diag.pnp.bus = 버스 {0}의 리더
+diag.pnp.software = 소프트웨어 리더(버스 {0}, 뒤에 매체 없음)
+diag.pnp.failed = 스마트카드 리더 {0}: PnP-present 상태이지만 드라이버가 시작되지 않았습니다 — 코드 {1}, 상태 {2}
+diag.pnp.problem = 스마트카드 리더 {0}: PnP-present 상태이지만 Windows에서 PnP 문제를 보고합니다 — 코드 {1}, 상태 {2}
+diag.pnp.unavailable = 스마트카드 리더(PnP): 확인할 수 없음 ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = 매체의 공장 초기 PIN 코드 표시(모델 목록)
+cli.pins.header = 매체의 공장 초기 PIN 코드(제조사 문서 기준):
+cli.pins.line = {0} — 사용자: {1}, 관리자: {2} [{3}]
+cli.pins.unset = 설정 안 됨
+cli.pins.supported = 지원됨
+cli.pins.planned = 계획됨
+cli.pins.note = PIN을 변경하지 않은 경우에만 유효합니다. 잘못된 PIN은 시도 횟수를 소모하며, 연속 세 번이면 매체가 잠깁니다.
+field.pin.hint.factory = 공장 초기 PIN {0}
+pins.note.diagnostic = 진단 전용: 개인 키는 칩을 벗어나지 않습니다
+pins.note.noadmin = 관리자 PIN이 설정되어 있지 않습니다
+pins.note.challenge = PIN은 challenge-response로 확인됩니다. 직접 입력하세요
+pins.note.sopin = 관리자 PIN은 SO-PIN이라고 합니다
+pins.note.nouser = 사용자 PIN이 설정되어 있지 않습니다
+pins.note.puk = 관리자 쪽은 PUK입니다
+pins.note.applets = 나머지 애플릿은 각자의 공장 초기값을 유지합니다
+log.token.replaced = 리더의 매체가 교체되었습니다. 목록을 새로 고치고 다시 시도하세요
+log.token.state.unknown = 매체의 현재 상태를 읽지 못해 작업을 중단했습니다
+tip.pin.show = 입력란의 PIN을 표시합니다.\n지금은 문자가 가려져 있습니다.
+tip.pin.hide = 입력란의 PIN을 가립니다.\n지금은 문자가 보입니다.

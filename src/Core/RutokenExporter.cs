@@ -147,8 +147,9 @@ namespace CryptoProExport
         /// <summary>
         /// Нужно ли обходить файловую память этого считывателя.
         ///
-        /// Обход смарт-карточных Рутокенов не просто бесполезен (файлов контейнера там нет,
-        /// AGENTS пп. 20, 22) — он <b>убивает процесс</b>. На Рутокен ЭЦП 3.0 (прошивка 30.02)
+        /// Обход подтверждённых Рутокенов не просто бесполезен (для S есть прямой APDU,
+        /// у смарт-карточных моделей файлов контейнера этим API нет) — он может
+        /// <b>убить процесс</b>. На Рутокен ЭЦП 3.0 (прошивка 30.02)
         /// в каталоге <c>/4096/4097/</c> лежит файл 256 байт, и <c>rtISCard::ReadBinary</c> на нём
         /// рушит кучу процесса (0xC0000374) прямо внутри нативного вызова — как SAFEARRAY-методы
         /// из п. 19, и так же не ловится <c>catch</c>. На прежних ЭЦП 2.0 и Lite файлов было ноль,
@@ -165,12 +166,43 @@ namespace CryptoProExport
         /// и по нему. Чистая функция: покрыта тестами без обращения к железу.
         /// </summary>
         public static bool ShouldWalk(string readerName, ISet<string> skipReaders)
+            => SkipReasonKey(readerName, skipReaders) == null;
+
+        /// <summary>
+        /// Почему считыватель не идёт в файловый обход, — ключ локализованного объяснения или
+        /// <c>null</c>, если обход нужен. Раньше на все случаи писалась одна строка «смарт-карточный
+        /// носитель, файловой памяти контейнеров нет», и из неё нельзя было понять ни что за
+        /// носитель пропущен, ни потерялось ли при этом что-нибудь. Причины разные:
+        ///   • носитель уже прочитан выше по PKCS#11/APDU — обход ничего не добавит;
+        ///   • Рутокен S читается прямым APDU: rtCOMLite на непустом носителе рушит процесс;
+        ///   • смарт-карточные Рутокены (Lite/ЭЦП) файловой памяти rtCOMLite вовсе не имеют —
+        ///     контейнер Lite читается прямым APDU, а не PKCS#11 (п. 21 AGENTS.md: PKCS#11
+        ///     контейнеров КриптоПро на Lite не показывает вообще);
+        ///   • чужой вендор — файловый API rtCOMLite относится только к Рутокен S.
+        ///
+        /// Пустое имя считывателя до сюда не доходит (вызывающий пропускает такую запись
+        /// раньше), но и оно обязано означать «не обходить» — иначе <c>ShouldWalk</c> поменял бы
+        /// смысл на противоположный.
+        ///
+        /// Чистая функция: покрыта тестами без обращения к железу.
+        /// </summary>
+        public static string SkipReasonKey(string readerName, ISet<string> skipReaders)
         {
-            if (string.IsNullOrEmpty(readerName)) return false;
-            if (skipReaders != null && skipReaders.Contains(readerName)) return false;
-            RutokenKind kind = Pkcs11Token.Classify(readerName);
-            return kind != RutokenKind.RutokenEcp && kind != RutokenKind.RutokenLite
-                && kind != RutokenKind.Other;
+            if (string.IsNullOrEmpty(readerName)) return "token.skip.foreign";
+            if (skipReaders != null && skipReaders.Contains(readerName)) return "token.skip.covered";
+            if (Pkcs11Token.HasUnsafeForeignFileWalkEvidence(readerName)) return "token.skip.foreign";
+            switch (Pkcs11Token.Classify(readerName))
+            {
+                case RutokenKind.RutokenS: return "token.skip.direct";
+                case RutokenKind.RutokenEcp:
+                case RutokenKind.RutokenLite: return "token.skip.smartcard";
+                case RutokenKind.JaCartaLt:
+                case RutokenKind.JaCartaPro:
+                case RutokenKind.Esmart:
+                case RutokenKind.Bifit:
+                case RutokenKind.Other: return "token.skip.foreign";
+                default: return null;
+            }
         }
 
         /// <summary>Перечислить и прочитать все контейнеры со всех подключённых Рутокенов.</summary>
@@ -194,9 +226,10 @@ namespace CryptoProExport
                     Cancel.ThrowIfCancellationRequested();
                     string tokenName = Convert.ToString(rObj);
                     if (string.IsNullOrEmpty(tokenName)) continue;
-                    if (!ShouldWalk(tokenName, SkipReaders))
+                    string skip = SkipReasonKey(tokenName, SkipReaders);
+                    if (skip != null)
                     {
-                        Log(Strings.Format("token.skip.smartcard", tokenName));
+                        Log(Strings.Format(skip, tokenName));
                         continue;
                     }
                     Log(Strings.Format("token.open", tokenName));
@@ -244,9 +277,10 @@ namespace CryptoProExport
                 {
                     try
                     {
-                        object ctx = RegFreeCom.CreateInstance(dll, ClsidRtContext);
-                        Log(Strings.Format("diag.rtcom", Strings.Get("diag.rtcom.bundled")));
-                        return ctx;
+                        // Штатный случай не комментируется: вшитая копия — это норма, а не
+                        // новость. В журнал идут только отклонения (системная регистрация,
+                        // неудачная загрузка), их видно ниже.
+                        return RegFreeCom.CreateInstance(dll, ClsidRtContext);
                     }
                     catch (Exception e)
                     {
@@ -265,18 +299,28 @@ namespace CryptoProExport
 
             Type ctxType = Type.GetTypeFromProgID(ProgId, throwOnError: false);
             if (ctxType == null)
-                throw new InvalidOperationException(Strings.Get("token.rtcom.unavailable"));
+                throw new ComponentMissingException(RequiredComponent.RtComLite);
             object system = Activator.CreateInstance(ctxType);
             Log(Strings.Format("diag.rtcom", Strings.Get("diag.rtcom.system")));
             return system;
         }
 
         /// <summary>Короткая сводка: откуда будет взят rtCOMLite (без обращения к токену).</summary>
-        public static string SourceSummary()
+        /// <summary>
+        /// Будет ли использована вшитая копия rtCOMLite. Нужна отчёту о зависимостях: обычный
+        /// случай («вшита и подходит») он показывает одной общей строкой без путей, а отдельную
+        /// строку тратит только на отклонения — системную регистрацию или недоступность.
+        /// </summary>
+        public static bool UsesBundledCopy()
         {
             string dll = BundledTools.TryExtract(
                 BundledTools.RtComLiteResource, BundledTools.RtComLiteFileName, out _);
-            if (dll != null && RegFreeCom.MatchesProcess(dll, out _))
+            return dll != null && RegFreeCom.MatchesProcess(dll, out _);
+        }
+
+        public static string SourceSummary()
+        {
+            if (UsesBundledCopy())
                 return Strings.Get("diag.rtcom.bundled");
             if (Type.GetTypeFromProgID(ProgId, throwOnError: false) != null)
                 return Strings.Get("diag.rtcom.system");
@@ -311,7 +355,7 @@ namespace CryptoProExport
             if (pinDefault)
             {
                 Log(Strings.Get("token.pin.default"));
-                rt.AuthenticateOwner(RT_USER, "12345678");
+                rt.AuthenticateOwner(RT_USER, StandardPins.UserPinFor(RutokenKind.RutokenLite));
             }
             else if (!string.IsNullOrEmpty(UserPin))
             {

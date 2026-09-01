@@ -13,18 +13,14 @@ common.none = không có
 files.all = Tất cả tệp
 
 # --- bảng thiết lập ---
-field.p12 = p12utility.exe:
-field.p12.placeholder = bản sao tích hợp — không cần chỉ định gì
 field.dest = Thư mục đích:
 field.pin = PIN (tuỳ chọn):
 field.pin.hint = để trống → cửa sổ hỏi
 field.lang = Ngôn ngữ giao diện:
 
-tip.p12 = Đường dẫn tới công cụ p12utility của CryptoPro — chính nó gỡ lệnh cấm xuất khoá.\nHãy để trống: bản sao công cụ đã nằm sẵn trong chương trình và tự giải nén.\nChỉ điền khi bạn cần một phiên bản p12utility khác.
-tip.p12.browse = Chọn tệp p12utility.exe khác thay cho bản tích hợp.
 tip.dest = Nơi lưu kết quả: các thư mục chứa container đã lấy ra (*.key) và tệp chứng thư (.cer).\nLưu ý: đây là bản sao khoá riêng của bạn — hãy giữ như một bí mật.
 tip.dest.browse = Chọn thư mục đích.
-tip.pin = Mã PIN người dùng của Rutoken.\nĐể trống → cửa sổ hệ thống sẽ hỏi PIN (nếu token còn PIN xuất xưởng thì dùng 12345678).\nCác ký tự bị che; giá trị không được lưu ở đâu cả.
+tip.pin = Mã PIN người dùng của Rutoken.\nĐể trống → cửa sổ hệ thống sẽ hỏi PIN (nếu token còn PIN xuất xưởng thì dùng 12345678).\nCác ký tự hiển thị để không gõ sai khi không nhìn thấy; nút bên cạnh sẽ ẩn chúng. Giá trị không được lưu ở đâu cả.
 tip.lang = Ngôn ngữ của giao diện, chú giải và thông báo.\nLựa chọn được ghi nhớ và áp dụng cho những lần chạy sau.\nTương tự từ dòng lệnh: --lang vi
 
 # --- các nút ---
@@ -32,29 +28,55 @@ btn.refresh = Làm mới danh sách
 btn.export = Xuất từ token
 btn.extract = Lấy chứng thư
 btn.full = Làm cho xuất được
-btn.check = Kiểm tra khoá
+btn.check = Xem container
 btn.install = Cài vào CryptoPro
 btn.pfx = Xuất ra PFX
 btn.logs = Nhật ký
+btn.logpane.show = Показать журнал
+btn.logpane.hide = Скрыть журнал
 btn.help = Trợ giúp
 btn.cancel = Huỷ
 
+# --- подписи рядов кнопок (только по-русски, AGENTS п. 17) ---
+group.list = Список:
+group.steps = Шаги:
+group.result = Результат:
+group.service = Служебное:
+
+# --- выбор способа .pfx (только по-русски, AGENTS п. 17) ---
+btn.pfx.choice = Сохранить в PFX…
+tip.pfx.choice = Собрать файл .pfx с закрытым ключом. Способа два, и файлы получаются разные —\nвыбор со всеми пояснениями появится по нажатию:\n  • через КриптоПро (certmgr) — такой файл КриптоПро потом примет обратно;\n  • без КриптоПро, из папки снятого контейнера — для OpenSSL и других программ.
+dlg.pfx.choice.title = Сохранить в PFX
+dlg.pfx.choice.prompt = Оба способа дают файл .pfx с закрытым ключом, но это разные файлы. Выберите нужный.
+dlg.pfx.choice.csp = Такой файл КриптоПро потом примет обратно — берите его, если .pfx нужен как резервная копия ключа для КриптоПро.
+
 tip.refresh = Bước 1. Hiển thị danh sách container khoá:\n  • những cái CryptoPro CSP nhìn thấy (kể cả trên token đã cắm);\n  • những cái tìm thấy trực tiếp trên các Rutoken đang kết nối.\nKhông thay đổi gì — chỉ đọc. Bắt đầu từ nút này là tiện nhất.
-tip.export = Bước 2. Lấy các container từ mọi Rutoken đang kết nối vào thư mục đích\n(mỗi container 6 tệp *.key). Đọc thẳng bộ nhớ token, bỏ qua CSP,\nnên vẫn chạy được khi có lệnh cấm xuất. Token và dữ liệu trên đó không bị thay đổi.\nKhoá trong bản sao vẫn chưa xuất được — việc đó do nút «Làm cho xuất được» đảm nhiệm.
+tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
+tip.export = Bước 2. Lấy các container từ Rutoken S / Lite, JaCarta LT và ESMART vào thư mục đích\n(mỗi container 6 tệp *.key). Đọc thẳng bộ nhớ token, bỏ qua CSP,\nnên vẫn chạy được khi có lệnh cấm xuất. Token và dữ liệu trên đó không bị thay đổi.\nKhoá trong bản sao vẫn chưa xuất được — việc đó do nút «Làm cho xuất được» đảm nhiệm.
 tip.extract = Bước 3. Lưu chứng thư của container được chọn trong danh sách ra tệp .cer\n(dữ liệu công khai, được lấy ra bình thường qua CryptoAPI).\nCần có container được chọn, token đã cắm và CSP nhìn thấy container.\np12utility cần đúng chứng thư này để gỡ lệnh cấm xuất.
 tip.full = Tất cả trong một cú nhấp: lấy container từ token → lấy chứng thư →\ngỡ lệnh cấm xuất khoá riêng (p12utility --cprepair --keyexport).\nKết quả: trong thư mục đích có bản sao container với khoá xuất được\n(dùng để sao lưu, chuyển máy và chuyển đổi sang PFX).\nToken gốc không bị thay đổi; tệp header.key ban đầu của bản sao được giữ lại là header.key.backup.
-tip.check = Kiểm tra container được chọn: lệnh cấm xuất khoá riêng đã được gỡ hay chưa.\nChương trình đọc quyền của khoá (KP_PERMISSIONS) — bản thân khoá không bao giờ bị xuất.\nĐó là cách xác nhận «Làm cho xuất được» thực sự có tác dụng.
+tip.check = Xem container được chọn: tên, vị trí, chi tiết và quyền của cả hai khoá.\nChương trình đọc quyền của khoá (KP_PERMISSIONS) — bản thân khoá không bao giờ bị xuất.\nĐó là cách xác nhận «Làm cho xuất được» thực sự có tác dụng.
 tip.install = Cài vào CryptoPro một thư mục container đã lấy từ token (6 tệp *.key) —\ntức là chép nó vào kho của CSP. Sau đó container xuất hiện trong danh sách và chạy\nđược mà không cần token: có thể lấy chứng thư và xuất ra PFX.\nĐổi tên không bắt buộc: CryptoPro đối chiếu tên với nội dung container và\nkhông phải lúc nào cũng chấp nhận bản sao đã đổi tên. Chương trình sẽ kiểm tra kết quả và\ncho biết CSP có thực sự nhìn thấy container hay không.
-tip.pfx = Xuất container được chọn ra tệp PKCS#12 (.pfx) — chứng thư cùng với\nkhoá riêng, sẵn sàng chuyển sang hệ thống khác.\nCần: lệnh cấm xuất đã được gỡ («Kiểm tra khoá» hiển thị «xuất được»)\nvà đã cài CryptoPro CSP (chương trình dùng certmgr của nó).\nMật khẩu cho tệp .pfx sẽ được hỏi riêng.
+tip.pfx = Xuất container được chọn ra tệp PKCS#12 (.pfx) — chứng thư cùng với\nkhoá riêng, sẵn sàng chuyển sang hệ thống khác.\nCần: lệnh cấm xuất đã được gỡ («Xem container» hiển thị «xuất được»)\nvà đã cài CryptoPro CSP (chương trình dùng certmgr của nó).\nMật khẩu cho tệp .pfx sẽ được hỏi riêng.
 tip.logs = Mở thư mục chứa nhật ký làm việc của chương trình.\nMỗi lần chạy ghi một tệp riêng — rất tiện để đính kèm vào câu hỏi\nnếu có gì đó không thành. Mật khẩu không bao giờ lọt vào nhật ký.
+tip.logpane = Развернуть или свернуть журнал внизу окна.\nПо умолчанию он свёрнут: в строке состояния видно, что идёт сейчас и чем\nзакончился предыдущий шаг, а списку достаётся всё окно. Полный текст нужен\nпри разборе — тогда журнал и разворачивают.\nСоседняя кнопка «Журнал» открывает папку с файлами прошлых запусков.
 tip.help = Sổ tay tích hợp: bắt đầu từ đâu, mỗi nút làm gì,\ncác lệnh của chế độ dòng lệnh và phân tích những lỗi thường gặp.\nNó nằm bên trong chương trình — không cần internet hay tệp bên ngoài.
 tip.cancel = Ngắt thao tác đang chạy.\nCông việc sẽ dừng ở bước gần nhất: lời gọi tới token hoặc tiện ích CryptoPro\nđang chạy phải được hoàn tất trước — khi đó tiện ích đang chạy sẽ bị kết thúc.\nCác tệp đã lưu vẫn nằm nguyên chỗ cũ.
 
 # --- danh sách container và nhật ký ---
 col.location = Vị trí
+col.backend = Способ чтения
 col.container = Container
 col.details = Chi tiết
-tip.list = Các container khoá đã tìm thấy.\n«Vị trí» = CSP (CryptoPro nhìn thấy) hoặc tên Rutoken (đọc trực tiếp từ token).\nChọn một dòng — nút «Lấy chứng thư» làm việc với container được chọn.
+tip.list = Các container khoá đã tìm thấy.\nChọn một dòng — nút «Lấy chứng thư» làm việc với container được chọn.
+tip.list.dblclick = Двойной клик по строке равносилен кнопке «Посмотреть контейнер».
+tip.list.columns = «Расположение» — где носитель: имя считывателя, HDIMAGE или прочерк,\nесли КриптоПро видит контейнер, но не сообщает устройство. «Способ чтения» —\nчем строка прочитана: CSP, PKCS#11, APDU, PC/SC или rtCOMLite.\nКлик по заголовку сортирует по колонке: по возрастанию, по убыванию и обратно\nв порядок обхода носителей.
+hint.need.row = Сейчас недоступно: в списке не выбрана строка.\nВыберите строку контейнера, с которым нужно работать.
+hint.row.device = Сейчас недоступно: в выделенной строке только устройство, контейнера в ней нет.\nВыберите строку с именем контейнера.
+hint.row.csp = Сейчас недоступно: контейнер этой строки читается через КриптоПро CSP, а не напрямую с носителя.\nВыберите строку [APDU] или rtCOMLite либо снимите выделение, чтобы обойти все поддерживаемые носители.\nПрава ключей выбранной строки показывает «Посмотреть контейнер».
+hint.row.pkcs11 = Сейчас недоступно: строка PKCS#11 показывает только публичные объекты носителя, файлов контейнера через неё не видно.\nВыберите строку [APDU] или rtCOMLite либо снимите выделение, чтобы обойти все поддерживаемые носители.
+hint.row.certonly = Сейчас недоступно: в выделенной строке только сертификат — парного контейнера КриптоПро на носителе для него нет.\nВыберите строку с именем контейнера; сам сертификат сохраняет «Извлечь сертификат».
+hint.cert.none = Сейчас недоступно: в выделенной строке сертификата нет — PKCS#11 показывает «нет».\nВыберите строку, в которой сертификат есть.
 tip.log = Nhật ký thực thi: các lệnh p12utility, các bước làm việc với token và lỗi.\nCó thể chọn và sao chép văn bản (Ctrl+C) — hữu ích khi phân tích sự cố.
 
 # --- thanh trạng thái ---
@@ -129,6 +151,8 @@ diag.rtcom.system = thành phần đã đăng ký trong hệ thống
 diag.rtcom.missing = KHÔNG DÙNG ĐƯỢC
 diag.rtcom.warn = chú ý: bản sao tích hợp là 32-bit và không nạp được vào tiến trình này — để làm việc với Rutoken mà không cài thành phần, hãy dùng bản dựng di động x86
 diag.csp.ok = CryptoPro CSP: đã cài, nhà cung cấp {0}
+csp.alg.2012 = GOST R 34.10-2012, {0} bit
+csp.alg.2001 = GOST R 34.10-2001
 diag.csp.missing = CryptoPro CSP: KHÔNG TÌM THẤY — hãy cài CryptoPro CSP (phụ thuộc bên ngoài duy nhất)
 diag.prov = {0}: {1} — {2}
 diag.prov.yes = có sẵn
@@ -158,7 +182,10 @@ pipe.keyexport.fail = LỖI keyexport trong «{0}»: {1} {2}
 token.connect = Đang kết nối tới dịch vụ thẻ thông minh…
 token.found = Số thiết bị tìm thấy: {0}
 token.open = Đang mở token: {0}
-token.skip.smartcard = Bỏ qua {0}: token thẻ thông minh, không có bộ nhớ tệp cho vùng chứa
+token.skip.smartcard = Bỏ qua {0}: Rutoken thẻ thông minh (Lite/ECP) — nó không có bộ nhớ tệp rtCOMLite. Container của Lite được đọc bằng APDU trực tiếp, còn khoá phần cứng ECP thì không sao chép được
+token.skip.covered = Bỏ qua {0}: vật mang này đã được đọc ở trên qua PKCS#11/APDU — việc duyệt tệp rtCOMLite không bổ sung gì
+token.skip.foreign = Bỏ qua {0}: không phải Rutoken, còn bộ nhớ tệp rtCOMLite là API của Rutoken S — không áp dụng cho thẻ của hãng khác
+token.skip.direct = Bỏ qua {0}: Rutoken S được đọc bằng APDU trực tiếp — trên vật mang không rỗng rtCOMLite trả về Unsupported function hoặc làm sập tiến trình
 token.rtcom.loadfail = Bản rtCOMLite tích hợp không nạp được ({0}); thử bản đã đăng ký trong hệ thống
 token.rtcom.mismatch = Bản rtCOMLite tích hợp không phù hợp ({0}); thử bản đã đăng ký trong hệ thống
 token.rtcom.extractfail = Không giải nén được bản rtCOMLite tích hợp ({0}); thử bản đã đăng ký trong hệ thống
@@ -181,6 +208,7 @@ tool.cancelled = {0} đã dừng do bị huỷ
 err.certmgr.notfound = Không tìm thấy certmgr
 err.container.name = Chưa cho biết tên container
 err.container.nokey = Không tìm thấy container «{0}» hoặc trong đó không có khoá thuộc loại cần thiết
+err.container.exportable = Container đã có thể xuất
 err.key.locked = Khoá riêng không xuất được — hãy gỡ lệnh cấm trước («{0}»). {1}
 err.cert.extract = Không lấy được chứng thư từ container
 err.pfx.missing = certmgr báo thành công, nhưng tệp lại không được tạo: {0}
@@ -250,11 +278,12 @@ cli.lang.missing = --lang cần một mã ngôn ngữ. Các ngôn ngữ hiện c
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = có
 common.certonly = chỉ chứng chỉ
-pkcs11.nolib = Không tìm thấy thư viện PKCS#11 (rtPKCS11ECP.dll, jcPKCS11-2.dll) — hãy cài trình điều khiển Rutoken hoặc JaCarta Unified Client
+pkcs11.nolib = Không tìm thấy thư viện PKCS#11 (rtPKCS11ECP.dll, jcPKCS11-2.dll, isbc_pkcs11_main.dll) — hãy cài trình điều khiển Rutoken, JaCarta Unified Client hoặc ESMART PKI Client
 pkcs11.loadfail = Không tải được thư viện PKCS#11: {0}
 pkcs11.enumfail = Không liệt kê được các khe PKCS#11: {0}
 pkcs11.tokenfail = Token «{0}»: {1}
 pkcs11.readfail = Không đọc được các đối tượng của token: {0}
+pkcs11.capfail = Không đọc được hồ sơ khả năng PKCS#11: {0}
 kind.rutoken.s = Rutoken S (bộ nhớ tệp)
 kind.rutoken.lite = Rutoken Lite (thẻ thông minh)
 kind.rutoken.ecp = Rutoken ECP (thẻ thông minh)
@@ -276,6 +305,19 @@ cli.list.pkcs11 = Token (PKCS#11):
 cli.token.none = Không tìm thấy token PKCS#11 (kiểm tra token đã cắm và trình điều khiển Rutoken đã cài).
 cli.token.line = {0}: {1} [{2}], số sê-ri {3}, phần mềm {4}
 cli.token.pin = PIN: {0}
+cap.profile.unknown = các cơ chế không xác định được thế hệ Rutoken ECP
+cap.profile.unread = chưa đọc được danh sách cơ chế — không xác định được thế hệ
+cap.profile.ecp2 = cơ chế giống Rutoken ECP 2.x
+cap.profile.ecp3 = cơ chế giống Rutoken ECP 3.0
+cli.token.capabilities = phần cứng {0}; cơ chế {1}; {2}; tạo khoá RSA HW {3}; ECDSA HW {4}; GOST HW {5}
+cli.token.rsa.bits = tối đa {0} bit
+cli.token.memory = bộ nhớ: {0}
+cli.token.memory.split = bộ nhớ: công khai — {0}; riêng tư — {1}
+cli.token.memory.side = {0} KB, còn trống {1} KB
+cli.token.memory.side.nofree = {0} KB (token không báo dung lượng trống)
+cli.token.memory.side.nototal = còn trống {0} KB (token không báo tổng dung lượng)
+cli.token.memory.side.none = token không báo
+token.boundary.ecp = Khóa riêng phần cứng không được sao chép khỏi Rutoken ECP; chỉ có chẩn đoán và các chứng thư công khai hiện có.
 cli.token.container = vùng chứa «{0}», chứng chỉ: {1}
 cli.token.certonly = chứng chỉ «{0}» (không có vùng chứa CryptoPro)
 cli.token.cert.saved = đã lưu chứng chỉ mà không cần CSP: {0}
@@ -319,9 +361,78 @@ err.pfx.nocert = Không có chứng chỉ trong vùng chứa lẫn trong tham s�
 err.pfx.badcert = Tệp chứng chỉ không đọc được như X.509 với khóa GOST 256 bit
 err.pfx.certmismatch = Chứng chỉ thuộc về khóa khác: khóa công khai không khớp
 cli.usage.liteexport = đọc vùng chứa Rutoken Lite qua APDU và khôi phục khóa (không cần CSP)
+cli.usage.tokenexport = sao chép vùng chứa từ một token được hỗ trợ đã chọn vào đĩa
+cli.usage.tokenfull = lấy từ token đã chọn + .cer tự động + keyexport
 err.lite.none = không tìm thấy vùng chứa CryptoPro trên {0} qua APDU
 err.lite.pin = thẻ đã từ chối mã PIN ({0}); hãy kiểm tra PIN, không được đoán
-log.export.directonly = The selected row does not expose a readable private-key container. Select an APDU/rtCOMLite row, or clear the selection to scan all Rutoken S devices.
+err.direct.pin.scope = không thể gửi một PIN tới nhiều đầu đọc; hãy chọn đúng một đầu đọc
+log.export.directonly = The selected row does not expose a readable private-key container. Select an APDU/rtCOMLite row, or clear the selection to scan all supported tokens.
 dlg.confirm.full.selected = Only the selected hardware container will be copied, its certificates extracted, and the key export ban lifted.\n\nContinue?
 pipe.lite.normalized = Lite container «{0}» converted to the HDIMAGE file format
 pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAGE format: {1}
+
+# --- лицензирование ---
+license.status.valid = Giấy phép hợp lệ ({0})
+license.status.invalid = Giấy phép không hợp lệ
+license.status.none = Chưa cài đặt giấy phép
+license.reason.product = Giấy phép được cấp cho sản phẩm khác: {0}
+license.reason.platform = Giấy phép được cấp cho nền tảng khác: {0}
+license.reason.machine = Giấy phép được cấp cho máy khác: dấu vân không khớp
+license.reason.expired = Giấy phép đã hết hạn: {0}
+license.reason.unreadable = Không thể đọc tệp dưới dạng giấy phép: tệp bị hỏng hoặc có định dạng không hợp lệ
+license.reason.signature = Không thể xác minh chữ ký giấy phép: chữ ký không hợp lệ hoặc khóa ký không xác định
+license.required = Thao tác này cần giấy phép hợp lệ. Hãy cài đặt tệp giấy phép (nút «Giấy phép…» hoặc lệnh license <tệp>); dấu vân của máy này được hiển thị bằng lệnh fingerprint.
+license.installed = Đã cài đặt và xác minh giấy phép: {0}
+license.fp = Dấu vân của máy này: {0}
+license.perpetual = vĩnh viễn
+license.until = đến {0}
+license.filter = Tệp giấy phép (*.jws, *.license)
+cli.usage.fingerprint = hiển thị dấu vân của máy này (để nhận giấy phép)
+cli.usage.license = cài đặt tệp giấy phép hoặc hiển thị trạng thái
+btn.license = Giấy phép…
+tip.license = Cài đặt tệp giấy phép (.jws, .license) và xác minh cho máy này.\nKhông có giấy phép hợp lệ, các thao tác xuất khóa riêng sẽ không khả dụng.\nDấu vân của máy này (để nhận giấy phép) được hiển thị bằng lệnh fingerprint và khi khởi động.
+dlg.license.title = Chọn tệp giấy phép
+
+# --- диагностика PC/SC ---
+cli.pcsc.count = đầu đọc {0}, trong đó có vật mang {1}; thư viện PKCS#11 hiển thị vật mang ở {2} — số còn lại không thư viện đã cài nào hiển thị
+cli.pcsc.uncovered = Thẻ có trong đầu đọc PC/SC nhưng không hiển thị dưới dạng token PKCS#11:
+cli.pcsc.line = {0} [{1}] — thẻ hiện diện, ATR {2}
+cli.pcsc.row = không thư viện PKCS#11 đã cài nào hiển thị vật mang này; ATR {0}
+cli.pcsc.hint = Thẻ như vậy không phải là token PKCS#11; nếu cũng không phải là vật mang CryptoPro thì không có gì để xuất.
+carrier.jacarta = JaCarta / Aladdin
+carrier.rutoken = Rutoken
+carrier.esmart = ESMART
+carrier.bifit = BIFIT (MS_KEY K / iBank2Key)
+carrier.etoken = eToken / SafeNet
+carrier.unknown = vật mang không xác định
+pcsc.contextfail = PC/SC: không thể kết nối tới dịch vụ thẻ thông minh ({0})
+pcsc.statusfail = PC/SC: không thể đọc trạng thái đầu đọc ({0})
+diag.pnp.none = Đầu đọc thẻ thông minh (PnP): không có thiết bị PnP-present
+diag.pnp.ok = Đầu đọc thẻ thông minh (PnP): {0} phần cứng, {1} phần mềm, tất cả trình điều khiển đã khởi động
+diag.pnp.usb = đầu đọc USB {0}
+diag.pnp.bus = đầu đọc trên bus {0}
+diag.pnp.software = đầu đọc phần mềm (bus {0}; không có thiết bị nào phía sau)
+diag.pnp.failed = Đầu đọc thẻ thông minh {0}: ở trạng thái PnP-present nhưng trình điều khiển không khởi động — mã {1}, trạng thái {2}
+diag.pnp.problem = Đầu đọc thẻ thông minh {0}: ở trạng thái PnP-present nhưng Windows báo cáo sự cố PnP — mã {1}, trạng thái {2}
+diag.pnp.unavailable = Đầu đọc thẻ thông minh (PnP): không thể kiểm tra ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = hiển thị mã PIN mặc định của thiết bị (danh mục mẫu)
+cli.pins.header = Mã PIN mặc định của thiết bị (theo tài liệu của nhà sản xuất):
+cli.pins.line = {0} — người dùng: {1}, quản trị viên: {2} [{3}]
+cli.pins.unset = chưa đặt
+cli.pins.supported = được hỗ trợ
+cli.pins.planned = dự kiến
+cli.pins.note = Các giá trị chỉ đúng khi PIN chưa được đổi. Nhập sai PIN sẽ tiêu tốn một lần thử; ba lần liên tiếp sẽ khóa thiết bị.
+field.pin.hint.factory = PIN mặc định {0}
+pins.note.diagnostic = chỉ chẩn đoán: khóa riêng không rời khỏi chip
+pins.note.noadmin = không đặt PIN quản trị viên
+pins.note.challenge = PIN được kiểm tra theo challenge-response; hãy nhập thủ công
+pins.note.sopin = PIN quản trị viên gọi là SO-PIN
+pins.note.nouser = không đặt PIN người dùng
+pins.note.puk = với quản trị viên đây là PUK
+pins.note.applets = các applet khác giữ giá trị mặc định riêng
+log.token.replaced = Thiết bị trong đầu đọc đã bị thay; hãy làm mới danh sách và thử lại
+log.token.state.unknown = Không đọc được trạng thái hiện tại của thiết bị; thao tác đã dừng
+tip.pin.show = Hiện PIN trong ô nhập.\nHiện tại các ký tự đang bị ẩn.
+tip.pin.hide = Ẩn PIN trong ô nhập.\nHiện tại các ký tự đang hiển thị.

@@ -40,6 +40,34 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void InstallCertificateArguments_KeepExactHdImageTarget()
+        {
+            string args = CertMgr.BuildInstallArguments(
+                @"C:\backup\cert_exchange.cer", @"\\.\HDIMAGE\container", signatureKey: false);
+
+            Assert.Equal(
+                "-install -file \"C:\\backup\\cert_exchange.cer\" " +
+                "-container \"\\\\.\\HDIMAGE\\container\" -silent", args);
+        }
+
+        [Theory]
+        [InlineData(true, false, "exchange.cer", "signature.cer", "exchange.cer", null)]
+        [InlineData(false, true, "exchange.cer", "signature.cer", null, "signature.cer")]
+        [InlineData(true, true, "exchange.cer", "signature.cer", "exchange.cer", "signature.cer")]
+        [InlineData(false, false, "exchange.cer", "signature.cer", null, null)]
+        public void CertificatesForPresentKeys_DropsCertificatesForMissingKeySpecs(
+            bool hasExchangeKey, bool hasSignatureKey,
+            string exchange, string signature,
+            string expectedExchange, string expectedSignature)
+        {
+            var actual = CertMgr.CertificatesForPresentKeys(
+                hasExchangeKey, hasSignatureKey, exchange, signature);
+
+            Assert.Equal(expectedExchange, actual.exchange);
+            Assert.Equal(expectedSignature, actual.signature);
+        }
+
+        [Fact]
         public void MaskPassword_HidesContainerPassword()
         {
             string args = P12Utility.BuildRepairArguments(true, false, "пароль с пробелом", true);
@@ -156,6 +184,51 @@ namespace CryptoProExport.Tests
         }
 
         [Theory]
+        // Нумерация SCARD_W_* сверена с winerror.h и системными сообщениями Windows
+        // (31.08.2026): 6B — неверный PIN, 6C — PIN заблокирован. До правки таблица была
+        // сдвинута и на заблокированном PIN писала «неверный PIN-код».
+        [InlineData(unchecked((int)0x8010006B), "неверный PIN")]
+        [InlineData(unchecked((int)0x8010006C), "заблокирован")]
+        [InlineData(unchecked((int)0x80100065), "ATR")]
+        public void CryptoErrors_MatchesTheWindowsScardNumbering(int code, string expectedFragment)
+        {
+            Assert.Contains(expectedFragment, CryptoErrors.Describe(code));
+        }
+
+        [Fact]
+        public void ComponentCheck_ExplainsEveryComponentInTheCurrentLanguage()
+        {
+            using var ru = Strings.Scope("ru");
+            foreach (RequiredComponent component in Enum.GetValues<RequiredComponent>())
+            {
+                string text = ComponentCheck.Explain(component);
+                Assert.False(string.IsNullOrWhiteSpace(text));
+                Assert.DoesNotContain(Strings.MissingMarkerStart, text, StringComparison.Ordinal);
+            }
+        }
+
+        [Fact]
+        public void ComponentCheck_MissingListsExactlyTheAbsentOnes()
+        {
+            // Проверка обязана быть безопасной: сама она не бросает, а Require превращает
+            // отсутствие в ComponentMissingException с уже готовым объяснением.
+            var absent = ComponentCheck.Missing(Enum.GetValues<RequiredComponent>());
+            foreach (RequiredComponent component in Enum.GetValues<RequiredComponent>())
+            {
+                bool present = ComponentCheck.IsPresent(component);
+                Assert.Equal(!present, absent.Contains(component));
+                if (present) ComponentCheck.Require(component);
+                else
+                {
+                    var error = Assert.Throws<ComponentMissingException>(
+                        () => ComponentCheck.Require(component));
+                    Assert.Equal(component, error.Component);
+                    Assert.Equal(ComponentCheck.Explain(component), error.Message);
+                }
+            }
+        }
+
+        [Theory]
         [InlineData(unchecked((int)0x8010006C), "PIN")]
         [InlineData(unchecked((int)0x80090016), "контейнер")]
         [InlineData(unchecked((int)0x8009000B), "экспортируемым")]
@@ -181,9 +254,76 @@ namespace CryptoProExport.Tests
             using var ru = Strings.Scope("ru");
             var report = Diagnostics.Report();
             Assert.Contains(report, l => l.StartsWith("Процесс:", StringComparison.Ordinal));
-            Assert.Contains(report, l => l.StartsWith("p12utility:", StringComparison.Ordinal));
-            Assert.Contains(report, l => l.StartsWith("rtCOMLite:", StringComparison.Ordinal));
+
+            // Вшитая зависимость в норме не упоминается вовсе: отдельную строку получает
+            // только отклонение (внешняя копия, нет её, системная регистрация). Наличие
+            // компонента проверяет ComponentCheck там, где он нужен, а не строка в журнале.
+            Assert.DoesNotContain(report, l => l.Contains("Встроенные зависимости", StringComparison.Ordinal));
+            Assert.True(ComponentCheck.IsPresent(RequiredComponent.P12Utility)
+                        ^ report.Any(l => l.StartsWith("p12utility:", StringComparison.Ordinal)
+                                          && l.Contains("НЕ НАЙДЕН", StringComparison.Ordinal)));
+
+            Assert.Contains(report, l => l.StartsWith("Считыватели смарт-карт (PnP):", StringComparison.Ordinal) ||
+                                         l.StartsWith("Считыватель смарт-карт ", StringComparison.Ordinal));
+            Assert.Contains(report, l => l.StartsWith("PKCS#11:", StringComparison.Ordinal));
             Assert.Contains(report, l => l.StartsWith("КриптоПро CSP:", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public void Diagnostics_SpellsOutProviderTypeInsteadOfBareNumber()
+        {
+            // «провайдеры 80, 81, 75» читателю лога ничего не говорят: рядом с типом обязано
+            // стоять обозначение стандарта, иначе строка бесполезна.
+            using var ru = Strings.Scope("ru");
+            string csp = Diagnostics.Report().FirstOrDefault(
+                l => l.StartsWith("КриптоПро CSP:", StringComparison.Ordinal));
+            Assert.NotNull(csp);
+            if (CertFromContainer.AvailableProviders().Count == 0) return;   // CSP не установлен
+
+            Assert.Contains("ГОСТ Р 34.10", csp, StringComparison.Ordinal);
+            Assert.DoesNotContain("провайдеры 80,", csp, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void ProviderAlgorithm_IsTranslatedLikeTheRestOfTheReport()
+        {
+            // Расшифровку пишем мы, а не вендор, поэтому она обязана переводиться: в английском
+            // отчёте не должно оставаться русских «бит» (замечание Codex на PR #70).
+            using (var ru = Strings.Scope("ru"))
+                Assert.Equal("80 — ГОСТ Р 34.10-2012, 256 бит", CertFromContainer.DescribeProvider(80));
+
+            using (var en = Strings.Scope("en"))
+            {
+                Assert.Equal("81 — GOST R 34.10-2012, 512 bit", CertFromContainer.DescribeProvider(81));
+                Assert.Equal("75 — GOST R 34.10-2001", CertFromContainer.DescribeProvider(75));
+            }
+
+            // Неизвестный тип остаётся числом: алгоритм за него не выдумывается.
+            Assert.Equal("99", CertFromContainer.ProviderAlgorithm(99));
+        }
+
+        [Fact]
+        public void ProviderAlgorithm_CoversEveryKnownProviderType()
+        {
+            // Добавили провайдер в таблицу и забыли расшифровку — тип вернётся голым числом.
+            using var ru = Strings.Scope("ru");
+            Assert.All(CertFromContainer.Providers, p => Assert.NotEqual(
+                p.type.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                CertFromContainer.ProviderAlgorithm(p.type)));
+        }
+
+        [Fact]
+        public void Pkcs11Libraries_AreEmbeddedForEveryVendorWithASelfContainedModule()
+        {
+            // Библиотеки трёх вендоров вшиты, чтобы смарт-карточный носитель читался и без
+            // установленных драйверов. Рутокен S сюда не входит намеренно: rtPKCS11.dll тянет
+            // rtAPIi.dll/rtLib.dll из пакета драйверов (см. BundledTools).
+            Assert.True(BundledTools.Has(BundledTools.ResourceName("rtPKCS11ECP.dll")), "Rutoken");
+            Assert.True(BundledTools.Has(BundledTools.ResourceName("jcPKCS11-2.dll")), "JaCarta");
+            Assert.True(BundledTools.Has(BundledTools.ResourceName("isbc_pkcs11_main.dll")), "ESMART");
+            Assert.True(BundledTools.Has(BundledTools.ResourceName("isbc_esmart_token_mod.dll")),
+                "ESMART backend");
+            Assert.False(BundledTools.Has(BundledTools.ResourceName("rtPKCS11.dll")), "Rutoken S");
         }
 
         [Fact]

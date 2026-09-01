@@ -13,18 +13,14 @@ common.none = brak
 files.all = Wszystkie pliki
 
 # --- panel ustawień ---
-field.p12 = p12utility.exe:
-field.p12.placeholder = kopia wbudowana — nic nie trzeba podawać
 field.dest = Folder docelowy:
 field.pin = PIN (opcjonalnie):
 field.pin.hint = puste → okno pytania
 field.lang = Język interfejsu:
 
-tip.p12 = Ścieżka do narzędzia p12utility firmy CryptoPro — to ono zdejmuje zakaz eksportu klucza.\nZostaw pole puste: kopia narzędzia jest już wbudowana w program i rozpakuje się sama.\nWypełnij tylko wtedy, gdy potrzebna jest inna wersja p12utility.
-tip.p12.browse = Wybierz inny plik p12utility.exe zamiast wbudowanego.
 tip.dest = Gdzie trafi wynik: foldery ze zdjętymi kontenerami (*.key) i pliki certyfikatów (.cer).\nUwaga: to kopia Twojego klucza prywatnego — trzymaj ją jak tajemnicę.
 tip.dest.browse = Wybierz folder docelowy.
-tip.pin = PIN użytkownika Rutokena.\nPuste → o PIN zapyta okno systemowe (a jeśli na tokenie jest PIN fabryczny, zostanie użyty 12345678).\nZnaki są ukryte; wartość nigdzie nie jest zapisywana.
+tip.pin = PIN użytkownika Rutokena.\nPuste → o PIN zapyta okno systemowe (a jeśli na tokenie jest PIN fabryczny, zostanie użyty 12345678).\nZnaki są widoczne, aby nie pomylić się na ślepo; przycisk obok je ukrywa. Wartość nigdzie nie jest zapisywana.
 tip.lang = Język interfejsu, podpowiedzi i komunikatów.\nWybór jest zapamiętywany i stosowany przy kolejnych uruchomieniach.\nTo samo z wiersza poleceń: --lang pl
 
 # --- przyciski ---
@@ -32,29 +28,55 @@ btn.refresh = Odśwież listę
 btn.export = Eksport z tokena
 btn.extract = Wyodrębnij certyfikat
 btn.full = Uczyń eksportowalnym
-btn.check = Sprawdź klucz
+btn.check = Wyświetl kontener
 btn.install = Zainstaluj w CryptoPro
 btn.pfx = Eksport do PFX
 btn.logs = Dziennik
+btn.logpane.show = Показать журнал
+btn.logpane.hide = Скрыть журнал
 btn.help = Pomoc
 btn.cancel = Anuluj
 
+# --- подписи рядов кнопок (только по-русски, AGENTS п. 17) ---
+group.list = Список:
+group.steps = Шаги:
+group.result = Результат:
+group.service = Служебное:
+
+# --- выбор способа .pfx (только по-русски, AGENTS п. 17) ---
+btn.pfx.choice = Сохранить в PFX…
+tip.pfx.choice = Собрать файл .pfx с закрытым ключом. Способа два, и файлы получаются разные —\nвыбор со всеми пояснениями появится по нажатию:\n  • через КриптоПро (certmgr) — такой файл КриптоПро потом примет обратно;\n  • без КриптоПро, из папки снятого контейнера — для OpenSSL и других программ.
+dlg.pfx.choice.title = Сохранить в PFX
+dlg.pfx.choice.prompt = Оба способа дают файл .pfx с закрытым ключом, но это разные файлы. Выберите нужный.
+dlg.pfx.choice.csp = Такой файл КриптоПро потом примет обратно — берите его, если .pfx нужен как резервная копия ключа для КриптоПро.
+
 tip.refresh = Krok 1. Pokaż listę kontenerów kluczy:\n  • widoczne dla CryptoPro CSP (także na włożonym tokenie);\n  • znalezione bezpośrednio na podłączonych Rutokenach.\nNiczego nie zmienia — tylko czyta. Od tego przycisku wygodnie zacząć.
-tip.export = Krok 2. Zdejmij kontenery ze wszystkich podłączonych Rutokenów do folderu docelowego\n(po 6 plików *.key na kontener). Czyta pamięć tokena bezpośrednio, z pominięciem CSP,\ndlatego działa nawet przy zakazie eksportu. Token i jego dane nie są zmieniane.\nKlucz w zdjętej kopii nadal nie jest eksportowalny — tym zajmuje się «Uczyń eksportowalnym».
+tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
+tip.export = Krok 2. Zdejmij kontenery z Rutoken S / Lite, JaCarta LT i ESMART do folderu docelowego\n(po 6 plików *.key na kontener). Czyta pamięć tokena bezpośrednio, z pominięciem CSP,\ndlatego działa nawet przy zakazie eksportu. Token i jego dane nie są zmieniane.\nKlucz w zdjętej kopii nadal nie jest eksportowalny — tym zajmuje się «Uczyń eksportowalnym».
 tip.extract = Krok 3. Zapisz certyfikat wybranego na liście kontenera do pliku .cer\n(dane jawne, wyodrębniane normalnie przez CryptoAPI).\nPotrzebny jest wybrany kontener, włożony token i widoczność kontenera dla CSP.\nDo zdjęcia zakazu eksportu p12utility potrzebuje właśnie tego certyfikatu.
 tip.full = Wszystko jednym kliknięciem: zdjęcie kontenerów z tokena → wyodrębnienie certyfikatów →\nzdjęcie zakazu eksportu klucza prywatnego (p12utility --cprepair --keyexport).\nWynik: w folderze docelowym kopia kontenera z eksportowalnym kluczem\n(nadaje się na kopię zapasową, przeniesienie i konwersję do PFX).\nOryginalny token nie jest zmieniany; pierwotny header.key kopii zostaje jako header.key.backup.
-tip.check = Sprawdź wybrany na liście kontener: czy zakaz eksportu klucza prywatnego został zdjęty.\nProgram czyta uprawnienia klucza (KP_PERMISSIONS) — sam klucz nigdy nie jest eksportowany.\nW ten sposób potwierdza się, że «Uczyń eksportowalnym» rzeczywiście zadziałało.
+tip.check = Wyświetl wybrany kontener: nazwę, lokalizację, szczegóły i uprawnienia obu kluczy.\nProgram czyta uprawnienia klucza (KP_PERMISSIONS) — sam klucz nigdy nie jest eksportowany.\nW ten sposób potwierdza się, że «Uczyń eksportowalnym» rzeczywiście zadziałało.
 tip.install = Zainstaluj w CryptoPro folder kontenera zdjętego z tokena (6 plików *.key) —\nczyli skopiuj go do magazynu CSP. Potem kontener pojawia się na liście i działa\nbez tokena: można z niego wyodrębnić certyfikat i wyeksportować go do PFX.\nZmiana nazwy nie jest konieczna: CryptoPro porównuje nazwę z zawartością kontenera i\nnie zawsze przyjmuje przemianowaną kopię. Program sprawdzi wynik i powie,\nczy CSP naprawdę zobaczył kontener.
-tip.pfx = Wyeksportuj wybrany na liście kontener do pliku PKCS#12 (.pfx) — certyfikat razem\nz kluczem prywatnym, gotowy do przeniesienia na inny system.\nWymagane: zakaz eksportu już zdjęty («Sprawdź klucz» pokazuje «eksportowalny»)\noraz zainstalowany CryptoPro CSP (używany jest jego certmgr).\nO hasło do .pfx program zapyta osobno.
+tip.pfx = Wyeksportuj wybrany na liście kontener do pliku PKCS#12 (.pfx) — certyfikat razem\nz kluczem prywatnym, gotowy do przeniesienia na inny system.\nWymagane: zakaz eksportu już zdjęty («Wyświetl kontener» pokazuje «eksportowalny»)\noraz zainstalowany CryptoPro CSP (używany jest jego certmgr).\nO hasło do .pfx program zapyta osobno.
 tip.logs = Otwórz folder z dziennikami pracy programu.\nKażde uruchomienie zapisuje osobny plik — wygodnie dołączyć go do pytania,\ngdy coś nie wyszło. Hasła nigdy nie trafiają do dziennika.
+tip.logpane = Развернуть или свернуть журнал внизу окна.\nПо умолчанию он свёрнут: в строке состояния видно, что идёт сейчас и чем\nзакончился предыдущий шаг, а списку достаётся всё окно. Полный текст нужен\nпри разборе — тогда журнал и разворачивают.\nСоседняя кнопка «Журнал» открывает папку с файлами прошлых запусков.
 tip.help = Wbudowany podręcznik: od czego zacząć, co robi każdy przycisk,\npolecenia trybu konsolowego i omówienie typowych błędów.\nLeży w środku programu — internet ani zewnętrzne pliki nie są potrzebne.
 tip.cancel = Przerwij bieżącą operację.\nPraca zatrzyma się na najbliższym kroku: wywołanie do tokena albo uruchomione\nnarzędzie CryptoPro trzeba najpierw doprowadzić do końca — działające narzędzie jest wtedy zamykane.\nJuż zapisane pliki zostają na miejscu.
 
 # --- lista kontenerów i dziennik ---
 col.location = Położenie
+col.backend = Способ чтения
 col.container = Kontener
 col.details = Szczegóły
-tip.list = Znalezione kontenery kluczy.\n«Położenie» = CSP (widoczny dla CryptoPro) albo nazwa Rutokena (odczytany wprost z tokena).\nZaznacz wiersz — przycisk «Wyodrębnij certyfikat» działa na zaznaczonym kontenerze.
+tip.list = Znalezione kontenery kluczy.\nZaznacz wiersz — przycisk «Wyodrębnij certyfikat» działa na zaznaczonym kontenerze.
+tip.list.dblclick = Двойной клик по строке равносилен кнопке «Посмотреть контейнер».
+tip.list.columns = «Расположение» — где носитель: имя считывателя, HDIMAGE или прочерк,\nесли КриптоПро видит контейнер, но не сообщает устройство. «Способ чтения» —\nчем строка прочитана: CSP, PKCS#11, APDU, PC/SC или rtCOMLite.\nКлик по заголовку сортирует по колонке: по возрастанию, по убыванию и обратно\nв порядок обхода носителей.
+hint.need.row = Сейчас недоступно: в списке не выбрана строка.\nВыберите строку контейнера, с которым нужно работать.
+hint.row.device = Сейчас недоступно: в выделенной строке только устройство, контейнера в ней нет.\nВыберите строку с именем контейнера.
+hint.row.csp = Сейчас недоступно: контейнер этой строки читается через КриптоПро CSP, а не напрямую с носителя.\nВыберите строку [APDU] или rtCOMLite либо снимите выделение, чтобы обойти все поддерживаемые носители.\nПрава ключей выбранной строки показывает «Посмотреть контейнер».
+hint.row.pkcs11 = Сейчас недоступно: строка PKCS#11 показывает только публичные объекты носителя, файлов контейнера через неё не видно.\nВыберите строку [APDU] или rtCOMLite либо снимите выделение, чтобы обойти все поддерживаемые носители.
+hint.row.certonly = Сейчас недоступно: в выделенной строке только сертификат — парного контейнера КриптоПро на носителе для него нет.\nВыберите строку с именем контейнера; сам сертификат сохраняет «Извлечь сертификат».
+hint.cert.none = Сейчас недоступно: в выделенной строке сертификата нет — PKCS#11 показывает «нет».\nВыберите строку, в которой сертификат есть.
 tip.log = Dziennik wykonania: polecenia p12utility, kroki pracy z tokenem i błędy.\nTekst można zaznaczyć i skopiować (Ctrl+C) — przydaje się przy analizie problemów.
 
 # --- pasek stanu ---
@@ -129,6 +151,8 @@ diag.rtcom.system = składnik zarejestrowany w systemie
 diag.rtcom.missing = NIEDOSTĘPNY
 diag.rtcom.warn = uwaga: kopia wbudowana jest 32-bitowa i nie ładuje się do tego procesu — do pracy z Rutokenem bez instalowania składnika weź przenośną kompilację x86
 diag.csp.ok = CryptoPro CSP: zainstalowany, dostawcy {0}
+csp.alg.2012 = GOST R 34.10-2012, {0} bitów
+csp.alg.2001 = GOST R 34.10-2001
 diag.csp.missing = CryptoPro CSP: NIE ZNALEZIONO — zainstaluj CryptoPro CSP (jedyna zależność zewnętrzna)
 diag.prov = {0}: {1} — {2}
 diag.prov.yes = dostępny
@@ -158,7 +182,10 @@ pipe.keyexport.fail = BŁĄD keyexport w «{0}»: {1} {2}
 token.connect = Łączenie z usługą kart inteligentnych…
 token.found = Znalezione urządzenia: {0}
 token.open = Otwieranie tokena: {0}
-token.skip.smartcard = Pomijam {0}: token smart card, brak plikowej pamięci kontenerów
+token.skip.smartcard = Pomijamy {0}: Rutoken kartowy (Lite/ECP) — nie ma pamięci plikowej rtCOMLite. Kontener Lite program czyta bezpośrednim APDU, a sprzętowego klucza ECP nie kopiuje wcale
+token.skip.covered = Pomijamy {0}: ten nośnik został już odczytany wyżej przez PKCS#11/APDU — przejście po plikach rtCOMLite nic nie doda
+token.skip.foreign = Pomijamy {0}: to nie Rutoken, a pamięć plikowa rtCOMLite to API Rutoken S; do karty innego producenta się nie stosuje
+token.skip.direct = Pomijamy {0}: Rutoken S czytany jest bezpośrednim APDU — na niepustym nośniku rtCOMLite odpowiada Unsupported function albo wywraca proces
 token.rtcom.loadfail = Wbudowana kopia rtCOMLite nie wczytała się ({0}); próbujemy zarejestrowanej w systemie
 token.rtcom.mismatch = Wbudowana kopia rtCOMLite nie pasuje ({0}); próbujemy zarejestrowanej w systemie
 token.rtcom.extractfail = Nie udało się rozpakować wbudowanej kopii rtCOMLite ({0}); próbujemy zarejestrowanej w systemie
@@ -181,6 +208,7 @@ tool.cancelled = {0} zatrzymany przez anulowanie
 err.certmgr.notfound = Nie znaleziono certmgr
 err.container.name = Nie podano nazwy kontenera
 err.container.nokey = Kontener «{0}» nie został znaleziony albo nie ma w nim klucza wymaganego typu
+err.container.exportable = Kontener jest już eksportowalny
 err.key.locked = Klucz prywatny nie jest eksportowalny — najpierw zdejmij zakaz («{0}»). {1}
 err.cert.extract = Nie udało się wyodrębnić certyfikatu z kontenera
 err.pfx.missing = certmgr zgłosił sukces, ale plik nie powstał: {0}
@@ -250,11 +278,12 @@ cli.lang.missing = --lang wymaga kodu języka. Dostępne języki: {0}
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = obecny
 common.certonly = tylko certyfikat
-pkcs11.nolib = Nie znaleziono biblioteki PKCS#11 (rtPKCS11ECP.dll, jcPKCS11-2.dll) — zainstaluj sterowniki Rutoken lub JaCarta Unified Client
+pkcs11.nolib = Nie znaleziono biblioteki PKCS#11 (rtPKCS11ECP.dll, jcPKCS11-2.dll, isbc_pkcs11_main.dll) — zainstaluj sterowniki Rutoken, JaCarta Unified Client lub ESMART PKI Client
 pkcs11.loadfail = Nie udało się załadować biblioteki PKCS#11: {0}
 pkcs11.enumfail = Nie udało się wyliczyć slotów PKCS#11: {0}
 pkcs11.tokenfail = Token „{0}”: {1}
 pkcs11.readfail = Nie udało się odczytać obiektów tokena: {0}
+pkcs11.capfail = Nie udało się odczytać profilu możliwości PKCS#11: {0}
 kind.rutoken.s = Rutoken S (pamięć plikowa)
 kind.rutoken.lite = Rutoken Lite (karta inteligentna)
 kind.rutoken.ecp = Rutoken ECP (karta inteligentna)
@@ -276,6 +305,19 @@ cli.list.pkcs11 = Tokeny (PKCS#11):
 cli.token.none = Nie znaleziono tokenów PKCS#11 (sprawdź, czy token jest włożony i czy zainstalowano sterowniki Rutoken).
 cli.token.line = {0}: {1} [{2}], nr seryjny {3}, firmware {4}
 cli.token.pin = PIN: {0}
+cap.profile.unknown = mechanizmy nie wskazują generacji Rutoken ECP
+cap.profile.unread = lista mechanizmów nieodczytana — generacja nieokreślona
+cap.profile.ecp2 = mechanizmy jak w Rutoken ECP 2.x
+cap.profile.ecp3 = mechanizmy jak w Rutoken ECP 3.0
+cli.token.capabilities = sprzęt {0}; mechanizmy {1}; {2}; generowanie RSA HW {3}; ECDSA HW {4}; GOST HW {5}
+cli.token.rsa.bits = do {0} bitów
+cli.token.memory = pamięć: {0}
+cli.token.memory.split = pamięć: publiczna — {0}; prywatna — {1}
+cli.token.memory.side = {0} KB, wolne {1} KB
+cli.token.memory.side.nofree = {0} KB (token nie podaje wolnego miejsca)
+cli.token.memory.side.nototal = wolne {0} KB (token nie podaje pojemności całkowitej)
+cli.token.memory.side.none = token tego nie podaje
+token.boundary.ecp = Sprzętowy klucz prywatny nie jest kopiowany z Rutoken ECP; dostępna jest tylko diagnostyka i obecne certyfikaty publiczne.
 cli.token.container = kontener „{0}”, certyfikat: {1}
 cli.token.certonly = certyfikat „{0}” (brak kontenera CryptoPro)
 cli.token.cert.saved = certyfikat zapisany bez CSP: {0}
@@ -319,9 +361,78 @@ err.pfx.nocert = Certyfikatu nie ma ani w kontenerze, ani w argumentach — wska
 err.pfx.badcert = Pliku certyfikatu nie udało się odczytać jako X.509 z kluczem GOST 256 bitów
 err.pfx.certmismatch = Certyfikat należy do innego klucza: klucze publiczne się różnią
 cli.usage.liteexport = odczytać kontener Rutoken Lite przez APDU i odzyskać klucz (bez CSP)
+cli.usage.tokenexport = skopiować kontenery z wybranego obsługiwanego tokena na dysk
+cli.usage.tokenfull = zdjąć z wybranego tokena + automatyczny .cer + keyexport
 err.lite.none = nie znaleziono kontenerów CryptoPro na {0} przez APDU
 err.lite.pin = karta odrzuciła PIN ({0}); sprawdź PIN, zgadywanie jest niedozwolone
-log.export.directonly = The selected row does not expose a readable private-key container. Select an APDU/rtCOMLite row, or clear the selection to scan all Rutoken S devices.
+err.direct.pin.scope = jednego PIN-u nie można wysłać do wielu czytników; wybierz dokładny czytnik
+log.export.directonly = The selected row does not expose a readable private-key container. Select an APDU/rtCOMLite row, or clear the selection to scan all supported tokens.
 dlg.confirm.full.selected = Only the selected hardware container will be copied, its certificates extracted, and the key export ban lifted.\n\nContinue?
 pipe.lite.normalized = Lite container «{0}» converted to the HDIMAGE file format
 pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAGE format: {1}
+
+# --- лицензирование ---
+license.status.valid = Licencja jest ważna ({0})
+license.status.invalid = Licencja jest nieważna
+license.status.none = Brak zainstalowanej licencji
+license.reason.product = Licencja wydana dla innego produktu: {0}
+license.reason.platform = Licencja wydana dla innej platformy: {0}
+license.reason.machine = Licencja wydana dla innego komputera: odcisk się nie zgadza
+license.reason.expired = Licencja wygasła: {0}
+license.reason.unreadable = Nie można odczytać pliku jako licencji: plik jest uszkodzony lub ma nieprawidłowy format
+license.reason.signature = Nie można zweryfikować podpisu licencji: podpis jest nieprawidłowy albo klucz podpisujący jest nieznany
+license.required = Ta operacja wymaga ważnej licencji. Zainstaluj plik licencji (przycisk „Licencja…” lub polecenie license <plik>); odcisk tej maszyny pokazuje polecenie fingerprint.
+license.installed = Licencja zainstalowana i zweryfikowana: {0}
+license.fp = Odcisk tej maszyny: {0}
+license.perpetual = bezterminowa
+license.until = do {0}
+license.filter = Plik licencji (*.jws, *.license)
+cli.usage.fingerprint = pokaż odcisk tej maszyny (do uzyskania licencji)
+cli.usage.license = zainstaluj plik licencji lub pokaż jej status
+btn.license = Licencja…
+tip.license = Zainstaluj plik licencji (.jws, .license) i zweryfikuj go dla tej maszyny.\nBez ważnej licencji operacje eksportu klucza prywatnego są niedostępne.\nOdcisk tej maszyny (do uzyskania licencji) pokazuje polecenie fingerprint oraz uruchomienie.
+dlg.license.title = Wybierz plik licencji
+
+# --- диагностика PC/SC ---
+cli.pcsc.count = czytników {0}, w tym z nośnikiem {1}; biblioteka PKCS#11 pokazała nośnik dla {2} — pozostałych nie pokazuje żadna z zainstalowanych
+cli.pcsc.uncovered = Karty obecne w czytnikach PC/SC, ale niepokazane jako token PKCS#11:
+cli.pcsc.line = {0} [{1}] — karta obecna, ATR {2}
+cli.pcsc.row = żadna zainstalowana biblioteka PKCS#11 nie pokazuje tego nośnika; ATR {0}
+cli.pcsc.hint = Taka karta nie jest tokenem PKCS#11; jeśli nie jest też nośnikiem CryptoPro, nie ma czego eksportować.
+carrier.jacarta = JaCarta / Aladdin
+carrier.rutoken = Rutoken
+carrier.esmart = ESMART
+carrier.bifit = BIFIT (MS_KEY K / iBank2Key)
+carrier.etoken = eToken / SafeNet
+carrier.unknown = nieznany nośnik
+pcsc.contextfail = PC/SC: nie można połączyć się z usługą kart inteligentnych ({0})
+pcsc.statusfail = PC/SC: nie można odczytać stanu czytników ({0})
+diag.pnp.none = Czytniki kart inteligentnych (PnP): brak urządzeń PnP-present
+diag.pnp.ok = Czytniki kart inteligentnych (PnP): {0} sprzętowych, {1} programowych, wszystkie sterowniki uruchomione
+diag.pnp.usb = czytnik USB {0}
+diag.pnp.bus = czytnik na magistrali {0}
+diag.pnp.software = czytnik programowy (magistrala {0}; nie stoi za nim nośnik)
+diag.pnp.failed = Czytnik kart inteligentnych {0}: jest PnP-present, ale sterownik nie został uruchomiony — kod {1}, stan {2}
+diag.pnp.problem = Czytnik kart inteligentnych {0}: jest PnP-present, ale system Windows zgłasza problem PnP — kod {1}, stan {2}
+diag.pnp.unavailable = Czytniki kart inteligentnych (PnP): sprawdzenie niedostępne ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = pokazać fabryczne kody PIN nośników (rejestr modeli)
+cli.pins.header = Fabryczne kody PIN nośników (według dokumentacji producentów):
+cli.pins.line = {0} — użytkownik: {1}, administrator: {2} [{3}]
+cli.pins.unset = nie ustawiono
+cli.pins.supported = obsługiwany
+cli.pins.planned = planowany
+cli.pins.note = Wartości obowiązują, dopóki PIN nie został zmieniony. Błędny PIN zużywa próbę; trzy z rzędu blokują nośnik.
+field.pin.hint.factory = fabryczny PIN {0}
+pins.note.diagnostic = tylko diagnostyka: klucz prywatny nie opuszcza układu
+pins.note.noadmin = PIN administratora nie jest ustawiony
+pins.note.challenge = PIN sprawdzany metodą wyzwanie-odpowiedź; wpisz go ręcznie
+pins.note.sopin = PIN administratora nazywa się SO-PIN
+pins.note.nouser = PIN użytkownika nie jest ustawiony
+pins.note.puk = u administratora jest to PUK
+pins.note.applets = pozostałe aplety zachowują własne wartości fabryczne
+log.token.replaced = Nośnik w czytniku został wymieniony — odśwież listę i spróbuj ponownie
+log.token.state.unknown = Nie udało się odczytać bieżącego stanu nośnika — operację przerwano
+tip.pin.show = Pokaż PIN w polu.\nZnaki są teraz ukryte.
+tip.pin.hide = Ukryj PIN w polu.\nZnaki są teraz widoczne.

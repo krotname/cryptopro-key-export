@@ -183,7 +183,8 @@ namespace CryptoProExport
             catch (IOException) { return null; }
         }
 
-        private static bool IsVisibleToCsp(string containerName)
+        /// <summary>Есть ли хотя бы один ключ именно в HDIMAGE-копии с указанным именем.</summary>
+        public static bool IsVisibleToCsp(string containerName)
         {
             if (string.IsNullOrEmpty(containerName)) return false;
             // Имя без считывателя неоднозначно: одноимённый контейнер на вставленном токене

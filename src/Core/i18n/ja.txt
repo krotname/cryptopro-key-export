@@ -13,18 +13,14 @@ common.none = なし
 files.all = すべてのファイル
 
 # --- 設定パネル ---
-field.p12 = p12utility.exe:
-field.p12.placeholder = 内蔵コピー — 何も指定する必要はありません
 field.dest = 出力先フォルダー:
 field.pin = PIN（省略可）:
 field.pin.hint = 空欄 → 入力ウィンドウ
 field.lang = 表示言語:
 
-tip.p12 = CryptoPro の p12utility へのパス — 鍵のエクスポート禁止を解除するのはこのツールです。\n空のままにしてください。ツールのコピーはプログラムに内蔵され、自動で展開されます。\n別のバージョンの p12utility が必要な場合だけ入力してください。
-tip.p12.browse = 内蔵のものではなく別の p12utility.exe を選びます。
 tip.dest = 結果の保存先: 取り出したコンテナーのフォルダー（*.key）と証明書ファイル（.cer）。\n注意: これは秘密鍵のコピーです — 機密として保管してください。
 tip.dest.browse = 出力先フォルダーを選びます。
-tip.pin = Rutoken の利用者 PIN。\n空欄 → PIN はシステムのウィンドウが尋ねます（トークンが工場出荷時の PIN なら 12345678 が使われます）。\n文字は伏せられ、値はどこにも保存されません。
+tip.pin = Rutoken の利用者 PIN。\n空欄 → PIN はシステムのウィンドウが尋ねます（トークンが工場出荷時の PIN なら 12345678 が使われます）。\n見えない状態での打ち間違いを防ぐため文字は表示されます。隣のボタンで隠せます。値はどこにも保存されません。
 tip.lang = 画面・ヒント・メッセージの言語。\n選択は記憶され、次回以降の起動に適用されます。\nコマンドラインでは同じことを --lang ja で指定します。
 
 # --- ボタン ---
@@ -32,29 +28,55 @@ btn.refresh = 一覧を更新
 btn.export = トークンから取り出す
 btn.extract = 証明書を取り出す
 btn.full = エクスポート可能にする
-btn.check = 鍵を確認
+btn.check = コンテナーを表示
 btn.install = CryptoPro に導入
 btn.pfx = PFX にエクスポート
 btn.logs = ログ
+btn.logpane.show = Показать журнал
+btn.logpane.hide = Скрыть журнал
 btn.help = ヘルプ
 btn.cancel = キャンセル
 
+# --- подписи рядов кнопок (только по-русски, AGENTS п. 17) ---
+group.list = Список:
+group.steps = Шаги:
+group.result = Результат:
+group.service = Служебное:
+
+# --- выбор способа .pfx (только по-русски, AGENTS п. 17) ---
+btn.pfx.choice = Сохранить в PFX…
+tip.pfx.choice = Собрать файл .pfx с закрытым ключом. Способа два, и файлы получаются разные —\nвыбор со всеми пояснениями появится по нажатию:\n  • через КриптоПро (certmgr) — такой файл КриптоПро потом примет обратно;\n  • без КриптоПро, из папки снятого контейнера — для OpenSSL и других программ.
+dlg.pfx.choice.title = Сохранить в PFX
+dlg.pfx.choice.prompt = Оба способа дают файл .pfx с закрытым ключом, но это разные файлы. Выберите нужный.
+dlg.pfx.choice.csp = Такой файл КриптоПро потом примет обратно — берите его, если .pfx нужен как резервная копия ключа для КриптоПро.
+
 tip.refresh = 手順 1。鍵コンテナーの一覧を表示します:\n  • CryptoPro CSP から見えるもの（挿入済みトークン上のものを含む）;\n  • 接続中の Rutoken 上で直接見つかったもの。\n何も変更せず、読み取るだけです。ここから始めるのが便利です。
-tip.export = 手順 2。接続中のすべての Rutoken からコンテナーを出力先フォルダーへ取り出します\n（コンテナーごとに *.key ファイル 6 個）。CSP を介さずトークンのメモリーを直接読むため、\nエクスポート禁止があっても動作します。トークンとその中のデータは変更されません。\n取り出したコピーの鍵はまだエクスポート不可です — それは「エクスポート可能にする」の役目です。
+tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
+tip.export = 手順 2。Rutoken S / Lite、JaCarta LT、ESMART からコンテナーを出力先フォルダーへ取り出します\n（コンテナーごとに *.key ファイル 6 個）。CSP を介さずトークンのメモリーを直接読むため、\nエクスポート禁止があっても動作します。トークンとその中のデータは変更されません。\n取り出したコピーの鍵はまだエクスポート不可です — それは「エクスポート可能にする」の役目です。
 tip.extract = 手順 3。一覧で選んだコンテナーの証明書を .cer ファイルに保存します\n（公開データで、CryptoAPI を通じて通常どおり取り出せます）。\n一覧でのコンテナー選択、トークンの挿入、CSP からコンテナーが見えることが必要です。\nエクスポート禁止の解除には、この証明書が p12utility に必要です。
 tip.full = ワンクリックですべて: トークンからコンテナーを取り出す → 証明書を取り出す →\n秘密鍵のエクスポート禁止を解除する（p12utility --cprepair --keyexport）。\n結果: 出力先フォルダーにエクスポート可能な鍵を持つコンテナーのコピーができます\n（バックアップ、移行、PFX への変換に使えます）。\n元のトークンは変更されません。コピーの元の header.key は header.key.backup として残ります。
-tip.check = 一覧で選んだコンテナーを確認します: 秘密鍵のエクスポート禁止が解除されたかどうか。\nプログラムは鍵の権限（KP_PERMISSIONS）を読むだけで、鍵自体は決してエクスポートしません。\nこうして「エクスポート可能にする」が実際に効いたことを確かめます。
+tip.check = 選択したコンテナーの名前、場所、詳細、および両方の鍵の権限を表示します。\nプログラムは鍵の権限（KP_PERMISSIONS）を読むだけで、鍵自体は決してエクスポートしません。\nこうして「エクスポート可能にする」が実際に効いたことを確かめます。
 tip.install = トークンから取り出したコンテナーのフォルダー（*.key ファイル 6 個）を CryptoPro に導入します —\nつまり CSP の保管領域へコピーします。その後コンテナーは一覧に現れ、トークンなしでも\n動作します: 証明書を取り出したり、PFX にエクスポートしたりできます。\n名前の変更は必須ではありません。CryptoPro は名前をコンテナーの中身と突き合わせるため、\n改名したコピーを常に受け入れるとは限りません。プログラムは結果を検証し、\nCSP が本当にコンテナーを認識したかどうかを知らせます。
-tip.pfx = 一覧で選んだコンテナーを PKCS#12（.pfx）ファイルにエクスポートします — 証明書と\n秘密鍵をまとめて、別のシステムへ移すためのものです。\n必要条件: エクスポート禁止が解除済みであること（「鍵を確認」が「エクスポート可能」と表示）\nと CryptoPro CSP が導入済みであること（その certmgr を使います）。\n.pfx のパスワードは別途尋ねます。
+tip.pfx = 一覧で選んだコンテナーを PKCS#12（.pfx）ファイルにエクスポートします — 証明書と\n秘密鍵をまとめて、別のシステムへ移すためのものです。\n必要条件: エクスポート禁止が解除済みであること（「コンテナーを表示」が「エクスポート可能」と表示）\nと CryptoPro CSP が導入済みであること（その certmgr を使います）。\n.pfx のパスワードは別途尋ねます。
 tip.logs = プログラムの動作ログが入ったフォルダーを開きます。\n起動ごとに別ファイルが書かれます — うまくいかなかったときに\n質問へ添付すると便利です。パスワードはログに残りません。
+tip.logpane = Развернуть или свернуть журнал внизу окна.\nПо умолчанию он свёрнут: в строке состояния видно, что идёт сейчас и чем\nзакончился предыдущий шаг, а списку достаётся всё окно. Полный текст нужен\nпри разборе — тогда журнал и разворачивают.\nСоседняя кнопка «Журнал» открывает папку с файлами прошлых запусков.
 tip.help = 内蔵マニュアル: どこから始めるか、各ボタンの働き、\nコンソールモードのコマンド、よくある不具合の解説。\nプログラムの中にあります — インターネットも外部ファイルも不要です。
 tip.cancel = 実行中の処理を中断します。\n作業は直近の区切りで止まります。トークンへの呼び出しや起動済みの CryptoPro\nユーティリティはいったん終わらせる必要があり、そのとき起動中のユーティリティは強制終了されます。\n保存済みのファイルはそのまま残ります。
 
 # --- コンテナー一覧とログ ---
 col.location = 場所
+col.backend = Способ чтения
 col.container = コンテナー
 col.details = 詳細
-tip.list = 見つかった鍵コンテナー。\n「場所」= CSP（CryptoPro から見える）または Rutoken の名前（トークンから直接読み取り）。\n行を選んでください —「証明書を取り出す」ボタンは選択したコンテナーに対して動作します。
+tip.list = 見つかった鍵コンテナー。\n行を選んでください —「証明書を取り出す」ボタンは選択したコンテナーに対して動作します。
+tip.list.dblclick = Двойной клик по строке равносилен кнопке «Посмотреть контейнер».
+tip.list.columns = «Расположение» — где носитель: имя считывателя, HDIMAGE или прочерк,\nесли КриптоПро видит контейнер, но не сообщает устройство. «Способ чтения» —\nчем строка прочитана: CSP, PKCS#11, APDU, PC/SC или rtCOMLite.\nКлик по заголовку сортирует по колонке: по возрастанию, по убыванию и обратно\nв порядок обхода носителей.
+hint.need.row = Сейчас недоступно: в списке не выбрана строка.\nВыберите строку контейнера, с которым нужно работать.
+hint.row.device = Сейчас недоступно: в выделенной строке только устройство, контейнера в ней нет.\nВыберите строку с именем контейнера.
+hint.row.csp = Сейчас недоступно: контейнер этой строки читается через КриптоПро CSP, а не напрямую с носителя.\nВыберите строку [APDU] или rtCOMLite либо снимите выделение, чтобы обойти все поддерживаемые носители.\nПрава ключей выбранной строки показывает «Посмотреть контейнер».
+hint.row.pkcs11 = Сейчас недоступно: строка PKCS#11 показывает только публичные объекты носителя, файлов контейнера через неё не видно.\nВыберите строку [APDU] или rtCOMLite либо снимите выделение, чтобы обойти все поддерживаемые носители.
+hint.row.certonly = Сейчас недоступно: в выделенной строке только сертификат — парного контейнера КриптоПро на носителе для него нет.\nВыберите строку с именем контейнера; сам сертификат сохраняет «Извлечь сертификат».
+hint.cert.none = Сейчас недоступно: в выделенной строке сертификата нет — PKCS#11 показывает «нет».\nВыберите строку, в которой сертификат есть.
 tip.log = 実行ログ: p12utility のコマンド、トークン操作の各段階、エラー。\nテキストは選択してコピーできます（Ctrl+C）— 問題の切り分けに役立ちます。
 
 # --- ステータスバー ---
@@ -129,6 +151,8 @@ diag.rtcom.system = システムに登録されたコンポーネント
 diag.rtcom.missing = 利用できません
 diag.rtcom.warn = 注意: 内蔵コピーは 32 ビットで、このプロセスには読み込まれません — コンポーネントを導入せずに Rutoken を扱うには x86 のポータブルビルドを使ってください
 diag.csp.ok = CryptoPro CSP: 導入済み、プロバイダー {0}
+csp.alg.2012 = GOST R 34.10-2012、{0} ビット
+csp.alg.2001 = GOST R 34.10-2001
 diag.csp.missing = CryptoPro CSP: 見つかりません — CryptoPro CSP を導入してください（唯一の外部依存です）
 diag.prov = {0}: {1} — {2}
 diag.prov.yes = 利用可能
@@ -158,7 +182,10 @@ pipe.keyexport.fail = 「{0}」の keyexport でエラー: {1} {2}
 token.connect = スマートカードサービスに接続しています…
 token.found = 見つかったデバイス数: {0}
 token.open = トークンを開いています: {0}
-token.skip.smartcard = {0} をスキップします: スマートカード型トークンで、コンテナーのファイルメモリがありません
+token.skip.smartcard = {0} をスキップします: スマートカード型 Rutoken (Lite/ECP) で、rtCOMLite のファイルメモリがありません。Lite のコンテナは直接 APDU で読み取り、ECP のハードウェア鍵はそもそも複製しません
+token.skip.covered = {0} をスキップします: この媒体は上で PKCS#11/APDU により読み取り済みで、rtCOMLite のファイル走査では何も増えません
+token.skip.foreign = {0} をスキップします: Rutoken ではありません。rtCOMLite のファイルメモリは Rutoken S の API であり、他社のカードには適用できません
+token.skip.direct = {0} をスキップします: Rutoken S は直接 APDU で読み取ります。空でない媒体では rtCOMLite が Unsupported function を返すかプロセスを壊します
 token.rtcom.loadfail = 内蔵の rtCOMLite が読み込めませんでした（{0}）。システムに登録されたものを試します
 token.rtcom.mismatch = 内蔵の rtCOMLite が適合しません（{0}）。システムに登録されたものを試します
 token.rtcom.extractfail = 内蔵の rtCOMLite を展開できませんでした（{0}）。システムに登録されたものを試します
@@ -181,6 +208,7 @@ tool.cancelled = 中止により {0} を停止しました
 err.certmgr.notfound = certmgr が見つかりません
 err.container.name = コンテナー名が指定されていません
 err.container.nokey = コンテナー「{0}」が見つからないか、必要な種類の鍵がありません
+err.container.exportable = コンテナーはすでにエクスポート可能です
 err.key.locked = 秘密鍵がエクスポート不可です — 先に禁止を解除してください（「{0}」）。{1}
 err.cert.extract = コンテナーから証明書を取り出せませんでした
 err.pfx.missing = certmgr は成功と報告しましたが、ファイルが作られていません: {0}
@@ -250,11 +278,12 @@ cli.lang.missing = --lang には言語コードが必要です。利用できる
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = あり
 common.certonly = 証明書のみ
-pkcs11.nolib = PKCS#11 ライブラリが見つかりません (rtPKCS11ECP.dll, jcPKCS11-2.dll) — Rutoken ドライバーまたは JaCarta Unified Client を導入してください
+pkcs11.nolib = PKCS#11 ライブラリが見つかりません (rtPKCS11ECP.dll, jcPKCS11-2.dll, isbc_pkcs11_main.dll) — Rutoken ドライバー、JaCarta Unified Client、または ESMART PKI Client を導入してください
 pkcs11.loadfail = PKCS#11 ライブラリを読み込めませんでした: {0}
 pkcs11.enumfail = PKCS#11 スロットを列挙できませんでした: {0}
 pkcs11.tokenfail = トークン「{0}」: {1}
 pkcs11.readfail = トークンのオブジェクトを読み取れませんでした: {0}
+pkcs11.capfail = PKCS#11 機能プロファイルを読み取れませんでした: {0}
 kind.rutoken.s = Rutoken S（ファイルメモリ）
 kind.rutoken.lite = Rutoken Lite（スマートカード）
 kind.rutoken.ecp = Rutoken ECP（スマートカード）
@@ -276,6 +305,19 @@ cli.list.pkcs11 = トークン (PKCS#11):
 cli.token.none = PKCS#11 トークンが見つかりません（トークンが挿入され、Rutoken ドライバーが導入されているか確認してください）。
 cli.token.line = {0}: {1} [{2}]、シリアル {3}、ファームウェア {4}
 cli.token.pin = PIN: {0}
+cap.profile.unknown = メカニズムからは Rutoken ECP の世代を判定できません
+cap.profile.unread = メカニズム一覧を読めませんでした — 世代は判定できません
+cap.profile.ecp2 = メカニズムは Rutoken ECP 2.x と同等
+cap.profile.ecp3 = メカニズムは Rutoken ECP 3.0 と同等
+cli.token.capabilities = ハードウェア {0}、メカニズム {1}、{2}、RSA HW 鍵生成 {3}、ECDSA HW {4}、GOST HW {5}
+cli.token.rsa.bits = 最大 {0} ビット
+cli.token.memory = メモリ: {0}
+cli.token.memory.split = メモリ: 公開 — {0}、非公開 — {1}
+cli.token.memory.side = {0} KB、空き {1} KB
+cli.token.memory.side.nofree = {0} KB (空き容量はトークンが通知しません)
+cli.token.memory.side.nototal = 空き {0} KB (総容量はトークンが通知しません)
+cli.token.memory.side.none = トークンが通知しません
+token.boundary.ecp = Rutoken ECP のハードウェア秘密鍵はコピーされません。利用できるのは診断と、存在する公開証明書だけです。
 cli.token.container = コンテナー「{0}」、証明書: {1}
 cli.token.certonly = 証明書「{0}」（CryptoPro コンテナーなし）
 cli.token.cert.saved = CSP なしで証明書を保存: {0}
@@ -319,9 +361,78 @@ err.pfx.nocert = コンテナーにも引数にも証明書がありません �
 err.pfx.badcert = 証明書ファイルを 256 ビット GOST 鍵の X.509 として読めませんでした
 err.pfx.certmismatch = 証明書は別の鍵のものです: 公開鍵が一致しません
 cli.usage.liteexport = Rutoken Lite コンテナを APDU で読み取り、鍵を復元する（CSP 不要）
+cli.usage.tokenexport = 選択した対応トークンのコンテナをディスクへコピーする
+cli.usage.tokenfull = 選択したトークンから取り出し + 自動 .cer + keyexport
 err.lite.none = {0} で CryptoPro コンテナが APDU 経由で見つかりません
 err.lite.pin = カードが PIN を拒否しました（{0}）。PIN を確認してください。推測は禁止です
-log.export.directonly = The selected row does not expose a readable private-key container. Select an APDU/rtCOMLite row, or clear the selection to scan all Rutoken S devices.
+err.direct.pin.scope = 1 つの PIN を複数のリーダーへ送信できません。対象リーダーを選択してください
+log.export.directonly = The selected row does not expose a readable private-key container. Select an APDU/rtCOMLite row, or clear the selection to scan all supported tokens.
 dlg.confirm.full.selected = Only the selected hardware container will be copied, its certificates extracted, and the key export ban lifted.\n\nContinue?
 pipe.lite.normalized = Lite container «{0}» converted to the HDIMAGE file format
 pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAGE format: {1}
+
+# --- лицензирование ---
+license.status.valid = ライセンスは有効です（{0}）
+license.status.invalid = ライセンスは無効です
+license.status.none = ライセンスがインストールされていません
+license.reason.product = ライセンスは別の製品向けに発行されています: {0}
+license.reason.platform = ライセンスは別のプラットフォーム向けに発行されています: {0}
+license.reason.machine = ライセンスは別のマシン向けに発行されています: フィンガープリントが一致しません
+license.reason.expired = ライセンスの有効期限が切れています: {0}
+license.reason.unreadable = ファイルをライセンスとして読み取れません：ファイルが破損しているか、形式が無効です
+license.reason.signature = ライセンスの署名を検証できませんでした：署名が無効か、署名キーが不明です
+license.required = この操作には有効なライセンスが必要です。ライセンスファイルをインストールしてください（「ライセンス…」ボタンまたは license <ファイル> コマンド）。このマシンのフィンガープリントは fingerprint コマンドで表示されます。
+license.installed = ライセンスをインストールし検証しました: {0}
+license.fp = このマシンのフィンガープリント: {0}
+license.perpetual = 無期限
+license.until = {0} まで
+license.filter = ライセンスファイル (*.jws, *.license)
+cli.usage.fingerprint = このマシンのフィンガープリントを表示（ライセンス取得用）
+cli.usage.license = ライセンスファイルをインストール、または状態を表示
+btn.license = ライセンス…
+tip.license = ライセンスファイル (.jws, .license) をインストールし、このマシン用に検証します。\n有効なライセンスがないと、秘密鍵のエクスポート操作は利用できません。\nこのマシンのフィンガープリント（ライセンス取得用）は fingerprint コマンドと起動時に表示されます。
+dlg.license.title = ライセンスファイルを選択
+
+# --- диагностика PC/SC ---
+cli.pcsc.count = リーダー {0} 台、うち媒体あり {1} 台。PKCS#11 ライブラリが媒体を示したのは {2} 台 — 残りはインストール済みのどのライブラリも示しません
+cli.pcsc.uncovered = PC/SCリーダーに存在するがPKCS#11トークンとして表示されないカード:
+cli.pcsc.line = {0} [{1}] — カードあり、ATR {2}
+cli.pcsc.row = インストール済みのどの PKCS#11 ライブラリもこの媒体を示しません。ATR {0}
+cli.pcsc.hint = このようなカードはPKCS#11トークンではありません。CryptoProの媒体でもない場合、エクスポートするものはありません。
+carrier.jacarta = JaCarta / Aladdin
+carrier.rutoken = Rutoken
+carrier.esmart = ESMART
+carrier.bifit = BIFIT (MS_KEY K / iBank2Key)
+carrier.etoken = eToken / SafeNet
+carrier.unknown = 不明な媒体
+pcsc.contextfail = PC/SC: スマートカードサービスに接続できませんでした ({0})
+pcsc.statusfail = PC/SC: リーダーの状態を読み取れませんでした ({0})
+diag.pnp.none = スマートカードリーダー (PnP): PnP-present のデバイスはありません
+diag.pnp.ok = スマートカードリーダー (PnP): ハードウェア {0} 台、ソフトウェア {1} 台、すべてのドライバーが起動済み
+diag.pnp.usb = USB リーダー {0}
+diag.pnp.bus = バス {0} のリーダー
+diag.pnp.software = ソフトウェアリーダー (バス {0}、背後に媒体はありません)
+diag.pnp.failed = スマートカードリーダー {0}: PnP-present ですが、ドライバーを起動できませんでした — コード {1}、状態 {2}
+diag.pnp.problem = スマートカードリーダー {0}: PnP-present ですが、Windows から PnP の問題が報告されています — コード {1}、状態 {2}
+diag.pnp.unavailable = スマートカードリーダー (PnP): 確認できません ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = トークンの初期PINコードを表示する（機種一覧）
+cli.pins.header = トークンの初期PINコード（各メーカーの公式資料より）:
+cli.pins.line = {0} — ユーザー: {1}、管理者: {2} [{3}]
+cli.pins.unset = 未設定
+cli.pins.supported = 対応済み
+cli.pins.planned = 予定
+cli.pins.note = PINを変更していない場合にのみ有効です。誤ったPINは試行回数を消費し、3回続けるとトークンがロックされます。
+field.pin.hint.factory = 初期PIN {0}
+pins.note.diagnostic = 診断のみ: 秘密鍵はチップから出ません
+pins.note.noadmin = 管理者PINは設定されていません
+pins.note.challenge = PINはチャレンジレスポンスで検証されます。手入力してください
+pins.note.sopin = 管理者PINはSO-PINと呼ばれます
+pins.note.nouser = ユーザーPINは設定されていません
+pins.note.puk = 管理者側はPUKです
+pins.note.applets = 他のアプレットはそれぞれの初期値のままです
+log.token.replaced = リーダーのトークンが交換されました。一覧を更新してやり直してください
+log.token.state.unknown = トークンの現在の状態を読み取れませんでした。処理を中止しました
+tip.pin.show = 入力欄のPINを表示します。\n現在は文字が隠れています。
+tip.pin.hide = 入力欄のPINを隠します。\n現在は文字が見えています。

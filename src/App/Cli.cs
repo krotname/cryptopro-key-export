@@ -26,6 +26,8 @@ namespace CryptoProExport.App
             ("extractcert <container> <outDir>",     "cli.usage.extractcert"),
             ("checkexport <container>",              "cli.usage.checkexport"),
             ("export <destDir> [pin]",               "cli.usage.export"),
+            ("tokenexport <reader> <outDir> [pin] [--container <id>]", "cli.usage.tokenexport"),
+            ("tokenfull <reader> <outDir> [pin] [--container <id>]",   "cli.usage.tokenfull"),
             ("keyexport <folder> <cert.cer> [pass]", "cli.usage.keyexport"),
             ("install <folder> [name]",              "cli.usage.install"),
             ("installed",                            "cli.usage.installed"),
@@ -35,15 +37,39 @@ namespace CryptoProExport.App
             ("extractpfx <folder> <out.pfx> <pfx-pass> [pass] [cert.cer]", "cli.usage.extractpfx"),
             ("liteexport <reader> <outDir> [pin]",   "cli.usage.liteexport"),
             ("full <destDir> [cert.cer] [pin]",      "cli.usage.full"),
+            ("pins",                                 "cli.usage.pins"),
+            ("fingerprint",                          "cli.usage.fingerprint"),
+            ("license [file|status]",                "cli.usage.license"),
             ("help",                                 "cli.usage.help"),
             ("--lang <xx>",                          "cli.usage.lang"),
         };
+
+        /// <summary>
+        /// Операции, дающие сам экспорт закрытого ключа. Без действительной лицензии они закрыты
+        /// (жёсткий гейт). Диагностика (deps/list/checkexport/installed/token/extractcert),
+        /// установка лицензии и справка остаются доступными — иначе нельзя было бы узнать отпечаток
+        /// и ввести лицензию.
+        /// </summary>
+        private static readonly string[] LicensedCommands =
+            { "export", "tokenexport", "tokenfull", "full", "keyexport", "extractkey", "extractpfx", "liteexport", "topfx" };
 
         public static int Run(string[] args)
         {
             try
             {
-                switch (args[0].ToLowerInvariant())
+                string cmd = args[0].ToLowerInvariant();
+
+                // Жёсткий гейт: операции экспорта закрытого ключа требуют действительной лицензии
+                // (офлайн-проверка вшитым ключом). Диагностика, установка лицензии и справка — свободны.
+                if (Array.IndexOf(LicensedCommands, cmd) >= 0 && !LicenseGate.IsLicensed())
+                {
+                    Err(Strings.Get("license.required"));
+                    Out(LicenseGate.StatusText());
+                    Out(LicenseGate.FingerprintText());
+                    return 4;
+                }
+
+                switch (cmd)
                 {
                     case "help":
                     case "--help":
@@ -68,7 +94,8 @@ namespace CryptoProExport.App
                         foreach (var c in CertFromContainer.EnumContainers())
                             Out($"  {c.Name}  " + Strings.Format("cli.list.provider", c.ProvType));
 
-                        // Токены по PKCS#11 (Рутокен ЭЦП/Lite): контейнеры видны без ввода PIN.
+                        // Токены по PKCS#11: метаданные и профиль механизмов видны без PIN;
+                        // публичные сертификаты показываются только когда реально присутствуют.
                         // Лог обязателен: без него сбой драйвера выглядел бы как «токенов нет».
                         var tokens = Pkcs11Token.Enumerate(readContainers: true, log: Out);
                         Out("[PKCS#11] " + Strings.Format("token.found", tokens.Count));
@@ -79,9 +106,29 @@ namespace CryptoProExport.App
                         foreach (var t in tokens)
                         {
                             Out($"  {t.Reader} [{Pkcs11Token.KindName(t.Kind)}]");
+                            Out("    " + Pkcs11Token.CapabilitySummary(t));
+                            if (t.Kind == RutokenKind.RutokenEcp)
+                                Out("    " + Strings.Get("token.boundary.ecp"));
                             foreach (var c in t.Containers)
                                 Out("    " + DescribeTokenEntry(c));
+                            if (DirectTokenApdu.Supports(t.Kind))
+                            {
+                                try
+                                {
+                                    var direct = new DirectTokenApdu { Log = m => Out("[APDU] " + m) };
+                                    foreach (var c in direct.ListContainers(t))
+                                        Out($"    [APDU {c.OutputName}] {c.Name ?? Strings.Get("log.container.unnamed")}");
+                                }
+                                catch (Exception e)
+                                {
+                                    Out("    [APDU] " + Strings.Format("log.tokens.unavailable", e.Message));
+                                }
+                            }
                         }
+
+                        // Карты, стоящие в PC/SC, но не показанные PKCS#11 — иначе «токенов нет»
+                        // читается как «носитель не вставлен», хотя карта физически стоит.
+                        ReportUncoveredCards(tokens);
 
                         Out(Strings.Get("cli.list.tokens"));
                         var exp = new RutokenExporter
@@ -100,7 +147,14 @@ namespace CryptoProExport.App
                     case "token":
                     {
                         var tokens = Pkcs11Token.Enumerate(readContainers: true, log: Out);
-                        if (tokens.Count == 0) { Out(Strings.Get("cli.token.none")); return 2; }
+                        if (tokens.Count == 0)
+                        {
+                            Out(Strings.Get("cli.token.none"));
+                            // Не молчим о карте, которую PKCS#11 не показал: возможно, носитель
+                            // стоит, но обслуживается минидрайвером и токеном не является.
+                            ReportUncoveredCards(tokens);
+                            return 2;
+                        }
                         string outDir = args.Length > 1 ? args[1] : null;
                         bool anySaveFailed = false;
                         bool anyCertificate = false;
@@ -110,6 +164,9 @@ namespace CryptoProExport.App
                             Out(Strings.Format("cli.token.line", t.Reader ?? "?", t.Label ?? "?",
                                 Pkcs11Token.KindName(t.Kind), t.Serial ?? "?", t.Firmware ?? "?"));
                             Out("  " + Strings.Format("cli.token.pin", Pkcs11Token.PinState(t)));
+                            Out("  " + Pkcs11Token.CapabilitySummary(t));
+                            if (t.Kind == RutokenKind.RutokenEcp)
+                                Out("  " + Strings.Get("token.boundary.ecp"));
                             foreach (var c in t.Containers)
                             {
                                 Out("  " + DescribeTokenEntry(c));
@@ -155,6 +212,102 @@ namespace CryptoProExport.App
                         // файлы на месте (тот же разбор, что у команды token в v1.4.1).
                         return saved.Count > 0 ? 0 : 2;
                     }
+                    case "tokenexport":
+                    {
+                        if (args.Length < 3) { Usage(); return 1; }
+                        string reader = args[1];
+                        string outDir = args[2];
+                        if (!TryParseDirectOptions(args, 3, out string pin,
+                                out string outputName))
+                        {
+                            Usage();
+                            return 1;
+                        }
+                        Pkcs11TokenInfo token = Pkcs11Token.Enumerate(readContainers: false, log: Out)
+                            .Find(candidate => string.Equals(candidate.Reader, reader,
+                                StringComparison.OrdinalIgnoreCase));
+                        if (token == null)
+                        {
+                            Err(Strings.Format("err.lite.none", reader));
+                            return 2;
+                        }
+                        if (!DirectTokenApdu.Supports(token.Kind))
+                            throw new ArgumentException(Pkcs11Token.KindName(token.Kind), nameof(reader));
+
+                        var pipeline = new ExportPipeline { Log = Out };
+                        List<DirectTokenContainerRef> containers = pipeline.Direct.ListContainers(token);
+                        try
+                        {
+                            containers = DirectTokenApdu.SelectContainers(token, containers, outputName);
+                        }
+                        catch (ArgumentException error)
+                        {
+                            Err(error.Message);
+                            return 1;
+                        }
+                        if (containers.Count == 0)
+                        {
+                            Err(Strings.Format("err.lite.none", reader));
+                            return 2;
+                        }
+                        int done = 0;
+                        foreach (DirectTokenContainerRef selected in containers)
+                        {
+                            var saved = pipeline.ExportDirectContainer(token, selected, outDir, pin);
+                            Out(Strings.Format("cli.done", saved.folder));
+                            done++;
+                        }
+                        return done > 0 ? 0 : 2;
+                    }
+                    case "tokenfull":
+                    {
+                        if (args.Length < 3) { Usage(); return 1; }
+                        string reader = args[1];
+                        string outDir = args[2];
+                        if (!TryParseDirectOptions(args, 3, out string pin,
+                                out string outputName))
+                        {
+                            Usage();
+                            return 1;
+                        }
+                        Pkcs11TokenInfo token = Pkcs11Token.Enumerate(readContainers: false, log: Out)
+                            .Find(candidate => string.Equals(candidate.Reader, reader,
+                                StringComparison.OrdinalIgnoreCase));
+                        if (token == null)
+                        {
+                            Err(Strings.Format("err.lite.none", reader));
+                            return 2;
+                        }
+                        if (!DirectTokenApdu.Supports(token.Kind))
+                            throw new ArgumentException(Pkcs11Token.KindName(token.Kind), nameof(reader));
+
+                        var pipeline = new ExportPipeline { Log = Out };
+                        List<DirectTokenContainerRef> containers = pipeline.Direct.ListContainers(token);
+                        try
+                        {
+                            containers = DirectTokenApdu.SelectContainers(token, containers, outputName);
+                        }
+                        catch (ArgumentException error)
+                        {
+                            Err(error.Message);
+                            return 1;
+                        }
+                        if (containers.Count == 0)
+                        {
+                            Err(Strings.Format("err.lite.none", reader));
+                            return 2;
+                        }
+                        int exported = 0, completed = 0;
+                        foreach (DirectTokenContainerRef selected in containers)
+                        {
+                            ExportPipelineResult result = pipeline.ExportDirectAndMakeExportable(
+                                token, selected, outDir, pin);
+                            exported += result.Exported;
+                            completed += result.Completed;
+                        }
+                        Out(Strings.Format("log.exported", exported));
+                        return exported == 0 ? 2 : completed == exported ? 0 : 3;
+                    }
                     case "keyexport":
                     {
                         if (args.Length < 3) { Usage(); return 1; }
@@ -177,6 +330,17 @@ namespace CryptoProExport.App
                         {
                             Out(Strings.Get("cli.install.invisible"));
                             return 2;
+                        }
+                        if (installed.VisibleToCsp)
+                        {
+                            string certMgrPath = CertMgr.Locate();
+                            if (certMgrPath != null)
+                            {
+                                var cm = new CertMgr(certMgrPath) { Log = Out };
+                                var linked = cm.InstallContainerCertificates(
+                                    args[1], CertMgr.HdImageContainer(installed.Name));
+                                if (linked.Found > 0 && !linked.AllSucceeded) return 3;
+                            }
                         }
                         return 0;
                     }
@@ -243,19 +407,31 @@ namespace CryptoProExport.App
                         if (args.Length < 3) { Usage(); return 1; }
                         string reader = args[1], outDir = args[2];
                         string pin = args.Length > 3 ? args[3] : null;
+
+                        // Явная CLI-команда раньше шла к reader по Rutoken Lite APDU до
+                        // классификации. Для известного носителя другого типа это опасная
+                        // подмена протокола (в частности, JaCarta LT использует Datastore).
+                        // Без положительного распознавания Rutoken Lite APDU не запускаем:
+                        // имя штатного reader классифицируется и без PKCS#11-драйвера.
+                        var tok = Pkcs11Token.Enumerate(readContainers: false, log: Out)
+                            .Find(t => string.Equals(t.Reader, reader, StringComparison.OrdinalIgnoreCase));
+                        RutokenKind readerKind = Pkcs11Token.ResolveReaderKind(reader, tok);
+                        if (readerKind != RutokenKind.RutokenLite)
+                            throw new ArgumentException(Pkcs11Token.KindName(readerKind), nameof(reader));
+
                         var lite = new RutokenLiteApdu { Log = Out };
                         var containers = lite.ListContainers(reader);
                         if (containers.Count == 0) { Err(Strings.Format("err.lite.none", reader)); return 2; }
                         foreach (var c in containers) Out($"  [{c.DfIndex:X2}] {c.Name}");
                         if (string.IsNullOrEmpty(pin))
                         {
-                            var tok = Pkcs11Token.Enumerate(readContainers: false, log: Out)
-                                .Find(t => string.Equals(t.Reader, reader, StringComparison.OrdinalIgnoreCase));
                             // Авто-PIN только при заводском PIN И полностью чистом счётчике:
                             // при подъеденном счётчике даже верный ввод рискует, а промах — блокирует.
                             if (tok != null && tok.PinDefault &&
-                                !tok.PinCountLow && !tok.PinFinalTry && !tok.PinLocked) pin = "12345678";
-                            else { Err(Strings.Format("err.lite.pin", "—")); return 2; }
+                                !tok.PinCountLow && !tok.PinFinalTry && !tok.PinLocked)
+                                pin = StandardPins.AutoFillUserPinFor(RutokenKind.RutokenLite);
+                            if (string.IsNullOrEmpty(pin))
+                            { Err(Strings.Format("err.lite.pin", "—")); return 2; }
                         }
                         int done = 0;
                         int failed = 0;
@@ -303,6 +479,55 @@ namespace CryptoProExport.App
                         Out(Strings.Format("log.exported", result.Exported));
                         return result.AllSucceeded ? 0 : result.Exported == 0 ? 2 : 3;
                     }
+                    case "pins":
+                    {
+                        // Реестр заводских PIN: значения опубликованы производителями и нужны,
+                        // когда владелец забыл, менялся ли PIN на его носителе.
+                        Out(Strings.Get("cli.pins.header"));
+                        foreach (StandardPin pin in StandardPins.All)
+                        {
+                            string user = string.IsNullOrEmpty(pin.UserPin)
+                                ? Strings.Get("cli.pins.unset") : pin.UserPin;
+                            string admin = string.IsNullOrEmpty(pin.AdminPin)
+                                ? Strings.Get("cli.pins.unset") : pin.AdminPin;
+                            Out("  " + Strings.Format("cli.pins.line", pin.Model, user, admin,
+                                Strings.Get(pin.Supported ? "cli.pins.supported" : "cli.pins.planned")));
+                            if (!string.IsNullOrEmpty(pin.NoteKey))
+                                Out("      " + Strings.Get(pin.NoteKey));
+                            Out("      " + pin.Source);
+                        }
+                        Out(Strings.Get("cli.pins.note"));
+                        return 0;
+                    }
+                    case "fingerprint":
+                        Out(LicenseGate.FingerprintText());
+                        return 0;
+                    case "license":
+                    {
+                        // Без аргумента или `license status` — показать статус и отпечаток;
+                        // `license <файл>` — проверить файл и, если он для этой машины, установить.
+                        if (args.Length < 2 || string.Equals(args[1], "status", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Out(LicenseGate.StatusText());
+                            Out(LicenseGate.FingerprintText());
+                            return LicenseGate.IsLicensed() ? 0 : 2;
+                        }
+                        var info = LicenseGate.Install(args[1]);
+                        if (info.Ok)
+                        {
+                            Out(Strings.Format("license.installed", LicenseGate.LicensePath));
+                            Out(LicenseGate.Describe(info));
+                            return 0;
+                        }
+                        Err(Strings.Get("license.status.invalid"));
+                        // Причина — отдельной строкой и на языке интерфейса: «недействительна» не
+                        // отличает чужую платформу от чужого отпечатка. Точное сообщение верификатора
+                        // (диагностика протокола, всегда по-русски) остаётся в файле журнала.
+                        Err(LicenseGate.ReasonText(info));
+                        if (!string.IsNullOrEmpty(info.VerifierDiagnostic))
+                            SessionLog.Write(info.VerifierDiagnostic);
+                        return 2;
+                    }
                     default:
                         Usage();
                         return 1;
@@ -316,6 +541,28 @@ namespace CryptoProExport.App
         }
 
         /// <summary>
+        /// Показать карты, которые физически стоят в считывателях PC/SC, но которых нет среди
+        /// перечисленных PKCS#11-токенов. Это честно отличает «носитель не вставлен» от «носитель
+        /// есть, но не является поддерживаемым контейнером» (например, JaCarta на платформе Athena
+        /// IDProtect: она работает через минидрайвер Microsoft, и ни одна vendor-библиотека PKCS#11
+        /// её как токен не показывает). Только диагностика: путь снятия ключа отсюда не выбирается.
+        /// </summary>
+        private static void ReportUncoveredCards(List<Pkcs11TokenInfo> tokens)
+        {
+            var pcsc = PcscReaders.List(m => Out("[PC/SC] " + m));
+            var readers = new List<string>();
+            foreach (var t in tokens) if (t?.Reader != null) readers.Add(t.Reader);
+
+            // Сводка печатается всегда: расхождение «устройств PKCS#11 семь, а считывателей
+            // восемь» без неё выглядело ошибкой приложения, хотя считаются разные вещи.
+            var lines = PcscReaders.CoverageLines(pcsc, readers);
+            if (lines.Count == 0) return;
+            foreach (var line in lines) Out("[PC/SC] " + line);
+            if (PcscReaders.Uncovered(pcsc, readers).Count > 0)
+                Out("  " + Strings.Get("cli.pcsc.hint"));
+        }
+
+        /// <summary>
         /// Строка списка для одной записи токена. Сертификат без парного контейнера КриптоПро
         /// называть «контейнером» нельзя — у него отдельная формулировка.
         /// </summary>
@@ -324,6 +571,44 @@ namespace CryptoProExport.App
                 ? Strings.Format("cli.token.certonly", c.Name ?? "?")
                 : Strings.Format("cli.token.container", c.Name ?? "?",
                     Strings.Get(c.Certificate != null ? "common.present" : "common.none"));
+
+        /// <summary>
+        /// Разобрать единственный позиционный PIN и необязательный точный технический
+        /// селектор. Значение можно передать как --container id или --container=id.
+        /// Неизвестные опции и дубли отклоняются, а не превращаются в PIN.
+        /// </summary>
+        private static bool TryParseDirectOptions(string[] args, int firstOptional,
+                                                  out string pin, out string outputName)
+        {
+            pin = null;
+            outputName = null;
+            for (int i = firstOptional; i < args.Length; i++)
+            {
+                string argument = args[i];
+                if (argument.StartsWith("--container=", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (outputName != null) return false;
+                    outputName = argument.Substring("--container=".Length);
+                    if (string.IsNullOrWhiteSpace(outputName)) return false;
+                }
+                else if (string.Equals(argument, "--container",
+                             StringComparison.OrdinalIgnoreCase))
+                {
+                    if (outputName != null || i + 1 >= args.Length) return false;
+                    outputName = args[++i];
+                    if (string.IsNullOrWhiteSpace(outputName)
+                        || outputName.StartsWith("--", StringComparison.Ordinal))
+                        return false;
+                }
+                else
+                {
+                    if (argument.StartsWith("--", StringComparison.Ordinal) || pin != null)
+                        return false;
+                    pin = argument;
+                }
+            }
+            return true;
+        }
 
         /// <summary>
         /// Сохранить извлечённый с токена сертификат (.cer) — без обращения к CSP.
@@ -359,6 +644,7 @@ namespace CryptoProExport.App
             foreach (var (syntax, key) in Commands)
                 Out("  " + syntax.PadRight(width, ' ') + Strings.Get(key));
             Out("  " + Strings.Get("cli.usage.gui"));
+            Out("  " + Strings.Get("token.boundary.ecp"));
         }
     }
 }

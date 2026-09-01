@@ -9,15 +9,16 @@ namespace CryptoProExport.Tests
     public sealed class ExportPipelineTests
     {
         [Fact]
-        public void AllPresentKeysHandled_RequiresCertificateForEveryPresentKey()
+        public void HasCertificateForPresentKey_AllowsOneCertifiedPairInTwoKeyFiles()
         {
             var both = new RutokenContainer();
             both.Files["primary.key"] = new byte[] { 1 };
             both.Files["primary2.key"] = new byte[] { 2 };
 
-            Assert.False(ExportPipeline.AllPresentKeysHandled(both, "exchange.cer", null));
-            Assert.False(ExportPipeline.AllPresentKeysHandled(both, null, "signature.cer"));
-            Assert.True(ExportPipeline.AllPresentKeysHandled(both, "exchange.cer", "signature.cer"));
+            Assert.True(ExportPipeline.HasCertificateForPresentKey(both, "exchange.cer", null));
+            Assert.True(ExportPipeline.HasCertificateForPresentKey(both, null, "signature.cer"));
+            Assert.True(ExportPipeline.HasCertificateForPresentKey(
+                both, "exchange.cer", "signature.cer"));
         }
 
         [Fact]
@@ -43,19 +44,50 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
-        public void AllPresentKeysHandled_AllowsSingleKeyContainer()
+        public void HasCertificateForPresentKey_RequiresMatchingPresentPair()
         {
             var exchangeOnly = new RutokenContainer();
             exchangeOnly.Files["primary.key"] = new byte[] { 1 };
+            var signatureOnly = new RutokenContainer();
+            signatureOnly.Files["primary2.key"] = new byte[] { 2 };
 
-            Assert.True(ExportPipeline.AllPresentKeysHandled(exchangeOnly, "exchange.cer", null));
+            Assert.True(ExportPipeline.HasCertificateForPresentKey(
+                exchangeOnly, "exchange.cer", null));
+            Assert.False(ExportPipeline.HasCertificateForPresentKey(
+                exchangeOnly, null, "signature.cer"));
+            Assert.False(ExportPipeline.HasCertificateForPresentKey(
+                signatureOnly, "exchange.cer", null));
+            Assert.True(ExportPipeline.HasCertificateForPresentKey(
+                signatureOnly, null, "signature.cer"));
         }
 
         [Fact]
-        public void AllPresentKeysHandled_RejectsContainerWithoutRecognizedKey()
+        public void HasCertificateForPresentKey_RejectsContainerWithoutRecognizedKey()
         {
-            Assert.False(ExportPipeline.AllPresentKeysHandled(new RutokenContainer(),
-                                                               "exchange.cer", "signature.cer"));
+            Assert.False(ExportPipeline.HasCertificateForPresentKey(new RutokenContainer(),
+                                                                     "exchange.cer", "signature.cer"));
+        }
+
+        [Theory]
+        [InlineData(true, false, true, false)]
+        [InlineData(false, true, false, true)]
+        [InlineData(true, true, true, true)]
+        [InlineData(false, false, false, false)]
+        public void LiteRepairTargets_SelectsOnlyKeysWithMatchingCertificates(
+            bool hasExchangeCert, bool hasSignatureCert,
+            bool expectExchange, bool expectSignature)
+        {
+            var both = new RutokenContainer();
+            both.Files["primary.key"] = new byte[] { 1 };
+            both.Files["primary2.key"] = new byte[] { 2 };
+
+            var targets = ExportPipeline.LiteRepairTargets(
+                both,
+                hasExchangeCert ? "exchange.cer" : null,
+                hasSignatureCert ? "signature.cer" : null);
+
+            Assert.Equal(expectExchange, targets.exchange);
+            Assert.Equal(expectSignature, targets.signature);
         }
 
         [Fact]
@@ -91,6 +123,25 @@ namespace CryptoProExport.Tests
             };
 
             Assert.Throws<LiteApduException>(() => ExportPipeline.ResolveLitePin(token, null));
+        }
+
+        [Fact]
+        public void ExportLiteContainer_RejectsJaCartaLtBeforeApduOrFilesystemWrite()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "cpx-jacarta-lt-" + Guid.NewGuid().ToString("N"));
+            var token = new Pkcs11TokenInfo
+            {
+                Reader = "Aladdin R.D. JaCarta LT 0",
+                Kind = RutokenKind.JaCartaLt,
+            };
+            var selected = new LiteContainerRef();
+            var pipeline = new ExportPipeline();
+
+            var error = Assert.Throws<ArgumentException>(
+                () => pipeline.ExportLiteContainer(token, selected, dir, "not-used"));
+
+            Assert.Contains("JaCarta LT", error.Message, StringComparison.Ordinal);
+            Assert.False(Directory.Exists(dir));
         }
 
         [Fact]

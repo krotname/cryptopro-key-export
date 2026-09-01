@@ -12,9 +12,18 @@ namespace CryptoProExport
     /// Смысл: пользователю не нужно ничего скачивать и класть рядом с exe —
     ///   • <c>p12utility.win32.exe</c> (КриптоПро, снятие запрета на экспорт);
     ///   • <c>rtCOMLite.dll</c> (Rutoken COM Lite, чтение файловой памяти токена)
-    ///     — грузится без регистрации в системе, см. <see cref="RegFreeCom"/>.
+    ///     — грузится без регистрации в системе, см. <see cref="RegFreeCom"/>;
+    ///   • библиотеки PKCS#11 трёх вендоров (Рутокен ЭЦП/Lite, JaCarta, ESMART) — запасной путь
+    ///     на машине без установленных драйверов носителя. Проверено 31.08.2026: каждая из них
+    ///     импортирует только системные DLL (WinSCard, CRYPT32, bcrypt …) и грузится из любого
+    ///     каталога. Системная копия всегда приоритетнее вшитой — см. <see cref="Pkcs11Token"/>.
     /// Единственное, что остаётся внешним, — сам КриптоПро CSP (лицензионный продукт,
     /// его CryptoAPI-провайдер должен быть установлен в системе).
+    ///
+    /// <para>Рутокен S (<c>rtPKCS11.dll</c>) намеренно не вшит: он импортирует
+    /// <c>rtAPIi.dll</c>/<c>rtLib.dll</c> из пакета драйверов, а сам носитель не является
+    /// CCID-считывателем — без драйвера Aktiv к нему нечем обратиться, и одна библиотека
+    /// ничего не дала бы.</para>
     ///
     /// Кэш: <c>%LOCALAPPDATA%\CryptoProExport\bundled\&lt;версия&gt;\</c>. Распаковка идемпотентна:
     /// файл переписывается, только если отсутствует или отличается по размеру.
@@ -27,6 +36,12 @@ namespace CryptoProExport
 
         public const string P12UtilityFileName = "p12utility.win32.exe";
         public const string RtComLiteFileName  = "rtCOMLite.dll";
+
+        /// <summary>Префикс ресурса вшитой нативной зависимости.</summary>
+        public const string ResourcePrefix = "CryptoProExport.Tools.";
+
+        /// <summary>Имя ресурса по имени файла: раскладка ресурсов повторяет каталог tools/.</summary>
+        public static string ResourceName(string fileName) => ResourcePrefix + fileName;
 
         private static readonly object Gate = new object();
         private static readonly Assembly Self = typeof(BundledTools).Assembly;

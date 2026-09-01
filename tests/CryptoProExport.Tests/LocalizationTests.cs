@@ -143,6 +143,15 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void RussianContainerView_HasTheRequestedLabels()
+        {
+            var ru = Strings.Table("ru");
+
+            Assert.Equal("Посмотреть контейнер", ru["btn.check"]);
+            Assert.Equal("Контейнер уже экспортируемый", ru["err.container.exportable"]);
+        }
+
+        [Fact]
         public void ComArgumentDetail_UsesTheSelectedLanguage()
         {
             using (Strings.Scope("en"))

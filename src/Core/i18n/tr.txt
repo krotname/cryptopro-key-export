@@ -13,18 +13,14 @@ common.none = yok
 files.all = Tüm dosyalar
 
 # --- ayarlar paneli ---
-field.p12 = p12utility.exe:
-field.p12.placeholder = gömülü kopya — burada bir şey belirtmeye gerek yok
 field.dest = Hedef klasör:
 field.pin = PIN (isteğe bağlı):
 field.pin.hint = boş → soru penceresi
 field.lang = Arayüz dili:
 
-tip.p12 = CryptoPro’nun p12utility aracının yolu — anahtarın dışa aktarım yasağını kaldıran odur.\nAlanı boş bırakın: aracın bir kopyası programa gömülüdür ve kendiliğinden açılır.\nYalnızca p12utility’nin başka bir sürümü gerekiyorsa doldurun.
-tip.p12.browse = Gömülü kopya yerine başka bir p12utility.exe seçin.
 tip.dest = Sonucun konacağı yer: çıkarılan kapsayıcı klasörleri (*.key) ve sertifika dosyaları (.cer).\nDikkat: bu, özel anahtarınızın bir kopyasıdır — sır gibi saklayın.
 tip.dest.browse = Hedef klasörü seçin.
-tip.pin = Rutoken kullanıcı PIN’i.\nBoş → PIN’i sistem penceresi soracaktır (belirteçte fabrika PIN’i duruyorsa 12345678 kullanılır).\nKarakterler gizlidir; değer hiçbir yere kaydedilmez.
+tip.pin = Rutoken kullanıcı PIN’i.\nBoş → PIN’i sistem penceresi soracaktır (belirteçte fabrika PIN’i duruyorsa 12345678 kullanılır).\nKarakterler körlemesine yanlış yazmamak için görünür; yanındaki düğme onları gizler. Değer hiçbir yere kaydedilmez.
 tip.lang = Arayüzün, ipuçlarının ve iletilerin dili.\nSeçim hatırlanır ve sonraki açılışlarda uygulanır.\nKomut satırında aynısı: --lang tr
 
 # --- düğmeler ---
@@ -32,29 +28,55 @@ btn.refresh = Listeyi yenile
 btn.export = Belirteçten dışa aktar
 btn.extract = Sertifikayı çıkar
 btn.full = Dışa aktarılabilir yap
-btn.check = Anahtarı denetle
+btn.check = Kapsayıcıyı görüntüle
 btn.install = CryptoPro’ya kur
 btn.pfx = PFX olarak dışa aktar
 btn.logs = Günlük
+btn.logpane.show = Показать журнал
+btn.logpane.hide = Скрыть журнал
 btn.help = Yardım
 btn.cancel = İptal
 
+# --- подписи рядов кнопок (только по-русски, AGENTS п. 17) ---
+group.list = Список:
+group.steps = Шаги:
+group.result = Результат:
+group.service = Служебное:
+
+# --- выбор способа .pfx (только по-русски, AGENTS п. 17) ---
+btn.pfx.choice = Сохранить в PFX…
+tip.pfx.choice = Собрать файл .pfx с закрытым ключом. Способа два, и файлы получаются разные —\nвыбор со всеми пояснениями появится по нажатию:\n  • через КриптоПро (certmgr) — такой файл КриптоПро потом примет обратно;\n  • без КриптоПро, из папки снятого контейнера — для OpenSSL и других программ.
+dlg.pfx.choice.title = Сохранить в PFX
+dlg.pfx.choice.prompt = Оба способа дают файл .pfx с закрытым ключом, но это разные файлы. Выберите нужный.
+dlg.pfx.choice.csp = Такой файл КриптоПро потом примет обратно — берите его, если .pfx нужен как резервная копия ключа для КриптоПро.
+
 tip.refresh = 1. adım. Anahtar kapsayıcılarının listesini göster:\n  • CryptoPro CSP’nin gördükleri (takılı belirteçtekiler dâhil);\n  • bağlı Rutoken’larda doğrudan bulunanlar.\nHiçbir şeyi değiştirmez — yalnızca okur. Başlamak için uygun düğme.
-tip.export = 2. adım. Bağlı tüm Rutoken’lardan kapsayıcıları hedef klasöre çıkar\n(kapsayıcı başına 6 *.key dosyası). Belirtecin belleğini CSP’yi atlayarak doğrudan okur,\nbu yüzden dışa aktarım yasağı varken de çalışır. Belirteç ve verileri değişmez.\nÇıkarılan kopyadaki anahtar hâlâ dışa aktarılamaz — onu «Dışa aktarılabilir yap» düğmesi halleder.
+tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
+tip.export = 2. adım. Rutoken S / Lite, JaCarta LT ve ESMART’tan kapsayıcıları hedef klasöre çıkar\n(kapsayıcı başına 6 *.key dosyası). Belirtecin belleğini CSP’yi atlayarak doğrudan okur,\nbu yüzden dışa aktarım yasağı varken de çalışır. Belirteç ve verileri değişmez.\nÇıkarılan kopyadaki anahtar hâlâ dışa aktarılamaz — onu «Dışa aktarılabilir yap» düğmesi halleder.
 tip.extract = 3. adım. Listede seçili kapsayıcının sertifikasını bir .cer dosyasına kaydet\n(açık veri, CryptoAPI üzerinden olağan biçimde çıkarılır).\nListede seçili bir kapsayıcı, takılı belirteç ve kapsayıcının CSP’ye görünür olması gerekir.\nDışa aktarım yasağını kaldırmak için p12utility’ye bu sertifika gerekir.
 tip.full = Tek tıkla her şey: kapsayıcıları belirteçten çıkar → sertifikaları çıkar →\nözel anahtarın dışa aktarım yasağını kaldır (p12utility --cprepair --keyexport).\nSonuç: hedef klasörde dışa aktarılabilir anahtara sahip bir kapsayıcı kopyası\n(yedek, taşıma ve PFX’e dönüştürme için uygundur).\nÖzgün belirteç değişmez; kopyanın asıl header.key dosyası header.key.backup olarak kalır.
-tip.check = Listede seçili kapsayıcıyı denetle: özel anahtarın dışa aktarım yasağı kalktı mı?\nProgram anahtarın izinlerini (KP_PERMISSIONS) okur — anahtarın kendisi hiç dışa aktarılmaz.\n«Dışa aktarılabilir yap» gerçekten işe yaradı mı, böyle doğrulanır.
+tip.check = Seçili kapsayıcıyı görüntüle: adı, konumu, ayrıntıları ve iki anahtarın izinleri.\nProgram anahtarın izinlerini (KP_PERMISSIONS) okur — anahtarın kendisi hiç dışa aktarılmaz.\n«Dışa aktarılabilir yap» gerçekten işe yaradı mı, böyle doğrulanır.
 tip.install = Belirteçten çıkarılmış bir kapsayıcı klasörünü (6 *.key dosyası) CryptoPro’ya kur —\nyani onu CSP deposuna kopyala. Ardından kapsayıcı listede görünür ve belirteç olmadan\nçalışır: sertifikası çıkarılabilir, PFX olarak dışa aktarılabilir.\nAdı değiştirmek zorunlu değil: CryptoPro adı kapsayıcının içeriğiyle karşılaştırır ve\nadı değiştirilmiş kopyayı her zaman kabul etmez. Program sonucu denetler ve\nCSP’nin kapsayıcıyı gerçekten görüp görmediğini bildirir.
-tip.pfx = Listede seçili kapsayıcıyı bir PKCS#12 (.pfx) dosyasına aktar — sertifika ile\nözel anahtar birlikte, başka bir sisteme taşımak için.\nGerekenler: dışa aktarım yasağının kalkmış olması («Anahtarı denetle» «dışa aktarılabilir» göstermeli)\nve CryptoPro CSP’nin kurulu olması (onun certmgr’ı kullanılır).\n.pfx parolasını program ayrıca soracaktır.
+tip.pfx = Listede seçili kapsayıcıyı bir PKCS#12 (.pfx) dosyasına aktar — sertifika ile\nözel anahtar birlikte, başka bir sisteme taşımak için.\nGerekenler: dışa aktarım yasağının kalkmış olması («Kapsayıcıyı görüntüle» «dışa aktarılabilir» göstermeli)\nve CryptoPro CSP’nin kurulu olması (onun certmgr’ı kullanılır).\n.pfx parolasını program ayrıca soracaktır.
 tip.logs = Programın çalışma günlüklerinin bulunduğu klasörü aç.\nHer açılış kendi dosyasını yazar — bir şey yolunda gitmediyse\nsoruya eklemek pratiktir. Parolalar günlüğe hiç düşmez.
+tip.logpane = Развернуть или свернуть журнал внизу окна.\nПо умолчанию он свёрнут: в строке состояния видно, что идёт сейчас и чем\nзакончился предыдущий шаг, а списку достаётся всё окно. Полный текст нужен\nпри разборе — тогда журнал и разворачивают.\nСоседняя кнопка «Журнал» открывает папку с файлами прошлых запусков.
 tip.help = Gömülü kılavuz: nereden başlanır, her düğme ne yapar,\nkonsol kipinin komutları ve tipik hataların çözümlemesi.\nProgramın içindedir — internet ve dış dosya gerekmez.
 tip.cancel = Süren işlemi kes.\nÇalışma en yakın adımda durur: belirtece yapılan çağrı ya da başlatılmış bir CryptoPro\naracı önce bitirilmek zorundadır — çalışan araç o sırada sonlandırılır.\nHâlihazırda kaydedilmiş dosyalar yerinde kalır.
 
 # --- kapsayıcı listesi ve günlük ---
 col.location = Konum
+col.backend = Способ чтения
 col.container = Kapsayıcı
 col.details = Ayrıntılar
-tip.list = Bulunan anahtar kapsayıcıları.\n«Konum» = CSP (CryptoPro görüyor) ya da Rutoken adı (doğrudan belirteçten okundu).\nBir satır seçin — «Sertifikayı çıkar» düğmesi seçili kapsayıcı üzerinde çalışır.
+tip.list = Bulunan anahtar kapsayıcıları.\nBir satır seçin — «Sertifikayı çıkar» düğmesi seçili kapsayıcı üzerinde çalışır.
+tip.list.dblclick = Двойной клик по строке равносилен кнопке «Посмотреть контейнер».
+tip.list.columns = «Расположение» — где носитель: имя считывателя, HDIMAGE или прочерк,\nесли КриптоПро видит контейнер, но не сообщает устройство. «Способ чтения» —\nчем строка прочитана: CSP, PKCS#11, APDU, PC/SC или rtCOMLite.\nКлик по заголовку сортирует по колонке: по возрастанию, по убыванию и обратно\nв порядок обхода носителей.
+hint.need.row = Сейчас недоступно: в списке не выбрана строка.\nВыберите строку контейнера, с которым нужно работать.
+hint.row.device = Сейчас недоступно: в выделенной строке только устройство, контейнера в ней нет.\nВыберите строку с именем контейнера.
+hint.row.csp = Сейчас недоступно: контейнер этой строки читается через КриптоПро CSP, а не напрямую с носителя.\nВыберите строку [APDU] или rtCOMLite либо снимите выделение, чтобы обойти все поддерживаемые носители.\nПрава ключей выбранной строки показывает «Посмотреть контейнер».
+hint.row.pkcs11 = Сейчас недоступно: строка PKCS#11 показывает только публичные объекты носителя, файлов контейнера через неё не видно.\nВыберите строку [APDU] или rtCOMLite либо снимите выделение, чтобы обойти все поддерживаемые носители.
+hint.row.certonly = Сейчас недоступно: в выделенной строке только сертификат — парного контейнера КриптоПро на носителе для него нет.\nВыберите строку с именем контейнера; сам сертификат сохраняет «Извлечь сертификат».
+hint.cert.none = Сейчас недоступно: в выделенной строке сертификата нет — PKCS#11 показывает «нет».\nВыберите строку, в которой сертификат есть.
 tip.log = Yürütme günlüğü: p12utility komutları, belirteçle çalışma adımları ve hatalar.\nMetin seçilip kopyalanabilir (Ctrl+C) — sorunları çözümlerken işe yarar.
 
 # --- durum çubuğu ---
@@ -129,6 +151,8 @@ diag.rtcom.system = sisteme kayıtlı bileşen
 diag.rtcom.missing = KULLANILAMIYOR
 diag.rtcom.warn = dikkat: gömülü kopya 32 bittir ve bu sürece yüklenmez — bileşeni kurmadan Rutoken ile çalışmak için x86 taşınabilir derlemeyi kullanın
 diag.csp.ok = CryptoPro CSP: kurulu, sağlayıcılar {0}
+csp.alg.2012 = GOST R 34.10-2012, {0} bit
+csp.alg.2001 = GOST R 34.10-2001
 diag.csp.missing = CryptoPro CSP: BULUNAMADI — CryptoPro CSP’yi kurun (tek dış bağımlılık)
 diag.prov = {0}: {1} — {2}
 diag.prov.yes = kullanılabilir
@@ -158,7 +182,10 @@ pipe.keyexport.fail = «{0}» içinde keyexport HATASI: {1} {2}
 token.connect = Akıllı kart hizmetine bağlanılıyor…
 token.found = Bulunan aygıtlar: {0}
 token.open = Belirteç açılıyor: {0}
-token.skip.smartcard = {0} atlanıyor: akıllı kart belirteci, dosya tabanlı kapsayıcı belleği yok
+token.skip.smartcard = {0} atlanıyor: akıllı kart Rutoken'ı (Lite/ECP) — rtCOMLite dosya belleği yoktur. Lite kapsayıcısı doğrudan APDU ile okunur, ECP donanım anahtarı ise hiç kopyalanmaz
+token.skip.covered = {0} atlanıyor: bu taşıyıcı yukarıda PKCS#11/APDU ile zaten okundu — rtCOMLite dosya taraması bir şey eklemez
+token.skip.foreign = {0} atlanıyor: bu bir Rutoken değil; rtCOMLite dosya belleği Rutoken S API'sidir ve başka üreticinin kartına uygulanmaz
+token.skip.direct = {0} atlanıyor: Rutoken S doğrudan APDU ile okunur — boş olmayan taşıyıcıda rtCOMLite Unsupported function döndürür ya da süreci çökertir
 token.rtcom.loadfail = Gömülü rtCOMLite yüklenmedi ({0}); sisteme kayıtlı olanı deniyoruz
 token.rtcom.mismatch = Gömülü rtCOMLite uymuyor ({0}); sisteme kayıtlı olanı deniyoruz
 token.rtcom.extractfail = Gömülü rtCOMLite açılamadı ({0}); sisteme kayıtlı olanı deniyoruz
@@ -181,6 +208,7 @@ tool.cancelled = {0} iptal nedeniyle durduruldu
 err.certmgr.notfound = certmgr bulunamadı
 err.container.name = Kapsayıcı adı verilmedi
 err.container.nokey = «{0}» kapsayıcısı bulunamadı ya da gerekli türde anahtar içermiyor
+err.container.exportable = Kapsayıcı zaten dışa aktarılabilir
 err.key.locked = Özel anahtar dışa aktarılamaz — önce yasağı kaldırın («{0}»). {1}
 err.cert.extract = Sertifika kapsayıcıdan çıkarılamadı
 err.pfx.missing = certmgr başarı bildirdi, ama dosya oluşmadı: {0}
@@ -250,11 +278,12 @@ cli.lang.missing = --lang bir dil kodu ister. Kullanılabilir diller: {0}
 # --- PKCS#11 / Rutoken ECP (added) ---
 common.present = mevcut
 common.certonly = yalnızca sertifika
-pkcs11.nolib = PKCS#11 kitaplığı bulunamadı (rtPKCS11ECP.dll, jcPKCS11-2.dll) — Rutoken sürücülerini veya JaCarta Unified Client uygulamasını kurun
+pkcs11.nolib = PKCS#11 kitaplığı bulunamadı (rtPKCS11ECP.dll, jcPKCS11-2.dll, isbc_pkcs11_main.dll) — Rutoken sürücülerini, JaCarta Unified Client veya ESMART PKI Client uygulamasını kurun
 pkcs11.loadfail = PKCS#11 kitaplığı yüklenemedi: {0}
 pkcs11.enumfail = PKCS#11 yuvaları listelenemedi: {0}
 pkcs11.tokenfail = Token «{0}»: {1}
 pkcs11.readfail = Token nesneleri okunamadı: {0}
+pkcs11.capfail = PKCS#11 yetenek profili okunamadı: {0}
 kind.rutoken.s = Rutoken S (dosya belleği)
 kind.rutoken.lite = Rutoken Lite (akıllı kart)
 kind.rutoken.ecp = Rutoken ECP (akıllı kart)
@@ -276,6 +305,19 @@ cli.list.pkcs11 = Token’lar (PKCS#11):
 cli.token.none = PKCS#11 token’ı bulunamadı (token’ın takılı ve Rutoken sürücülerinin kurulu olduğunu kontrol edin).
 cli.token.line = {0}: {1} [{2}], seri {3}, ürün yazılımı {4}
 cli.token.pin = PIN: {0}
+cap.profile.unknown = mekanizmalar bir Rutoken ECP kuşağını belirlemiyor
+cap.profile.unread = mekanizma listesi okunmadı — kuşak belirlenemiyor
+cap.profile.ecp2 = mekanizmalar Rutoken ECP 2.x gibi
+cap.profile.ecp3 = mekanizmalar Rutoken ECP 3.0 gibi
+cli.token.capabilities = donanım {0}; mekanizma {1}; {2}; RSA HW anahtar üretimi {3}; ECDSA HW {4}; GOST HW {5}
+cli.token.rsa.bits = {0} bite kadar
+cli.token.memory = bellek: {0}
+cli.token.memory.split = bellek: genel — {0}; özel — {1}
+cli.token.memory.side = {0} KB, boş {1} KB
+cli.token.memory.side.nofree = {0} KB (belirteç boş alanı bildirmiyor)
+cli.token.memory.side.nototal = {0} KB boş (belirteç toplam alanı bildirmiyor)
+cli.token.memory.side.none = belirteç bildirmiyor
+token.boundary.ecp = Rutoken ECP donanım özel anahtarı kopyalanmaz; yalnızca tanılama ve varsa açık sertifikalar kullanılabilir.
 cli.token.container = kapsayıcı «{0}», sertifika: {1}
 cli.token.certonly = sertifika «{0}» (CryptoPro kapsayıcısı yok)
 cli.token.cert.saved = sertifika CSP olmadan kaydedildi: {0}
@@ -319,9 +361,78 @@ err.pfx.nocert = Ne kapsayıcıda ne de argümanlarda sertifika var — bir .cer
 err.pfx.badcert = Sertifika dosyası 256 bit GOST anahtarlı X.509 olarak çözümlenmedi
 err.pfx.certmismatch = Sertifika başka bir anahtara ait: açık anahtarlar uyuşmuyor
 cli.usage.liteexport = Rutoken Lite kapsayıcısını APDU ile oku ve anahtarı kurtar (CSP olmadan)
+cli.usage.tokenexport = seçilen desteklenen bir tokenın kapsayıcılarını diske kopyala
+cli.usage.tokenfull = seçilen belirteçten çıkarma + otomatik .cer + keyexport
 err.lite.none = {0} üzerinde APDU ile CryptoPro kapsayıcısı bulunamadı
 err.lite.pin = kart PIN'i reddetti ({0}); PIN'i kontrol edin, tahmin etmeye izin verilmez
-log.export.directonly = The selected row does not expose a readable private-key container. Select an APDU/rtCOMLite row, or clear the selection to scan all Rutoken S devices.
+err.direct.pin.scope = bir PIN birden çok okuyucuya gönderilemez; tek okuyucu seçin
+log.export.directonly = The selected row does not expose a readable private-key container. Select an APDU/rtCOMLite row, or clear the selection to scan all supported tokens.
 dlg.confirm.full.selected = Only the selected hardware container will be copied, its certificates extracted, and the key export ban lifted.\n\nContinue?
 pipe.lite.normalized = Lite container «{0}» converted to the HDIMAGE file format
 pipe.lite.normalizefail = Failed to convert Lite container «{0}» to the HDIMAGE format: {1}
+
+# --- лицензирование ---
+license.status.valid = Lisans geçerli ({0})
+license.status.invalid = Lisans geçersiz
+license.status.none = Yüklü lisans yok
+license.reason.product = Lisans başka bir ürün için verilmiş: {0}
+license.reason.platform = Lisans başka bir platform için verilmiş: {0}
+license.reason.machine = Lisans başka bir makine için verilmiş: parmak izi eşleşmiyor
+license.reason.expired = Lisansın süresi doldu: {0}
+license.reason.unreadable = Dosya lisans olarak okunamıyor: dosya bozuk veya biçimi geçersiz
+license.reason.signature = Lisans imzası doğrulanamadı: imza geçersiz veya imzalama anahtarı bilinmiyor
+license.required = Bu işlem geçerli bir lisans gerektirir. Bir lisans dosyası yükleyin («Lisans…» düğmesi veya license <dosya> komutu); bu makinenin parmak izini fingerprint komutu gösterir.
+license.installed = Lisans yüklendi ve doğrulandı: {0}
+license.fp = Bu makinenin parmak izi: {0}
+license.perpetual = süresiz
+license.until = {0} tarihine kadar
+license.filter = Lisans dosyası (*.jws, *.license)
+cli.usage.fingerprint = bu makinenin parmak izini göster (lisans almak için)
+cli.usage.license = lisans dosyası yükle veya durumunu göster
+btn.license = Lisans…
+tip.license = Bir lisans dosyası (.jws, .license) yükleyin ve bu makine için doğrulayın.\nGeçerli bir lisans olmadan özel anahtar dışa aktarma işlemleri kullanılamaz.\nBu makinenin parmak izini (lisans almak için) fingerprint komutu ve başlangıç gösterir.
+dlg.license.title = Lisans dosyası seç
+
+# --- диагностика PC/SC ---
+cli.pcsc.count = okuyucu {0}, taşıyıcılı {1}; PKCS#11 kitaplığı {2} taşıyıcıyı gösterdi — kalanları kurulu kitaplıkların hiçbiri göstermiyor
+cli.pcsc.uncovered = PC/SC okuyucularında bulunan ancak PKCS#11 belirteci olarak gösterilmeyen kartlar:
+cli.pcsc.line = {0} [{1}] — kart mevcut, ATR {2}
+cli.pcsc.row = kurulu hiçbir PKCS#11 kitaplığı bu taşıyıcıyı göstermiyor; ATR {0}
+cli.pcsc.hint = Böyle bir kart PKCS#11 belirteci değildir; CryptoPro taşıyıcısı da değilse dışa aktarılacak bir şey yoktur.
+carrier.jacarta = JaCarta / Aladdin
+carrier.rutoken = Rutoken
+carrier.esmart = ESMART
+carrier.bifit = BIFIT (MS_KEY K / iBank2Key)
+carrier.etoken = eToken / SafeNet
+carrier.unknown = bilinmeyen taşıyıcı
+pcsc.contextfail = PC/SC: akıllı kart hizmetine bağlanılamadı ({0})
+pcsc.statusfail = PC/SC: okuyucu durumu okunamadı ({0})
+diag.pnp.none = Akıllı kart okuyucuları (PnP): PnP-present cihaz yok
+diag.pnp.ok = Akıllı kart okuyucuları (PnP): {0} donanım, {1} yazılım, tüm sürücüler başlatıldı
+diag.pnp.usb = USB okuyucu {0}
+diag.pnp.bus = {0} veri yolundaki okuyucu
+diag.pnp.software = yazılım okuyucusu (veri yolu {0}; arkasında ayrı bir taşıyıcı yok)
+diag.pnp.failed = Akıllı kart okuyucusu {0}: PnP-present durumunda, ancak sürücüsü başlatılamadı — kod {1}, durum {2}
+diag.pnp.problem = Akıllı kart okuyucusu {0}: PnP-present durumunda, ancak Windows bir PnP sorunu bildiriyor — kod {1}, durum {2}
+diag.pnp.unavailable = Akıllı kart okuyucuları (PnP): denetim kullanılamıyor ({0})
+
+# --- factory PIN registry ---
+cli.usage.pins = taşıyıcıların fabrika PIN kodlarını göster (model kaydı)
+cli.pins.header = Taşıyıcıların fabrika PIN kodları (üretici belgelerine göre):
+cli.pins.line = {0} — kullanıcı: {1}, yönetici: {2} [{3}]
+cli.pins.unset = tanımlı değil
+cli.pins.supported = destekleniyor
+cli.pins.planned = planlanıyor
+cli.pins.note = Değerler PIN değiştirilmediği sürece geçerlidir. Yanlış PIN bir deneme harcar; arka arkaya üçü taşıyıcıyı kilitler.
+field.pin.hint.factory = fabrika PIN {0}
+pins.note.diagnostic = yalnızca tanılama: özel anahtar yongadan çıkmaz
+pins.note.noadmin = yönetici PIN'i tanımlı değil
+pins.note.challenge = PIN meydan okuma-yanıt ile doğrulanır; elle girin
+pins.note.sopin = yönetici PIN'inin adı SO-PIN'dir
+pins.note.nouser = kullanıcı PIN'i tanımlı değil
+pins.note.puk = yönetici için bu bir PUK'tur
+pins.note.applets = diğer uygulamacıklar kendi fabrika değerlerini korur
+log.token.replaced = Okuyucudaki taşıyıcı değiştirildi; listeyi yenileyip yeniden deneyin
+log.token.state.unknown = Taşıyıcının güncel durumu okunamadı; işlem durduruldu
+tip.pin.show = PIN'i alanda göster.\nKarakterler şu anda gizli.
+tip.pin.hide = PIN'i alanda gizle.\nKarakterler şu anda görünüyor.

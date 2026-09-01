@@ -29,16 +29,61 @@ namespace CryptoProExport.Tests
         // (0xC0000374), а контейнеров в файловой памяти у них всё равно нет.
         [InlineData("Aktiv Rutoken ECP 0", false)]
         [InlineData("Aktiv Rutoken lite 0", false)]
-        [InlineData("Aktiv ruToken 0", true)]      // Рутокен S — ровно тот случай, ради которого обход и нужен
+        [InlineData("Aktiv ruToken 0", false)]     // Рутокен S читает прямой APDU; rtCOMLite на нём аварийный
         [InlineData("Generic Smart Card Reader 0", true)]
         // Носитель чужого вендора: файловая память rtCOMLite — API Рутокен S, к нему неприменима.
         [InlineData("Aladdin Token JC 0", false)]
         [InlineData("JaCarta 0", false)]
+        [InlineData("JaCarta LT 0", false)]
+        [InlineData("JaCarta DS 0", false)]
+        [InlineData("Datastore 0", false)]
+        [InlineData("Aladdin R.D. JaCarta LT 0", false)]
+        // Носители БИФИТ: своей библиотеки PKCS#11 в системе нет, но файловый API Рутокен S
+        // к ним всё равно неприменим — fail-closed.
+        [InlineData("BIFIT ANGARA 0", false)]
+        [InlineData("BIFIT iBank2Key 0", false)]
         [InlineData("", false)]
         [InlineData(null, false)]
         public void ShouldWalk_SkipsSmartCardRutokensByReaderName(string reader, bool expected)
         {
             Assert.Equal(expected, RutokenExporter.ShouldWalk(reader, null));
+        }
+
+        [Theory]
+        // Причина пропуска у каждого семейства своя, и в журнале она обязана различаться:
+        // одна строка «смарт-карточный носитель» не давала понять, потерялось ли что-нибудь.
+        [InlineData("Aktiv ruToken 0", "token.skip.direct")]
+        [InlineData("Aktiv Rutoken lite 0", "token.skip.smartcard")]
+        [InlineData("Aktiv Rutoken ECP 0", "token.skip.smartcard")]
+        [InlineData("Aladdin R.D. JaCarta LT 0", "token.skip.foreign")]
+        [InlineData("BIFIT ANGARA 0", "token.skip.foreign")]
+        [InlineData("Generic Smart Card Reader 0", null)]
+        public void SkipReasonKey_TellsWhyEachFamilyIsSkipped(string reader, string expected)
+        {
+            Assert.Equal(expected, RutokenExporter.SkipReasonKey(reader, null));
+        }
+
+        [Fact]
+        public void SkipReasonKey_SaysTheCarrierWasAlreadyRead()
+        {
+            var skip = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "ACS ACR38U 0",
+            };
+            Assert.Equal("token.skip.covered", RutokenExporter.SkipReasonKey("acs acr38u 0", skip));
+        }
+
+        [Theory]
+        [InlineData("token.skip.covered")]
+        [InlineData("token.skip.smartcard")]
+        [InlineData("token.skip.foreign")]
+        [InlineData("token.skip.direct")]
+        public void SkipReasonKey_EveryReasonIsLocalizedAndNamesTheReader(string key)
+        {
+            using var language = Strings.Scope("ru");
+            string text = Strings.Format(key, "Aktiv Rutoken lite 0");
+            Assert.DoesNotContain(Strings.MissingMarkerStart, text, StringComparison.Ordinal);
+            Assert.Contains("Aktiv Rutoken lite 0", text, StringComparison.Ordinal);
         }
 
         [Fact]

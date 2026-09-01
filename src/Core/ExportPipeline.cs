@@ -16,7 +16,7 @@ namespace CryptoProExport
 
     /// <summary>
     /// Полная цепочка «неэкспортируемый ключ с Рутокена → экспортируемый файловый контейнер»:
-    ///   1) RutokenExporter — снять контейнер(ы) с токена на диск (обход CSP через rtCOMLite);
+    ///   1) DirectTokenApdu или RutokenExporter — снять контейнер(ы) с токена на диск;
     ///   2) CertFromContainer — вытащить сертификат из контейнера через CryptoAPI (пока токен вставлен);
     ///   3) P12Utility.MakeExportable — снять запрет на экспорт закрытого ключа (--keyexport).
     /// Дальше экспортируемый контейнер конвертируется в PKCS#12
@@ -26,6 +26,7 @@ namespace CryptoProExport
     public sealed class ExportPipeline
     {
         public RutokenExporter Exporter { get; }
+        public DirectTokenApdu Direct { get; }
         public P12Utility P12 { get; }
         public Action<string> Log { get; set; } = Console.WriteLine;
 
@@ -37,7 +38,13 @@ namespace CryptoProExport
         public CancellationToken Cancel
         {
             get => _cancel;
-            set { _cancel = value; Exporter.Cancel = value; if (P12 != null) P12.Cancel = value; }
+            set
+            {
+                _cancel = value;
+                Exporter.Cancel = value;
+                Direct.Cancel = value;
+                if (P12 != null) P12.Cancel = value;
+            }
         }
 
         private CancellationToken _cancel = CancellationToken.None;
@@ -46,6 +53,8 @@ namespace CryptoProExport
         {
             Exporter = new RutokenExporter();
             Exporter.Log = m => Log("[rtCOMLite] " + m);
+            Direct = new DirectTokenApdu();
+            Direct.Log = m => Log("[APDU] " + m);
 
             // Простому `export` p12utility не нужен. Отсутствие утилиты проверяется только
             // перед полным циклом, иначе сборка без embedded tools не могла бы хотя бы снять
@@ -58,18 +67,48 @@ namespace CryptoProExport
             }
         }
 
+        /// <summary>
+        /// Компоненты полного цикла. Простому <c>export</c> они не нужны, поэтому проверка стоит
+        /// здесь, а не в конструкторе: сборка без вшитых утилит обязана хотя бы снять файловый
+        /// контейнер. Снятие запрета выполняет p12utility, а работает она поверх КриптоПро CSP —
+        /// без него и сертификат из контейнера через CryptoAPI не достать. Без явной проверки
+        /// отказ приходил бы кодом изнутри запущенного процесса.
+        /// </summary>
+        private void RequireFullCycle()
+        {
+            if (P12 == null) throw new ComponentMissingException(RequiredComponent.P12Utility);
+            ComponentCheck.Require(RequiredComponent.CryptoProCsp);
+        }
+
         /// <summary>Снять все контейнеры со всех токенов в подпапки destParent. Возвращает прочитанные контейнеры и пути.</summary>
         public List<(RutokenContainer container, string folder)> ExportFromTokens(string destParent, string userPin = null)
         {
             Exporter.UserPin = userPin;
-            // Смарт-карточные Рутокены (ЭЦП, Lite) из обхода исключаются: файлов контейнера там нет,
-            // а ReadBinary на ЭЦП 3.0 рушит процесс (см. RutokenExporter.ShouldWalk).
             // Лог PKCS#11 пробрасывается по той же причине, что в list и deps: без него сбой
             // драйвера выглядит как «смарт-карточных токенов нет», и обход молча уходит на них.
-            Exporter.SkipReaders = Pkcs11Token.SmartCardReaders(
-                Pkcs11Token.Enumerate(readContainers: false,
-                    log: m => Log("[PKCS#11] " + m), cancel: Cancel));
+            var tokens = Pkcs11Token.Enumerate(readContainers: false,
+                log: m => Log("[PKCS#11] " + m), cancel: Cancel);
+            DirectTokenApdu.EnsureBatchSelectionSafe(tokens);
+            DirectTokenApdu.EnsureSingleReaderForExplicitPin(tokens, userPin);
+            // Все подтверждённые модели исключаются из rtCOMLite: для S/Lite/LT/PRO/ESMART есть прямой
+            // APDU, а на ECP/чужом носителе файловый обход либо бессмыслен, либо опасен.
+            Exporter.SkipReaders = Pkcs11Token.SmartCardReaders(tokens);
             var saved = new List<(RutokenContainer, string)>();
+
+            foreach (Pkcs11TokenInfo token in tokens)
+            {
+                if (!DirectTokenApdu.Supports(token.Kind)) continue;
+                foreach (DirectTokenContainerRef selected in Direct.ListContainers(token))
+                {
+                    Cancel.ThrowIfCancellationRequested();
+                    var item = ExportDirectContainer(token, selected, destParent, userPin);
+                    saved.Add(item);
+                }
+            }
+
+            // Legacy fallback только для неопознанных старых файловых носителей.
+            // Reader, явно похожий на Rutoken S, ShouldWalk не пропустит: на живом S
+            // rtCOMLite оказался аварийным, и для него допустим только прямой APDU.
             foreach (var c in Exporter.ReadAllContainers())
             {
                 Cancel.ThrowIfCancellationRequested();
@@ -78,6 +117,20 @@ namespace CryptoProExport
                 saved.Add((c, folder));
             }
             return saved;
+        }
+
+        /// <summary>Снять один выбранный контейнер с доказанного APDU-носителя.</summary>
+        public (RutokenContainer container, string folder) ExportDirectContainer(
+            Pkcs11TokenInfo token, DirectTokenContainerRef selected,
+            string destParent, string userPin = null)
+        {
+            if (token == null) throw new ArgumentNullException(nameof(token));
+            if (selected == null) throw new ArgumentNullException(nameof(selected));
+            Cancel.ThrowIfCancellationRequested();
+            RutokenContainer container = Direct.ReadContainer(token, selected, userPin);
+            string folder = container.SaveTo(destParent, selected.OutputName);
+            Log(Strings.Format("pipe.saved", container.ContainerName, folder));
+            return (container, folder);
         }
 
         /// <summary>
@@ -108,34 +161,16 @@ namespace CryptoProExport
             if (token.Kind != RutokenKind.RutokenLite)
                 throw new ArgumentException(Pkcs11Token.KindName(token.Kind), nameof(token));
 
-            string pin = ResolveLitePin(token, userPin);
-            string folder = RutokenLiteApdu.ReserveOutputDirectory(
-                destParent, $"lite_{selected.DfIndex:X2}");
-            var lite = new RutokenLiteApdu { Log = m => Log("[APDU] " + m) };
-            try
+            var direct = new DirectTokenContainerRef
             {
-                Cancel.ThrowIfCancellationRequested();
-                string actualName = lite.ReadContainer(token.Reader, selected.DfIndex, pin, folder);
-                var container = LoadSavedContainer(
-                    folder, token.Reader, $"APDU/{selected.DfIndex:X2}", actualName ?? selected.Name);
-                Log(Strings.Format("pipe.saved", container.ContainerName, folder));
-                return (container, folder);
-            }
-            catch
-            {
-                // ReserveOutputDirectory создаёт пустую папку заранее. После отказа карты или
-                // отмены не оставляем её как ложный результат; непустой каталог не трогаем.
-                try
-                {
-                    if (Directory.Exists(folder))
-                    {
-                        using var entries = Directory.EnumerateFileSystemEntries(folder).GetEnumerator();
-                        if (!entries.MoveNext()) Directory.Delete(folder);
-                    }
-                }
-                catch (IOException) { }
-                throw;
-            }
+                Kind = RutokenKind.RutokenLite,
+                Reader = token.Reader,
+                Name = selected.Name,
+                OutputName = $"lite_{selected.DfIndex:X2}",
+                Index = selected.DfIndex,
+                Lite = selected,
+            };
+            return ExportDirectContainer(token, direct, destParent, userPin);
         }
 
         /// <summary>Выбрать PIN Lite без подбора и без риска добить счётчик попыток.</summary>
@@ -144,25 +179,11 @@ namespace CryptoProExport
             if (!string.IsNullOrEmpty(userPin)) return userPin;
             if (token != null && token.PinDefault && !token.PinCountLow &&
                 !token.PinFinalTry && !token.PinLocked)
-                return "12345678";
-            throw new LiteApduException(Strings.Format("err.lite.pin", "—"));
-        }
-
-        private static RutokenContainer LoadSavedContainer(
-            string folder, string tokenName, string tokenDir, string containerName)
-        {
-            var container = new RutokenContainer
             {
-                TokenName = tokenName,
-                TokenDir = tokenDir,
-                ContainerName = containerName,
-            };
-            foreach (string file in ContainerStore.ContainerFiles)
-            {
-                string path = Path.Combine(folder, file);
-                if (File.Exists(path)) container.Files[file] = File.ReadAllBytes(path);
+                string factory = StandardPins.AutoFillUserPinFor(RutokenKind.RutokenLite);
+                if (!string.IsNullOrEmpty(factory)) return factory;
             }
-            return container;
+            throw new LiteApduException(Strings.Format("err.lite.pin", "—"));
         }
 
         /// <summary>
@@ -177,8 +198,7 @@ namespace CryptoProExport
             string destParent, string certExchange = null, string certSignature = null,
             string userPin = null, string containerPassword = null)
         {
-            if (P12 == null)
-                throw new FileNotFoundException(Strings.Get("err.p12.unavailable"));
+            RequireFullCycle();
 
             var result = new ExportPipelineResult();
             foreach (var (container, folder) in ExportFromTokens(destParent, userPin))
@@ -198,8 +218,7 @@ namespace CryptoProExport
             string certExchange = null, string certSignature = null,
             string containerPassword = null)
         {
-            if (P12 == null)
-                throw new FileNotFoundException(Strings.Get("err.p12.unavailable"));
+            RequireFullCycle();
             var saved = ExportContainer(container, destParent);
             return CompleteOne(saved.container, saved.folder,
                 certExchange, certSignature, containerPassword);
@@ -211,11 +230,24 @@ namespace CryptoProExport
             string userPin = null, string certExchange = null, string certSignature = null,
             string containerPassword = null)
         {
-            if (P12 == null)
-                throw new FileNotFoundException(Strings.Get("err.p12.unavailable"));
+            RequireFullCycle();
             var saved = ExportLiteContainer(token, selected, destParent, userPin);
             return CompleteOne(saved.container, saved.folder,
                 certExchange, certSignature, containerPassword, normalizeLite: true);
+        }
+
+        /// <summary>Полный цикл для выбранного Rutoken S/Lite, JaCarta LT/PRO или ESMART.</summary>
+        public ExportPipelineResult ExportDirectAndMakeExportable(
+            Pkcs11TokenInfo token, DirectTokenContainerRef selected, string destParent,
+            string userPin = null, string certExchange = null, string certSignature = null,
+            string containerPassword = null)
+        {
+            RequireFullCycle();
+            var saved = ExportDirectContainer(token, selected, destParent, userPin);
+            return CompleteOne(saved.container, saved.folder,
+                certExchange, certSignature, containerPassword,
+                normalizeLite: token.Kind == RutokenKind.RutokenLite
+                    || token.Kind == RutokenKind.JaCartaPro);
         }
 
         private ExportPipelineResult CompleteOne(
@@ -263,13 +295,14 @@ namespace CryptoProExport
 
             bool hasExchange = container.Files.ContainsKey("primary.key");
             bool hasSignature = container.Files.ContainsKey("primary2.key");
+            var targets = LiteRepairTargets(container, ex, sg);
             string signatureFolder = null;
             try
             {
-                if (hasExchange && hasSignature)
+                if (targets.exchange && targets.signature)
                     signatureFolder = CloneLiteOutput(folder, "signature");
 
-                if (hasExchange)
+                if (targets.exchange)
                 {
                     NormalizeLiteContainer(folder, containerPassword, useCspEnvelope: false);
                     RestoreOriginalHeader(folder);
@@ -286,7 +319,7 @@ namespace CryptoProExport
                     Log(Strings.Format("pipe.lite.normalized", folder));
                 }
 
-                if (hasSignature)
+                if (targets.signature)
                 {
                     string target = signatureFolder ?? folder;
                     NormalizeLiteContainer(target, containerPassword, useCspEnvelope: true);
@@ -312,6 +345,20 @@ namespace CryptoProExport
                 Log(Strings.Format("pipe.lite.normalizefail", folder, e.Message));
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Двухключевой Lite/PRO-контейнер может содержать сертификат только для одной пары.
+        /// Ремонтировать можно лишь ветку, где одновременно присутствуют ключ и его сертификат:
+        /// иначе p12utility либо падает без --cert, либо привязывает чужой сертификат.
+        /// </summary>
+        internal static (bool exchange, bool signature) LiteRepairTargets(
+            RutokenContainer container, string certExchange, string certSignature)
+        {
+            if (container == null) return (false, false);
+            return (
+                container.Files.ContainsKey("primary.key") && !string.IsNullOrEmpty(certExchange),
+                container.Files.ContainsKey("primary2.key") && !string.IsNullOrEmpty(certSignature));
         }
 
         /// <summary>
@@ -428,7 +475,7 @@ namespace CryptoProExport
                 }
                 catch (Exception e) { Log(Strings.Format("pipe.cert.autofail", e.Message)); }
             }
-            if (ex == null && sg == null || !AllPresentKeysHandled(container, ex, sg))
+            if (ex == null && sg == null || !HasCertificateForPresentKey(container, ex, sg))
             {
                 Log(Strings.Format("pipe.keyexport.skip", folder));
                 return false;
@@ -436,15 +483,20 @@ namespace CryptoProExport
             return true;
         }
 
-        internal static bool AllPresentKeysHandled(RutokenContainer container,
-                                                   string certExchange, string certSignature)
+        /// <summary>
+        /// p12utility нужен сертификат только для той пары, которую он ремонтирует. Реальный
+        /// контейнер УЦ может содержать обе пары файлов, но сертификат лишь для одной из них;
+        /// в таком случае p12utility с одним --cert/--certsg перестраивает заголовок в рабочий
+        /// одноключевой HDIMAGE-контейнер. Блокировать такой контейнер нельзя.
+        /// </summary>
+        internal static bool HasCertificateForPresentKey(RutokenContainer container,
+                                                         string certExchange, string certSignature)
         {
             if (container == null) return false;
             bool hasExchange = container.Files.ContainsKey("primary.key");
             bool hasSignature = container.Files.ContainsKey("primary2.key");
-            return (hasExchange || hasSignature)
-                && (!hasExchange || !string.IsNullOrEmpty(certExchange))
-                && (!hasSignature || !string.IsNullOrEmpty(certSignature));
+            return (hasExchange && !string.IsNullOrEmpty(certExchange))
+                || (hasSignature && !string.IsNullOrEmpty(certSignature));
         }
     }
 }
