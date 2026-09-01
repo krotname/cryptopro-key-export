@@ -32,6 +32,8 @@ btn.check = Ver contenedor
 btn.install = Instalar en CryptoPro
 btn.pfx = Exportar a PFX
 btn.logs = Registro
+btn.logpane.show = Показать журнал
+btn.logpane.hide = Скрыть журнал
 btn.help = Ayuda
 btn.cancel = Cancelar
 
@@ -57,6 +59,7 @@ tip.check = Ver el contenedor seleccionado: nombre, ubicación, detalles y permi
 tip.install = Instalar en CryptoPro una carpeta de contenedor extraída de un token (6 archivos *.key),\nes decir, copiarla al almacén del CSP. Después el contenedor aparece en la lista y funciona\nsin el token: se puede extraer su certificado y exportarlo a PFX.\nCambiar el nombre es opcional: CryptoPro coteja el nombre con el contenido del contenedor y\nno siempre acepta una copia renombrada. El programa comprueba el resultado y le dirá\nsi el CSP ve el contenedor de verdad.
 tip.pfx = Exportar el contenedor seleccionado a un archivo PKCS#12 (.pfx): el certificado junto\ncon la clave privada, listo para trasladarlo a otro sistema.\nSe requiere: la prohibición ya levantada («Ver contenedor» muestra «exportable»)\ny CryptoPro CSP instalado (se usa su certmgr).\nLa contraseña del .pfx se pedirá aparte.
 tip.logs = Abrir la carpeta con los registros del programa.\nCada arranque escribe su propio archivo, cómodo para adjuntarlo a una consulta\nsi algo no ha salido bien. Las contraseñas nunca llegan al registro.
+tip.logpane = Развернуть или свернуть журнал внизу окна.\nПо умолчанию он свёрнут: в строке состояния видно, что идёт сейчас и чем\nзакончился предыдущий шаг, а списку достаётся всё окно. Полный текст нужен\nпри разборе — тогда журнал и разворачивают.\nСоседняя кнопка «Журнал» открывает папку с файлами прошлых запусков.
 tip.help = Manual incorporado: por dónde empezar, qué hace cada botón,\nlos comandos de consola y el repaso de los errores habituales.\nEstá dentro del programa: no hacen falta internet ni archivos externos.
 tip.cancel = Interrumpir la operación en curso.\nEl trabajo se detendrá en el paso más próximo: una llamada al token o una utilidad\nde CryptoPro en marcha hay que terminarla primero, y entonces la utilidad\nse cierra a la fuerza. Los archivos ya guardados se quedan donde están.
 

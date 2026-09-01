@@ -32,6 +32,8 @@ btn.check = Voir le conteneur
 btn.install = Installer dans CryptoPro
 btn.pfx = Exporter en PFX
 btn.logs = Journal
+btn.logpane.show = Показать журнал
+btn.logpane.hide = Скрыть журнал
 btn.help = Aide
 btn.cancel = Annuler
 
@@ -57,6 +59,7 @@ tip.check = Afficher le conteneur sélectionné : nom, emplacement, détails et 
 tip.install = Installer dans CryptoPro un dossier de conteneur extrait d’un jeton (6 fichiers *.key) —\nautrement dit, le copier dans le magasin du CSP. Ensuite le conteneur apparaît dans la liste et\nfonctionne sans le jeton : on peut en extraire le certificat et l’exporter en PFX.\nRenommer n’est pas obligatoire : CryptoPro compare le nom au contenu du conteneur et\nn’accepte pas toujours une copie renommée. Le programme vérifie le résultat et vous dira\nsi le CSP voit réellement le conteneur.
 tip.pfx = Exporter le conteneur sélectionné dans un fichier PKCS#12 (.pfx) — le certificat avec\nla clé privée, prêt à être transféré vers un autre système.\nIl faut : l’interdiction déjà levée (« Voir le conteneur » affiche « exportable »)\net CryptoPro CSP installé (son certmgr est utilisé).\nLe mot de passe du .pfx sera demandé séparément.
 tip.logs = Ouvrir le dossier des journaux du programme.\nChaque lancement écrit son propre fichier — pratique à joindre à une question\nsi quelque chose n’a pas marché. Les mots de passe n’arrivent jamais dans le journal.
+tip.logpane = Развернуть или свернуть журнал внизу окна.\nПо умолчанию он свёрнут: в строке состояния видно, что идёт сейчас и чем\nзакончился предыдущий шаг, а списку достаётся всё окно. Полный текст нужен\nпри разборе — тогда журнал и разворачивают.\nСоседняя кнопка «Журнал» открывает папку с файлами прошлых запусков.
 tip.help = Manuel intégré : par où commencer, ce que fait chaque bouton,\nles commandes du mode console et l’analyse des erreurs courantes.\nIl est à l’intérieur du programme — ni internet ni fichiers externes nécessaires.
 tip.cancel = Interrompre l’opération en cours.\nLe travail s’arrêtera à l’étape la plus proche : un appel au jeton ou un utilitaire\nCryptoPro lancé doit d’abord aller à son terme — l’utilitaire lancé est alors arrêté.\nLes fichiers déjà enregistrés restent en place.
 

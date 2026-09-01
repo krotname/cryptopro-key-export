@@ -32,6 +32,8 @@ btn.check = Container anzeigen
 btn.install = In CryptoPro installieren
 btn.pfx = Nach PFX exportieren
 btn.logs = Protokoll
+btn.logpane.show = Показать журнал
+btn.logpane.hide = Скрыть журнал
 btn.help = Hilfe
 btn.cancel = Abbrechen
 
@@ -57,6 +59,7 @@ tip.check = Den gewählten Container anzeigen: Name, Speicherort, Details und Be
 tip.install = Einen vom Token ausgelesenen Containerordner (6 *.key-Dateien) in CryptoPro installieren —\nalso in den CSP-Speicher kopieren. Danach erscheint der Container in der Liste und arbeitet\nohne Token: man kann sein Zertifikat entnehmen und ihn nach PFX exportieren.\nDas Umbenennen ist optional: CryptoPro gleicht den Namen mit dem Containerinhalt ab und\nnimmt eine umbenannte Kopie nicht immer an. Das Programm prüft das Ergebnis und sagt Ihnen,\nob der CSP den Container tatsächlich sieht.
 tip.pfx = Den gewählten Container in eine PKCS#12-Datei (.pfx) exportieren — das Zertifikat samt\nprivatem Schlüssel, bereit für den Umzug in ein anderes System.\nVoraussetzung: das Exportverbot ist bereits aufgehoben («Container anzeigen» zeigt «exportierbar»)\nund CryptoPro CSP ist installiert (dessen certmgr wird verwendet).\nDas Kennwort für die .pfx fragt das Programm gesondert ab.
 tip.logs = Den Ordner mit den Arbeitsprotokollen des Programms öffnen.\nJeder Start schreibt eine eigene Datei — praktisch, um sie einer Frage beizulegen,\nwenn etwas nicht geklappt hat. Kennwörter landen nie im Protokoll.
+tip.logpane = Развернуть или свернуть журнал внизу окна.\nПо умолчанию он свёрнут: в строке состояния видно, что идёт сейчас и чем\nзакончился предыдущий шаг, а списку достаётся всё окно. Полный текст нужен\nпри разборе — тогда журнал и разворачивают.\nСоседняя кнопка «Журнал» открывает папку с файлами прошлых запусков.
 tip.help = Eingebautes Handbuch: womit anfangen, was jede Schaltfläche tut,\ndie Befehle des Konsolenmodus und eine Analyse typischer Fehler.\nEs steckt im Programm — Internet und Fremddateien sind nicht nötig.
 tip.cancel = Die laufende Operation abbrechen.\nDie Arbeit hält beim nächstgelegenen Schritt an: ein Aufruf an den Token oder ein laufendes\nCryptoPro-Werkzeug muss erst zu Ende gebracht werden — das laufende Werkzeug wird dabei beendet.\nBereits gespeicherte Dateien bleiben an Ort und Stelle.
 

@@ -32,6 +32,8 @@ btn.check = View container
 btn.install = Install into CryptoPro
 btn.pfx = Export to PFX
 btn.logs = Log
+btn.logpane.show = Показать журнал
+btn.logpane.hide = Скрыть журнал
 btn.help = Help
 btn.cancel = Cancel
 
@@ -57,6 +59,7 @@ tip.check = View the selected container: its name, location, details and both ke
 tip.install = Install a container folder taken off a token (6 *.key files) into CryptoPro —\nthat is, copy it into the CSP store. A discovered .cer is also bound to the exact\nHDIMAGE copy so the certificate works without the token and can be exported to PFX.\nRenaming is optional: CryptoPro matches the name against the container contents and\ndoes not always accept a renamed copy. The program verifies the result and tells you\nwhether the CSP actually sees the container.
 tip.pfx = Export the container selected in the list into a PKCS#12 (.pfx) file — the certificate\ntogether with the private key, ready to be moved to another system.\nRequires: the export ban already lifted («View container» reports «exportable»)\nand an installed CryptoPro CSP (its certmgr is used).\nThe program will ask for the .pfx password separately.
 tip.logs = Open the folder with the program logs.\nEvery run writes its own file — handy to attach to a question\nif something did not work out. Passwords never reach the log.
+tip.logpane = Развернуть или свернуть журнал внизу окна.\nПо умолчанию он свёрнут: в строке состояния видно, что идёт сейчас и чем\nзакончился предыдущий шаг, а списку достаётся всё окно. Полный текст нужен\nпри разборе — тогда журнал и разворачивают.\nСоседняя кнопка «Журнал» открывает папку с файлами прошлых запусков.
 tip.help = Built-in manual: where to start, what each button does,\nthe console commands and a walk-through of the usual errors.\nIt lives inside the program — no internet and no extra files needed.
 tip.cancel = Interrupt the current operation.\nWork stops at the nearest step: a call into the token or a running CryptoPro\nutility has to be finished first — a running utility is killed at that point.\nFiles already saved stay where they are.
 

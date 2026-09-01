@@ -32,6 +32,8 @@ btn.check = Lihat kontainer
 btn.install = Pasang ke CryptoPro
 btn.pfx = Ekspor ke PFX
 btn.logs = Log
+btn.logpane.show = Показать журнал
+btn.logpane.hide = Скрыть журнал
 btn.help = Bantuan
 btn.cancel = Batal
 
@@ -57,6 +59,7 @@ tip.check = Lihat kontainer yang dipilih: nama, lokasi, detail, dan izin kedua k
 tip.install = Pasang ke CryptoPro folder kontainer yang diambil dari token (6 berkas *.key) —\nyaitu menyalinnya ke penyimpanan CSP. Setelah itu kontainer tampil di daftar dan bekerja\ntanpa token: sertifikatnya bisa diambil dan diekspor ke PFX.\nMengganti nama tidak wajib: CryptoPro mencocokkan nama dengan isi kontainer dan\ntidak selalu menerima salinan yang diganti namanya. Program akan memeriksa hasilnya dan\nmemberi tahu apakah CSP benar-benar melihat kontainer itu.
 tip.pfx = Ekspor kontainer yang dipilih ke berkas PKCS#12 (.pfx) — sertifikat beserta\nkunci privat, siap dipindahkan ke sistem lain.\nDiperlukan: larangan ekspor sudah dicabut («Lihat kontainer» menampilkan «dapat diekspor»)\ndan CryptoPro CSP terpasang (certmgr miliknya yang dipakai).\nKata sandi berkas .pfx akan ditanyakan tersendiri.
 tip.logs = Buka folder berisi log kerja program.\nSetiap peluncuran menulis berkas tersendiri — praktis dilampirkan ke pertanyaan\njika ada yang tidak berhasil. Kata sandi tidak pernah masuk ke log.
+tip.logpane = Развернуть или свернуть журнал внизу окна.\nПо умолчанию он свёрнут: в строке состояния видно, что идёт сейчас и чем\nзакончился предыдущий шаг, а списку достаётся всё окно. Полный текст нужен\nпри разборе — тогда журнал и разворачивают.\nСоседняя кнопка «Журнал» открывает папку с файлами прошлых запусков.
 tip.help = Panduan bawaan: dari mana memulai, apa fungsi tiap tombol,\nperintah mode konsol, dan pembahasan kesalahan yang umum.\nPanduan ada di dalam program — tidak perlu internet maupun berkas tambahan.
 tip.cancel = Hentikan operasi yang sedang berjalan.\nPekerjaan berhenti pada langkah terdekat: panggilan ke token atau utilitas CryptoPro\nyang sudah berjalan harus diselesaikan dulu — utilitas yang berjalan lalu dimatikan.\nBerkas yang sudah tersimpan tetap di tempatnya.
 

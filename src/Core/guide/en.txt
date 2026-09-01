@@ -100,9 +100,15 @@ interface languages fall back to the English text.
 
   Service:
     License               install a license (.jws) and verify it
+    Show log              expand the log pane at the bottom
     Log                   open the folder with the program logs
     Help                  this window
     Cancel                stop the operation that is running
+
+  The log pane at the bottom starts collapsed: the status bar is
+  normally enough — it shows what is running and how the previous
+  step ended, and the whole window goes to the list. "Show log"
+  expands the full text and remembers the height you left it at.
 
   Every button has a tooltip — hold the cursor over it. A button that
   does not fit the selected row is greyed out, and its own tooltip
