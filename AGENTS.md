@@ -793,6 +793,15 @@ GitHub Actions **работает** (`.github/workflows/ci.yml`). Прежнее
       (self-contained single-file, сам прогоняет `--selftest`), логика — через `dotnet test`.
       Запуск через `dotnet <dll>` не спасает: x64-хост отвергает x86-сборку
       (`FileLoadException: assembly architecture is not compatible`).
+    - **Модальный диалог снимается только через `PostMessage`.** UI Automation здесь не
+      работает: `InvokePattern.Invoke` на кнопке, открывающей модальное окно, не возвращается
+      до его закрытия и падает с `Operation timed out (0x80131505)`, после чего таймаутят и
+      остальные UIA-запросы к процессу. Рабочий приём — найти кнопку по `WM_GETTEXT` среди
+      `EnumChildWindows`, послать ей `BM_CLICK` через `PostMessage` (не `SendMessage`), затем
+      найти окно диалога по заголовку среди `EnumWindows` того же PID и снять
+      `CopyFromScreen`. Снимающий процесс должен быть DPI-aware
+      (`SetProcessDpiAwarenessContext(-4)`), иначе Windows отдаёт ему виртуализированные
+      координаты и снимок получается обрезанным.
 
 ## Git-процесс
 - Приватный репозиторий `krotname/cryptopro-key-export`, ветка `main`.

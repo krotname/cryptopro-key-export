@@ -95,9 +95,8 @@ interface languages fall back to the English text.
     Install into CryptoPro  put an extracted folder into the CSP store
 
   Result:
-    Export to PFX         write the container out as .pfx
+    Save to PFX...        build a .pfx; the dialog asks which way
     Extract key (PEM)     the private key as PKCS#8/PEM, no CSP
-    Build PFX (no CSP)    a .pfx from the container folder, for OpenSSL
 
   Service:
     License               install a license (.jws) and verify it
@@ -109,12 +108,15 @@ interface languages fall back to the English text.
   does not fit the selected row is greyed out, and its own tooltip
   says why.
 
-  Two buttons produce a .pfx, and the files are DIFFERENT. "Export to
-  PFX" goes through CryptoPro's certmgr, and CryptoPro will take that
-  file back. "Build PFX (no CSP)" builds the file on its own, without
-  CryptoPro — but CryptoPro will NOT import it: it is meant for
-  OpenSSL and other software. For a backup you plan to restore into
-  CryptoPro, take the first one.
+  "Save to PFX..." asks which file you need, and the files are
+  DIFFERENT. "Export to PFX" goes through CryptoPro's certmgr, and
+  CryptoPro will take that file back; it works on the row selected in
+  the list. "Build PFX (no CSP)" builds the file on its own from the
+  extracted container folder — but CryptoPro will NOT import it: it is
+  meant for OpenSSL and other software. For a backup you plan to
+  restore into CryptoPro, take the first one. The dialog spells the
+  difference out next to each button, and a way that is not available
+  right now is greyed out with the reason beside it.
 
 
 5. COMMAND LINE

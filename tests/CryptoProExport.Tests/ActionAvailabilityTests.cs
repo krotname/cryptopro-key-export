@@ -123,9 +123,14 @@ namespace CryptoProExport.Tests
                          "(_btnFull, RowAction.MakeExportable)",
                          "(_btnExtract, RowAction.ExtractCert)",
                          "(_btnView, RowAction.ViewContainer)",
-                         "(_btnPfx, RowAction.ExportPfx)",
                      })
                 Assert.Contains(wiring, gui, StringComparison.Ordinal);
+
+            // ExportPfx — особый случай: с тех пор как оба .pfx свелись в одну кнопку с выбором
+            // (ROADMAP, P2, п. 4), гасить кнопку в ленте нельзя — второй способ выделенной строки
+            // не требует. Причину спрашивает сам диалог выбора и пишет её рядом с вариантом.
+            Assert.Contains("ActionAvailability.ReasonKey(RowAction.ExportPfx, CurrentRow())",
+                            gui, StringComparison.Ordinal);
 
             // Доступность пересчитывается и по смене выделения, и по смене занятости.
             Assert.Contains("_lv.SelectedIndexChanged += (_, __) => UpdateRowActions();", gui, StringComparison.Ordinal);

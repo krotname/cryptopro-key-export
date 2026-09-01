@@ -41,6 +41,12 @@ group.steps = Шаги:
 group.result = Результат:
 group.service = Служебное:
 
+# --- выбор способа .pfx (только по-русски, AGENTS п. 17) ---
+btn.pfx.choice = Сохранить в PFX…
+tip.pfx.choice = Собрать файл .pfx с закрытым ключом. Способа два, и файлы получаются разные —\nвыбор со всеми пояснениями появится по нажатию:\n  • через КриптоПро (certmgr) — такой файл КриптоПро потом примет обратно;\n  • без КриптоПро, из папки снятого контейнера — для OpenSSL и других программ.
+dlg.pfx.choice.title = Сохранить в PFX
+dlg.pfx.choice.prompt = Оба способа дают файл .pfx с закрытым ключом, но это разные файлы. Выберите нужный.
+
 tip.refresh = 1. adım. Anahtar kapsayıcılarının listesini göster:\n  • CryptoPro CSP’nin gördükleri (takılı belirteçtekiler dâhil);\n  • bağlı Rutoken’larda doğrudan bulunanlar.\nHiçbir şeyi değiştirmez — yalnızca okur. Başlamak için uygun düğme.
 tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
 tip.export = 2. adım. Rutoken S / Lite, JaCarta LT ve ESMART’tan kapsayıcıları hedef klasöre çıkar\n(kapsayıcı başına 6 *.key dosyası). Belirtecin belleğini CSP’yi atlayarak doğrudan okur,\nbu yüzden dışa aktarım yasağı varken de çalışır. Belirteç ve verileri değişmez.\nÇıkarılan kopyadaki anahtar hâlâ dışa aktarılamaz — onu «Dışa aktarılabilir yap» düğmesi halleder.
