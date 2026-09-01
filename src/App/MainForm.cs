@@ -758,6 +758,11 @@ namespace CryptoProExport.App
             // публичные сертификаты показываются только когда реально присутствуют.
             cancel.ThrowIfCancellationRequested();
             var tokens = Pkcs11Token.Enumerate(readContainers: true, log: Log, cancel: cancel);
+            // Библиотека токен показала — это ещё не значит, что его объекты прочитаны:
+            // сессия могла не открыться, а поиск объектов упасть. Тогда пустой перечень
+            // контейнеров ничего не доказывает (замечание Codex на PR #83). Флаг осмыслен
+            // именно здесь: контейнеры мы как раз просили прочитать.
+            foreach (var t in tokens) if (t != null && !t.ContainersKnown) scanFailed = true;
             Log("[PKCS#11] " + Strings.Format("token.found", tokens.Count));
             foreach (var t in tokens)
             {
