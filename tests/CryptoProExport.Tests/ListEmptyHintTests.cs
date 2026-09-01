@@ -86,6 +86,27 @@ namespace CryptoProExport.Tests
         }
 
         /// <summary>
+        /// Две карты, показана одна: непокрытая должна объясняться «нет библиотеки», а не
+        /// «контейнеров нет». Прочитанный соседний токен не доказывает, что прочитаны все
+        /// (замечание Codex на PR #83).
+        /// </summary>
+        [Fact]
+        public void OneReadCarrier_DoesNotVouchForTheOther()
+        {
+            var readers = new[]
+            {
+                new PcscReader { Name = "Aktiv Rutoken ECP 0", CardPresent = true },
+                new PcscReader { Name = "BIFIT ANGARA 0", CardPresent = true },
+            };
+            var uncovered = PcscReaders.Uncovered(readers, new[] { "Aktiv Rutoken ECP 0" });
+            Assert.Single(uncovered);
+
+            Assert.Equal(ListEmptyHint.NoLibraryKey,
+                         ListEmptyHint.KeyFor(0, carriers: 2, pkcs11Tokens: 1,
+                                              uncoveredCarriers: uncovered.Count));
+        }
+
+        /// <summary>
         /// Сорвавшийся обход — это «неизвестно», а не «пусто». У Рутокен Lite и JaCarta LT
         /// контейнеры КриптоПро видны только прямым APDU, и его ошибка не доказывает, что
         /// контейнеров нет (замечание Codex на PR #83). Ошибка перекрывает остальные причины.
@@ -98,13 +119,17 @@ namespace CryptoProExport.Tests
         {
             Assert.Equal(ListEmptyHint.ScanFailedKey,
                          ListEmptyHint.KeyFor(0, carriers, pkcs11Tokens, scanFailed: true));
+            // И даже когда носитель никем не покрыт: неизвестно — сильнее любой догадки.
+            Assert.Equal(ListEmptyHint.ScanFailedKey,
+                         ListEmptyHint.KeyFor(0, carriers, pkcs11Tokens,
+                                              uncoveredCarriers: 1, scanFailed: true));
         }
 
         /// <summary>Найденный контейнер объяснять не нужно даже после сорвавшегося обхода.</summary>
         [Fact]
         public void FailedScan_DoesNotExplainAListWithContainers()
         {
-            Assert.Null(ListEmptyHint.KeyFor(1, 1, 1, scanFailed: true));
+            Assert.Null(ListEmptyHint.KeyFor(1, 1, 1, uncoveredCarriers: 1, scanFailed: true));
         }
 
         /// <summary>

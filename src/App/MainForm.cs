@@ -835,7 +835,8 @@ namespace CryptoProExport.App
                 if (t?.Reader != null) pkcs11Readers.Add(t.Reader);
             foreach (var line in PcscReaders.CoverageLines(pcscReaders, pkcs11Readers))
                 Log("[PC/SC] " + line);
-            foreach (var r in PcscReaders.Uncovered(pcscReaders, pkcs11Readers))
+            var uncovered = PcscReaders.Uncovered(pcscReaders, pkcs11Readers);
+            foreach (var r in uncovered)
                 // В колонке контейнера — вендор носителя, а не «нет»: контейнеры КриптоПро на
                 // таком носителе быть могут (проверено на BIFIT ANGARA), просто показывает их
                 // не PKCS#11, а CSP — отдельной строкой выше.
@@ -859,7 +860,10 @@ namespace CryptoProExport.App
             }
             catch (Exception e)
             {
-                scanFailed = true;
+                // Недоступность самого rtCOMLite неполным обходом не считается: это legacy-путь,
+                // и на x64/ARM64 без зарегистрированного компонента CreateContext падает всегда,
+                // ещё не дойдя ни до одного носителя. Иначе «опрос не завершился» показывалось бы
+                // и на машине вовсе без носителей (замечание Codex на PR #83).
                 Log(Strings.Format("log.tokens.unavailable", e.Message));
             }
             SuggestFactoryPin(tokens);
@@ -869,7 +873,7 @@ namespace CryptoProExport.App
             // (замечание Codex на PR #83).
             int carriers = 0;
             foreach (var r in pcscReaders) if (r != null && r.CardPresent) carriers++;
-            SetEmptyHint(carriers, tokens.Count, scanFailed);
+            SetEmptyHint(carriers, tokens.Count, uncovered.Count, scanFailed);
             Log(Strings.Get("log.done"));
         }
 
@@ -1636,11 +1640,13 @@ namespace CryptoProExport.App
         /// показалось (замечание Codex на PR #83). Что именно написать, решает
         /// <see cref="ListEmptyHint"/>: причин три и действия у них разные.
         /// </summary>
-        private void SetEmptyHint(int? carriers, int pkcs11Tokens = 0, bool scanFailed = false)
+        private void SetEmptyHint(int? carriers, int pkcs11Tokens = 0,
+                                  int uncoveredCarriers = 0, bool scanFailed = false)
         {
             if (InvokeRequired)
             {
-                BeginInvoke(new Action(() => SetEmptyHint(carriers, pkcs11Tokens, scanFailed)));
+                BeginInvoke(new Action(
+                    () => SetEmptyHint(carriers, pkcs11Tokens, uncoveredCarriers, scanFailed)));
                 return;
             }
             if (carriers == null) { _emptyHintKey = null; ApplyEmptyHint(); return; }
@@ -1649,7 +1655,8 @@ namespace CryptoProExport.App
             foreach (ListViewItem row in _lv.Items)
                 if (ListEmptyHint.IsContainerRow(RowKind(row.Tag))) containers++;
 
-            _emptyHintKey = ListEmptyHint.KeyFor(containers, carriers.Value, pkcs11Tokens, scanFailed);
+            _emptyHintKey = ListEmptyHint.KeyFor(containers, carriers.Value, pkcs11Tokens,
+                                                 uncoveredCarriers, scanFailed);
             ApplyEmptyHint();
         }
 

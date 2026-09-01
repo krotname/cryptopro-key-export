@@ -63,11 +63,18 @@ namespace CryptoProExport
         /// ошибка означает «неизвестно» (замечание Codex на PR #83). Ошибка перекрывает
         /// остальные причины: пока опрос не прошёл целиком, судить об остальном нельзя.
         /// </param>
+        /// <param name="uncoveredCarriers">
+        /// Носители, которых не показала ни одна библиотека PKCS#11. Достаточно одного:
+        /// прочитанный соседний токен не доказывает, что прочитаны все, — иначе на машине с
+        /// двумя картами непокрытая объяснялась бы «контейнеров нет» вместо «нет библиотеки»
+        /// (замечание Codex на PR #83).
+        /// </param>
         public static string KeyFor(int containerRows, int carriers, int pkcs11Tokens,
-                                    bool scanFailed = false)
+                                    int uncoveredCarriers = 0, bool scanFailed = false)
         {
             if (containerRows > 0) return null;
             if (scanFailed) return ScanFailedKey;
+            if (uncoveredCarriers > 0) return NoLibraryKey;
             if (carriers <= 0 && pkcs11Tokens <= 0) return NoReaderKey;
             return pkcs11Tokens > 0 ? NoContainerKey : NoLibraryKey;
         }
