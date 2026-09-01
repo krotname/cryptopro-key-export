@@ -23,7 +23,12 @@ namespace CryptoProExport.App
     [SupportedOSPlatform("windows")]
     public sealed class MainForm : Form
     {
-        private TextBox _txtDest, _txtPin, _txtLog;
+        private TextBox _txtPin, _txtLog, _txtFind;
+        /// <summary>
+        /// Папка назначения. Поля в окне у неё больше нет (ROADMAP, P2, п. 8): она нужна только
+        /// в момент экспорта, там её и спрашивают, а выбор запоминается на сессию.
+        /// </summary>
+        private string _dest;
         private Button _btnPinReveal;
         /// <summary>Последнее подставленное программой значение PIN — чтобы отличать его от введённого.</summary>
         private string _autoFilledPin;
@@ -42,8 +47,7 @@ namespace CryptoProExport.App
         private bool _sortDesc;
         /// <summary>Номер строки в порядке обхода — по нему список возвращается к исходному виду.</summary>
         private int _rowSeq;
-        private Label _lblDest, _lblPin, _lblPinHint, _lblLang;
-        private Button _btnDest;
+        private Label _lblPin, _lblPinHint, _lblFind;
         private Button _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnInstall, _btnView, _btnPfx, _btnExtractKey, _btnLicense, _btnLogs, _btnHelp;
         private Button _btnCancel;
         /// <summary>Переключатель нижней панели журнала: по умолчанию она свёрнута.</summary>
@@ -65,7 +69,10 @@ namespace CryptoProExport.App
         private (Label Caption, string Key, Button[] Buttons)[] _buttonGroups;
         /// <summary>Выключенная кнопка, чью подсказку показали вручную (см. <see cref="ShowDisabledTip"/>).</summary>
         private Button _disabledTipOn;
-        private ComboBox _cmbLang;
+        /// <summary>Кнопка выбора языка: список из постоянной панели переехал в диалог.</summary>
+        private Button _btnLang;
+        /// <summary>Все строки обхода. В списке видны те, что подходят под поиск.</summary>
+        private readonly List<ListViewItem> _allRows = new();
         private ToolTip _tips;
         private ToolStripStatusLabel _status;
         /// <summary>Последняя строка журнала в строке состояния — то, что видно вместо свёрнутой панели.</summary>
@@ -124,10 +131,10 @@ namespace CryptoProExport.App
 
         public MainForm()
         {
+            _dest = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "RutokenExport");
             BuildUi();
             ApplyTexts();
-            _txtDest.Text = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "RutokenExport");
         }
 
 
@@ -194,7 +201,7 @@ namespace CryptoProExport.App
             // русского оригинала, и жёсткие размеры обрезали бы надписи.
             var settings = new TableLayoutPanel
             {
-                Dock = DockStyle.Top, ColumnCount = 3, RowCount = 3,
+                Dock = DockStyle.Top, ColumnCount = 3, RowCount = 1,
                 Padding = new Padding(10, 10, 10, 4),
                 AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
             };
@@ -202,7 +209,6 @@ namespace CryptoProExport.App
             settings.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             settings.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
-            _txtDest = new TextBox { Dock = DockStyle.Fill, Margin = new Padding(3, 4, 3, 4) };
             // PIN виден по умолчанию: он вводится с клавиатуры за своим столом, а вслепую
             // владелец чаще ошибается — а ошибка здесь стоит попытки носителя. Скрыть можно
             // кнопкой рядом, когда рядом кто-то есть.
@@ -217,19 +223,12 @@ namespace CryptoProExport.App
                 if (_lblPinHint != null) _lblPinHint.Text = PinHintText();
             };
 
-            // Поля пути к p12utility в окне нет: копия утилиты вшита и распаковывается сама,
-            // а внешнюю, если она лежит рядом с приложением, находит P12Utility.Locate().
-            // Пустое поле с подписью «указывать ничего не нужно» только занимало первую строку
-            // окна и заставляло разбираться, что это за файл.
-            _lblDest = MakeFieldLabel();
-            settings.Controls.Add(_lblDest, 0, 0);
-            settings.Controls.Add(_txtDest, 1, 0);
-            _btnDest = new Button { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Fill };
-            _btnDest.Click += (_, __) => PickFolder(_txtDest);
-            settings.Controls.Add(_btnDest, 2, 0);
-
+            // В постоянной панели осталась одна строка — PIN. Поля пути к p12utility тут не было
+            // и раньше (копия вшита), а «Папка назначения» и «Язык интерфейса» уехали туда, где
+            // они нужны (ROADMAP, P2, п. 8): папку спрашивает сам экспорт, язык — кнопка «Язык…»
+            // в служебной группе. Обе строки занимали место всегда, а требовались по разу.
             _lblPin = MakeFieldLabel();
-            settings.Controls.Add(_lblPin, 0, 1);
+            settings.Controls.Add(_lblPin, 0, 0);
             // Кнопка живёт в одной ячейке с полем: третья колонка занята подсказкой о PIN.
             var pinCell = new TableLayoutPanel
             {
@@ -251,22 +250,10 @@ namespace CryptoProExport.App
             };
             pinCell.Controls.Add(_txtPin, 0, 0);
             pinCell.Controls.Add(_btnPinReveal, 1, 0);
-            settings.Controls.Add(pinCell, 1, 1);
+            settings.Controls.Add(pinCell, 1, 0);
             _lblPinHint = MakeFieldLabel();
             _lblPinHint.ForeColor = Color.Gray;
-            settings.Controls.Add(_lblPinHint, 2, 1);
-
-            _lblLang = MakeFieldLabel();
-            settings.Controls.Add(_lblLang, 0, 2);
-            _cmbLang = new ComboBox
-            {
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                Width = 260, Anchor = AnchorStyles.Left, Margin = new Padding(3, 4, 3, 4),
-            };
-            foreach (string code in Strings.Available) _cmbLang.Items.Add(new LanguageChoice(code));
-            SelectCurrentLanguage();
-            _cmbLang.SelectedIndexChanged += (_, __) => OnLanguagePicked();
-            settings.Controls.Add(_cmbLang, 1, 2);
+            settings.Controls.Add(_lblPinHint, 2, 0);
 
             // --- Панель кнопок: четыре группы по смыслу ---
             // Сплошная лента из тринадцати кнопок не показывала порядок работы (ROADMAP, P2, п. 3):
@@ -299,6 +286,7 @@ namespace CryptoProExport.App
             // стоит рядом с кнопкой, открывающей папку журналов: обе про одно и то же, но одна
             // разворачивает текст в этом окне, а вторая ведёт к файлам прошлых запусков.
             _btnLogPane = MakeButton((_, __) => ToggleLogPane());
+            _btnLang = MakeButton((_, __) => PickLanguage());
             _btnHelp = MakeButton((_, __) => Guide.Show(this));
             _btnCancel = MakeButton((_, __) => CancelCurrent());
             _btnCancel.Enabled = false;
@@ -309,7 +297,8 @@ namespace CryptoProExport.App
             _actionButtons = new[]
             {
                 _btnRefresh, _btnExport, _btnExtract, _btnFull,
-                _btnView, _btnInstall, _btnPfx, _btnExtractKey, _btnLicense, _btnLogs, _btnHelp,
+                _btnView, _btnInstall, _btnPfx, _btnExtractKey, _btnLicense, _btnLogs,
+                _btnLang, _btnHelp,
             };
             // «Показать журнал» занятостью не гасится: развернуть журнал нужнее всего как раз
             // во время долгой операции — это единственный способ увидеть её ход целиком.
@@ -331,7 +320,8 @@ namespace CryptoProExport.App
                 AddButtonRow(buttons, "group.list", _btnRefresh, _btnView),
                 AddButtonRow(buttons, "group.steps", _btnExport, _btnExtract, _btnFull, _btnInstall),
                 AddButtonRow(buttons, "group.result", _btnPfx, _btnExtractKey),
-                AddButtonRow(buttons, "group.service", _btnLicense, _btnLogPane, _btnLogs, _btnHelp, _btnCancel),
+                AddButtonRow(buttons, "group.service",
+                             _btnLicense, _btnLogPane, _btnLogs, _btnLang, _btnHelp, _btnCancel),
             };
             // Подсказка выключенной кнопки: Windows не шлёт мыши сообщения выключенному окну,
             // поэтому ToolTip сам её не покажет — а причина отказа нужна именно там. Сообщения
@@ -387,6 +377,23 @@ namespace CryptoProExport.App
                 AutoSize = false, ForeColor = Color.Gray, Visible = false,
                 BackColor = SystemColors.Control, Padding = new Padding(16, 10, 16, 10),
             };
+            // Поиск по списку: личных контейнеров у владельца больше пяти, и глазами искать
+            // строку дольше, чем набрать три буквы (ROADMAP, P2, п. 8). Фильтр только прячет
+            // строки — сам обход и его порядок не меняются.
+            var find = new TableLayoutPanel
+            {
+                Dock = DockStyle.Top, ColumnCount = 2, RowCount = 1,
+                AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                Padding = new Padding(0, 0, 0, 4),
+            };
+            find.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            find.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            _lblFind = MakeFieldLabel();
+            _txtFind = new TextBox { Dock = DockStyle.Fill, Margin = new Padding(3, 4, 3, 4) };
+            _txtFind.TextChanged += (_, __) => ApplyFilter();
+            find.Controls.Add(_lblFind, 0, 0);
+            find.Controls.Add(_txtFind, 1, 0);
+
             split.Panel1.Controls.Add(_lblEmpty);
             // SendToBack, а не BringToFront: WinForms раскладывает пристыкованных детей от
             // последнего к первому, поэтому Dock=Fill списка должен разбираться последним —
@@ -394,6 +401,7 @@ namespace CryptoProExport.App
             _lblEmpty.SendToBack();
             // Ширина полосы меняется вместе с окном, а с ней и число строк переноса.
             split.Panel1.ClientSizeChanged += (_, __) => SizeEmptyHint();
+            split.Panel1.Controls.Add(find);
             split.Panel1.Padding = new Padding(10, 0, 10, 0);
 
             _txtLog = new TextBox
@@ -446,16 +454,13 @@ namespace CryptoProExport.App
             RightToLeft = rtl ? RightToLeft.Yes : RightToLeft.No;
             RightToLeftLayout = rtl;
 
-            _lblDest.Text = Strings.Get("field.dest");
             _lblPin.Text = Strings.Get("field.pin");
             _lblPinHint.Text = PinHintText();
             ApplyPinRevealState();
-            _lblLang.Text = Strings.Get("field.lang");
-            _btnDest.Text = Strings.Get("common.browse");
+            _lblFind.Text = Strings.Get("field.find");
 
-            Tip(_lblDest, "tip.dest"); Tip(_txtDest, "tip.dest"); Tip(_btnDest, "tip.dest.browse");
             Tip(_lblPin, "tip.pin"); Tip(_txtPin, "tip.pin"); Tip(_lblPinHint, "tip.pin");
-            Tip(_lblLang, "tip.lang"); Tip(_cmbLang, "tip.lang");
+            Tip(_lblFind, "tip.find"); Tip(_txtFind, "tip.find");
 
             // Подписи групп выравниваются по самой длинной из них: иначе кнопки начинались бы
             // с разного отступа и колонка групп читалась бы хуже сплошной ленты. MinimumSize,
@@ -486,6 +491,7 @@ namespace CryptoProExport.App
             // Надпись переключателя зависит от текущего состояния панели, поэтому её ставит
             // ApplyLogPaneState — и здесь, и на каждом нажатии.
             ApplyLogPaneState();
+            SetButton(_btnLang, "btn.lang", "tip.lang");
             SetButton(_btnHelp, "btn.help", "tip.help");
             SetButton(_btnCancel, "btn.cancel", "tip.cancel");
 
@@ -514,14 +520,18 @@ namespace CryptoProExport.App
             ShowLastLogLine();
         }
 
-        private void OnLanguagePicked()
+        /// <summary>
+        /// Спросить язык интерфейса. Список уехал из постоянной панели в диалог: выбирают его
+        /// один раз, а место он занимал всегда (ROADMAP, P2, п. 8).
+        /// </summary>
+        private void PickLanguage()
         {
-            if (_cmbLang.SelectedItem is not LanguageChoice choice) return;
-            if (string.Equals(choice.Code, Strings.Current, StringComparison.OrdinalIgnoreCase)) return;
-            Strings.Use(choice.Code);
-            Strings.Remember(choice.Code);
+            string code = LanguageDialog.Ask(this);
+            if (code == null) return;
+            Strings.Use(code);
+            Strings.Remember(code);
             ApplyTexts();
-            Log(Strings.Format("log.lang.changed", Strings.NativeName(choice.Code)));
+            Log(Strings.Format("log.lang.changed", Strings.NativeName(code)));
         }
 
         /// <summary>
@@ -532,30 +542,7 @@ namespace CryptoProExport.App
         internal void SwitchLanguage(string code)
         {
             if (!Strings.Use(code)) return;
-            SelectCurrentLanguage();
             ApplyTexts();
-        }
-
-        private void SelectCurrentLanguage()
-        {
-            for (int i = 0; i < _cmbLang.Items.Count; i++)
-            {
-                if (_cmbLang.Items[i] is LanguageChoice c &&
-                    string.Equals(c.Code, Strings.Current, StringComparison.OrdinalIgnoreCase))
-                {
-                    _cmbLang.SelectedIndex = i;
-                    return;
-                }
-            }
-            if (_cmbLang.Items.Count > 0) _cmbLang.SelectedIndex = 0;
-        }
-
-        /// <summary>Строка списка языков: код скрыт в объекте, пользователю видно родное название.</summary>
-        private sealed class LanguageChoice
-        {
-            public LanguageChoice(string code) => Code = code;
-            public string Code { get; }
-            public override string ToString() => Strings.NativeName(Code) + " (" + Code + ")";
         }
 
         /// <summary>Иконка окна и панели задач — та же, что у exe, из вшитого ресурса (все размеры).</summary>
@@ -722,7 +709,7 @@ namespace CryptoProExport.App
             // Прежнее объяснение снимаем сразу: пока обход идёт, оно относилось бы к старому
             // состоянию, а прерванное обновление оставило бы его на пустом списке навсегда.
             SetEmptyHint(null);
-            Invoke(() => { _lv.Items.Clear(); _rowSeq = 0; });
+            Invoke(() => { _lv.Items.Clear(); _allRows.Clear(); _rowSeq = 0; });
             // Сорвавшийся опрос нельзя выдавать за «контейнеров нет»: у Рутокен Lite и
             // JaCarta LT контейнеры КриптоПро видны только прямым APDU, и его ошибка означает
             // «неизвестно», а не «пусто» (замечание Codex на PR #83).
@@ -1070,8 +1057,8 @@ namespace CryptoProExport.App
         private void DoExport(CancellationToken cancel)
         {
             if (!RequireLicense()) return;
-            string dest = TextOf(_txtDest).Trim();
-            if (string.IsNullOrEmpty(dest)) { Log(Strings.Get("log.need.dest")); return; }
+            string dest = AskDestination();
+            if (dest == null) { Log(Strings.Get("log.cancelled.user")); return; }
             ContainerSelection selected = SelectedContainer();
             if (selected != null && selected.Apdu == null && selected.Direct == null)
             {
@@ -1105,8 +1092,8 @@ namespace CryptoProExport.App
             ContainerSelection selected = SelectedContainer();
             string container = selected?.Target;
             if (container == null) { Log(Strings.Get("log.need.container")); return; }
-            string destRoot = TextOf(_txtDest).Trim();
-            if (string.IsNullOrEmpty(destRoot)) { Log(Strings.Get("log.need.dest")); return; }
+            string destRoot = AskDestination();
+            if (destRoot == null) { Log(Strings.Get("log.cancelled.user")); return; }
             string dest = Path.Combine(destRoot, "certs_" + Sanitize(selected.Name));
 
             // Для строки PKCS#11 сохраняем именно сертификат выбранного токена. Поиск заново
@@ -1155,12 +1142,13 @@ namespace CryptoProExport.App
                 return;
             }
             if (!RequireLicense()) return;
-            string dest = TextOf(_txtDest).Trim();
-            if (string.IsNullOrEmpty(dest)) { Log(Strings.Get("log.need.dest")); return; }
             var confirm = AskConfirm(
                 Strings.Get(selected == null ? "dlg.confirm.full" : "dlg.confirm.full.selected"),
                 Strings.Get("dlg.confirm.title"));
             if (confirm != DialogResult.OK) { Log(Strings.Get("log.cancelled.user")); return; }
+            // Папку спрашиваем после подтверждения: отказавшемуся не за чем выбирать её вовсе.
+            string dest = AskDestination();
+            if (dest == null) { Log(Strings.Get("log.cancelled.user")); return; }
 
             var pipe = new ExportPipeline() { Log = Log, Cancel = cancel };
             ExportPipelineResult result;
@@ -1211,7 +1199,7 @@ namespace CryptoProExport.App
 
         private void DoInstall(CancellationToken cancel)
         {
-            string folder = AskFolder(Strings.Get("dlg.folder.container"), TextOf(_txtDest).Trim());
+            string folder = AskFolder(Strings.Get("dlg.folder.container"), _dest);
             if (folder == null) { Log(Strings.Get("log.cancelled")); return; }
             if (!ContainerStore.LooksLikeContainer(folder))
             {
@@ -1296,7 +1284,7 @@ namespace CryptoProExport.App
 
             string dest = AskSaveFile(Strings.Get("dlg.pfx.save"),
                                       "PKCS#12 (*.pfx)|*.pfx|" + Strings.Get("files.all") + "|*.*",
-                                      TextOf(_txtDest).Trim(), Sanitize(selected.Name) + ".pfx");
+                                      _dest, Sanitize(selected.Name) + ".pfx");
             if (dest == null) { Log(Strings.Get("log.cancelled")); return; }
 
             string pass = AskText(Strings.Get("dlg.pfx.pass.title"), Strings.Get("dlg.pfx.pass.prompt"),
@@ -1315,7 +1303,7 @@ namespace CryptoProExport.App
         private void DoExtractKey()
         {
             if (!RequireLicense()) return;
-            string folder = AskFolder(Strings.Get("dlg.folder.container"), TextOf(_txtDest).Trim());
+            string folder = AskFolder(Strings.Get("dlg.folder.container"), _dest);
             if (folder == null) { Log(Strings.Get("log.cancelled")); return; }
             if (!ContainerStore.LooksLikeContainer(folder))
             {
@@ -1329,7 +1317,7 @@ namespace CryptoProExport.App
 
             string dest = AskSaveFile(Strings.Get("dlg.extractkey.save"),
                                       "PEM (*.pem)|*.pem|" + Strings.Get("files.all") + "|*.*",
-                                      TextOf(_txtDest).Trim(), "privatekey.pem", "pem");
+                                      _dest, "privatekey.pem", "pem");
             if (dest == null) { Log(Strings.Get("log.cancelled")); return; }
 
             try
@@ -1352,7 +1340,7 @@ namespace CryptoProExport.App
         private void DoExtractPfx()
         {
             if (!RequireLicense()) return;
-            string folder = AskFolder(Strings.Get("dlg.folder.container"), TextOf(_txtDest).Trim());
+            string folder = AskFolder(Strings.Get("dlg.folder.container"), _dest);
             if (folder == null) { Log(Strings.Get("log.cancelled")); return; }
             if (!ContainerStore.LooksLikeContainer(folder))
             {
@@ -1372,7 +1360,7 @@ namespace CryptoProExport.App
                           ?? Path.GetFileName(folder.TrimEnd(Path.DirectorySeparatorChar));
             string dest = AskSaveFile(Strings.Get("dlg.extractpfx.save"),
                                       "PKCS#12 (*.pfx)|*.pfx|" + Strings.Get("files.all") + "|*.*",
-                                      TextOf(_txtDest).Trim(), Sanitize(name) + ".pfx");
+                                      _dest, Sanitize(name) + ".pfx");
             if (dest == null) { Log(Strings.Get("log.cancelled")); return; }
 
             try
@@ -1513,7 +1501,7 @@ namespace CryptoProExport.App
             // общего нужен и на входе, и на выходе: список мог обновиться самой операцией.
             UpdateRowActions();
             _btnCancel.Enabled = busy;
-            _cmbLang.Enabled = !busy;
+            // Кнопка языка гасится вместе с остальными служебными: она в _actionButtons.
             _progress.Visible = busy;
             _status.Text = busy ? title : Strings.Get("status.ready");
             ShowLastLogLine();
@@ -1614,11 +1602,49 @@ namespace CryptoProExport.App
         private void AddRow(string where, string how, string name, string details, object tag = null)
         {
             if (InvokeRequired) { BeginInvoke(new Action(() => AddRow(where, how, name, details, tag))); return; }
-            _lv.Items.Add(new ListViewItem(new[] { where, how, name, details })
+            var row = new ListViewItem(new[] { where, how, name, details })
             {
                 Tag = tag,
                 Name = _rowSeq++.ToString("D5", System.Globalization.CultureInfo.InvariantCulture),
-            });
+            };
+            // Полный перечень держим отдельно: в списке видно только то, что подходит под поиск,
+            // а решать «показывать нечего» и считать контейнеры нужно по всему обходу.
+            _allRows.Add(row);
+            if (Matches(row)) _lv.Items.Add(row);
+        }
+
+        /// <summary>Подходит ли строка под поиск: подстрока без учёта регистра в любой колонке.</summary>
+        private bool Matches(ListViewItem row)
+        {
+            string needle = _txtFind?.Text?.Trim();
+            if (string.IsNullOrEmpty(needle)) return true;
+            foreach (ListViewItem.ListViewSubItem cell in row.SubItems)
+                if (cell.Text != null
+                    && cell.Text.IndexOf(needle, StringComparison.CurrentCultureIgnoreCase) >= 0)
+                    return true;
+            return false;
+        }
+
+        /// <summary>
+        /// Пересобрать видимую часть списка по строке поиска. Сам обход не повторяется: строки
+        /// уже собраны, меняется только то, что показано. Сортировка сохраняется — сравниватель
+        /// остаётся на списке, и строки встают на свои места при добавлении.
+        /// </summary>
+        private void ApplyFilter()
+        {
+            if (InvokeRequired) { BeginInvoke(new Action(ApplyFilter)); return; }
+
+            _lv.BeginUpdate();
+            try
+            {
+                _lv.Items.Clear();
+                foreach (ListViewItem row in _allRows)
+                    if (Matches(row)) _lv.Items.Add(row);
+            }
+            finally { _lv.EndUpdate(); }
+
+            UpdateRowActions();
+            ApplyEmptyHint();
         }
 
         /// <summary>
@@ -1658,7 +1684,7 @@ namespace CryptoProExport.App
             if (carriers == null) { _emptyHintKey = null; ApplyEmptyHint(); return; }
 
             int containers = 0;
-            foreach (ListViewItem row in _lv.Items)
+            foreach (ListViewItem row in _allRows)
                 if (ListEmptyHint.IsContainerRow(RowKind(row.Tag))) containers++;
 
             _emptyHintKey = ListEmptyHint.KeyFor(containers, carriers.Value, pkcs11Tokens,
@@ -1686,8 +1712,14 @@ namespace CryptoProExport.App
         private void ApplyEmptyHint()
         {
             if (_lblEmpty == null) return;
-            _lblEmpty.Text = _emptyHintKey == null ? string.Empty : Strings.Get(_emptyHintKey);
-            _lblEmpty.Visible = _emptyHintKey != null;
+            // Список пуст из-за поиска — это другое дело: обход прошёл, строки есть, их просто
+            // не видно. Звать вставить носитель тут было бы неправдой.
+            string key = _allRows.Count > 0 && _lv.Items.Count == 0
+                ? "list.empty.filter"
+                : _emptyHintKey;
+
+            _lblEmpty.Text = key == null ? string.Empty : Strings.Get(key);
+            _lblEmpty.Visible = key != null;
             if (!_lblEmpty.Visible) { _lv.Visible = true; return; }
 
             // Пустой список подпись занимает целиком — сам список тогда прячем, показывать
@@ -1885,11 +1917,17 @@ namespace CryptoProExport.App
             ShowLastLogLine();
         }
 
-        private void PickFolder(TextBox target)
+        /// <summary>
+        /// Спросить папку назначения — в момент экспорта, а не в постоянной панели окна
+        /// (ROADMAP, P2, п. 8). Выбор запоминается на сессию и подставляется в следующий раз:
+        /// подряд идущие шаги одного конвейера ведут в одно место. Возвращает <c>null</c>,
+        /// если пользователь отказался.
+        /// </summary>
+        private string AskDestination()
         {
-            using var d = new FolderBrowserDialog();
-            if (Directory.Exists(target.Text)) d.SelectedPath = target.Text;
-            if (d.ShowDialog(this) == DialogResult.OK) target.Text = d.SelectedPath;
+            string picked = AskFolder(Strings.Get("dlg.folder.dest"), _dest);
+            if (picked != null) _dest = picked;
+            return picked;
         }
 
         private static string NullIfEmpty(string s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();

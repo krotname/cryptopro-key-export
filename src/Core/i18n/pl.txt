@@ -8,19 +8,16 @@ app.title = Eksport kluczy CryptoPro z Rutokena
 common.ok = OK
 common.cancel = Anuluj
 common.close = Zamknij
-common.browse = Przeglądaj…
 common.none = brak
 files.all = Wszystkie pliki
 
 # --- panel ustawień ---
-field.dest = Folder docelowy:
 field.pin = PIN (opcjonalnie):
+field.find = Поиск:
 field.pin.hint = puste → okno pytania
-field.lang = Język interfejsu:
 
-tip.dest = Gdzie trafi wynik: foldery ze zdjętymi kontenerami (*.key) i pliki certyfikatów (.cer).\nUwaga: to kopia Twojego klucza prywatnego — trzymaj ją jak tajemnicę.
-tip.dest.browse = Wybierz folder docelowy.
 tip.pin = PIN użytkownika Rutokena.\nPuste → o PIN zapyta okno systemowe (a jeśli na tokenie jest PIN fabryczny, zostanie użyty 12345678).\nZnaki są widoczne, aby nie pomylić się na ślepo; przycisk obok je ukrywa. Wartość nigdzie nie jest zapisywana.
+tip.find = Показывать только строки, где встречается набранное — в любой колонке,\nбез учёта регистра. Пустое поле показывает всё.\nСам обход носителей поиск не повторяет: фильтруется уже собранный список.
 tip.lang = Język interfejsu, podpowiedzi i komunikatów.\nWybór jest zapamiętywany i stosowany przy kolejnych uruchomieniach.\nTo samo z wiersza poleceń: --lang pl
 
 # --- przyciski ---
@@ -32,6 +29,7 @@ btn.check = Wyświetl kontener
 btn.install = Zainstaluj w CryptoPro
 btn.pfx = Eksport do PFX
 btn.logs = Dziennik
+btn.lang = Язык…
 btn.logpane.show = Показать журнал
 btn.logpane.hide = Скрыть журнал
 btn.help = Pomoc
@@ -75,6 +73,7 @@ list.empty.noreader = Носителей не найдено.\n\nВставьт�
 list.empty.nolibrary = Носитель подключён, но показать с него нечего.\n\nНи одна установленная библиотека PKCS#11 не показала этот носитель.\nЕсли драйверов вендора (Рутокен, JaCarta, ESMART) нет — поставьте их.\nЕсли они есть, точная причина написана в журнале: библиотека могла\nне загрузиться или не отдать список слотов.
 list.empty.nocontainer = Носитель прочитан, но ключевых контейнеров на нём нет.\n\nВ списке — само устройство: контейнеров с ключами на нём не нашлось.\nПроверьте, тот ли носитель вставлен. Контейнеры, установленные\nв КриптоПро на диск, тоже показались бы здесь.
 list.empty.scanfailed = Опрос носителей не завершился.\n\nЧасть носителей прочитать не удалось, поэтому пустой список здесь ничего\nне доказывает. Точная ошибка написана в журнале: разверните его кнопкой\n«Показать журнал». Проверьте носитель и нажмите «Обновить список».
+list.empty.filter = По запросу ничего не найдено.\n\nОбход прошёл, строки есть — их просто не видно под текущим поиском.\nОчистите поле «Поиск», чтобы увидеть весь список.
 hint.need.row = Сейчас недоступно: в списке не выбрана строка.\nВыберите строку контейнера, с которым нужно работать.
 hint.row.device = Сейчас недоступно: в выделенной строке только устройство, контейнера в ней нет.\nВыберите строку с именем контейнера.
 hint.row.csp = Сейчас недоступно: контейнер этой строки читается через КриптоПро CSP, а не напрямую с носителя.\nВыберите строку [APDU] или rtCOMLite либо снимите выделение, чтобы обойти все поддерживаемые носители.\nПрава ключей выбранной строки показывает «Посмотреть контейнер».
@@ -100,7 +99,6 @@ log.deps.header = Zależności (poza CryptoPro CSP nie trzeba niczego pobierać 
 log.session = Dziennik tej sesji: {0}
 log.done = Gotowe.
 log.tokens.unavailable = Rutokeny niedostępne: {0}
-log.need.dest = Podaj folder docelowy.
 log.need.container = Wybierz kontener na liście.
 log.exported = Zdjęte kontenery: {0}
 log.cert.exchange = Certyfikat wymiany:  {0}
@@ -134,6 +132,9 @@ log.logs.fail = Nie udało się otworzyć folderu dzienników: {0}
 dlg.confirm.title = Potwierdzenie
 dlg.confirm.full = Ze wszystkich podłączonych Rutokenów zostaną zdjęte kontenery, wyodrębnione certyfikaty i zdjęty zakaz eksportu kluczy.\n\nKontynuować?
 dlg.folder.container = Folder ze zdjętym kontenerem (6 plików *.key)
+dlg.folder.dest = Куда сложить снятые контейнеры и сертификаты
+dlg.lang.title = Язык интерфейса
+dlg.lang.prompt = Выбор запоминается и применяется при следующих запусках. То же самое из командной строки: --lang ru
 dlg.install.title = Instalacja kontenera w CryptoPro
 dlg.install.prompt = Nazwa, pod którą kontener pojawi się na liście CryptoPro.\nZmiana nie jest konieczna: CSP nie zawsze przyjmuje przemianowaną kopię.
 dlg.pfx.save = Gdzie zapisać PFX

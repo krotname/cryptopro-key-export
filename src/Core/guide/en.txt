@@ -40,7 +40,8 @@ interface languages fall back to the English text.
   2) «Refresh list» shows its type, capabilities, CryptoPro containers
      and public certificates. For Rutoken ECP this is the boundary:
      its hardware private key is not copied.
-  3) For a file-backed token row, fill in «Destination folder».
+  3) Select a file-backed token row. The program asks for the folder
+     to put everything into when it gets to writing files.
   4) «Make exportable» then does everything in one click:
        copies the container off the token (6 *.key files),
        extracts the certificates through CryptoAPI,
@@ -102,6 +103,7 @@ interface languages fall back to the English text.
     License               install a license (.jws) and verify it
     Show log              expand the log pane at the bottom
     Log                   open the folder with the program logs
+    Language...           interface language, tooltips and messages
     Help                  this window
     Cancel                stop the operation that is running
 
@@ -109,6 +111,13 @@ interface languages fall back to the English text.
   normally enough — it shows what is running and how the previous
   step ended, and the whole window goes to the list. "Show log"
   expands the full text and remembers the height you left it at.
+
+  Above the list there is a «Search» box: it keeps the rows where the
+  typed text occurs, in any column and ignoring case. The carriers are
+  not walked again — the already collected list is filtered; an empty
+  box shows everything. Only one permanent field is left in the window,
+  the PIN: the export asks for the destination folder itself, and the
+  language is picked once with the «Language...» button.
 
   The list has four columns. "Location" is where the carrier is: the
   reader name, HDIMAGE, or a dash when CryptoPro sees the container but
