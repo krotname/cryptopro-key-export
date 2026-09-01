@@ -68,6 +68,12 @@ namespace CryptoProExport.App
             public string Name;
             public string Serial;
             public byte[] Certificate;
+            /// <summary>
+            /// Сертификат-сирота без парного объекта контейнера (AGENTS п. 30). Имя такой
+            /// строки — метка сертификата, а не контейнера: отдавать его CryptoAPI или
+            /// certmgr нельзя, они разрешили бы его в посторонний одноимённый контейнер CSP.
+            /// </summary>
+            public bool CertificateOnly;
         }
 
         private sealed class ApduContainerSelection
@@ -589,6 +595,7 @@ namespace CryptoProExport.App
                                Name = c.Name,
                                Serial = t.Serial,
                                Certificate = c.Certificate,
+                               CertificateOnly = c.CertificateOnly,
                            });
                     hasDirectRow = true;
                 }
@@ -965,6 +972,7 @@ namespace CryptoProExport.App
             ContainerSelection selected = SelectedContainer();
             string container = selected?.Target;
             if (container == null) { Log(Strings.Get("log.need.container")); return; }
+            if (IsCertificateOnly(selected)) { Log(Strings.Get("hint.row.certonly")); return; }
             var (ex, sg) = CheckExportability(container);
             Log(Strings.Format("log.check.container", container));
             Log("  " + Strings.Get("col.location") + ": " + selected.Location);
@@ -1032,6 +1040,7 @@ namespace CryptoProExport.App
             ContainerSelection selected = SelectedContainer();
             string container = selected?.Target;
             if (container == null) { Log(Strings.Get("log.need.container")); return; }
+            if (IsCertificateOnly(selected)) { Log(Strings.Get("hint.row.certonly")); return; }
 
             string exe = CertMgr.Locate();
             if (exe == null) { Log(Strings.Get("log.pfx.nocertmgr")); return; }
@@ -1288,6 +1297,14 @@ namespace CryptoProExport.App
             }
         }
 
+        /// <summary>
+        /// За строкой стоит сертификат-сирота: контейнера с таким именем на носителе нет.
+        /// Кнопка на такой строке погашена, но строку читает фоновая задача уже после
+        /// нажатия — выделение успевает смениться, поэтому проверка нужна и здесь.
+        /// </summary>
+        private static bool IsCertificateOnly(ContainerSelection selected) =>
+            selected?.Token != null && selected.Token.CertificateOnly;
+
         /// <summary>Тип выделенной строки — всё, что нужно знать о ней для доступности кнопок.</summary>
         private SelectedRow CurrentRow()
         {
@@ -1298,9 +1315,10 @@ namespace CryptoProExport.App
                 ApduContainerSelection => SelectedRow.Apdu,
                 RutokenContainer => SelectedRow.Direct,
                 // Сертификат прочитан при обновлении списка: пустое поле здесь означает, что
-                // извлекать нечего, и это видно до нажатия, а не после попытки.
-                TokenCertificateSelection t => t.Certificate != null
-                    ? SelectedRow.TokenWithCert : SelectedRow.TokenWithoutCert,
+                // извлекать нечего, и это видно до нажатия, а не после попытки. Сертификат-сирота
+                // выделен отдельно: контейнера за ним нет вовсе, адресовать по имени нечего.
+                TokenCertificateSelection t => t.CertificateOnly ? SelectedRow.TokenCertificateOnly
+                    : t.Certificate != null ? SelectedRow.TokenWithCert : SelectedRow.TokenWithoutCert,
                 // TokenDeviceSelection и любая строка без своего Tag: контейнера в ней нет.
                 _ => SelectedRow.Device,
             };

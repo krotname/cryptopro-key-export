@@ -31,6 +31,8 @@ namespace CryptoProExport.Tests
         // Действиям по одному контейнеру годится строка любого источника, кроме устройства.
         [InlineData(RowAction.ExtractCert, SelectedRow.Csp)]
         [InlineData(RowAction.ExtractCert, SelectedRow.TokenWithCert)]
+        // Сертификат-сирота извлекается как раз этим действием — он для того и в списке.
+        [InlineData(RowAction.ExtractCert, SelectedRow.TokenCertificateOnly)]
         [InlineData(RowAction.ExtractCert, SelectedRow.Apdu)]
         [InlineData(RowAction.ExtractCert, SelectedRow.Direct)]
         [InlineData(RowAction.ViewContainer, SelectedRow.Csp)]
@@ -58,6 +60,12 @@ namespace CryptoProExport.Tests
         [InlineData(RowAction.Export, SelectedRow.TokenWithoutCert, "hint.row.pkcs11")]
         [InlineData(RowAction.MakeExportable, SelectedRow.TokenWithCert, "hint.row.pkcs11")]
         [InlineData(RowAction.MakeExportable, SelectedRow.TokenWithoutCert, "hint.row.pkcs11")]
+        [InlineData(RowAction.Export, SelectedRow.TokenCertificateOnly, "hint.row.pkcs11")]
+        [InlineData(RowAction.MakeExportable, SelectedRow.TokenCertificateOnly, "hint.row.pkcs11")]
+        // За сертификатом-сиротой контейнера нет: его имя нельзя отдавать ни CryptoAPI, ни
+        // certmgr — они разрешили бы его в посторонний одноимённый контейнер CSP.
+        [InlineData(RowAction.ViewContainer, SelectedRow.TokenCertificateOnly, "hint.row.certonly")]
+        [InlineData(RowAction.ExportPfx, SelectedRow.TokenCertificateOnly, "hint.row.certonly")]
         // Действию по одному контейнеру нужна выделенная строка.
         [InlineData(RowAction.ExtractCert, SelectedRow.None, "hint.need.row")]
         [InlineData(RowAction.ViewContainer, SelectedRow.None, "hint.need.row")]
@@ -131,6 +139,9 @@ namespace CryptoProExport.Tests
             string gui = File.ReadAllText(RepoFile("src", "App", "MainForm.cs"));
             Assert.Contains("Log(Strings.Get(\"log.export.directonly\"));", gui, StringComparison.Ordinal);
             Assert.Contains("Log(Strings.Get(\"log.need.container\"));", gui, StringComparison.Ordinal);
+            // Сертификат-сирота не должен уходить в CryptoAPI и certmgr даже мимо погашенной кнопки.
+            Assert.Equal(2, System.Text.RegularExpressions.Regex.Matches(
+                gui, @"IsCertificateOnly\(selected\)\) \{ Log\(Strings\.Get\(""hint\.row\.certonly""\)\); return; \}").Count);
         }
 
         /// <summary>Все причины отказа, которые умеет назвать таблица.</summary>
@@ -144,7 +155,11 @@ namespace CryptoProExport.Tests
                     if (reason != null) keys.Add(reason);
                 }
             Assert.Equal(
-                new[] { "hint.cert.none", "hint.need.row", "hint.row.csp", "hint.row.device", "hint.row.pkcs11" },
+                new[]
+                {
+                    "hint.cert.none", "hint.need.row", "hint.row.certonly",
+                    "hint.row.csp", "hint.row.device", "hint.row.pkcs11",
+                },
                 keys.ToArray());
             return keys;
         }

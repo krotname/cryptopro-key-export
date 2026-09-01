@@ -15,6 +15,12 @@ namespace CryptoProExport
         TokenWithCert,
         /// <summary>Строка PKCS#11: контейнер носителя, сертификата в нём нет.</summary>
         TokenWithoutCert,
+        /// <summary>
+        /// Строка PKCS#11: сертификат-сирота без парного <c>CKO_DATA</c>. Контейнера за такой
+        /// строкой нет вовсе (AGENTS п. 30), поэтому её имя нельзя отдавать ни CryptoAPI, ни
+        /// certmgr: они разрешили бы его в посторонний одноимённый контейнер CSP.
+        /// </summary>
+        TokenCertificateOnly,
         /// <summary>Контейнер, читаемый прямым APDU (Rutoken S/Lite, JaCarta LT/PRO, ESMART).</summary>
         Apdu,
         /// <summary>Контейнер, найденный legacy-путём rtCOMLite.</summary>
@@ -77,6 +83,7 @@ namespace CryptoProExport
 
                 // Сертификат достаётся из самой строки (PKCS#11) или через CryptoAPI (остальные).
                 // Отсутствие сертификата в строке PKCS#11 видно заранее — это не попытка.
+                // Сертификат-сирота извлекается как раз этим действием: он для того и в списке.
                 case RowAction.ExtractCert:
                     return row switch
                     {
@@ -86,8 +93,14 @@ namespace CryptoProExport
                     };
 
                 // Остальным действиям нужен ровно один выделенный контейнер — любого источника.
+                // За строкой сертификата-сироты контейнера нет, и адресовать по её имени нечего.
                 default:
-                    return row == SelectedRow.None ? "hint.need.row" : null;
+                    return row switch
+                    {
+                        SelectedRow.None => "hint.need.row",
+                        SelectedRow.TokenCertificateOnly => "hint.row.certonly",
+                        _ => null,
+                    };
             }
         }
 
