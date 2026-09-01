@@ -94,7 +94,9 @@ interface languages fall back to the English text.
   Log                   open the folder with the program logs
   Help                  this window
 
-  Every button has a tooltip — hold the cursor over it.
+  Every button has a tooltip — hold the cursor over it. A button that
+  does not fit the selected row is greyed out, and its own tooltip
+  says why.
 
   Two buttons produce a .pfx, and the files are DIFFERENT. "Export to
   PFX" goes through CryptoPro's certmgr, and CryptoPro will take that

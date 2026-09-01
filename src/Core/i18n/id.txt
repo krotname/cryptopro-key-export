@@ -53,6 +53,11 @@ col.container = Kontainer
 col.details = Rincian
 tip.list = Kontainer kunci yang ditemukan.\n«Lokasi» = CSP (terlihat oleh CryptoPro) atau nama Rutoken (dibaca langsung dari token).\nPilih satu baris — tombol «Ambil sertifikat» bekerja pada kontainer yang dipilih.
 tip.list.dblclick = Двойной клик по строке равносилен кнопке «Посмотреть контейнер».
+hint.need.row = Сейчас недоступно: в списке не выбрана строка.\nВыберите строку контейнера, с которым нужно работать.
+hint.row.device = Сейчас недоступно: в выделенной строке только устройство, контейнера в ней нет.\nВыберите строку с именем контейнера.
+hint.row.csp = Сейчас недоступно: контейнер этой строки читается через КриптоПро CSP, а не напрямую с носителя.\nВыберите строку [APDU] или rtCOMLite либо снимите выделение, чтобы обойти все поддерживаемые носители.\nПрава ключей выбранной строки показывает «Посмотреть контейнер».
+hint.row.pkcs11 = Сейчас недоступно: строка PKCS#11 показывает только публичные объекты носителя, файлов контейнера через неё не видно.\nВыберите строку [APDU] или rtCOMLite либо снимите выделение, чтобы обойти все поддерживаемые носители.
+hint.cert.none = Сейчас недоступно: в выделенной строке сертификата нет — PKCS#11 показывает «нет».\nВыберите строку, в которой сертификат есть.
 tip.log = Log eksekusi: perintah p12utility, langkah kerja dengan token, dan kesalahan.\nTeks bisa dipilih dan disalin (Ctrl+C) — berguna saat menelusuri masalah.
 
 # --- bilah status ---
