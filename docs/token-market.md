@@ -41,7 +41,8 @@ E2E от неэкспортируемого контейнера на токен
 ## Каноническая фотосерия физических экземпляров
 
 [Единая галерея, метод обработки и SHA-256 всех 27 файлов](token-photo-series.md)
-фиксируют девять проверенных физических экземпляров на 27.08.2026. Фотография
+фиксируют девять проверенных физических экземпляров на 27.08.2026, а таблица ниже
+дополнена двумя носителями БИФИТ, сфотографированными 31.08.2026. Фотография
 подтверждает только видимую маркировку и корпус; точную аппаратную модель закрывают
 согласованные USB/reader/model-признаки либо отдельный физический протокол.
 
@@ -56,6 +57,8 @@ E2E от неэкспортируемого контейнера на токен
 | **Рутокен ЭЦП 3.0** | заводская маркировка `Рутокен ЭЦП 3.0`; серийный номер оставлен только на фотографии | [лицевая и обратная стороны](images/rutoken-ecp-3/rutoken-ecp-3-front-rear-studio.png) |
 | **Рутокен Lite** | `VID_0A89/PID_0025`, reader `Aktiv Rutoken lite 0`, модель `Rutoken lite`, fw `8.0` | [лицевая и обратная стороны](images/rutoken-lite/rutoken-lite-front-rear-studio.png) |
 | **Рутокен S** | PnP `Rutoken S`, `VID_0A89/PID_0020`, reader `Aktiv Co. ruToken 0`, fw `36.0` | [лицевая и обратная стороны](images/rutoken-s/rutoken-s-front-rear-studio.png) |
+| **MS_KEY K «АНГАРА» (БИФИТ)** | `VID_23A0/PID_0008`, reader `BIFIT ANGARA 0`, ATR `3B 9E 96 00 80 31 C0 65 4D 53 … 72 F7 41 81 07` (ASCII `MS`); проверен 31.08.2026 ([hardware/bifit.md](hardware/bifit.md)) | [лицевая и обратная стороны](images/bifit-mskey-k/bifit-mskey-k-front-rear-studio.png) |
+| **iBank2Key (БИФИТ)** | `VID_23A0/PID_0002`, reader `BIFIT iBank2Key 0`, ATR `3B 98 96 00 80 31 C0 72 F7 41 81 07`; КриптоПро отвергает по ATR ([hardware/bifit.md](hardware/bifit.md)) | [лицевая и обратная стороны](images/bifit-ibank2key/bifit-ibank2key-front-rear-studio.png) |
 
 ## Что доказано физически
 
