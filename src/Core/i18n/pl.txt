@@ -32,6 +32,8 @@ btn.check = Wyświetl kontener
 btn.install = Zainstaluj w CryptoPro
 btn.pfx = Eksport do PFX
 btn.logs = Dziennik
+btn.logpane.show = Показать журнал
+btn.logpane.hide = Скрыть журнал
 btn.help = Pomoc
 btn.cancel = Anuluj
 
@@ -57,6 +59,7 @@ tip.check = Wyświetl wybrany kontener: nazwę, lokalizację, szczegóły i upra
 tip.install = Zainstaluj w CryptoPro folder kontenera zdjętego z tokena (6 plików *.key) —\nczyli skopiuj go do magazynu CSP. Potem kontener pojawia się na liście i działa\nbez tokena: można z niego wyodrębnić certyfikat i wyeksportować go do PFX.\nZmiana nazwy nie jest konieczna: CryptoPro porównuje nazwę z zawartością kontenera i\nnie zawsze przyjmuje przemianowaną kopię. Program sprawdzi wynik i powie,\nczy CSP naprawdę zobaczył kontener.
 tip.pfx = Wyeksportuj wybrany na liście kontener do pliku PKCS#12 (.pfx) — certyfikat razem\nz kluczem prywatnym, gotowy do przeniesienia na inny system.\nWymagane: zakaz eksportu już zdjęty («Wyświetl kontener» pokazuje «eksportowalny»)\noraz zainstalowany CryptoPro CSP (używany jest jego certmgr).\nO hasło do .pfx program zapyta osobno.
 tip.logs = Otwórz folder z dziennikami pracy programu.\nKażde uruchomienie zapisuje osobny plik — wygodnie dołączyć go do pytania,\ngdy coś nie wyszło. Hasła nigdy nie trafiają do dziennika.
+tip.logpane = Развернуть или свернуть журнал внизу окна.\nПо умолчанию он свёрнут: в строке состояния видно, что идёт сейчас и чем\nзакончился предыдущий шаг, а списку достаётся всё окно. Полный текст нужен\nпри разборе — тогда журнал и разворачивают.\nСоседняя кнопка «Журнал» открывает папку с файлами прошлых запусков.
 tip.help = Wbudowany podręcznik: od czego zacząć, co robi każdy przycisk,\npolecenia trybu konsolowego i omówienie typowych błędów.\nLeży w środku programu — internet ani zewnętrzne pliki nie są potrzebne.
 tip.cancel = Przerwij bieżącą operację.\nPraca zatrzyma się na najbliższym kroku: wywołanie do tokena albo uruchomione\nnarzędzie CryptoPro trzeba najpierw doprowadzić do końca — działające narzędzie jest wtedy zamykane.\nJuż zapisane pliki zostają na miejscu.
 

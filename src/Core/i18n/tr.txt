@@ -32,6 +32,8 @@ btn.check = Kapsayıcıyı görüntüle
 btn.install = CryptoPro’ya kur
 btn.pfx = PFX olarak dışa aktar
 btn.logs = Günlük
+btn.logpane.show = Показать журнал
+btn.logpane.hide = Скрыть журнал
 btn.help = Yardım
 btn.cancel = İptal
 
@@ -57,6 +59,7 @@ tip.check = Seçili kapsayıcıyı görüntüle: adı, konumu, ayrıntıları ve
 tip.install = Belirteçten çıkarılmış bir kapsayıcı klasörünü (6 *.key dosyası) CryptoPro’ya kur —\nyani onu CSP deposuna kopyala. Ardından kapsayıcı listede görünür ve belirteç olmadan\nçalışır: sertifikası çıkarılabilir, PFX olarak dışa aktarılabilir.\nAdı değiştirmek zorunlu değil: CryptoPro adı kapsayıcının içeriğiyle karşılaştırır ve\nadı değiştirilmiş kopyayı her zaman kabul etmez. Program sonucu denetler ve\nCSP’nin kapsayıcıyı gerçekten görüp görmediğini bildirir.
 tip.pfx = Listede seçili kapsayıcıyı bir PKCS#12 (.pfx) dosyasına aktar — sertifika ile\nözel anahtar birlikte, başka bir sisteme taşımak için.\nGerekenler: dışa aktarım yasağının kalkmış olması («Kapsayıcıyı görüntüle» «dışa aktarılabilir» göstermeli)\nve CryptoPro CSP’nin kurulu olması (onun certmgr’ı kullanılır).\n.pfx parolasını program ayrıca soracaktır.
 tip.logs = Programın çalışma günlüklerinin bulunduğu klasörü aç.\nHer açılış kendi dosyasını yazar — bir şey yolunda gitmediyse\nsoruya eklemek pratiktir. Parolalar günlüğe hiç düşmez.
+tip.logpane = Развернуть или свернуть журнал внизу окна.\nПо умолчанию он свёрнут: в строке состояния видно, что идёт сейчас и чем\nзакончился предыдущий шаг, а списку достаётся всё окно. Полный текст нужен\nпри разборе — тогда журнал и разворачивают.\nСоседняя кнопка «Журнал» открывает папку с файлами прошлых запусков.
 tip.help = Gömülü kılavuz: nereden başlanır, her düğme ne yapar,\nkonsol kipinin komutları ve tipik hataların çözümlemesi.\nProgramın içindedir — internet ve dış dosya gerekmez.
 tip.cancel = Süren işlemi kes.\nÇalışma en yakın adımda durur: belirtece yapılan çağrı ya da başlatılmış bir CryptoPro\naracı önce bitirilmek zorundadır — çalışan araç o sırada sonlandırılır.\nHâlihazırda kaydedilmiş dosyalar yerinde kalır.
 

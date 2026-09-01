@@ -36,6 +36,10 @@ namespace CryptoProExport.App
         private Button _btnDest;
         private Button _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnInstall, _btnView, _btnPfx, _btnExtractKey, _btnLicense, _btnLogs, _btnHelp;
         private Button _btnCancel;
+        /// <summary>Переключатель нижней панели журнала: по умолчанию она свёрнута.</summary>
+        private Button _btnLogPane;
+        /// <summary>Высота списка при развёрнутом журнале — чтобы вернуть её, а не половину окна.</summary>
+        private int _logSplit;
         private Button[] _actionButtons;
         /// <summary>Кнопки, доступность которых зависит от выделенной строки, и их действия.</summary>
         private (Button Button, RowAction Action)[] _rowButtons;
@@ -54,6 +58,8 @@ namespace CryptoProExport.App
         private ComboBox _cmbLang;
         private ToolTip _tips;
         private ToolStripStatusLabel _status;
+        /// <summary>Последняя строка журнала в строке состояния — то, что видно вместо свёрнутой панели.</summary>
+        private ToolStripStatusLabel _lastLog;
         private ToolStripProgressBar _progress;
         private CancellationTokenSource _cancellation;
         private bool _busy;
@@ -112,12 +118,6 @@ namespace CryptoProExport.App
                 Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "RutokenExport");
         }
 
-        /// <summary>Список и журнал делят место пополам — журнал читают не реже перечня.</summary>
-        protected override void OnLoad(EventArgs e)
-        {
-            base.OnLoad(e);
-            if (_split.Height > 200) _split.SplitterDistance = _split.Height / 2;
-        }
 
         /// <summary>
         /// После показа окна — сводка по зависимостям в лог (что вшито, чего не хватает), а следом
@@ -283,6 +283,10 @@ namespace CryptoProExport.App
             _btnExtractKey = MakeButton((_, __) => Run("status.extractkey", DoExtractKey));
             _btnLicense = MakeButton((_, __) => DoLicense());
             _btnLogs = MakeButton((_, __) => OpenLogFolder());
+            // Панель журнала свёрнута по умолчанию (ROADMAP, P2, п. 5), поэтому её переключатель
+            // стоит рядом с кнопкой, открывающей папку журналов: обе про одно и то же, но одна
+            // разворачивает текст в этом окне, а вторая ведёт к файлам прошлых запусков.
+            _btnLogPane = MakeButton((_, __) => ToggleLogPane());
             _btnHelp = MakeButton((_, __) => Guide.Show(this));
             _btnCancel = MakeButton((_, __) => CancelCurrent());
             _btnCancel.Enabled = false;
@@ -295,6 +299,8 @@ namespace CryptoProExport.App
                 _btnRefresh, _btnExport, _btnExtract, _btnFull,
                 _btnView, _btnInstall, _btnPfx, _btnExtractKey, _btnLicense, _btnLogs, _btnHelp,
             };
+            // «Показать журнал» занятостью не гасится: развернуть журнал нужнее всего как раз
+            // во время долгой операции — это единственный способ увидеть её ход целиком.
             // Остальные кнопки к выделению безразличны: «Обновить» перечитывает весь список,
             // «Установить» и «Извлечь ключ» спрашивают папку диалогом, «Сохранить в PFX»
             // проверяет строку уже в своём диалоге (там же пишет причину отказа), а
@@ -313,7 +319,7 @@ namespace CryptoProExport.App
                 AddButtonRow(buttons, "group.list", _btnRefresh, _btnView),
                 AddButtonRow(buttons, "group.steps", _btnExport, _btnExtract, _btnFull, _btnInstall),
                 AddButtonRow(buttons, "group.result", _btnPfx, _btnExtractKey),
-                AddButtonRow(buttons, "group.service", _btnLicense, _btnLogs, _btnHelp, _btnCancel),
+                AddButtonRow(buttons, "group.service", _btnLicense, _btnLogPane, _btnLogs, _btnHelp, _btnCancel),
             };
             // Подсказка выключенной кнопки: Windows не шлёт мыши сообщения выключенному окну,
             // поэтому ToolTip сам её не покажет — а причина отказа нужна именно там. Сообщения
@@ -322,9 +328,15 @@ namespace CryptoProExport.App
             buttons.MouseLeave += (_, __) => ShowDisabledTip(buttons, new Point(-1, -1));
 
             // --- Список + лог ---
-            // SplitterDistance выставляется в OnLoad: до раскладки высота панели ещё не известна,
-            // и значение, заданное здесь, WinForms молча обрезает по фактическому размеру.
-            var split = _split = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Horizontal };
+            // Журнал свёрнут по умолчанию (ROADMAP, P2, п. 5): он занимал половину окна всегда,
+            // хотя в норме нужны только последняя строка (она уходит в строку состояния) и само
+            // состояние. Полный текст никуда не делся — его разворачивает «Показать журнал».
+            // SplitterDistance выставляется в момент разворота: до раскладки высота панели ещё
+            // не известна, и значение, заданное здесь, WinForms молча обрезает по факту.
+            var split = _split = new SplitContainer
+            {
+                Dock = DockStyle.Fill, Orientation = Orientation.Horizontal, Panel2Collapsed = true,
+            };
 
             _lv = new ListView
             {
@@ -358,10 +370,24 @@ namespace CryptoProExport.App
             split.Panel2.Padding = new Padding(10, 0, 10, 10);
 
             // --- Строка состояния: что идёт прямо сейчас ---
-            _status = new ToolStripStatusLabel { Spring = true, TextAlign = ContentAlignment.MiddleLeft };
+            // Состояние и последняя строка журнала стоят рядом и в покое читаются похоже
+            // («Готово» и «Готово.»), поэтому между ними разделитель: это два разных поля.
+            _status = new ToolStripStatusLabel
+            {
+                TextAlign = ContentAlignment.MiddleLeft,
+                BorderSides = ToolStripStatusLabelBorderSides.Right,
+                BorderStyle = Border3DStyle.Etched,
+            };
+            // Последняя строка журнала рядом с состоянием: со свёрнутой панелью это всё, что
+            // нужно в норме, — что идёт сейчас и чем закончился предыдущий шаг.
+            _lastLog = new ToolStripStatusLabel
+            {
+                Spring = true, TextAlign = ContentAlignment.MiddleLeft, ForeColor = Color.Gray,
+                AutoToolTip = false,
+            };
             _progress = new ToolStripProgressBar { Style = ProgressBarStyle.Marquee, Visible = false, Width = 140 };
             var statusStrip = new StatusStrip { SizingGrip = false };
-            statusStrip.Items.AddRange(new ToolStripItem[] { _status, _progress });
+            statusStrip.Items.AddRange(new ToolStripItem[] { _status, _lastLog, _progress });
 
             Controls.Add(split);
             Controls.Add(buttons);
@@ -420,6 +446,9 @@ namespace CryptoProExport.App
             SetButton(_btnExtractKey, "btn.extractkey", "tip.extractkey");
             SetButton(_btnLicense, "btn.license", "tip.license");
             SetButton(_btnLogs, "btn.logs", "tip.logs");
+            // Надпись переключателя зависит от текущего состояния панели, поэтому её ставит
+            // ApplyLogPaneState — и здесь, и на каждом нажатии.
+            ApplyLogPaneState();
             SetButton(_btnHelp, "btn.help", "tip.help");
             SetButton(_btnCancel, "btn.cancel", "tip.cancel");
 
@@ -445,6 +474,7 @@ namespace CryptoProExport.App
             FitButtonGroups();
 
             if (!_busy) _status.Text = Strings.Get("status.ready");
+            ShowLastLogLine();
         }
 
         private void OnLanguagePicked()
@@ -1410,6 +1440,7 @@ namespace CryptoProExport.App
             _cmbLang.Enabled = !busy;
             _progress.Visible = busy;
             _status.Text = busy ? title : Strings.Get("status.ready");
+            ShowLastLogLine();
             Cursor = busy ? Cursors.WaitCursor : Cursors.Default;
         }
 
@@ -1417,6 +1448,7 @@ namespace CryptoProExport.App
         {
             if (InvokeRequired) { BeginInvoke(new Action(() => SetStatus(text))); return; }
             _status.Text = text;
+            ShowLastLogLine();
         }
 
         /// <summary>
@@ -1540,6 +1572,80 @@ namespace CryptoProExport.App
         {
             if (InvokeRequired) { BeginInvoke(new Action(() => AppendLog(msg))); return; }
             _txtLog.AppendText(msg + Environment.NewLine);
+            // Со свёрнутой панелью журнал виден одной последней строкой в строке состояния.
+            // Пустые строки — это отбивки между разделами: держим на месте предыдущую строку,
+            // иначе после каждого раздела состояние обнулялось бы в пустоту.
+            if (string.IsNullOrWhiteSpace(msg)) return;
+            _lastLog.Text = OneLine(msg);
+            // Строка состояния узкая — целиком сообщение показывает своя подсказка.
+            _lastLog.ToolTipText = _lastLog.Text;
+            ShowLastLogLine();
+        }
+
+        /// <summary>
+        /// Показывать последнюю строку журнала рядом с состоянием, только если она добавляет
+        /// новое. Половина шагов пишет в журнал ровно то же, что уходит в состояние
+        /// («Обновление списка контейнеров…», «Готово»), и рядом это читалось бы как сбой.
+        /// При развёрнутом журнале строка не нужна вовсе — весь текст и так на виду.
+        /// </summary>
+        private void ShowLastLogLine()
+        {
+            if (InvokeRequired) { BeginInvoke(new Action(ShowLastLogLine)); return; }
+            _lastLog.Visible = _split.Panel2Collapsed && !SameLine(_lastLog.Text, _status.Text);
+        }
+
+        /// <summary>Одна и та же мысль с точкой на конце и без неё — это одна строка.</summary>
+        private static bool SameLine(string a, string b)
+        {
+            static string Core(string s) => (s ?? string.Empty).Trim().TrimEnd('.', '…', ':');
+            return string.Equals(Core(a), Core(b), StringComparison.CurrentCultureIgnoreCase);
+        }
+
+        /// <summary>
+        /// Строка состояния — одна строка: переводы строк в ней превращаются в пробелы, а
+        /// слишком длинное сообщение обрезается. Полный текст всегда остаётся в журнале.
+        /// </summary>
+        private static string OneLine(string msg)
+        {
+            string s = msg.Replace('\r', ' ').Replace('\n', ' ').Trim();
+            while (s.Contains("  ", StringComparison.Ordinal)) s = s.Replace("  ", " ", StringComparison.Ordinal);
+            return s.Length > 200 ? s.Substring(0, 200) + "…" : s;
+        }
+
+        /// <summary>
+        /// Развернуть или свернуть журнал. Свёрнут он по умолчанию (ROADMAP, P2, п. 5): половину
+        /// окна он занимал всегда, а нужен целиком только при разборе. Высота, на которой журнал
+        /// оставили, запоминается — второй разворот возвращает её, а не половину окна.
+        /// </summary>
+        private void ToggleLogPane()
+        {
+            if (_split.Panel2Collapsed)
+            {
+                _split.Panel2Collapsed = false;
+                // Только теперь у Panel2 есть высота: до разворота SplitContainer молча
+                // обрезал бы SplitterDistance по фактическому (нулевому) размеру панели.
+                int room = _split.Height - _split.SplitterWidth - _split.Panel2MinSize;
+                if (room > _split.Panel1MinSize)
+                {
+                    int want = _logSplit > 0 ? _logSplit : _split.Height / 2;
+                    _split.SplitterDistance = Math.Clamp(want, _split.Panel1MinSize, room);
+                }
+            }
+            else
+            {
+                _logSplit = _split.SplitterDistance;
+                _split.Panel2Collapsed = true;
+            }
+
+            ApplyLogPaneState();
+        }
+
+        /// <summary>Надпись переключателя и видимость последней строки — по состоянию панели.</summary>
+        private void ApplyLogPaneState()
+        {
+            bool collapsed = _split.Panel2Collapsed;
+            SetButton(_btnLogPane, collapsed ? "btn.logpane.show" : "btn.logpane.hide", "tip.logpane");
+            ShowLastLogLine();
         }
 
         private void PickFolder(TextBox target)
