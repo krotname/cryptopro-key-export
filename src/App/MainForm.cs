@@ -1533,10 +1533,17 @@ namespace CryptoProExport.App
             selected?.Token != null && selected.Token.CertificateOnly;
 
         /// <summary>Тип выделенной строки — всё, что нужно знать о ней для доступности кнопок.</summary>
-        private SelectedRow CurrentRow()
+        private SelectedRow CurrentRow() =>
+            _lv.SelectedItems.Count == 0 ? SelectedRow.None : RowKind(_lv.SelectedItems[0].Tag);
+
+        /// <summary>
+        /// Тип строки по её <c>Tag</c>. Отдельно от <see cref="CurrentRow"/>, потому что тот
+        /// же вопрос задаётся не только про выделенную строку: по нему же считаются строки с
+        /// контейнерами для объяснения пустого списка.
+        /// </summary>
+        private static SelectedRow RowKind(object tag)
         {
-            if (_lv.SelectedItems.Count == 0) return SelectedRow.None;
-            return _lv.SelectedItems[0].Tag switch
+            return tag switch
             {
                 CspContainerSelection => SelectedRow.Csp,
                 ApduContainerSelection => SelectedRow.Apdu,
@@ -1622,7 +1629,7 @@ namespace CryptoProExport.App
 
             int containers = 0;
             foreach (ListViewItem row in _lv.Items)
-                if (row.Tag != null && row.Tag is not TokenDeviceSelection) containers++;
+                if (ListEmptyHint.IsContainerRow(RowKind(row.Tag))) containers++;
 
             _emptyHintKey = ListEmptyHint.KeyFor(containers, carriers.Value, pkcs11Tokens);
             ApplyEmptyHint();

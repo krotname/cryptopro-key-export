@@ -86,6 +86,25 @@ namespace CryptoProExport.Tests
         }
 
         /// <summary>
+        /// Что считать строкой с контейнером. Устройство без контейнера и сертификат-сирота
+        /// (AGENTS п. 30) список наполняют, но показывать по-прежнему нечего — иначе объяснение
+        /// подавлялось бы как раз там, где оно и нужно (замечание Codex на PR #83).
+        /// </summary>
+        [Theory]
+        [InlineData(SelectedRow.Csp, true)]
+        [InlineData(SelectedRow.Apdu, true)]
+        [InlineData(SelectedRow.Direct, true)]
+        [InlineData(SelectedRow.TokenWithCert, true)]
+        [InlineData(SelectedRow.TokenWithoutCert, true)]
+        [InlineData(SelectedRow.TokenCertificateOnly, false)]
+        [InlineData(SelectedRow.Device, false)]
+        [InlineData(SelectedRow.None, false)]
+        public void OnlyRealContainers_Count(SelectedRow row, bool counts)
+        {
+            Assert.Equal(counts, ListEmptyHint.IsContainerRow(row));
+        }
+
+        /// <summary>
         /// Все объяснения должны быть на каждом языке интерфейса: строка показывается вместо
         /// списка, и маркер пропавшего перевода занял бы всё окно.
         /// </summary>

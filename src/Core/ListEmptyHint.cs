@@ -28,6 +28,15 @@ namespace CryptoProExport
         public const string NoContainerKey = "list.empty.nocontainer";
 
         /// <summary>
+        /// Стоит ли за строкой списка настоящий контейнер. Строка «только устройство» и
+        /// сертификат-сирота (AGENTS п. 30) — не контейнеры: за первой контейнера ещё нет,
+        /// за вторым нет вовсе. Обе наполняют список, но показывать по-прежнему нечего, и
+        /// считать их «есть что показать» нельзя (замечание Codex на PR #83).
+        /// </summary>
+        public static bool IsContainerRow(SelectedRow row) =>
+            row is not (SelectedRow.None or SelectedRow.Device or SelectedRow.TokenCertificateOnly);
+
+        /// <summary>
         /// Ключ объяснения или <c>null</c>, если объяснять нечего — контейнеры в списке есть.
         /// </summary>
         /// <param name="containerRows">
