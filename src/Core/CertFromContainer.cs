@@ -156,6 +156,16 @@ namespace CryptoProExport
         /// <summary>Результат проверки «снят ли запрет на экспорт закрытого ключа».</summary>
         public sealed class ExportCheck
         {
+            /// <summary>Контейнер открылся хотя бы одним провайдером — сам контейнер существует.</summary>
+            public bool ContainerOpened;
+            /// <summary>
+            /// Почему контейнер не открылся, если <see cref="ContainerOpened"/> = false. Только
+            /// «контейнер не найден» (<c>NTE_BAD_KEYSET</c>/<c>NTE_KEYSET_NOT_DEF</c>) даёт право
+            /// сказать, что контейнера нет: остальные коды — например <c>NTE_SILENT_CONTEXT</c>,
+            /// когда носителю нужен диалог PIN, — говорят о том, что открыть не удалось
+            /// (замечание Codex на PR #84).
+            /// </summary>
+            public int AcquireError;
             /// <summary>Контейнер найден и в нём есть ключ такого типа.</summary>
             public bool KeyFound;
             /// <summary>Ключ помечен экспортируемым (в KP_PERMISSIONS взведён CRYPT_EXPORT).</summary>
@@ -203,7 +213,19 @@ namespace CryptoProExport
             foreach (var (type, name) in Providers)
             {
                 if (!CryptAcquireContext(out IntPtr hProv, container, name, type, CRYPT_SILENT))
+                {
+                    // Код держим самый показательный: отказ по существу («нужен диалог PIN»)
+                    // важнее обычного «нет такого контейнера» у соседнего провайдера.
+                    int error = Marshal.GetLastWin32Error();
+                    if (result.AcquireError == 0 || IsMissingContainer(result.AcquireError))
+                        result.AcquireError = error;
                     continue;
+                }
+                // Контейнер открылся: дальше «ключа нет» — это именно про ключ, а не про
+                // опечатку в имени. Без этого различия checkexport на несуществующем имени
+                // отвечал «ключ не найден», и владелец читал это как «ключа больше нет».
+                result.ContainerOpened = true;
+                result.AcquireError = 0;
                 try
                 {
                     if (!CryptGetUserKey(hProv, keySpec, out IntPtr hKey))
@@ -228,6 +250,41 @@ namespace CryptoProExport
             }
             return result;
         }
+
+        /// <summary>
+        /// Открывается ли контейнер с таким именем хотя бы одним провайдером. Нужно, чтобы
+        /// отличить «такого контейнера нет» от «контейнер есть, но сертификата (ключа) в нём
+        /// нет»: обе ситуации выглядели одинаково — «нет», хотя лечатся по-разному.
+        /// Открытый контекст сразу закрывается — это только проба.
+        /// </summary>
+        public static ExportCheck ProbeContainer(string container)
+        {
+            var result = new ExportCheck();
+            foreach (var (type, name) in Providers)
+            {
+                if (!CryptAcquireContext(out IntPtr hProv, container, name, type, CRYPT_SILENT))
+                {
+                    int error = Marshal.GetLastWin32Error();
+                    if (result.AcquireError == 0 || IsMissingContainer(result.AcquireError))
+                        result.AcquireError = error;
+                    continue;
+                }
+                CryptReleaseContext(hProv, 0);
+                result.ContainerOpened = true;
+                result.AcquireError = 0;
+                return result;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Код ошибки означает именно «такого контейнера нет», а не отказ по другой причине.
+        /// Только на нём можно печатать «контейнер не найден»: <c>NTE_SILENT_CONTEXT</c>,
+        /// ошибки считывателя и прочие отказы означают, что открыть не удалось.
+        /// </summary>
+        public static bool IsMissingContainer(int error) =>
+            error == unchecked((int)0x80090016)      // NTE_BAD_KEYSET
+            || error == unchecked((int)0x80090019);  // NTE_KEYSET_NOT_DEF
 
         /// <summary>Подобрать провайдер и извлечь оба сертификата (обмена/подписи) по имени контейнера.</summary>
         public static ExtractedCerts Extract(string container)

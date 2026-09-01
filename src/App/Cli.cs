@@ -186,6 +186,14 @@ namespace CryptoProExport.App
                     case "extractcert":
                     {
                         if (args.Length < 3) { Usage(); return 1; }
+                        // Сначала сам контейнер: иначе опечатка в имени давала «Обмен: нет,
+                        // Подпись: нет» — то же, что у настоящего контейнера без сертификатов.
+                        var probe = CertFromContainer.ProbeContainer(args[1]);
+                        if (!probe.ContainerOpened)
+                        {
+                            Err(ContainerFailure(args[1], probe.AcquireError));
+                            return 2;
+                        }
                         var (ex, sg) = CertFromContainer.SaveCerts(args[1], args[2]);
                         Out(Strings.Format("cli.cert.exchange", ex ?? Strings.Get("common.none")));
                         Out(Strings.Format("cli.cert.sign", sg ?? Strings.Get("common.none")));
@@ -196,6 +204,15 @@ namespace CryptoProExport.App
                         if (args.Length < 2) { Usage(); return 1; }
                         var ex = CertFromContainer.CheckExportable(args[1], CertFromContainer.AT_KEYEXCHANGE);
                         var sg = CertFromContainer.CheckExportable(args[1], CertFromContainer.AT_SIGNATURE);
+                        // Контейнер не открылся ни одним провайдером — это не «ключ не найден»,
+                        // а «нет такого контейнера»: чаще всего опечатка в имени или носитель
+                        // не вставлен. Прежний ответ читался как «ключ пропал».
+                        if (!ex.ContainerOpened && !sg.ContainerOpened)
+                        {
+                            Err(ContainerFailure(args[1],
+                                ex.AcquireError != 0 ? ex.AcquireError : sg.AcquireError));
+                            return 2;
+                        }
                         Out(Strings.Format("cli.check.exchange", ex));
                         Out(Strings.Format("cli.check.sign", sg));
                         // 2 — проверять нечего (нет контейнера/ключа), 3 — ключ есть, но запрет не снят
@@ -637,6 +654,16 @@ namespace CryptoProExport.App
         /// Подсказка по командам. Ширина колонки считается по факту: переводы длиннее
         /// русского оригинала, а жёсткий отступ разъехался бы.
         /// </summary>
+        /// <summary>
+        /// Почему контейнер не открылся. «Не найден» говорим только на кодах «нет такого
+        /// контейнера»: любой другой отказ (например NTE_SILENT_CONTEXT — носителю нужен диалог
+        /// PIN) означает, что контейнер, возможно, есть, и прятать это за «не найден» нельзя.
+        /// </summary>
+        private static string ContainerFailure(string container, int error) =>
+            error == 0 || CertFromContainer.IsMissingContainer(error)
+                ? Strings.Format("err.container.missing", container)
+                : Strings.Format("err.container.openfail", container, CryptoErrors.Describe(error));
+
         private static void Usage()
         {
             Out(Strings.Get("cli.usage.title"));
