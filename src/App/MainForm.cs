@@ -1157,11 +1157,17 @@ namespace CryptoProExport.App
         private void DoPfxChoice()
         {
             string reason = ActionAvailability.ReasonKey(RowAction.ExportPfx, CurrentRow());
+            // Главное различие — примет ли файл обратно сам КриптоПро — в подсказках кнопок не
+            // сказано: они объясняют, как файл собирается. Дописываем его к обоим пояснениям,
+            // иначе о нём узнают из журнала после экспорта (замечание Codex на PR #79). Для
+            // способа без CSP берём ту же фразу, что уходит в журнал, — она уже переведена.
             int choice = ChoiceDialog.Ask(
                 this, Strings.Get("dlg.pfx.choice.title"), Strings.Get("dlg.pfx.choice.prompt"),
-                new ChoiceDialog.Option(Strings.Get("btn.pfx"), Strings.Get("tip.pfx"),
+                new ChoiceDialog.Option(Strings.Get("btn.pfx"),
+                                        Strings.Get("tip.pfx") + "\n\n" + Strings.Get("dlg.pfx.choice.csp"),
                                         reason == null ? null : Strings.Get(reason)),
-                new ChoiceDialog.Option(Strings.Get("btn.extractpfx"), Strings.Get("tip.extractpfx")));
+                new ChoiceDialog.Option(Strings.Get("btn.extractpfx"),
+                                        Strings.Get("tip.extractpfx") + "\n\n" + Strings.Get("log.extractpfx.note")));
 
             switch (choice)
             {

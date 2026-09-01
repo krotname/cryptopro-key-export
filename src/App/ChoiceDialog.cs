@@ -93,12 +93,20 @@ namespace CryptoProExport.App
                 buttons.Add(button);
                 layout.Controls.Add(button);
 
-                string details = option.Reason ?? option.Details;
+                // Причина отказа — обычным цветом и первой: её нужно заметить. Пояснение самого
+                // способа остаётся и у погашенного варианта — иначе, выбирая между способами,
+                // владелец не увидел бы, чем они отличаются (замечание Codex на PR #79).
+                if (option.Reason != null)
+                    layout.Controls.Add(new Label
+                    {
+                        Text = option.Reason, AutoSize = true, MaximumSize = new Size(TextWidth, 0),
+                        Margin = new Padding(3, 0, 3, 4),
+                    });
+
                 layout.Controls.Add(new Label
                 {
-                    Text = details, AutoSize = true, MaximumSize = new Size(TextWidth, 0),
-                    // Причина серым не пишется: она объясняет отказ, и её нужно заметить.
-                    ForeColor = option.Reason == null ? SystemColors.GrayText : SystemColors.ControlText,
+                    Text = option.Details, AutoSize = true, MaximumSize = new Size(TextWidth, 0),
+                    ForeColor = SystemColors.GrayText,
                     Margin = new Padding(3, 0, 3, 14),
                 });
             }
@@ -117,7 +125,29 @@ namespace CryptoProExport.App
             // Первый доступный вариант — под Enter: обычно он же и нужен.
             form.AcceptButton = buttons.Find(b => b.Enabled);
 
+            // Пояснения длинные, и на невысоком экране окно по содержимому просто не поместится:
+            // низ с кнопкой «Отмена» ушёл бы за край. Меряем то, что получилось, и, если высоты
+            // не хватает, отключаем AutoSize и отдаём остаток прокрутке.
+            form.PerformLayout();
+            Rectangle area = Screen.FromHandle(WindowOf(owner)).WorkingArea;
+            int limit = area.Height - 100;
+            if (form.PreferredSize.Height > limit)
+            {
+                Size need = form.PreferredSize;
+                form.AutoSize = false;
+                layout.AutoSize = false;
+                layout.AutoScroll = true;
+                form.ClientSize = new Size(need.Width + SystemInformation.VerticalScrollBarWidth, limit);
+            }
+
             return form.ShowDialog(owner) == DialogResult.OK ? chosen : -1;
+        }
+
+        /// <summary>Хендл владельца — по нему выбирается монитор; без владельца сойдёт основной.</summary>
+        private static IntPtr WindowOf(IWin32Window owner)
+        {
+            try { return owner?.Handle ?? IntPtr.Zero; }
+            catch (ObjectDisposedException) { return IntPtr.Zero; }
         }
     }
 }

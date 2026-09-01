@@ -46,6 +46,7 @@ btn.pfx.choice = Сохранить в PFX…
 tip.pfx.choice = Собрать файл .pfx с закрытым ключом. Способа два, и файлы получаются разные —\nвыбор со всеми пояснениями появится по нажатию:\n  • через КриптоПро (certmgr) — такой файл КриптоПро потом примет обратно;\n  • без КриптоПро, из папки снятого контейнера — для OpenSSL и других программ.
 dlg.pfx.choice.title = Сохранить в PFX
 dlg.pfx.choice.prompt = Оба способа дают файл .pfx с закрытым ключом, но это разные файлы. Выберите нужный.
+dlg.pfx.choice.csp = Такой файл КриптоПро потом примет обратно — берите его, если .pfx нужен как резервная копия ключа для КриптоПро.
 
 tip.refresh = Krok 1. Pokaż listę kontenerów kluczy:\n  • widoczne dla CryptoPro CSP (także na włożonym tokenie);\n  • znalezione bezpośrednio na podłączonych Rutokenach.\nNiczego nie zmienia — tylko czyta. Od tego przycisku wygodnie zacząć.
 tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
