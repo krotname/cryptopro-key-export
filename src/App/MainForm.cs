@@ -128,6 +128,16 @@ namespace CryptoProExport.App
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
+            // Окно уже размещено — только теперь известно, на каком мониторе оно оказалось и
+            // сколько места там есть на самом деле. Если ширину пришлось добавить, окно снова
+            // центрируем по горизонтали на этом же мониторе: прирост вправо от центрированного
+            // окна выглядел бы сдвигом.
+            if (FitButtonGroups() && StartPosition == FormStartPosition.CenterScreen)
+            {
+                Rectangle area = Screen.FromControl(this).WorkingArea;
+                Left = Math.Max(area.Left, area.Left + (area.Width - Width) / 2);
+            }
+
             Run("status.deps", cancel =>
             {
                 Log(Strings.Get("log.deps.header"));
@@ -522,11 +532,16 @@ namespace CryptoProExport.App
         /// они зависят и от языка (переводы длиннее русского), и от масштаба экрана (на 150 %
         /// прежние 880 точек уже не вмещали ряд «Шаги»). Окно только расширяется, не выходит за
         /// рабочую область экрана и уже достаточную ширину — в том числе выбранную пользователем
-        /// или развёрнутое окно — не меняет.
+        /// или развёрнутое окно — не меняет. Возвращает true, если ширину пришлось менять.
+        ///
+        /// До показа окна ничего не делает: пока хендла нет, оно стоит в своей исходной точке, а
+        /// <see cref="FormStartPosition.CenterScreen"/> применяется позже — <c>Screen.FromControl</c>
+        /// вернул бы основной монитор, а не тот, на котором окно окажется (замечание Codex на
+        /// PR #78). Поэтому первый расчёт делает <see cref="OnShown"/>, когда окно уже размещено.
         /// </summary>
-        private void FitButtonGroups()
+        private bool FitButtonGroups()
         {
-            if (_buttons == null || _buttonGroups == null) return;
+            if (_buttons == null || _buttonGroups == null || !IsHandleCreated) return false;
 
             static int Span(Control c) => c.PreferredSize.Width + c.Margin.Horizontal;
 
@@ -542,13 +557,14 @@ namespace CryptoProExport.App
             Rectangle area = Screen.FromControl(this).WorkingArea;
             int frame = Width - ClientSize.Width;
             int target = Math.Min(need, area.Width - frame);
-            if (ClientSize.Width >= target) return;
+            if (ClientSize.Width >= target) return false;
 
             ClientSize = new Size(target, ClientSize.Height);
             // Окно у правого края экрана: расти вправо ему некуда, поэтому сдвигаем влево —
             // иначе как раз правые кнопки группы уехали бы за рабочую область (замечание
             // Codex на PR #78). Ширина уже ограничена шириной области, так что места хватит.
             if (Right > area.Right) Left = Math.Max(area.Left, area.Right - Width);
+            return true;
         }
 
         /// <summary>Кнопки растягиваются под текст: длина надписи зависит от языка.</summary>
