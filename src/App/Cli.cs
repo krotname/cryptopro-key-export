@@ -188,9 +188,10 @@ namespace CryptoProExport.App
                         if (args.Length < 3) { Usage(); return 1; }
                         // Сначала сам контейнер: иначе опечатка в имени давала «Обмен: нет,
                         // Подпись: нет» — то же, что у настоящего контейнера без сертификатов.
-                        if (!CertFromContainer.ContainerExists(args[1]))
+                        var probe = CertFromContainer.ProbeContainer(args[1]);
+                        if (!probe.ContainerOpened)
                         {
-                            Err(Strings.Format("err.container.missing", args[1]));
+                            Err(ContainerFailure(args[1], probe.AcquireError));
                             return 2;
                         }
                         var (ex, sg) = CertFromContainer.SaveCerts(args[1], args[2]);
@@ -208,7 +209,8 @@ namespace CryptoProExport.App
                         // не вставлен. Прежний ответ читался как «ключ пропал».
                         if (!ex.ContainerOpened && !sg.ContainerOpened)
                         {
-                            Err(Strings.Format("err.container.missing", args[1]));
+                            Err(ContainerFailure(args[1],
+                                ex.AcquireError != 0 ? ex.AcquireError : sg.AcquireError));
                             return 2;
                         }
                         Out(Strings.Format("cli.check.exchange", ex));
@@ -652,6 +654,16 @@ namespace CryptoProExport.App
         /// Подсказка по командам. Ширина колонки считается по факту: переводы длиннее
         /// русского оригинала, а жёсткий отступ разъехался бы.
         /// </summary>
+        /// <summary>
+        /// Почему контейнер не открылся. «Не найден» говорим только на кодах «нет такого
+        /// контейнера»: любой другой отказ (например NTE_SILENT_CONTEXT — носителю нужен диалог
+        /// PIN) означает, что контейнер, возможно, есть, и прятать это за «не найден» нельзя.
+        /// </summary>
+        private static string ContainerFailure(string container, int error) =>
+            error == 0 || CertFromContainer.IsMissingContainer(error)
+                ? Strings.Format("err.container.missing", container)
+                : Strings.Format("err.container.openfail", container, CryptoErrors.Describe(error));
+
         private static void Usage()
         {
             Out(Strings.Get("cli.usage.title"));

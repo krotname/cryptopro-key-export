@@ -209,6 +209,7 @@ err.certmgr.notfound = Không tìm thấy certmgr
 err.container.name = Chưa cho biết tên container
 err.container.nokey = Không tìm thấy container «{0}» hoặc trong đó không có khoá thuộc loại cần thiết
 err.container.missing = Контейнер «{0}» не найден. Проверьте имя (список даёт команда list) и вставлен ли носитель.
+err.container.openfail = Контейнер «{0}» не удалось открыть: {1}
 err.container.exportable = Container đã có thể xuất
 err.key.locked = Khoá riêng không xuất được — hãy gỡ lệnh cấm trước («{0}»). {1}
 err.cert.extract = Không lấy được chứng thư từ container

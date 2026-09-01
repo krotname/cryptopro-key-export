@@ -209,6 +209,7 @@ err.certmgr.notfound = certmgr nicht gefunden
 err.container.name = Kein Containername angegeben
 err.container.nokey = Container «{0}» wurde nicht gefunden oder enthält keinen Schlüssel des benötigten Typs
 err.container.missing = Контейнер «{0}» не найден. Проверьте имя (список даёт команда list) и вставлен ли носитель.
+err.container.openfail = Контейнер «{0}» не удалось открыть: {1}
 err.container.exportable = Der Container ist bereits exportierbar
 err.key.locked = Der private Schlüssel ist nicht exportierbar — heben Sie zuerst das Verbot auf («{0}»). {1}
 err.cert.extract = Das Zertifikat ließ sich nicht aus dem Container entnehmen

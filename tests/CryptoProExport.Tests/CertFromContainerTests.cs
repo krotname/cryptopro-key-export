@@ -46,12 +46,27 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
-        public void ContainerExists_IsFalseForAnInventedName()
+        public void ProbeContainer_DoesNotOpenAnInventedName()
         {
             // Промах по имени — единственный случай, воспроизводимый без CSP и токена.
             // Он же и был перепутан: «нет такого контейнера» выглядело как «ключа нет».
-            Assert.False(CertFromContainer.ContainerExists(
-                "контейнер, которого нет " + Guid.NewGuid().ToString("N")));
+            var probe = CertFromContainer.ProbeContainer(
+                "контейнер, которого нет " + Guid.NewGuid().ToString("N"));
+
+            Assert.False(probe.ContainerOpened);
+        }
+
+        [Fact]
+        public void IsMissingContainer_AcceptsOnlyTheAbsentKeysetCodes()
+        {
+            // Право сказать «контейнера нет» дают только эти два кода. NTE_SILENT_CONTEXT —
+            // это «носителю нужен диалог PIN», то есть контейнер, возможно, на месте
+            // (замечание Codex на PR #84).
+            Assert.True(CertFromContainer.IsMissingContainer(unchecked((int)0x80090016)));   // NTE_BAD_KEYSET
+            Assert.True(CertFromContainer.IsMissingContainer(unchecked((int)0x80090019)));   // NTE_KEYSET_NOT_DEF
+            Assert.False(CertFromContainer.IsMissingContainer(unchecked((int)0x80090022)));  // NTE_SILENT_CONTEXT
+            Assert.False(CertFromContainer.IsMissingContainer(unchecked((int)0x8010000C)));  // SCARD_E_NOT_TRANSACTED
+            Assert.False(CertFromContainer.IsMissingContainer(0));
         }
 
         [Fact]
@@ -71,9 +86,13 @@ namespace CryptoProExport.Tests
             // который открылся. Проверяем проводку, потому что сам вызов требует CSP.
             string cli = File.ReadAllText(RepoFile("src", "App", "Cli.cs"));
 
-            Assert.Contains("CertFromContainer.ContainerExists(args[1])", cli, StringComparison.Ordinal);
+            Assert.Contains("CertFromContainer.ProbeContainer(args[1])", cli, StringComparison.Ordinal);
             Assert.Contains("!ex.ContainerOpened && !sg.ContainerOpened", cli, StringComparison.Ordinal);
+            // «Не найден» печатается только на кодах «нет такого контейнера»; остальные отказы
+            // идут своим текстом с расшифровкой кода.
             Assert.Contains("err.container.missing", cli, StringComparison.Ordinal);
+            Assert.Contains("err.container.openfail", cli, StringComparison.Ordinal);
+            Assert.Contains("CertFromContainer.IsMissingContainer(error)", cli, StringComparison.Ordinal);
         }
 
         private static string RepoFile(params string[] parts)
