@@ -34,7 +34,7 @@ namespace CryptoProExport.App
         private ColumnHeader _colWhere, _colName, _colDetails;
         private Label _lblDest, _lblPin, _lblPinHint, _lblLang;
         private Button _btnDest;
-        private Button _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnInstall, _btnView, _btnPfx, _btnExtractKey, _btnExtractPfx, _btnLicense, _btnLogs, _btnHelp;
+        private Button _btnRefresh, _btnExport, _btnExtract, _btnFull, _btnInstall, _btnView, _btnPfx, _btnExtractKey, _btnLicense, _btnLogs, _btnHelp;
         private Button _btnCancel;
         private Button[] _actionButtons;
         /// <summary>Кнопки, доступность которых зависит от выделенной строки, и их действия.</summary>
@@ -276,9 +276,11 @@ namespace CryptoProExport.App
             _btnFull.Font = new Font(Font, FontStyle.Bold);
             _btnView = MakeButton((_, __) => Run("status.check", DoViewContainer));
             _btnInstall = MakeButton((_, __) => Run("status.install", DoInstall));
-            _btnPfx = MakeButton((_, __) => Run("status.pfx", DoExportPfx));
+            // Одна кнопка на оба .pfx: сами файлы разные, и выбор делается в диалоге, где
+            // разница написана рядом с вариантами (ROADMAP, P2, п. 4). Двумя соседними кнопками
+            // она объяснялась только подсказкой, а замечали её уже после экспорта.
+            _btnPfx = MakeButton((_, __) => DoPfxChoice());
             _btnExtractKey = MakeButton((_, __) => Run("status.extractkey", DoExtractKey));
-            _btnExtractPfx = MakeButton((_, __) => Run("status.extractpfx", DoExtractPfx));
             _btnLicense = MakeButton((_, __) => DoLicense());
             _btnLogs = MakeButton((_, __) => OpenLogFolder());
             _btnHelp = MakeButton((_, __) => Guide.Show(this));
@@ -291,10 +293,11 @@ namespace CryptoProExport.App
             _actionButtons = new[]
             {
                 _btnRefresh, _btnExport, _btnExtract, _btnFull,
-                _btnView, _btnInstall, _btnPfx, _btnExtractKey, _btnExtractPfx, _btnLicense, _btnLogs, _btnHelp,
+                _btnView, _btnInstall, _btnPfx, _btnExtractKey, _btnLicense, _btnLogs, _btnHelp,
             };
-            // Остальные семь кнопок к выделению безразличны: «Обновить» перечитывает весь список,
-            // «Установить», «Извлечь ключ» и «Собрать PFX» спрашивают папку диалогом, а
+            // Остальные кнопки к выделению безразличны: «Обновить» перечитывает весь список,
+            // «Установить» и «Извлечь ключ» спрашивают папку диалогом, «Сохранить в PFX»
+            // проверяет строку уже в своём диалоге (там же пишет причину отказа), а
             // «Лицензия», «Журнал» и «Справка» к носителям вообще не обращаются.
             _rowButtons = new[]
             {
@@ -302,7 +305,6 @@ namespace CryptoProExport.App
                 (_btnFull, RowAction.MakeExportable),
                 (_btnExtract, RowAction.ExtractCert),
                 (_btnView, RowAction.ViewContainer),
-                (_btnPfx, RowAction.ExportPfx),
             };
             // Порядок групп — порядок работы: сначала найти носитель и посмотреть контейнер,
             // потом шаги снятия, потом файл-результат, и лишь затем служебное.
@@ -310,7 +312,7 @@ namespace CryptoProExport.App
             {
                 AddButtonRow(buttons, "group.list", _btnRefresh, _btnView),
                 AddButtonRow(buttons, "group.steps", _btnExport, _btnExtract, _btnFull, _btnInstall),
-                AddButtonRow(buttons, "group.result", _btnPfx, _btnExtractKey, _btnExtractPfx),
+                AddButtonRow(buttons, "group.result", _btnPfx, _btnExtractKey),
                 AddButtonRow(buttons, "group.service", _btnLicense, _btnLogs, _btnHelp, _btnCancel),
             };
             // Подсказка выключенной кнопки: Windows не шлёт мыши сообщения выключенному окну,
@@ -414,9 +416,8 @@ namespace CryptoProExport.App
             SetButton(_btnFull, "btn.full", "tip.full");
             SetButton(_btnView, "btn.check", "tip.check");
             SetButton(_btnInstall, "btn.install", "tip.install");
-            SetButton(_btnPfx, "btn.pfx", "tip.pfx");
+            SetButton(_btnPfx, "btn.pfx.choice", "tip.pfx.choice");
             SetButton(_btnExtractKey, "btn.extractkey", "tip.extractkey");
-            SetButton(_btnExtractPfx, "btn.extractpfx", "tip.extractpfx");
             SetButton(_btnLicense, "btn.license", "tip.license");
             SetButton(_btnLogs, "btn.logs", "tip.logs");
             SetButton(_btnHelp, "btn.help", "tip.help");
@@ -1140,6 +1141,40 @@ namespace CryptoProExport.App
                 }
             }
             RefreshList();
+        }
+
+        /// <summary>
+        /// Спросить, какой .pfx нужен, и запустить выбранный способ. Файлы получаются разные:
+        /// «Экспорт в PFX» идёт через certmgr КриптоПро, и такой файл КриптоПро примет обратно;
+        /// «Собрать PFX (без CSP)» собирает файл сам из папки снятого контейнера, и КриптоПро
+        /// его не импортирует (AGENTS п. 39). Раньше это были две соседние кнопки, а разницу
+        /// объясняла только подсказка — теперь она написана прямо рядом с выбором.
+        ///
+        /// Причина, по которой первый способ сейчас недоступен, берётся из той же таблицы
+        /// <see cref="ActionAvailability"/>, что гасит кнопки по выделенной строке: второй
+        /// способ строки не требует, поэтому гасить всю кнопку в ленте больше нельзя.
+        /// </summary>
+        private void DoPfxChoice()
+        {
+            string reason = ActionAvailability.ReasonKey(RowAction.ExportPfx, CurrentRow());
+            // Главное различие — примет ли файл обратно сам КриптоПро — в подсказках кнопок не
+            // сказано: они объясняют, как файл собирается. Дописываем его к обоим пояснениям,
+            // иначе о нём узнают из журнала после экспорта (замечание Codex на PR #79). Для
+            // способа без CSP берём ту же фразу, что уходит в журнал, — она уже переведена.
+            int choice = ChoiceDialog.Ask(
+                this, Strings.Get("dlg.pfx.choice.title"), Strings.Get("dlg.pfx.choice.prompt"),
+                new ChoiceDialog.Option(Strings.Get("btn.pfx"),
+                                        Strings.Get("tip.pfx") + "\n\n" + Strings.Get("dlg.pfx.choice.csp"),
+                                        reason == null ? null : Strings.Get(reason)),
+                new ChoiceDialog.Option(Strings.Get("btn.extractpfx"),
+                                        Strings.Get("tip.extractpfx") + "\n\n" + Strings.Get("log.extractpfx.note")));
+
+            switch (choice)
+            {
+                case 0: Run("status.pfx", DoExportPfx); break;
+                case 1: Run("status.extractpfx", DoExtractPfx); break;
+                default: Log(Strings.Get("log.cancelled")); break;
+            }
         }
 
         private void DoExportPfx(CancellationToken cancel)

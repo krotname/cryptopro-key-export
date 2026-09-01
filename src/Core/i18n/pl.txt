@@ -41,6 +41,13 @@ group.steps = Шаги:
 group.result = Результат:
 group.service = Служебное:
 
+# --- выбор способа .pfx (только по-русски, AGENTS п. 17) ---
+btn.pfx.choice = Сохранить в PFX…
+tip.pfx.choice = Собрать файл .pfx с закрытым ключом. Способа два, и файлы получаются разные —\nвыбор со всеми пояснениями появится по нажатию:\n  • через КриптоПро (certmgr) — такой файл КриптоПро потом примет обратно;\n  • без КриптоПро, из папки снятого контейнера — для OpenSSL и других программ.
+dlg.pfx.choice.title = Сохранить в PFX
+dlg.pfx.choice.prompt = Оба способа дают файл .pfx с закрытым ключом, но это разные файлы. Выберите нужный.
+dlg.pfx.choice.csp = Такой файл КриптоПро потом примет обратно — берите его, если .pfx нужен как резервная копия ключа для КриптоПро.
+
 tip.refresh = Krok 1. Pokaż listę kontenerów kluczy:\n  • widoczne dla CryptoPro CSP (także na włożonym tokenie);\n  • znalezione bezpośrednio na podłączonych Rutokenach.\nNiczego nie zmienia — tylko czyta. Od tego przycisku wygodnie zacząć.
 tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
 tip.export = Krok 2. Zdejmij kontenery z Rutoken S / Lite, JaCarta LT i ESMART do folderu docelowego\n(po 6 plików *.key na kontener). Czyta pamięć tokena bezpośrednio, z pominięciem CSP,\ndlatego działa nawet przy zakazie eksportu. Token i jego dane nie są zmieniane.\nKlucz w zdjętej kopii nadal nie jest eksportowalny — tym zajmuje się «Uczyń eksportowalnym».
