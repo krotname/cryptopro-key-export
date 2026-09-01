@@ -100,6 +100,13 @@ namespace CryptoProExport
         public bool HardwareGost;
         /// <summary>Все относящиеся к профилю механизмы прочитаны без ошибки.</summary>
         public bool CapabilitiesKnown;
+        /// <summary>
+        /// Список публичных объектов носителя прочитан без ошибки. Ложь при
+        /// <c>readContainers: false</c> — их и не читали, — а при <c>true</c> означает сбой:
+        /// сессия не открылась или поиск объектов упал. Пустой <see cref="Containers"/> тогда
+        /// не доказывает, что контейнеров нет (замечание Codex на PR #83).
+        /// </summary>
+        public bool ContainersKnown;
         public RutokenCapabilityProfile CapabilityProfile;
 
         /// <summary>Объём памяти токена для публичных объектов, байт; -1 — не объявлен.</summary>
@@ -856,6 +863,9 @@ namespace CryptoProExport
                     if (addContainers) current.Containers = info.Containers;
                 }
 
+                // Полнота чтения объектов накапливается вместе с самими объектами: удачная
+                // попытка одной библиотеки не должна теряться из-за неудачной другой.
+                result[prev.Index].ContainersKnown = prev.ContainersRead || containersRead;
                 seen[info.Reader] = new Pkcs11ReadState(prev.Index,
                     prev.CapabilitiesRead || capabilitiesRead,
                     prev.ContainersRead || containersRead);
@@ -956,6 +966,7 @@ namespace CryptoProExport
                         log(Strings.Format("pkcs11.tokenfail", info.Reader ?? "?", e.Message));
                     }
 
+                    info.ContainersKnown = containersRead;
                     Place(result, seen, info, capabilitiesRead, containersRead);
                 }
             }

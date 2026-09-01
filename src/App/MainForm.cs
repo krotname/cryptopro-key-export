@@ -30,6 +30,11 @@ namespace CryptoProExport.App
         /// <summary>Модель, чьё заводское значение подставлено, — для подсказки на текущем языке.</summary>
         private string _autoFilledModel;
         private ListView _lv;
+        /// <summary>Объяснение пустого списка поверх него самого; null-ключ — скрыт.</summary>
+        private Label _lblEmpty;
+        private string _emptyHintKey;
+        /// <summary>Идёт пересчёт высоты полосы — чтобы присвоение высоты не вызвало его снова.</summary>
+        private bool _sizingHint;
         private SplitContainer _split;
         private ColumnHeader _colWhere, _colBackend, _colName, _colDetails;
         /// <summary>Колонка, по которой отсортирован список; -1 — исходный порядок обхода.</summary>
@@ -373,6 +378,22 @@ namespace CryptoProExport.App
             // по самим кнопкам, а не по сообщению в журнале после нажатия.
             _lv.SelectedIndexChanged += (_, __) => UpdateRowActions();
             split.Panel1.Controls.Add(_lv);
+            // Пустой список раньше не объяснял себя ничем: причина уходила только в журнал,
+            // а журнал теперь свёрнут (ROADMAP, P2, п. 7). Подпись перекрывает список целиком
+            // и появляется, только когда показывать в нём нечего.
+            _lblEmpty = new Label
+            {
+                Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter,
+                AutoSize = false, ForeColor = Color.Gray, Visible = false,
+                BackColor = SystemColors.Control, Padding = new Padding(16, 10, 16, 10),
+            };
+            split.Panel1.Controls.Add(_lblEmpty);
+            // SendToBack, а не BringToFront: WinForms раскладывает пристыкованных детей от
+            // последнего к первому, поэтому Dock=Fill списка должен разбираться последним —
+            // иначе полоса просто легла бы поверх нижних строк, не подвинув их.
+            _lblEmpty.SendToBack();
+            // Ширина полосы меняется вместе с окном, а с ней и число строк переноса.
+            split.Panel1.ClientSizeChanged += (_, __) => SizeEmptyHint();
             split.Panel1.Padding = new Padding(10, 0, 10, 0);
 
             _txtLog = new TextBox
@@ -475,6 +496,7 @@ namespace CryptoProExport.App
             _tips.SetToolTip(_btnFull, _tips.GetToolTip(_btnFull) + ecpBoundary);
 
             ApplyColumnHeaders();
+            ApplyEmptyHint();
             Tip(_lv, "tip.list");
             _tips.SetToolTip(_lv, _tips.GetToolTip(_lv) + "\n\n" + Strings.Get("tip.list.dblclick")
                                   + "\n\n" + Strings.Get("tip.list.columns"));
@@ -697,7 +719,14 @@ namespace CryptoProExport.App
             // строками нового носителя ещё до конца обхода, и прерванное обновление (отмена,
             // ошибка) оставило бы в поле PIN уже вынутого токена — он ушёл бы дальше как явный.
             ClearAutoFilledPin();
+            // Прежнее объяснение снимаем сразу: пока обход идёт, оно относилось бы к старому
+            // состоянию, а прерванное обновление оставило бы его на пустом списке навсегда.
+            SetEmptyHint(null);
             Invoke(() => { _lv.Items.Clear(); _rowSeq = 0; });
+            // Сорвавшийся опрос нельзя выдавать за «контейнеров нет»: у Рутокен Lite и
+            // JaCarta LT контейнеры КриптоПро видны только прямым APDU, и его ошибка означает
+            // «неизвестно», а не «пусто» (замечание Codex на PR #83).
+            bool scanFailed = false;
             Log(Strings.Get("status.refresh"));
 
             // HDIMAGE-копия и исходный токен часто имеют одно логическое имя. Показываем
@@ -729,6 +758,11 @@ namespace CryptoProExport.App
             // публичные сертификаты показываются только когда реально присутствуют.
             cancel.ThrowIfCancellationRequested();
             var tokens = Pkcs11Token.Enumerate(readContainers: true, log: Log, cancel: cancel);
+            // Библиотека токен показала — это ещё не значит, что его объекты прочитаны:
+            // сессия могла не открыться, а поиск объектов упасть. Тогда пустой перечень
+            // контейнеров ничего не доказывает (замечание Codex на PR #83). Флаг осмыслен
+            // именно здесь: контейнеры мы как раз просили прочитать.
+            foreach (var t in tokens) if (t != null && !t.ContainersKnown) scanFailed = true;
             Log("[PKCS#11] " + Strings.Format("token.found", tokens.Count));
             foreach (var t in tokens)
             {
@@ -777,6 +811,7 @@ namespace CryptoProExport.App
                     }
                     catch (Exception e)
                     {
+                        scanFailed = true;
                         Log("[APDU] " + Strings.Format("log.tokens.unavailable", e.Message));
                     }
                 }
@@ -794,13 +829,17 @@ namespace CryptoProExport.App
             // устройств PKCS#11 не сходилось с числом считывателей, и понять, какой носитель
             // потерялся, было нельзя. Опрос PC/SC пассивный — к карте он не подключается.
             cancel.ThrowIfCancellationRequested();
-            var pcscReaders = PcscReaders.List(m => Log("[PC/SC] " + m));
+            // Сбой опроса PC/SC оставляет пустой список — но это «неизвестно», а не «носителей
+            // нет»: звать вставить носитель по нему нельзя (замечание Codex на PR #83).
+            var pcscReaders = PcscReaders.List(m => Log("[PC/SC] " + m), out bool pcscComplete);
+            if (!pcscComplete) scanFailed = true;
             var pkcs11Readers = new List<string>();
             foreach (var t in tokens)
                 if (t?.Reader != null) pkcs11Readers.Add(t.Reader);
             foreach (var line in PcscReaders.CoverageLines(pcscReaders, pkcs11Readers))
                 Log("[PC/SC] " + line);
-            foreach (var r in PcscReaders.Uncovered(pcscReaders, pkcs11Readers))
+            var uncovered = PcscReaders.Uncovered(pcscReaders, pkcs11Readers);
+            foreach (var r in uncovered)
                 // В колонке контейнера — вендор носителя, а не «нет»: контейнеры КриптоПро на
                 // таком носителе быть могут (проверено на BIFIT ANGARA), просто показывает их
                 // не PKCS#11, а CSP — отдельной строкой выше.
@@ -809,21 +848,38 @@ namespace CryptoProExport.App
                        new TokenDeviceSelection());
 
             cancel.ThrowIfCancellationRequested();
+            var exp = new RutokenExporter
+            {
+                Log = m => Log("[rtCOMLite] " + m),
+                Cancel = cancel,
+                SkipReaders = Pkcs11Token.SmartCardReaders(tokens),
+            };
             try
             {
-                var exp = new RutokenExporter
-                {
-                    Log = m => Log("[rtCOMLite] " + m),
-                    Cancel = cancel,
-                    SkipReaders = Pkcs11Token.SmartCardReaders(tokens),
-                };
                 foreach (var c in exp.ReadAllContainers())
                     AddRow(Strings.Format("log.container.token", c.TokenName), "rtCOMLite",
                            c.ContainerName ?? Strings.Get("log.container.unnamed"),
                            Strings.Format("log.container.files", c.TokenDir, c.Files.Count), c);
             }
-            catch (Exception e) { Log(Strings.Format("log.tokens.unavailable", e.Message)); }
+            catch (Exception e)
+            {
+                // Недоступность самого rtCOMLite неполным обходом не считается: это legacy-путь,
+                // и на x64/ARM64 без зарегистрированного компонента CreateContext падает всегда,
+                // ещё не дойдя ни до одного носителя. Иначе «опрос не завершился» показывалось бы
+                // и на машине вовсе без носителей. А вот ошибка уже начатого обхода — неполный
+                // обход: контекст создан, носители пошли, и пустота больше не доказана
+                // (замечания Codex на PR #83).
+                if (exp.Started) scanFailed = true;
+                Log(Strings.Format("log.tokens.unavailable", e.Message));
+            }
             SuggestFactoryPin(tokens);
+            // Считаем носители, а не считыватели: пустой слот — это «вставьте носитель», а не
+            // «нет библиотеки». Строку в списке PcscReaders.Uncovered даёт тоже только по
+            // вставленной карте, поэтому иначе пустой считыватель объяснялся бы неверно
+            // (замечание Codex на PR #83).
+            int carriers = 0;
+            foreach (var r in pcscReaders) if (r != null && r.CardPresent) carriers++;
+            SetEmptyHint(carriers, tokens.Count, uncovered.Count, scanFailed);
             Log(Strings.Get("log.done"));
         }
 
@@ -1501,10 +1557,17 @@ namespace CryptoProExport.App
             selected?.Token != null && selected.Token.CertificateOnly;
 
         /// <summary>Тип выделенной строки — всё, что нужно знать о ней для доступности кнопок.</summary>
-        private SelectedRow CurrentRow()
+        private SelectedRow CurrentRow() =>
+            _lv.SelectedItems.Count == 0 ? SelectedRow.None : RowKind(_lv.SelectedItems[0].Tag);
+
+        /// <summary>
+        /// Тип строки по её <c>Tag</c>. Отдельно от <see cref="CurrentRow"/>, потому что тот
+        /// же вопрос задаётся не только про выделенную строку: по нему же считаются строки с
+        /// контейнерами для объяснения пустого списка.
+        /// </summary>
+        private static SelectedRow RowKind(object tag)
         {
-            if (_lv.SelectedItems.Count == 0) return SelectedRow.None;
-            return _lv.SelectedItems[0].Tag switch
+            return tag switch
             {
                 CspContainerSelection => SelectedRow.Csp,
                 ApduContainerSelection => SelectedRow.Apdu,
@@ -1574,6 +1637,89 @@ namespace CryptoProExport.App
             _lv.ListViewItemSorter = new RowComparer(_sortColumn, _sortDesc);
             _lv.Sort();
             ApplyColumnHeaders();
+        }
+
+        /// <summary>
+        /// Объяснить в самом списке, почему в нём нет ни одного контейнера. Считаются именно
+        /// контейнерные строки: строка «только устройство» список наполняет, но показывать в
+        /// нём всё равно нечего, — а по общему числу строк объяснение никогда бы и не
+        /// показалось (замечание Codex на PR #83). Что именно написать, решает
+        /// <see cref="ListEmptyHint"/>: причин три и действия у них разные.
+        /// </summary>
+        private void SetEmptyHint(int? carriers, int pkcs11Tokens = 0,
+                                  int uncoveredCarriers = 0, bool scanFailed = false)
+        {
+            if (InvokeRequired)
+            {
+                BeginInvoke(new Action(
+                    () => SetEmptyHint(carriers, pkcs11Tokens, uncoveredCarriers, scanFailed)));
+                return;
+            }
+            if (carriers == null) { _emptyHintKey = null; ApplyEmptyHint(); return; }
+
+            int containers = 0;
+            foreach (ListViewItem row in _lv.Items)
+                if (ListEmptyHint.IsContainerRow(RowKind(row.Tag))) containers++;
+
+            _emptyHintKey = ListEmptyHint.KeyFor(containers, carriers.Value, pkcs11Tokens,
+                                                 uncoveredCarriers, scanFailed);
+            ApplyEmptyHint();
+        }
+
+        /// <summary>
+        /// Самопроверка для --selftest: показать объяснение, чтобы его текст попал в общую
+        /// проверку переводов. Все причины проверяются на каждом языке — иначе пропавший ключ
+        /// был бы виден только на машине без единого носителя.
+        /// </summary>
+        internal void PreviewEmptyHint(string key)
+        {
+            _emptyHintKey = key;
+            ApplyEmptyHint();
+        }
+
+        /// <summary>
+        /// Показать объяснение на действующем языке — и после смены языка тоже. Пустой список
+        /// подпись занимает целиком: показывать там больше нечего. Если строки устройств есть,
+        /// она встаёт полосой под ними — сами устройства видеть нужно, они и есть половина
+        /// ответа на вопрос «почему пусто».
+        /// </summary>
+        private void ApplyEmptyHint()
+        {
+            if (_lblEmpty == null) return;
+            _lblEmpty.Text = _emptyHintKey == null ? string.Empty : Strings.Get(_emptyHintKey);
+            _lblEmpty.Visible = _emptyHintKey != null;
+            if (!_lblEmpty.Visible) { _lv.Visible = true; return; }
+
+            // Пустой список подпись занимает целиком — сам список тогда прячем, показывать
+            // в нём нечего и его заголовки только мешали бы читать объяснение. Если строки
+            // устройств есть, они остаются на месте, а подпись встаёт полосой под ними.
+            bool wholeList = _lv.Items.Count == 0;
+            _lblEmpty.Dock = wholeList ? DockStyle.Fill : DockStyle.Bottom;
+            _lv.Visible = !wholeList;
+            SizeEmptyHint();
+        }
+
+        /// <summary>
+        /// Высота полосы с объяснением: текст переносится по ширине панели, и сколько строк
+        /// получится, известно только после замера. AutoSize не годится (меряет без переноса
+        /// и перекрывает список), а пересчёт защищён флагом: присвоение высоты само вызывает
+        /// раскладку, и без него получилась бы та же петля, что от вложенных AutoSize-панелей
+        /// (AGENTS п. 46).
+        /// </summary>
+        private void SizeEmptyHint()
+        {
+            if (_sizingHint || _lblEmpty == null || !_lblEmpty.Visible) return;
+            if (_lblEmpty.Dock != DockStyle.Bottom) return;
+
+            _sizingHint = true;
+            try
+            {
+                var panel = _split.Panel1;
+                int width = Math.Max(160, panel.ClientSize.Width - panel.Padding.Horizontal);
+                int height = _lblEmpty.GetPreferredSize(new Size(width, 0)).Height;
+                if (_lblEmpty.Height != height) _lblEmpty.Height = height;
+            }
+            finally { _sizingHint = false; }
         }
 
         /// <summary>Заголовки колонок с отметкой сортировки на текущей.</summary>

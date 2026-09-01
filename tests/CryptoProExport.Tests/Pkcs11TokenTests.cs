@@ -693,7 +693,33 @@ namespace CryptoProExport.Tests
             Assert.Equal(45, result[0].MechanismCount);
             Assert.Equal(RutokenCapabilityProfile.Ecp2Capabilities, result[0].CapabilityProfile);
             Assert.Same(container, Assert.Single(result[0].Containers));
+            // Объекты прочитала вторая библиотека — запись должна это помнить: пустой перечень
+            // после сбоя чтения не доказывает, что контейнеров нет (замечание Codex, PR #83).
+            Assert.True(result[0].ContainersKnown);
             Assert.True(Pkcs11Token.AlreadyRead(seen, capabilities.Reader, readContainers: true));
+        }
+
+        /// <summary>
+        /// Библиотека токен показала, а объекты прочитать не смогла: запись обязана остаться
+        /// с <c>ContainersKnown == false</c>, иначе окно объявит носитель прочитанным и пустым.
+        /// </summary>
+        [Fact]
+        public void Place_KeepsFailedContainerReadVisible()
+        {
+            var result = new List<Pkcs11TokenInfo>();
+            var seen = new Dictionary<string, Pkcs11ReadState>(StringComparer.OrdinalIgnoreCase);
+            var failed = new Pkcs11TokenInfo
+            {
+                Reader = "Aktiv Rutoken ECP 0",
+                CapabilitiesKnown = true,
+                ContainersKnown = false,
+            };
+
+            Assert.True(Pkcs11Token.Place(result, seen, failed,
+                capabilitiesRead: true, containersRead: false));
+
+            Assert.False(Assert.Single(result).ContainersKnown);
+            Assert.False(Pkcs11Token.AlreadyRead(seen, failed.Reader, readContainers: true));
         }
 
         [Fact]

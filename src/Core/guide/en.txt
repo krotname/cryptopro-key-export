@@ -117,6 +117,14 @@ interface languages fall back to the English text.
   details. Clicking a header sorts by that column: ascending, descending,
   and back to the order the carriers were walked in.
 
+  When the list holds no containers, it says why. There are three reasons:
+  no carrier at all — insert one and press "Refresh list"; a carrier is
+  inserted but no installed PKCS#11 library showed it — install the vendor
+  drivers, and if they are already there the log has the exact reason; or
+  the carrier was read and holds no containers; or the scan failed, in
+  which case an empty list proves nothing and the log has the error. When the
+  devices themselves are listed, the explanation sits as a strip below them.
+
   Every button has a tooltip — hold the cursor over it. A button that
   does not fit the selected row is greyed out, and its own tooltip
   says why.
