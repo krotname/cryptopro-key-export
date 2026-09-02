@@ -350,5 +350,108 @@ namespace CryptoProExport.Tests
                     ? $"jacartapro_{index:X2}" : $"lite_{index:X2}",
                 Index = index,
             };
+
+        [Theory]
+        [InlineData("Feitian SCR301 0", true)]
+        [InlineData("Feitian SCR301 12", true)]
+        [InlineData("Feitian SCR301", false)]        // нет индекса
+        [InlineData("Feitian SCR301 0A", false)]     // нечисловой индекс
+        [InlineData("ISBC ESMART Token 0", false)]   // эксклюзивное имя — не универсальный ридер
+        [InlineData("", false)]
+        public void EsmartGostReader_IsOnlyTheIndexedUniversalCcidName(string reader, bool expected)
+        {
+            Assert.Equal(expected, EsmartApdu.IsGostReader(reader));
+        }
+
+        [Fact]
+        public void EsmartGostExpectedAtr_PinsUniversalReaderButNotExclusiveNames()
+        {
+            // За универсальным Feitian SCR301 может стоять любая карта — сессия открывается
+            // только при совпадении ATR. У эксклюзивных ESMART-имён модель задаёт сам ридер.
+            Assert.Equal(EsmartApdu.GostExactAtr, EsmartApdu.ExpectedAtr("Feitian SCR301 0"));
+            Assert.Null(EsmartApdu.ExpectedAtr("ISBC ESMART Token 0"));
+        }
+
+        private static Pkcs11TokenInfo GostToken() => new Pkcs11TokenInfo
+        {
+            Kind = RutokenKind.Esmart,
+            Reader = "Feitian SCR301 0",
+            Model = "ESMARTToken GOST",
+            Manufacturer = "ISBC",
+            Atr = EsmartApdu.GostExactAtr,
+        };
+
+        [Fact]
+        public void EsmartGostMetadata_RequiresExactModelManufacturerReaderAndAtr()
+        {
+            Assert.True(EsmartApdu.IsExactGostMetadata(GostToken()));
+
+            var wrongModel = GostToken(); wrongModel.Model = "ESMART Token GOST 2";
+            Assert.False(EsmartApdu.IsExactGostMetadata(wrongModel));
+
+            var wrongVendor = GostToken(); wrongVendor.Manufacturer = "Contoso";
+            Assert.False(EsmartApdu.IsExactGostMetadata(wrongVendor));
+
+            var wrongAtr = GostToken(); wrongAtr.Atr = "3B 00";
+            Assert.False(EsmartApdu.IsExactGostMetadata(wrongAtr));
+
+            var exclusiveReader = GostToken(); exclusiveReader.Reader = "ISBC ESMART Token 0";
+            Assert.False(EsmartApdu.IsExactGostMetadata(exclusiveReader));
+        }
+
+        [Fact]
+        public void IsConfirmedEsmart_AdmitsGostOnlyThroughExactMetadata()
+        {
+            // ГОСТ-носитель за универсальным ридером проходит допуск лишь по точной паре
+            // model/manufacturer и ATR — имени считывателя здесь недостаточно.
+            Assert.True(Pkcs11Token.IsConfirmedEsmart(GostToken()));
+
+            var noAtr = GostToken(); noAtr.Atr = null;
+            Assert.False(Pkcs11Token.IsConfirmedEsmart(noAtr));
+
+            var bareReader = new Pkcs11TokenInfo
+            {
+                Kind = RutokenKind.Esmart,
+                Reader = "Feitian SCR301 0",
+                Manufacturer = "ISBC",
+            };
+            Assert.False(Pkcs11Token.IsConfirmedEsmart(bareReader));
+        }
+
+        [Fact]
+        public void EsmartGostLiveReader_RequiresExactlyOneMatchingAtrOnTheSameReader()
+        {
+            var token = GostToken();
+            var present = new[]
+            {
+                new PcscReader { Name = "Feitian SCR301 0", CardPresent = true, Atr = EsmartApdu.GostExactAtr },
+            };
+            Assert.True(EsmartApdu.IsExactLiveGostReader(token, present));
+
+            var swapped = new[]
+            {
+                new PcscReader { Name = "Feitian SCR301 0", CardPresent = true, Atr = "3B 00" },
+            };
+            Assert.False(EsmartApdu.IsExactLiveGostReader(token, swapped));
+
+            var absent = new[]
+            {
+                new PcscReader { Name = "Feitian SCR301 0", CardPresent = false, Atr = EsmartApdu.GostExactAtr },
+            };
+            Assert.False(EsmartApdu.IsExactLiveGostReader(token, absent));
+            Assert.False(EsmartApdu.IsExactLiveGostReader(token, Array.Empty<PcscReader>()));
+        }
+
+        [Fact]
+        public void EsmartGostFileIds_AreFlatUnderTheSelectedContainer()
+        {
+            // Раскладка ГОСТ: суффиксы 1..6 = masks/primary/header/masks2/primary2/name,
+            // все под текущим контейнером как 0xF011..0xF016 (не слот-адресация старого ESMART).
+            Assert.Equal(0xF011, EsmartGostApdu.FileId(1, 0x01));
+            Assert.Equal(0xF016, EsmartGostApdu.FileId(1, 0x06));
+            Assert.Equal(0xF013, EsmartGostApdu.FileId(16, 0x03));
+            Assert.Throws<ArgumentOutOfRangeException>(() => EsmartGostApdu.FileId(0, 0x01));
+            Assert.Throws<ArgumentOutOfRangeException>(() => EsmartGostApdu.FileId(17, 0x01));
+        }
     }
 }

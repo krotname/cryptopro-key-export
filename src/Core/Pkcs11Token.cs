@@ -496,13 +496,16 @@ namespace CryptoProExport
         /// <summary>
         /// Достаточны ли метаданные именно для отправки ESMART APDU. Семейство должен
         /// подтвердить штатный PKCS#11-модуль ISBC, а reader — совпасть с одной из двух
-        /// физически проверенных моделей. Числовой индекс reader может меняться.
+        /// физически проверенных моделей с эксклюзивным именем. Числовой индекс reader может
+        /// меняться. Третий проверенный носитель — ESMART Token ГОСТ — прячется за
+        /// универсальным считывателем, поэтому он допускается только по точным метаданным
+        /// и ATR (см. <see cref="EsmartApdu.IsExactGostMetadata"/>).
         /// </summary>
         internal static bool IsConfirmedEsmart(Pkcs11TokenInfo token)
         {
             if (token == null || token.Kind != RutokenKind.Esmart) return false;
-            bool vendor = HasEsmartEvidence(token.Manufacturer);
-            return vendor && IsValidatedEsmartReader(token.Reader);
+            if (!HasEsmartEvidence(token.Manufacturer)) return false;
+            return IsValidatedEsmartReader(token.Reader) || EsmartApdu.IsExactGostMetadata(token);
         }
 
         /// <summary>

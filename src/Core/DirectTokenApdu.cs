@@ -63,7 +63,9 @@ namespace CryptoProExport
             if (token.Kind == RutokenKind.RutokenS)
                 return new RutokenSApdu { Log = Say, Cancel = Cancel }.ListContainers(token.Reader);
             if (token.Kind == RutokenKind.Esmart)
-                return new EsmartApdu { Log = Say, Cancel = Cancel }.ListContainers(token.Reader);
+                return EsmartApdu.IsGostReader(token.Reader)
+                    ? new EsmartGostApdu { Log = Say, Cancel = Cancel }.ListContainers(token.Reader)
+                    : new EsmartApdu { Log = Say, Cancel = Cancel }.ListContainers(token.Reader);
             if (token.Kind == RutokenKind.JaCartaPro)
                 return new JaCartaProApdu { Log = Say, Cancel = Cancel }.ListContainers(token.Reader);
             return new JaCartaLtApdu { Log = Say, Cancel = Cancel }.ListContainers(token.Reader);
@@ -158,8 +160,11 @@ namespace CryptoProExport
                 return new RutokenSApdu { Log = Say, Cancel = Cancel }
                     .ReadContainer(token.Reader, selected, pin);
             if (token.Kind == RutokenKind.Esmart)
-                return new EsmartApdu { Log = Say, Cancel = Cancel }
-                    .ReadContainer(token.Reader, selected, pin);
+                return EsmartApdu.IsGostReader(token.Reader)
+                    ? new EsmartGostApdu { Log = Say, Cancel = Cancel }
+                        .ReadContainer(token.Reader, selected, pin)
+                    : new EsmartApdu { Log = Say, Cancel = Cancel }
+                        .ReadContainer(token.Reader, selected, pin);
             if (token.Kind == RutokenKind.JaCartaPro)
             {
                 if (token.PinCountLow || token.PinFinalTry || token.PinLocked)
@@ -248,8 +253,15 @@ namespace CryptoProExport
             if (token == null) throw new ArgumentNullException(nameof(token));
             if (!Supports(token.Kind))
                 throw new ArgumentException(Pkcs11Token.KindName(token.Kind), nameof(token));
-            if (token.Kind == RutokenKind.Esmart && !Pkcs11Token.IsConfirmedEsmart(token))
-                throw new ArgumentException(Pkcs11Token.KindName(token.Kind), nameof(token));
+            if (token.Kind == RutokenKind.Esmart)
+            {
+                // Универсальный считыватель ESMART ГОСТ дополнительно перечитывается прямо
+                // перед APDU: между опросом PKCS#11 и работой в него можно вставить чужую карту.
+                if (!Pkcs11Token.IsConfirmedEsmart(token)
+                    || (EsmartApdu.IsGostReader(token.Reader)
+                        && !EsmartApdu.IsExactLiveGostReader(token, PcscReaders.List())))
+                    throw new ArgumentException(Pkcs11Token.KindName(token.Kind), nameof(token));
+            }
             if (token.Kind == RutokenKind.JaCartaPro)
             {
                 if (!Pkcs11Token.IsConfirmedJaCartaPro(token)

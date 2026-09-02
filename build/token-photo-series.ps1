@@ -51,6 +51,11 @@ $series = @(
         Rear  = [pscustomobject]@{ File = 'esmart-token-usb64k-rear-original.jpg';  Rotation = 0; Crop = '572x182+152+659' }
     }
     [pscustomobject]@{
+        Slug = 'esmart-token-gost'
+        Front = [pscustomobject]@{ File = 'esmart-token-gost-front-original.jpg'; Rotation = 90; Crop = '2100x668+1002+1094' }
+        Rear  = [pscustomobject]@{ File = 'esmart-token-gost-rear-original.jpg';  Rotation = 90; Crop = '2100x668+785+1151' }
+    }
+    [pscustomobject]@{
         Slug = 'jacarta-lt'
         Front = [pscustomobject]@{ File = 'jacarta-lt-front-original.jpg'; Rotation = 0; Crop = '506x161+174+680' }
         Rear  = [pscustomobject]@{ File = 'jacarta-lt-rear-original.jpg';  Rotation = 0; Crop = '462x147+248+631' }
@@ -105,6 +110,11 @@ function New-Panel {
 
     $arguments = @(
         $Source,
+        # Нормализуем EXIF-ориентацию в пиксели ДО поворота: телефонные снимки несут флаг
+        # Orientation (у этой серии — RightTop), а разные операции ImageMagick применяют его
+        # непоследовательно. auto-orient делает кадр детерминированным, поэтому Rotation/Crop
+        # ниже отсчитываются от уже «выпрямленного» изображения независимо от билда ImageMagick.
+        '-auto-orient',
         '-rotate', $Rotation.ToString(),
         '+repage',
         '-crop', $Crop,
