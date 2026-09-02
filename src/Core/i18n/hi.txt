@@ -372,6 +372,7 @@ err.pfx.nocert = प्रमाणपत्र न कंटेनर में
 err.pfx.badcert = प्रमाणपत्र फ़ाइल 256-बिट GOST कुंजी वाले X.509 के रूप में नहीं पढ़ी गई
 err.pfx.certmismatch = प्रमाणपत्र किसी और कुंजी का है: सार्वजनिक कुंजियाँ मेल नहीं खातीं
 cli.usage.liteexport = APDU के ज़रिए Rutoken Lite कंटेनर पढ़ें और कुंजी पुनर्प्राप्त करें (CSP के बिना)
+cli.usage.angaraexport = read an MS_KEY K ANGARA (BIFIT) container over APDU and recover the key (no CSP)
 cli.usage.tokenexport = copy containers from one selected supported token to disk
 cli.usage.tokenfull = चुने गए टोकन से निकालना + स्वतः .cer + keyexport
 err.lite.none = {0} पर APDU के ज़रिए कोई CryptoPro कंटेनर नहीं मिला
@@ -440,6 +441,7 @@ pins.note.diagnostic = केवल निदान: निजी कुंज�
 pins.note.noadmin = प्रशासक PIN सेट नहीं है
 pins.note.challenge = PIN चैलेंज-रिस्पॉन्स से जाँचा जाता है; इसे हाथ से दर्ज करें
 pins.note.sopin = प्रशासक PIN को SO-PIN कहा जाता है
+pins.note.transport = "11111111" is the protected=none container transport password (reference 7D), not a device PIN
 pins.note.nouser = उपयोगकर्ता PIN सेट नहीं है
 pins.note.puk = प्रशासक के लिए यह PUK है
 pins.note.applets = बाक़ी ऐपलेट अपने-अपने फ़ैक्ट्री मान रखते हैं

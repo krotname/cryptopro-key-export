@@ -372,6 +372,7 @@ err.pfx.nocert = Tidak ada sertifikat di kontainer maupun di argumen — tunjuk 
 err.pfx.badcert = Berkas sertifikat tidak terbaca sebagai X.509 dengan kunci GOST 256 bit
 err.pfx.certmismatch = Sertifikat milik kunci lain: kunci publiknya berbeda
 cli.usage.liteexport = baca kontainer Rutoken Lite melalui APDU dan pulihkan kunci (tanpa CSP)
+cli.usage.angaraexport = read an MS_KEY K ANGARA (BIFIT) container over APDU and recover the key (no CSP)
 cli.usage.tokenexport = salin kontainer dari satu token yang didukung ke disk
 cli.usage.tokenfull = ambil dari token terpilih + .cer otomatis + keyexport
 err.lite.none = tidak ada kontainer CryptoPro ditemukan di {0} melalui APDU
@@ -440,6 +441,7 @@ pins.note.diagnostic = hanya diagnostik: kunci privat tidak meninggalkan cip
 pins.note.noadmin = PIN administrator tidak diatur
 pins.note.challenge = PIN diverifikasi secara challenge-response; masukkan manual
 pins.note.sopin = PIN administrator disebut SO-PIN
+pins.note.transport = "11111111" is the protected=none container transport password (reference 7D), not a device PIN
 pins.note.nouser = PIN pengguna tidak diatur
 pins.note.puk = bagi administrator ini adalah PUK
 pins.note.applets = applet lain memakai nilai pabriknya sendiri

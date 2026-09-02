@@ -58,6 +58,7 @@ namespace CryptoProExport
         private const string RutokenSource = "https://dev.rutoken.ru/pages/viewpage.action?pageId=72451342";
         private const string AladdinSource = "https://kbp.aladdin-rd.ru/index.php?View=entry&EntryID=85";
         private const string EsmartSource = "https://esmart.ru/tech-support/faq/";
+        private const string BifitSource = "https://mskey.multisoft.ru/";
 
         private static readonly StandardPin[] Registry =
         {
@@ -100,6 +101,17 @@ namespace CryptoProExport
                 UserPin = "12345678", AdminPin = "12345678",
                 Supported = true, AutoFill = true, Source = EsmartSource,
                 NoteKey = "pins.note.sopin",
+            },
+            new StandardPin
+            {
+                // MS_KEY K «АНГАРА»: «11111111» — не PIN устройства (его нет), а транспортная
+                // ссылка доступа к контейнеру protected=none по P2=0x7D, которую CSP посылает сам.
+                // AutoFill=false: PKCS#11-модуля в системе нет, подтвердить состояние счётчика
+                // нельзя, а на контейнере с реальным паролем слепой ввод сжёг бы попытку.
+                Model = "MS_KEY K ANGARA (BIFIT)", Vendor = "MultiSoft / BIFIT",
+                UserPin = "11111111", AdminPin = null,
+                Supported = true, AutoFill = false, Source = BifitSource,
+                NoteKey = "pins.note.transport",
             },
             new StandardPin
             {
@@ -155,6 +167,7 @@ namespace CryptoProExport
                 case RutokenKind.JaCartaLt: return Find("JaCarta LT");
                 case RutokenKind.JaCartaPro: return Find("eToken PRO (Java) / JaCarta PRO");
                 case RutokenKind.Esmart: return Find("ESMART Token / ESMART Token GOST");
+                case RutokenKind.Bifit: return Find("MS_KEY K ANGARA (BIFIT)");
                 default: return null;
             }
         }

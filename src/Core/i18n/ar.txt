@@ -372,6 +372,7 @@ err.pfx.nocert = لا توجد شهادة في الحاوية ولا في الم
 err.pfx.badcert = لم يُقرأ ملف الشهادة بوصفه X.509 بمفتاح GOST بطول 256 بت
 err.pfx.certmismatch = الشهادة تخصّ مفتاحًا آخر: المفتاحان العامّان غير متطابقين
 cli.usage.liteexport = قراءة حاوية Rutoken Lite عبر APDU واستعادة المفتاح (بدون CSP)
+cli.usage.angaraexport = read an MS_KEY K ANGARA (BIFIT) container over APDU and recover the key (no CSP)
 cli.usage.tokenexport = copy containers from one selected supported token to disk
 cli.usage.tokenfull = استخراج من الرمز المحدد + ‎.cer‎ تلقائي + keyexport
 err.lite.none = لم يُعثر على حاويات CryptoPro على {0} عبر APDU
@@ -440,6 +441,7 @@ pins.note.diagnostic = للتشخيص فقط: المفتاح الخاص لا ي�
 pins.note.noadmin = لم يُحدَّد رمز PIN للمسؤول
 pins.note.challenge = يُتحقق من الرمز بأسلوب تحدٍّ-استجابة؛ أدخله يدويًا
 pins.note.sopin = رمز المسؤول يُسمى SO-PIN
+pins.note.transport = "11111111" is the protected=none container transport password (reference 7D), not a device PIN
 pins.note.nouser = لم يُحدَّد رمز PIN للمستخدم
 pins.note.puk = لدى المسؤول هذا رمز PUK
 pins.note.applets = تحتفظ التطبيقات الأخرى بقيمها المصنعية الخاصة

@@ -372,6 +372,7 @@ err.pfx.nocert = கொள்கலனிலும் அளபுருக்�
 err.pfx.badcert = சான்றிதழ் கோப்பு 256-பிட் GOST விசையுடன் கூடிய X.509 ஆகப் படிக்கப்படவில்லை
 err.pfx.certmismatch = சான்றிதழ் வேறு விசைக்கு உரியது: பொது விசைகள் பொருந்தவில்லை
 cli.usage.liteexport = APDU மூலம் Rutoken Lite கொள்கலனைப் படித்து விசையை மீட்டெடுக்கவும் (CSP இல்லாமல்)
+cli.usage.angaraexport = read an MS_KEY K ANGARA (BIFIT) container over APDU and recover the key (no CSP)
 cli.usage.tokenexport = copy containers from one selected supported token to disk
 cli.usage.tokenfull = தேர்ந்தெடுத்த டோக்கனிலிருந்து எடுத்தல் + தானியங்கி .cer + keyexport
 err.lite.none = {0} இல் APDU மூலம் CryptoPro கொள்கலன்கள் எதுவும் இல்லை
@@ -440,6 +441,7 @@ pins.note.diagnostic = நோயறிதலுக்கு மட்டும�
 pins.note.noadmin = நிர்வாகி PIN அமைக்கப்படவில்லை
 pins.note.challenge = PIN challenge-response முறையில் சரிபார்க்கப்படுகிறது; கைமுறையாக உள்ளிடவும்
 pins.note.sopin = நிர்வாகி PIN என்பது SO-PIN எனப்படும்
+pins.note.transport = "11111111" is the protected=none container transport password (reference 7D), not a device PIN
 pins.note.nouser = பயனர் PIN அமைக்கப்படவில்லை
 pins.note.puk = நிர்வாகிக்கு இது PUK ஆகும்
 pins.note.applets = மற்ற ஆப்லெட்டுகள் தங்கள் தொழிற்சாலை மதிப்புகளை வைத்திருக்கும்

@@ -372,6 +372,7 @@ err.pfx.nocert = コンテナーにも引数にも証明書がありません �
 err.pfx.badcert = 証明書ファイルを 256 ビット GOST 鍵の X.509 として読めませんでした
 err.pfx.certmismatch = 証明書は別の鍵のものです: 公開鍵が一致しません
 cli.usage.liteexport = Rutoken Lite コンテナを APDU で読み取り、鍵を復元する（CSP 不要）
+cli.usage.angaraexport = read an MS_KEY K ANGARA (BIFIT) container over APDU and recover the key (no CSP)
 cli.usage.tokenexport = 選択した対応トークンのコンテナをディスクへコピーする
 cli.usage.tokenfull = 選択したトークンから取り出し + 自動 .cer + keyexport
 err.lite.none = {0} で CryptoPro コンテナが APDU 経由で見つかりません
@@ -440,6 +441,7 @@ pins.note.diagnostic = 診断のみ: 秘密鍵はチップから出ません
 pins.note.noadmin = 管理者PINは設定されていません
 pins.note.challenge = PINはチャレンジレスポンスで検証されます。手入力してください
 pins.note.sopin = 管理者PINはSO-PINと呼ばれます
+pins.note.transport = "11111111" is the protected=none container transport password (reference 7D), not a device PIN
 pins.note.nouser = ユーザーPINは設定されていません
 pins.note.puk = 管理者側はPUKです
 pins.note.applets = 他のアプレットはそれぞれの初期値のままです

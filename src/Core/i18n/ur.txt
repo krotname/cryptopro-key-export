@@ -372,6 +372,7 @@ err.pfx.nocert = نہ کنٹینر میں سرٹیفکیٹ ہے نہ دلائل 
 err.pfx.badcert = سرٹیفکیٹ فائل ‎256-بٹ GOST کلید والے X.509 کے طور پر نہیں پڑھی جا سکی
 err.pfx.certmismatch = سرٹیفکیٹ کسی اور کلید کا ہے: عوامی کلیدیں مختلف ہیں
 cli.usage.liteexport = APDU کے ذریعے Rutoken Lite کنٹینر پڑھیں اور کلید بازیافت کریں (CSP کے بغیر)
+cli.usage.angaraexport = read an MS_KEY K ANGARA (BIFIT) container over APDU and recover the key (no CSP)
 cli.usage.tokenexport = copy containers from one selected supported token to disk
 cli.usage.tokenfull = منتخب ٹوکن سے نکالنا + خودکار .cer + keyexport
 err.lite.none = {0} پر APDU کے ذریعے کوئی CryptoPro کنٹینر نہیں ملا
@@ -440,6 +441,7 @@ pins.note.diagnostic = صرف تشخیص: نجی کلید چپ سے باہر ن�
 pins.note.noadmin = منتظم کا PIN مقرر نہیں
 pins.note.challenge = PIN چیلنج-ریسپانس سے جانچا جاتا ہے؛ اسے ہاتھ سے درج کریں
 pins.note.sopin = منتظم کے PIN کو SO-PIN کہا جاتا ہے
+pins.note.transport = "11111111" is the protected=none container transport password (reference 7D), not a device PIN
 pins.note.nouser = صارف کا PIN مقرر نہیں
 pins.note.puk = منتظم کے لیے یہ PUK ہے
 pins.note.applets = باقی ایپلٹس اپنی فیکٹری قدریں رکھتے ہیں
