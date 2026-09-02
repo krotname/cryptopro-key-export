@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.CryptoPro;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Macs;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Math.EC;
@@ -36,6 +36,32 @@ namespace CryptoProExport
     /// </summary>
     public static class ContainerKeyExtractor
     {
+        /// <summary>Назначение ключевой пары контейнера: обмен (primary/masks) или подпись (primary2/masks2).</summary>
+        public enum KeyUsage
+        {
+            /// <summary>Ключ обмена — <c>primary.key</c> и <c>masks.key</c>.</summary>
+            Exchange,
+
+            /// <summary>Ключ подписи — <c>primary2.key</c> и <c>masks2.key</c>.</summary>
+            Signature,
+        }
+
+        /// <summary>Разобранная пара вместе с её назначением (для контейнеров с двумя ключами).</summary>
+        public sealed class ExtractedKey
+        {
+            internal ExtractedKey(KeyUsage usage, Result result)
+            {
+                Usage = usage;
+                Result = result;
+            }
+
+            /// <summary>Обмен или подпись.</summary>
+            public KeyUsage Usage { get; }
+
+            /// <summary>Разбор этой пары.</summary>
+            public Result Result { get; }
+        }
+
         /// <summary>Результат разбора: закрытый ключ и всё, что нужно для вывода в PKCS#8/PEM.</summary>
         public sealed class Result
         {
@@ -72,27 +98,92 @@ namespace CryptoProExport
         public static Result Extract(string containerDir, string password = "")
         {
             if (containerDir == null) throw new ArgumentNullException(nameof(containerDir));
+            return Extract(ContainerFiles.FromDirectory(containerDir), password);
+        }
 
-            bool hasPrimary = File.Exists(Path.Combine(containerDir, "primary.key"));
-            bool hasMasks = File.Exists(Path.Combine(containerDir, "masks.key"));
-            bool hasPrimary2 = File.Exists(Path.Combine(containerDir, "primary2.key"));
-            bool hasMasks2 = File.Exists(Path.Combine(containerDir, "masks2.key"));
+        /// <summary>
+        /// То же по уже прочитанным файлам контейнера — например, по копии, которая ещё не
+        /// записана на диск (<see cref="ExportableContainerBuilder"/>).
+        /// </summary>
+        public static Result Extract(ContainerFiles files, string password = "")
+        {
+            if (files == null) throw new ArgumentNullException(nameof(files));
+
+            bool hasPrimary = files.Has("primary.key");
+            bool hasMasks = files.Has("masks.key");
+            bool hasPrimary2 = files.Has("primary2.key");
+            bool hasMasks2 = files.Has("masks2.key");
             if (hasPrimary != hasMasks)
-                _ = ReadKeyFile(containerDir, hasPrimary ? "masks.key" : "primary.key");
+                _ = files.Require(hasPrimary ? "masks.key" : "primary.key");
             if (hasPrimary2 != hasMasks2)
-                _ = ReadKeyFile(containerDir, hasPrimary2 ? "masks2.key" : "primary2.key");
+                _ = files.Require(hasPrimary2 ? "masks2.key" : "primary2.key");
 
-            return ExtractKey(containerDir, password, signature: !hasPrimary && hasPrimary2);
+            return ExtractKey(files, password, signature: !hasPrimary && hasPrimary2);
+        }
+
+        /// <summary>
+        /// Разобрать и независимо проверить все ключевые пары контейнера. Неполная пара считается
+        /// повреждением: при пересборке контейнера нельзя молча потерять обменный или подписной ключ.
+        /// </summary>
+        public static List<ExtractedKey> ExtractAll(string containerDir, string password = "")
+        {
+            if (containerDir == null) throw new ArgumentNullException(nameof(containerDir));
+            return ExtractAll(ContainerFiles.FromDirectory(containerDir), password);
+        }
+
+        /// <inheritdoc cref="ExtractAll(string, string)"/>
+        public static List<ExtractedKey> ExtractAll(ContainerFiles files, string password = "")
+        {
+            if (files == null) throw new ArgumentNullException(nameof(files));
+
+            bool exchangePrimary = files.Has("primary.key");
+            bool exchangeMasks = files.Has("masks.key");
+            bool signaturePrimary = files.Has("primary2.key");
+            bool signatureMasks = files.Has("masks2.key");
+            if (exchangePrimary != exchangeMasks)
+                _ = files.Require(exchangePrimary ? "masks.key" : "primary.key");
+            if (signaturePrimary != signatureMasks)
+                _ = files.Require(signaturePrimary ? "masks2.key" : "primary2.key");
+            if (!exchangePrimary && !signaturePrimary)
+                _ = files.Require("primary.key");
+
+            var keys = new List<ExtractedKey>(2);
+            try
+            {
+                if (exchangePrimary)
+                    keys.Add(new ExtractedKey(KeyUsage.Exchange, ExtractKey(files, password, signature: false)));
+                if (signaturePrimary)
+                    keys.Add(new ExtractedKey(KeyUsage.Signature, ExtractKey(files, password, signature: true)));
+                return keys;
+            }
+            catch (Exception)
+            {
+                // Если вторая пара повреждена, уже восстановленный первый d не должен остаться
+                // незатёртым только потому, что метод завершился исключением.
+                Wipe(keys);
+                throw;
+            }
+        }
+
+        /// <summary>Затереть восстановленные закрытые ключи, которые вызывающему больше не нужны.</summary>
+        public static void Wipe(IEnumerable<ExtractedKey> keys)
+        {
+            if (keys == null) return;
+            foreach (ExtractedKey key in keys)
+                if (key?.Result?.PrivateKey != null)
+                    Array.Clear(key.Result.PrivateKey, 0, key.Result.PrivateKey.Length);
         }
 
         /// <summary>Разобрать конкретный ключ пары; используется при нормализации обоих primary.</summary>
-        internal static Result ExtractKey(string containerDir, string password, bool signature)
+        internal static Result ExtractKey(string containerDir, string password, bool signature) =>
+            ExtractKey(ContainerFiles.FromDirectory(containerDir), password, signature);
+
+        /// <summary>Разобрать конкретный ключ пары (обмен или подпись).</summary>
+        internal static Result ExtractKey(ContainerFiles files, string password, bool signature)
         {
-            string primaryFile = signature ? "primary2.key" : "primary.key";
-            string masksFile = signature ? "masks2.key" : "masks.key";
-            byte[] primaryRaw = ReadKeyFile(containerDir, primaryFile);
-            byte[] masksRaw = ReadKeyFile(containerDir, masksFile);
-            byte[] headerRaw = ReadKeyFile(containerDir, "header.key");
+            byte[] primaryRaw = files.Require(signature ? "primary2.key" : "primary.key");
+            byte[] masksRaw = files.Require(signature ? "masks2.key" : "masks.key");
+            byte[] headerRaw = files.Require("header.key");
 
             List<byte[]> primaryCandidates = PrimaryCiphertexts(primaryRaw);
             var (mask, salt) = ParseMasks(masksRaw);
@@ -368,14 +459,6 @@ namespace CryptoProExport
             return os.GetOctets();
         }
 
-        private static byte[] ReadKeyFile(string dir, string name)
-        {
-            string path = Path.Combine(dir, name);
-            if (!File.Exists(path))
-                throw new ContainerKeyException(Strings.Format("err.extract.nofile", name, dir));
-            return File.ReadAllBytes(path);
-        }
-
         /// <summary>
         /// Локализованное «контейнер повреждён». Технический хвост {0} — диагностический токен
         /// (имя файла, длина, смещение) на латинице, как коды в CryptoErrors: он не переводится,
@@ -460,6 +543,37 @@ namespace CryptoProExport
 
         internal static byte[] EcbDecrypt(byte[] key, byte[] data) => Ecb(key, data, encrypt: false);
         internal static byte[] EcbEncrypt(byte[] key, byte[] data) => Ecb(key, data, encrypt: true);
+
+        /// <summary>
+        /// Четырёхбайтовая имитовставка контейнера КриптоПро: ГОСТ 28147-89 MAC, узел Param-Z,
+        /// нулевой IV. Этот же примитив защищает <c>header.key</c> и третье поле <c>masks*.key</c>.
+        /// </summary>
+        internal static byte[] Mac(byte[] key, byte[] data)
+        {
+            if (key == null || key.Length != 32)
+                throw new ContainerKeyException(Strings.Format("err.extract.corrupt",
+                    $"GOST 28147 MAC key {key?.Length ?? 0} bytes, expected 32"));
+            var mac = new Gost28147Mac();
+            mac.Init(new ParametersWithSBox(new KeyParameter(key), ParamZSBox));
+            mac.BlockUpdate(data, 0, data.Length);
+            var outp = new byte[mac.GetMacSize()];
+            mac.DoFinal(outp, 0);
+            return outp;
+        }
+
+        /// <summary>Имитовставка содержимого <c>header.key</c> — ключ нулевой.</summary>
+        internal static byte[] ContainerMac(byte[] contentDer) => Mac(new byte[32], contentDer);
+
+        /// <summary>Имитовставка соли в <c>masks*.key</c>: ключ — сама маска (у 64-байтовой берётся вторая половина).</summary>
+        internal static byte[] MaskMac(byte[] mask, byte[] salt)
+        {
+            if (mask == null || (mask.Length != 32 && mask.Length != 64))
+                throw new ContainerKeyException(Strings.Format("err.extract.corrupt",
+                    $"container mask {mask?.Length ?? 0} bytes, expected 32 or 64"));
+            byte[] key = mask.Length == 32 ? mask : mask.AsSpan(32, 32).ToArray();
+            try { return Mac(key, salt); }
+            finally { if (!ReferenceEquals(key, mask)) Array.Clear(key, 0, key.Length); }
+        }
 
         private static byte[] Ecb(byte[] key, byte[] data, bool encrypt)
         {

@@ -29,6 +29,7 @@ namespace CryptoProExport.App
             ("tokenexport <reader> <outDir> [pin] [--container <id>]", "cli.usage.tokenexport"),
             ("tokenfull <reader> <outDir> [pin] [--container <id>]",   "cli.usage.tokenfull"),
             ("keyexport <folder> <cert.cer> [pass]", "cli.usage.keyexport"),
+            ("exportable <folder> <outFolder> [pass]", "cli.usage.exportable"),
             ("install <folder> [name]",              "cli.usage.install"),
             ("installed",                            "cli.usage.installed"),
             ("uninstall <folder>",                   "cli.usage.uninstall"),
@@ -52,7 +53,7 @@ namespace CryptoProExport.App
         /// и ввести лицензию.
         /// </summary>
         private static readonly string[] LicensedCommands =
-            { "export", "tokenexport", "tokenfull", "full", "keyexport", "extractkey", "extractpfx", "liteexport", "angaraexport", "topfx" };
+            { "export", "tokenexport", "tokenfull", "full", "keyexport", "exportable", "extractkey", "extractpfx", "liteexport", "angaraexport", "topfx" };
 
         public static int Run(string[] args)
         {
@@ -335,6 +336,43 @@ namespace CryptoProExport.App
                         var r = p12.MakeExportable(args[1], args[2], null, args.Length > 3 ? args[3] : null);
                         Out(r.Success ? Strings.Get("cli.keyexport.ok") : Strings.Format("cli.error", r.Explain()));
                         return r.Success ? 0 : 2;
+                    }
+                    case "exportable":
+                    {
+                        // Экспортируемая копия контейнера без CSP и p12utility: ключи заново
+                        // маскируются, в header.key взводится бит экспорта и пересчитывается MAC.
+                        // Исходная папка не изменяется, результат — отдельный контейнер.
+                        if (args.Length < 3) { Usage(); return 1; }
+                        string containerPassword = args.Length > 3 ? args[3] : "";
+                        var source = ContainerFiles.FromDirectory(args[1]);
+                        var rebuilt = ExportableContainerBuilder.Build(source, containerPassword);
+                        try
+                        {
+                            rebuilt.WriteTo(args[2]);
+                            CryptoProHeaderExportability.RequireExportable(
+                                File.ReadAllBytes(Path.Combine(args[2], "header.key")),
+                                exchange: File.Exists(Path.Combine(args[2], "primary.key")),
+                                signature: File.Exists(Path.Combine(args[2], "primary2.key")));
+                            Out(Strings.Format("cli.exportable.ok", args[2]));
+                            // Отчёт снимается с того, что реально записано на диск, а не с копии
+                            // в памяти: это независимая проверка результата команды.
+                            var keys = ContainerKeyExtractor.ExtractAll(args[2], containerPassword);
+                            try
+                            {
+                                foreach (var key in keys)
+                                    Out("  " + Strings.Format("cli.exportable.key",
+                                        Strings.Get(key.Usage == ContainerKeyExtractor.KeyUsage.Signature
+                                            ? "key.usage.signature" : "key.usage.exchange"),
+                                        key.Result.CurveOid, Convert.ToHexString(key.Result.PublicX)));
+                            }
+                            finally { ContainerKeyExtractor.Wipe(keys); }
+                        }
+                        finally
+                        {
+                            rebuilt.WipeKeyMaterial();
+                            source.WipeKeyMaterial();
+                        }
+                        return 0;
                     }
                     case "install":
                     {
