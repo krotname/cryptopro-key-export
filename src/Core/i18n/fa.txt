@@ -372,6 +372,7 @@ err.pfx.nocert = نه در محفظه گواهی هست و نه در آرگوم�
 err.pfx.badcert = فایل گواهی به‌عنوان X.509 با کلید GOST‏ ۲۵۶ بیتی خوانده نشد
 err.pfx.certmismatch = گواهی متعلق به کلید دیگری است: کلیدهای عمومی یکسان نیستند
 cli.usage.liteexport = خواندن محفظه‌ی Rutoken Lite از طریق APDU و بازیابی کلید (بدون CSP)
+cli.usage.angaraexport = read an MS_KEY K ANGARA (BIFIT) container over APDU and recover the key (no CSP)
 cli.usage.tokenexport = copy containers from one selected supported token to disk
 cli.usage.tokenfull = بیرون کشیدن از توکن انتخاب‌شده + .cer خودکار + keyexport
 err.lite.none = هیچ محفظه‌ی CryptoPro روی {0} از طریق APDU یافت نشد
@@ -440,6 +441,7 @@ pins.note.diagnostic = فقط تشخیص: کلید خصوصی از تراشه خ
 pins.note.noadmin = رمز PIN مدیر تعیین نشده است
 pins.note.challenge = رمز با روش چالش-پاسخ بررسی می‌شود؛ آن را دستی وارد کنید
 pins.note.sopin = رمز مدیر SO-PIN نامیده می‌شود
+pins.note.transport = "11111111" is the protected=none container transport password (reference 7D), not a device PIN
 pins.note.nouser = رمز PIN کاربر تعیین نشده است
 pins.note.puk = برای مدیر این یک PUK است
 pins.note.applets = اپلت‌های دیگر مقادیر کارخانه‌ای خود را نگه می‌دارند

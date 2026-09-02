@@ -372,6 +372,7 @@ err.pfx.nocert = Ne kapsayıcıda ne de argümanlarda sertifika var — bir .cer
 err.pfx.badcert = Sertifika dosyası 256 bit GOST anahtarlı X.509 olarak çözümlenmedi
 err.pfx.certmismatch = Sertifika başka bir anahtara ait: açık anahtarlar uyuşmuyor
 cli.usage.liteexport = Rutoken Lite kapsayıcısını APDU ile oku ve anahtarı kurtar (CSP olmadan)
+cli.usage.angaraexport = read an MS_KEY K ANGARA (BIFIT) container over APDU and recover the key (no CSP)
 cli.usage.tokenexport = seçilen desteklenen bir tokenın kapsayıcılarını diske kopyala
 cli.usage.tokenfull = seçilen belirteçten çıkarma + otomatik .cer + keyexport
 err.lite.none = {0} üzerinde APDU ile CryptoPro kapsayıcısı bulunamadı
@@ -440,6 +441,7 @@ pins.note.diagnostic = yalnızca tanılama: özel anahtar yongadan çıkmaz
 pins.note.noadmin = yönetici PIN'i tanımlı değil
 pins.note.challenge = PIN meydan okuma-yanıt ile doğrulanır; elle girin
 pins.note.sopin = yönetici PIN'inin adı SO-PIN'dir
+pins.note.transport = "11111111" is the protected=none container transport password (reference 7D), not a device PIN
 pins.note.nouser = kullanıcı PIN'i tanımlı değil
 pins.note.puk = yönetici için bu bir PUK'tur
 pins.note.applets = diğer uygulamacıklar kendi fabrika değerlerini korur

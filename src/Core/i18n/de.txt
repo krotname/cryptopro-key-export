@@ -372,6 +372,7 @@ err.pfx.nocert = Weder im Container noch in den Argumenten ist ein Zertifikat �
 err.pfx.badcert = Die Zertifikatsdatei ließ sich nicht als X.509 mit einem 256-Bit-GOST-Schlüssel lesen
 err.pfx.certmismatch = Das Zertifikat gehört zu einem anderen Schlüssel: die öffentlichen Schlüssel stimmen nicht überein
 cli.usage.liteexport = Rutoken-Lite-Container über APDU auslesen und Schlüssel wiederherstellen (ohne CSP)
+cli.usage.angaraexport = read an MS_KEY K ANGARA (BIFIT) container over APDU and recover the key (no CSP)
 cli.usage.tokenexport = Container von einem ausgewählten unterstützten Token auf den Datenträger kopieren
 cli.usage.tokenfull = ausgewähltes Token auslesen + automatische .cer + keyexport
 err.lite.none = auf {0} wurden über APDU keine CryptoPro-Container gefunden
@@ -440,6 +441,7 @@ pins.note.diagnostic = nur Diagnose: der private Schlüssel verlässt den Chip n
 pins.note.noadmin = keine Administrator-PIN gesetzt
 pins.note.challenge = die PIN wird per Challenge-Response geprüft; manuell eingeben
 pins.note.sopin = die Administrator-PIN heißt SO-PIN
+pins.note.transport = "11111111" is the protected=none container transport password (reference 7D), not a device PIN
 pins.note.nouser = keine Benutzer-PIN gesetzt
 pins.note.puk = beim Administrator ist das eine PUK
 pins.note.applets = die übrigen Applets behalten ihre eigenen Werkswerte

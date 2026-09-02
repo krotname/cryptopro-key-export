@@ -375,6 +375,7 @@ cli.install.invisible = КриптоПро пока не видит контей
 cli.lang.unknown = Неизвестный язык «{0}». Доступные языки: {1}
 cli.lang.missing = После --lang нужен код языка. Доступные языки: {0}
 cli.usage.liteexport = снять контейнер с Рутокен Lite по APDU и восстановить ключ (без CSP)
+cli.usage.angaraexport = снять контейнер с MS_KEY K «АНГАРА» (БИФИТ) по APDU и восстановить ключ (без CSP)
 cli.usage.tokenexport = снять контейнеры с выбранного поддерживаемого токена на диск
 cli.usage.tokenfull = снять с выбранного токена + авто-.cer + keyexport
 err.lite.none = На {0} контейнеров КриптоПро по APDU не найдено
@@ -442,6 +443,7 @@ pins.note.diagnostic = только диагностика: закрытый к�
 pins.note.noadmin = PIN Администратора не задан
 pins.note.challenge = PIN проверяется challenge-response; подставляется только вручную
 pins.note.sopin = PIN Администратора называется SO-PIN
+pins.note.transport = «11111111» — транспортный пароль контейнера protected=none по ссылке 7D, а не PIN устройства
 pins.note.nouser = PIN Пользователя не задан
 pins.note.puk = у Администратора это PUK
 pins.note.applets = остальные апплеты — со своими стандартными значениями

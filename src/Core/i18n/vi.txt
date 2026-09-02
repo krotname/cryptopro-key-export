@@ -372,6 +372,7 @@ err.pfx.nocert = Không có chứng chỉ trong vùng chứa lẫn trong tham s�
 err.pfx.badcert = Tệp chứng chỉ không đọc được như X.509 với khóa GOST 256 bit
 err.pfx.certmismatch = Chứng chỉ thuộc về khóa khác: khóa công khai không khớp
 cli.usage.liteexport = đọc vùng chứa Rutoken Lite qua APDU và khôi phục khóa (không cần CSP)
+cli.usage.angaraexport = read an MS_KEY K ANGARA (BIFIT) container over APDU and recover the key (no CSP)
 cli.usage.tokenexport = sao chép vùng chứa từ một token được hỗ trợ đã chọn vào đĩa
 cli.usage.tokenfull = lấy từ token đã chọn + .cer tự động + keyexport
 err.lite.none = không tìm thấy vùng chứa CryptoPro trên {0} qua APDU
@@ -440,6 +441,7 @@ pins.note.diagnostic = chỉ chẩn đoán: khóa riêng không rời khỏi chi
 pins.note.noadmin = không đặt PIN quản trị viên
 pins.note.challenge = PIN được kiểm tra theo challenge-response; hãy nhập thủ công
 pins.note.sopin = PIN quản trị viên gọi là SO-PIN
+pins.note.transport = "11111111" is the protected=none container transport password (reference 7D), not a device PIN
 pins.note.nouser = không đặt PIN người dùng
 pins.note.puk = với quản trị viên đây là PUK
 pins.note.applets = các applet khác giữ giá trị mặc định riêng

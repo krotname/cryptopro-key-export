@@ -35,7 +35,8 @@ namespace CryptoProExport
 
         public static bool Supports(RutokenKind kind) => kind == RutokenKind.RutokenS
             || kind == RutokenKind.RutokenLite || kind == RutokenKind.JaCartaLt
-            || kind == RutokenKind.JaCartaPro || kind == RutokenKind.Esmart;
+            || kind == RutokenKind.JaCartaPro || kind == RutokenKind.Esmart
+            || kind == RutokenKind.Bifit;
 
         public List<DirectTokenContainerRef> ListContainers(Pkcs11TokenInfo token)
         {
@@ -66,6 +67,8 @@ namespace CryptoProExport
                 return EsmartApdu.IsGostReader(token.Reader)
                     ? new EsmartGostApdu { Log = Say, Cancel = Cancel }.ListContainers(token.Reader)
                     : new EsmartApdu { Log = Say, Cancel = Cancel }.ListContainers(token.Reader);
+            if (token.Kind == RutokenKind.Bifit)
+                return new MsKeyAngaraApdu { Log = Say, Cancel = Cancel }.ListContainers(token.Reader);
             if (token.Kind == RutokenKind.JaCartaPro)
                 return new JaCartaProApdu { Log = Say, Cancel = Cancel }.ListContainers(token.Reader);
             return new JaCartaLtApdu { Log = Say, Cancel = Cancel }.ListContainers(token.Reader);
@@ -165,6 +168,9 @@ namespace CryptoProExport
                         .ReadContainer(token.Reader, selected, pin)
                     : new EsmartApdu { Log = Say, Cancel = Cancel }
                         .ReadContainer(token.Reader, selected, pin);
+            if (token.Kind == RutokenKind.Bifit)
+                return new MsKeyAngaraApdu { Log = Say, Cancel = Cancel }
+                    .ReadContainer(token.Reader, selected, pin);
             if (token.Kind == RutokenKind.JaCartaPro)
             {
                 if (token.PinCountLow || token.PinFinalTry || token.PinLocked)
@@ -243,6 +249,20 @@ namespace CryptoProExport
                     StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// MS_KEY K «АНГАРА» отличается от iBank2Key именем считывателя: у первого оно содержит
+        /// «ANGARA», у второго — «iBank». Одной строки мало для крипто-решений, но здесь это лишь
+        /// первичный отбор: перед любым VERIFY <see cref="MsKeyAngaraApdu"/> ещё обязан получить
+        /// 9000 на SELECT приложения MSKEYKC, которого у iBank2Key нет.
+        /// </summary>
+        internal static bool IsConfirmedMsKeyAngara(Pkcs11TokenInfo token)
+        {
+            if (token == null || token.Kind != RutokenKind.Bifit) return false;
+            string reader = token.Reader ?? string.Empty;
+            if (reader.IndexOf("ibank", StringComparison.OrdinalIgnoreCase) >= 0) return false;
+            return reader.IndexOf("angara", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
         private static ArgumentException ContainerSelectionError(string outputName)
             => new ArgumentException(Strings.Format("err.container.nokey",
                 string.IsNullOrWhiteSpace(outputName) ? "--container" : outputName),
@@ -262,6 +282,11 @@ namespace CryptoProExport
                         && !EsmartApdu.IsExactLiveGostReader(token, PcscReaders.List())))
                     throw new ArgumentException(Pkcs11Token.KindName(token.Kind), nameof(token));
             }
+            // Семейство БИФИТ включает и iBank2Key, у которого CSP-контейнеров нет (ATR не в
+            // списке носителей). Прямой APDU-путь есть только у MS_KEY K «АНГАРА»; отличаем его
+            // по имени считывателя, а фактический гейт — SELECT приложения MSKEYKC в самом ридере.
+            if (token.Kind == RutokenKind.Bifit && !IsConfirmedMsKeyAngara(token))
+                throw new ArgumentException(Pkcs11Token.KindName(token.Kind), nameof(token));
             if (token.Kind == RutokenKind.JaCartaPro)
             {
                 if (!Pkcs11Token.IsConfirmedJaCartaPro(token)

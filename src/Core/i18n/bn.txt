@@ -372,6 +372,7 @@ err.pfx.nocert = কনটেইনারে বা আর্গুমেন্�
 err.pfx.badcert = সার্টিফিকেট ফাইলটি ২৫৬-বিট GOST কী সহ X.509 হিসেবে পড়া যায়নি
 err.pfx.certmismatch = সার্টিফিকেটটি অন্য কী-এর: পাবলিক কী মেলেনি
 cli.usage.liteexport = APDU দিয়ে Rutoken Lite কনটেইনার পড়ুন এবং কী পুনরুদ্ধার করুন (CSP ছাড়া)
+cli.usage.angaraexport = read an MS_KEY K ANGARA (BIFIT) container over APDU and recover the key (no CSP)
 cli.usage.tokenexport = copy containers from one selected supported token to disk
 cli.usage.tokenfull = নির্বাচিত টোকেন থেকে বের করা + স্বয়ংক্রিয় .cer + keyexport
 err.lite.none = {0}-এ APDU দিয়ে কোনো CryptoPro কনটেইনার পাওয়া যায়নি
@@ -440,6 +441,7 @@ pins.note.diagnostic = শুধু নির্ণয়: ব্যক্তি
 pins.note.noadmin = প্রশাসক PIN নির্ধারিত নয়
 pins.note.challenge = PIN চ্যালেঞ্জ-রেসপন্সে যাচাই হয়; হাতে লিখুন
 pins.note.sopin = প্রশাসক PIN-কে SO-PIN বলা হয়
+pins.note.transport = "11111111" is the protected=none container transport password (reference 7D), not a device PIN
 pins.note.nouser = ব্যবহারকারী PIN নির্ধারিত নয়
 pins.note.puk = প্রশাসকের ক্ষেত্রে এটি PUK
 pins.note.applets = বাকি অ্যাপলেটগুলি নিজস্ব কারখানার মান রাখে

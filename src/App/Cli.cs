@@ -36,6 +36,7 @@ namespace CryptoProExport.App
             ("extractkey <folder> <out.pem> [pass]", "cli.usage.extractkey"),
             ("extractpfx <folder> <out.pfx> <pfx-pass> [pass] [cert.cer]", "cli.usage.extractpfx"),
             ("liteexport <reader> <outDir> [pin]",   "cli.usage.liteexport"),
+            ("angaraexport <reader> <outDir> [pin]", "cli.usage.angaraexport"),
             ("full <destDir> [cert.cer] [pin]",      "cli.usage.full"),
             ("pins",                                 "cli.usage.pins"),
             ("fingerprint",                          "cli.usage.fingerprint"),
@@ -51,7 +52,7 @@ namespace CryptoProExport.App
         /// и ввести лицензию.
         /// </summary>
         private static readonly string[] LicensedCommands =
-            { "export", "tokenexport", "tokenfull", "full", "keyexport", "extractkey", "extractpfx", "liteexport", "topfx" };
+            { "export", "tokenexport", "tokenfull", "full", "keyexport", "extractkey", "extractpfx", "liteexport", "angaraexport", "topfx" };
 
         public static int Run(string[] args)
         {
@@ -485,6 +486,63 @@ namespace CryptoProExport.App
                                 failed++;
                                 Err(Strings.Format("cli.error", ex.Message));
                             }
+                        }
+                        return failed > 0 ? 3 : done > 0 ? 0 : 2;
+                    }
+                    case "angaraexport":
+                    {
+                        // Снять контейнер КриптоПро с MS_KEY K «АНГАРА» (БИФИТ) прямым APDU,
+                        // минуя CSP, и восстановить закрытый ключ офлайн-разбором. Носитель не
+                        // имеет системного PKCS#11-модуля, поэтому вид определяется по имени
+                        // считывателя, а фактический гейт — SELECT приложения MSKEYKC на карте
+                        // (у iBank2Key его нет). PIN не подбираем: для контейнеров protected=none
+                        // это транспортный «11111111», который посылает сам CSP.
+                        if (args.Length < 3) { Usage(); return 1; }
+                        string reader = args[1], outDir = args[2];
+                        string pin = args.Length > 3 ? args[3] : StandardPins.UserPinFor(RutokenKind.Bifit);
+
+                        RutokenKind kind = Pkcs11Token.ResolveReaderKind(reader, null);
+                        if (kind != RutokenKind.Bifit)
+                            throw new ArgumentException(Strings.Format("err.reader.unsupported",
+                                reader, Pkcs11Token.KindName(kind)));
+                        var token = new Pkcs11TokenInfo { Reader = reader, Kind = RutokenKind.Bifit };
+
+                        var pipeline = new ExportPipeline { Log = Out };
+                        List<DirectTokenContainerRef> containers = pipeline.Direct.ListContainers(token);
+                        if (containers.Count == 0) { Err(Strings.Format("err.lite.none", reader)); return 2; }
+                        foreach (var c in containers) Out($"  [{c.OutputName}]");
+                        int done = 0, failed = 0;
+                        foreach (DirectTokenContainerRef selected in containers)
+                        {
+                            (RutokenContainer container, string folder) saved;
+                            try
+                            {
+                                saved = pipeline.ExportDirectContainer(token, selected, outDir, pin);
+                            }
+                            catch (LiteApduException ex)
+                            {
+                                // Отказ карты (неверный VERIFY, блокировка, обрыв) — прекращаем
+                                // ПОЛНОСТЬЮ: тот же PIN на следующем контейнере лишь потратит
+                                // очередную попытку, а их всего десять до необратимой блокировки.
+                                failed++;
+                                Err(Strings.Format("cli.error", ex.Message));
+                                break;
+                            }
+                            Out(Strings.Format("cli.done", saved.folder));
+                            try
+                            {
+                                // Пароль контейнера (CPKDF) — не транспортный VERIFY: у
+                                // protected=none он пуст. Транспортный «11111111» уже отработал
+                                // при чтении файлов с карты.
+                                var r = ContainerKeyExtractor.Extract(saved.folder, "");
+                                File.WriteAllText(Path.Combine(saved.folder, "private.pem"),
+                                    GostKeyExport.ToPkcs8Pem(r));
+                                Out(Strings.Format("cli.extractkey.ok", Path.Combine(saved.folder, "private.pem")));
+                                Out("  " + Strings.Format("cli.extractkey.pub", r.CurveOid,
+                                    Convert.ToHexString(r.PublicX)));
+                                done++;
+                            }
+                            catch (ContainerKeyException ex) { failed++; Err(Strings.Format("cli.error", ex.Message)); }
                         }
                         return failed > 0 ? 3 : done > 0 ? 0 : 2;
                     }
