@@ -28,11 +28,17 @@ cd <worktree>
 git fetch --prune origin
 git log --oneline -1 origin/main
 gh pr list --state open --json number --jq 'length'    # должно быть 0
-gh run list --branch main --limit 1 --json status,conclusion
+
+# Именно workflow сборки и именно тот коммит: без --workflow сюда попадёт любой
+# другой прогон ветки (например, плановая «Clean expired private CI artifacts»),
+# и упавшая или устаревшая сборка останется незамеченной.
+$sha = git rev-parse origin/main
+gh run list --workflow ci.yml --branch main --commit $sha --limit 1 `
+  --json status,conclusion,headSha,displayTitle
 ```
 
 - открытых PR нет (иначе релиз выйдет без чужой готовой работы);
-- последний прогон CI на `main` завершился `success`;
+- прогон `ci.yml` **на коммите `origin/main`** завершился `success`;
 - локальное дерево чистое, worktree синхронизирован с `origin/main`.
 
 ## 2. Собрать состав релиза
@@ -85,7 +91,7 @@ git push origin v1.8.0
 ## 5. Дождаться job и проверить результат
 
 ```powershell
-gh run list --limit 3 --json displayTitle,status,conclusion
+gh run list --workflow ci.yml --limit 3 --json displayTitle,status,conclusion,headBranch
 gh release view v1.8.0 --json name,tagName,assets,createdAt
 ```
 
