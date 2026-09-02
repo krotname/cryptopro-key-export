@@ -223,7 +223,7 @@ CryptoProExport.exe license status         # текущий статус
 
 ## Языки интерфейса
 
-Интерфейс, подсказки и сообщения версии 1.7.0 переведены на 20 языков:
+Интерфейс, подсказки и сообщения версии 1.8.0 переведены на 20 языков:
 
 `ar` العربية · `bn` বাংলা · `de` Deutsch · `en` English · `es` Español · `fa` فارسی ·
 `fr` Français · `hi` हिन्दी · `id` Bahasa Indonesia · `it` Italiano · `ja` 日本語 ·
