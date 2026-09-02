@@ -144,6 +144,36 @@ namespace CryptoProExport.App
         }
 
         /// <summary>
+        /// Диалог выбора языка в дерево главной формы не входит, поэтому его подсказки и
+        /// надписи не проверялись бы ничем (замечание Codex на PR #86). Строим его отдельно
+        /// на каждом языке — показывать для этого не нужно.
+        /// </summary>
+        private static bool InspectLanguageDialog(string language)
+        {
+            using var form = LanguageDialog.Build(out ToolTip tips);
+            using (tips)
+            {
+                var (_, missing) = MainForm.CheckTooltips(form, tips);
+                if (missing.Count > 0)
+                {
+                    Console.Error.WriteLine($"SELFTEST FAIL [{language}, диалог языка]: без всплывающих "
+                                            + "подсказок остались элементы: " + string.Join(", ", missing));
+                    return false;
+                }
+
+                var untranslated = MainForm.MissingTranslations(form, tips);
+                if (untranslated.Count > 0)
+                {
+                    Console.Error.WriteLine($"SELFTEST FAIL [{language}, диалог языка]: нет переводов: "
+                                            + string.Join(", ", untranslated.Take(10)));
+                    return false;
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
         /// Построить форму и закрыть — проверка, что UI-граф собирается (для headless-сборки/CI).
         /// Форма строится на каждом вшитом языке: так ловятся и потерянные подсказки, и
         /// незаполненные ключи перевода (Strings.Get возвращает заметный маркер, а не пустоту).
@@ -163,6 +193,7 @@ namespace CryptoProExport.App
                     using var scope = Strings.Scope(language);
                     using var probe = new MainForm();
                     if (!Inspect(probe, language, "построение", ref checkedTips)) return 1;
+                    if (!InspectLanguageDialog(language)) return 1;
                 }
 
                 // 2. Одно окно проводится по всем языкам подряд — это путь выбора языка в списке:
