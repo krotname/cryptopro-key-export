@@ -339,39 +339,42 @@ namespace CryptoProExport.App
                     }
                     case "exportable":
                     {
-                        // Экспортируемая копия контейнера без CSP и p12utility: ключи заново
-                        // маскируются, в header.key взводится бит экспорта и пересчитывается MAC.
+                        // Экспортируемая копия контейнера без CSP и p12utility: оба ключа
+                        // проверяются по d·G, в header.key взводится бит экспорта и
+                        // пересчитывается имитовставка, ключевые файлы переносятся как есть.
                         // Исходная папка не изменяется, результат — отдельный контейнер.
                         if (args.Length < 3) { Usage(); return 1; }
                         string containerPassword = args.Length > 3 ? args[3] : "";
                         var source = ContainerFiles.FromDirectory(args[1]);
-                        var rebuilt = ExportableContainerBuilder.Build(source, containerPassword);
                         try
                         {
-                            rebuilt.WriteTo(args[2]);
-                            CryptoProHeaderExportability.RequireExportable(
-                                File.ReadAllBytes(Path.Combine(args[2], "header.key")),
-                                exchange: File.Exists(Path.Combine(args[2], "primary.key")),
-                                signature: File.Exists(Path.Combine(args[2], "primary2.key")));
-                            Out(Strings.Format("cli.exportable.ok", args[2]));
-                            // Отчёт снимается с того, что реально записано на диск, а не с копии
-                            // в памяти: это независимая проверка результата команды.
-                            var keys = ContainerKeyExtractor.ExtractAll(args[2], containerPassword);
+                            var rebuilt = ExportableContainerBuilder.Build(source, containerPassword);
                             try
                             {
-                                foreach (var key in keys)
-                                    Out("  " + Strings.Format("cli.exportable.key",
-                                        Strings.Get(key.Usage == ContainerKeyExtractor.KeyUsage.Signature
-                                            ? "key.usage.signature" : "key.usage.exchange"),
-                                        key.Result.CurveOid, Convert.ToHexString(key.Result.PublicX)));
+                                // Заголовок проверяется до записи: незачем оставлять на диске папку,
+                                // о которой уже известно, что бит экспорта в ней не взведён.
+                                CryptoProHeaderExportability.RequireExportable(
+                                    rebuilt.Require("header.key"),
+                                    exchange: rebuilt.Has("primary.key"),
+                                    signature: rebuilt.Has("primary2.key"));
+                                rebuilt.WriteTo(args[2]);
+                                Out(Strings.Format("cli.exportable.ok", args[2]));
+                                // Отчёт снимается с того, что реально записано на диск, а не с копии
+                                // в памяти: это независимая проверка результата команды.
+                                var keys = ContainerKeyExtractor.ExtractAll(args[2], containerPassword);
+                                try
+                                {
+                                    foreach (var key in keys)
+                                        Out("  " + Strings.Format("cli.exportable.key",
+                                            Strings.Get(key.Usage == ContainerKeyExtractor.KeyUsage.Signature
+                                                ? "key.usage.signature" : "key.usage.exchange"),
+                                            key.Result.CurveOid, Convert.ToHexString(key.Result.PublicX)));
+                                }
+                                finally { ContainerKeyExtractor.Wipe(keys); }
                             }
-                            finally { ContainerKeyExtractor.Wipe(keys); }
+                            finally { rebuilt.WipeKeyMaterial(); }
                         }
-                        finally
-                        {
-                            rebuilt.WipeKeyMaterial();
-                            source.WipeKeyMaterial();
-                        }
+                        finally { source.WipeKeyMaterial(); }
                         return 0;
                     }
                     case "install":
