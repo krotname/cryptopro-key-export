@@ -55,26 +55,35 @@ namespace CryptoProExport
             {
                 Cancel.ThrowIfCancellationRequested();
                 int df = ContainerBase(index);
-                if (!SelectApplication(session) || !SelectDf(session, df)) continue;
-                // name.key доступен без PIN — по нему и опознаётся контейнер. Носитель держит
-                // пустые предвыделенные слоты (все EF из нулей): их отбраковываем — настоящий
-                // контейнер начинается с валидного DER-SEQUENCE и несёт непустое имя.
-                byte[] name = ReadFile(session, EfId(df, 0x05));
-                if (!IsDerSequence(name) || string.IsNullOrEmpty(RutokenLiteApdu.ParseName(name)))
-                    continue;
-                // header доступен без PIN — проверяем его содержимое, а не только существование.
-                if (!IsDerSequence(ReadFile(session, EfId(df, 0x02)))) continue; // header.key
-                bool key = FileExists(session, EfId(df, 0x01))                   // primary.key
-                    && FileExists(session, EfId(df, 0x00));                      // masks.key
-                if (!key) continue;
-                result.Add(new DirectTokenContainerRef
+                try
                 {
-                    Kind = RutokenKind.Bifit,
-                    Reader = reader,
-                    Name = RutokenLiteApdu.ParseName(name),
-                    OutputName = $"angara_{df:X2}",
-                    Index = index,
-                });
+                    if (!SelectApplication(session) || !SelectDf(session, df)) continue;
+                    // name.key доступен без PIN — по нему и опознаётся контейнер. Носитель держит
+                    // пустые предвыделенные слоты (все EF из нулей): их отбраковываем — настоящий
+                    // контейнер начинается с валидного DER-SEQUENCE и несёт непустое имя.
+                    byte[] name = ReadFile(session, EfId(df, 0x05));
+                    if (!IsDerSequence(name) || string.IsNullOrEmpty(RutokenLiteApdu.ParseName(name)))
+                        continue;
+                    // header доступен без PIN — проверяем его содержимое, а не только существование.
+                    if (!IsDerSequence(ReadFile(session, EfId(df, 0x02)))) continue; // header.key
+                    bool key = FileExists(session, EfId(df, 0x01))                   // primary.key
+                        && FileExists(session, EfId(df, 0x00));                      // masks.key
+                    if (!key) continue;
+                    result.Add(new DirectTokenContainerRef
+                    {
+                        Kind = RutokenKind.Bifit,
+                        Reader = reader,
+                        Name = RutokenLiteApdu.ParseName(name),
+                        OutputName = $"angara_{df:X2}",
+                        Index = index,
+                    });
+                }
+                catch (LiteApduException)
+                {
+                    // Перечисление — best-effort и без PIN: слот, который на чтении name/header
+                    // ответил отказом (например, требует авторизации), пропускаем, а не роняем
+                    // весь список. Ключевые файлы всё равно недоступны без ReadContainer.
+                }
             }
             return result;
         }
@@ -207,14 +216,9 @@ namespace CryptoProExport
                     "err.lite.pin", "0x" + PcscApduSession.Status(response).ToString("X4")));
         }
 
-        internal static int FcpSize(byte[] fcp)
-        {
-            byte[] value = EsmartApdu.FindTag(fcp, 0x80);
-            if (value == null || value.Length is < 1 or > 2) return -1;
-            int size = 0;
-            foreach (byte item in value) size = (size << 8) | item;
-            return size > 0 ? size : -1;
-        }
+        // Формат FCP (шаблон 0x62, размер в теге 0x80) у MS_KEY тот же, что у ESMART, — не
+        // дублируем разбор, а переиспользуем единственную реализацию.
+        internal static int FcpSize(byte[] fcp) => EsmartApdu.FcpSize(fcp);
 
         private static void ValidateBlobs(IReadOnlyDictionary<string, byte[]> blobs, string source)
         {

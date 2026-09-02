@@ -514,7 +514,20 @@ namespace CryptoProExport.App
                         int done = 0, failed = 0;
                         foreach (DirectTokenContainerRef selected in containers)
                         {
-                            var saved = pipeline.ExportDirectContainer(token, selected, outDir, pin);
+                            (RutokenContainer container, string folder) saved;
+                            try
+                            {
+                                saved = pipeline.ExportDirectContainer(token, selected, outDir, pin);
+                            }
+                            catch (LiteApduException ex)
+                            {
+                                // Отказ карты (неверный VERIFY, блокировка, обрыв) — прекращаем
+                                // ПОЛНОСТЬЮ: тот же PIN на следующем контейнере лишь потратит
+                                // очередную попытку, а их всего десять до необратимой блокировки.
+                                failed++;
+                                Err(Strings.Format("cli.error", ex.Message));
+                                break;
+                            }
                             Out(Strings.Format("cli.done", saved.folder));
                             try
                             {
