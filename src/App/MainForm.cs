@@ -649,15 +649,22 @@ namespace CryptoProExport.App
         /// списка должна быть подсказка. Возвращает количество элементов с подсказкой
         /// и описания тех, у кого её нет.
         /// </summary>
-        internal (int withTip, List<string> missing) CheckTooltips()
+        internal (int withTip, List<string> missing) CheckTooltips() => CheckTooltips(this, _tips);
+
+        /// <summary>
+        /// То же самое для любого окна и его набора подсказок. Отдельным методом, потому что
+        /// проверять надо не только главную форму: диалог выбора языка в её дерево не входит,
+        /// и без этого его подсказки не проверялись бы ничем (замечание Codex на PR #86).
+        /// </summary>
+        internal static (int withTip, List<string> missing) CheckTooltips(Control root, ToolTip tips)
         {
             var missing = new List<string>();
             int withTip = 0;
 
-            Walk(this, c =>
+            Walk(root, c =>
             {
-                if (c is not (Button or TextBox or ListView or ComboBox)) return;
-                if (string.IsNullOrWhiteSpace(_tips.GetToolTip(c))) missing.Add($"{c.GetType().Name} \"{c.Text}\"");
+                if (c is not (Button or TextBox or ListView or ListBox or ComboBox)) return;
+                if (string.IsNullOrWhiteSpace(tips.GetToolTip(c))) missing.Add($"{c.GetType().Name} \"{c.Text}\"");
                 else withTip++;
             });
 
@@ -685,6 +692,26 @@ namespace CryptoProExport.App
             {
                 Check(c.GetType().Name, c.Text);
                 Check(c.GetType().Name + ".Tip", _tips.GetToolTip(c));
+            });
+            return bad;
+        }
+
+        /// <summary>Те же проверки надписей для чужого окна — см. <see cref="CheckTooltips(Control, ToolTip)"/>.</summary>
+        internal static List<string> MissingTranslations(Control root, ToolTip tips)
+        {
+            var bad = new List<string>();
+
+            void Check(string where, string text)
+            {
+                if (!string.IsNullOrEmpty(text) && text.Contains(Strings.MissingMarkerStart, StringComparison.Ordinal))
+                    bad.Add(where + ": " + text);
+            }
+
+            Check("Form.Text", root.Text);
+            Walk(root, c =>
+            {
+                Check(c.GetType().Name, c.Text);
+                Check(c.GetType().Name + ".Tip", tips.GetToolTip(c));
             });
             return bad;
         }

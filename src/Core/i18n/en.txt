@@ -19,6 +19,8 @@ field.pin.hint = empty → prompt window
 tip.pin = Rutoken user PIN.\nEmpty → the system window will ask for the PIN (and if the token still has the factory PIN, 12345678 is used).\nCharacters are visible so you do not mistype blindly; the button next to the field hides them. The value is never stored.
 tip.find = Показывать только строки, где встречается набранное — в любой колонке,\nбез учёта регистра. Пустое поле показывает всё.\nСам обход носителей поиск не повторяет: фильтруется уже собранный список.
 tip.lang = Language of the interface, tooltips and messages.\nThe choice is remembered and applied on the next runs.\nSame from the command line: --lang en
+tip.lang.ok = Применить выбранный язык. Выбор запоминается и действует при следующих запусках.
+tip.lang.cancel = Закрыть окно, оставив прежний язык.
 
 # --- buttons ---
 btn.refresh = Refresh list

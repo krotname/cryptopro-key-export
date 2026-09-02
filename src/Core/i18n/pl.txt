@@ -19,6 +19,8 @@ field.pin.hint = puste → okno pytania
 tip.pin = PIN użytkownika Rutokena.\nPuste → o PIN zapyta okno systemowe (a jeśli na tokenie jest PIN fabryczny, zostanie użyty 12345678).\nZnaki są widoczne, aby nie pomylić się na ślepo; przycisk obok je ukrywa. Wartość nigdzie nie jest zapisywana.
 tip.find = Показывать только строки, где встречается набранное — в любой колонке,\nбез учёта регистра. Пустое поле показывает всё.\nСам обход носителей поиск не повторяет: фильтруется уже собранный список.
 tip.lang = Język interfejsu, podpowiedzi i komunikatów.\nWybór jest zapamiętywany i stosowany przy kolejnych uruchomieniach.\nTo samo z wiersza poleceń: --lang pl
+tip.lang.ok = Применить выбранный язык. Выбор запоминается и действует при следующих запусках.
+tip.lang.cancel = Закрыть окно, оставив прежний язык.
 
 # --- przyciski ---
 btn.refresh = Odśwież listę

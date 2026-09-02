@@ -19,6 +19,8 @@ field.pin.hint = để trống → cửa sổ hỏi
 tip.pin = Mã PIN người dùng của Rutoken.\nĐể trống → cửa sổ hệ thống sẽ hỏi PIN (nếu token còn PIN xuất xưởng thì dùng 12345678).\nCác ký tự hiển thị để không gõ sai khi không nhìn thấy; nút bên cạnh sẽ ẩn chúng. Giá trị không được lưu ở đâu cả.
 tip.find = Показывать только строки, где встречается набранное — в любой колонке,\nбез учёта регистра. Пустое поле показывает всё.\nСам обход носителей поиск не повторяет: фильтруется уже собранный список.
 tip.lang = Ngôn ngữ của giao diện, chú giải và thông báo.\nLựa chọn được ghi nhớ và áp dụng cho những lần chạy sau.\nTương tự từ dòng lệnh: --lang vi
+tip.lang.ok = Применить выбранный язык. Выбор запоминается и действует при следующих запусках.
+tip.lang.cancel = Закрыть окно, оставив прежний язык.
 
 # --- các nút ---
 btn.refresh = Làm mới danh sách

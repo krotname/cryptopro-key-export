@@ -19,6 +19,8 @@ field.pin.hint = vide → fenêtre de saisie
 tip.pin = PIN utilisateur du Rutoken.\nVide → le PIN sera demandé par la fenêtre du système (et si le jeton a encore le PIN d’usine, 12345678 est utilisé).\nLes caractères sont visibles pour éviter les fautes de frappe à l’aveugle ; le bouton voisin les masque. La valeur n’est enregistrée nulle part.
 tip.find = Показывать только строки, где встречается набранное — в любой колонке,\nбез учёта регистра. Пустое поле показывает всё.\nСам обход носителей поиск не повторяет: фильтруется уже собранный список.
 tip.lang = Langue de l’interface, des info-bulles et des messages.\nLe choix est mémorisé et appliqué aux lancements suivants.\nLa même chose en ligne de commande : --lang fr
+tip.lang.ok = Применить выбранный язык. Выбор запоминается и действует при следующих запусках.
+tip.lang.cancel = Закрыть окно, оставив прежний язык.
 
 # --- boutons ---
 btn.refresh = Actualiser la liste

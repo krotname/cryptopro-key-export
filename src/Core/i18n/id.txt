@@ -19,6 +19,8 @@ field.pin.hint = kosong → jendela permintaan
 tip.pin = PIN pengguna Rutoken.\nKosong → PIN akan diminta oleh jendela sistem (dan jika token masih memakai PIN pabrik, dipakai 12345678).\nKarakter terlihat agar tidak salah ketik secara buta; tombol di sebelahnya menyembunyikannya. Nilainya tidak disimpan di mana pun.
 tip.find = Показывать только строки, где встречается набранное — в любой колонке,\nбез учёта регистра. Пустое поле показывает всё.\nСам обход носителей поиск не повторяет: фильтруется уже собранный список.
 tip.lang = Bahasa antarmuka, tooltip, dan pesan.\nPilihan diingat dan diterapkan pada peluncuran berikutnya.\nHal yang sama dari baris perintah: --lang id
+tip.lang.ok = Применить выбранный язык. Выбор запоминается и действует при следующих запусках.
+tip.lang.cancel = Закрыть окно, оставив прежний язык.
 
 # --- tombol ---
 btn.refresh = Segarkan daftar

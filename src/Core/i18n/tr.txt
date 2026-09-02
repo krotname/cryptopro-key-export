@@ -19,6 +19,8 @@ field.pin.hint = boş → soru penceresi
 tip.pin = Rutoken kullanıcı PIN’i.\nBoş → PIN’i sistem penceresi soracaktır (belirteçte fabrika PIN’i duruyorsa 12345678 kullanılır).\nKarakterler körlemesine yanlış yazmamak için görünür; yanındaki düğme onları gizler. Değer hiçbir yere kaydedilmez.
 tip.find = Показывать только строки, где встречается набранное — в любой колонке,\nбез учёта регистра. Пустое поле показывает всё.\nСам обход носителей поиск не повторяет: фильтруется уже собранный список.
 tip.lang = Arayüzün, ipuçlarının ve iletilerin dili.\nSeçim hatırlanır ve sonraki açılışlarda uygulanır.\nKomut satırında aynısı: --lang tr
+tip.lang.ok = Применить выбранный язык. Выбор запоминается и действует при следующих запусках.
+tip.lang.cancel = Закрыть окно, оставив прежний язык.
 
 # --- düğmeler ---
 btn.refresh = Listeyi yenile
