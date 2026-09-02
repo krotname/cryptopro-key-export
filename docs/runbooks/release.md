@@ -103,9 +103,9 @@ gh release view v1.8.0 --json name,tagName,assets,createdAt
 - скачанный файл сходится по SHA-256 с содержимым `.sha256`:
 
 ```powershell
-gh release download v1.8.0 --dir "$env:TEMP\rel"
-Get-FileHash "$env:TEMP\rel\CryptoProExport-1.8.0.0-portable-x86.exe" -Algorithm SHA256
-Get-Content "$env:TEMP\rel\CryptoProExport-1.8.0.0-portable-x86.exe.sha256"
+gh release download v1.8.0 --dir "$env:TEMP\cpx-rel"
+Get-FileHash "$env:TEMP\cpx-rel\CryptoProExport-1.8.0.0-portable-x86.exe" -Algorithm SHA256
+Get-Content "$env:TEMP\cpx-rel\CryptoProExport-1.8.0.0-portable-x86.exe.sha256"
 ```
 
 Последний шаг — самопроверка **скачанного** файла: релиз проверяется тем же
@@ -114,8 +114,8 @@ exe недостаточно: это WinExe, своей консоли у нег
 только в перенаправленном файле (AGENTS п. 1). Нужны и код возврата, и маркер:
 
 ```powershell
-$exe = "$env:TEMPel\CryptoProExport-1.8.0.0-portable-x86.exe"
-$log = "$env:TEMPel\selftest.txt"
+$exe = "$env:TEMP\cpx-rel\CryptoProExport-1.8.0.0-portable-x86.exe"
+$log = "$env:TEMP\cpx-rel\selftest.txt"
 $p = Start-Process $exe '--selftest' -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput $log
 $out = [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($log))
 $out
