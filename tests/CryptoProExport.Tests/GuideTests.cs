@@ -85,6 +85,7 @@ namespace CryptoProExport.Tests
         [InlineData("tokenexport")]
         [InlineData("tokenfull")]
         [InlineData("keyexport")]
+        [InlineData("exportable")]
         [InlineData("install")]
         [InlineData("installed")]
         [InlineData("uninstall")]

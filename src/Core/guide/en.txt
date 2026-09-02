@@ -74,6 +74,13 @@ interface languages fall back to the English text.
   3) «Extract certificate», then «Make exportable».
   4) «View container» and «Export to PFX».
 
+  Without CryptoPro CSP the same is done by the exportable
+  command: it verifies both keys by d·G and builds a copy of the
+  container in a new folder with the export bit set in header.key
+  and the MAC recomputed. The key files are carried over as is and
+  the source folder is left untouched. Then install and topfx as
+  usual; keyexport via p12utility remains the fallback.
+
   About the container name: CryptoPro matches the name against the
   contents, so renaming a copy does not always work. If it fails,
   the program restores the original name and says so — the container
@@ -162,6 +169,7 @@ interface languages fall back to the English text.
   tokenfull <reader> <dir> [pin] [--container <id>]
                                       token + all remaining steps
   keyexport <folder> <cert.cer> [pw]  lift the export ban
+  exportable <folder> <new> [pw]      exportable copy (no CSP)
   install <folder> [name]             install a container into CSP
   installed                           show installed containers
   uninstall <folder>                  remove an installed container

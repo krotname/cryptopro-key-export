@@ -12,8 +12,11 @@
    совместимый путь для других файловых Рутокенов, но для S не используется: его
    файловые методы нестабильны на непустом носителе. APDU минует КриптоПро CSP,
    поэтому запрет на экспорт не мешает снять 6 файлов контейнера (`*.key`).
-2. **Снятие запрета на экспорт** — вызов КриптоПро `p12utility --cprepair --keyexport`
-   (перезаписывает `header.key`, помечая ключ экспортируемым). Сертификат для операции
+2. **Снятие запрета на экспорт** — двумя путями. Основной, без КриптоПро вовсе, — команда
+   `exportable`: она восстанавливает оба ключа контейнера по `d·G`, взводит бит экспорта в
+   `header.key`, пересчитывает имитовставку заголовка и складывает новую папку-контейнер,
+   не трогая исходную. Запасной путь — вызов КриптоПро `p12utility --cprepair --keyexport`
+   (перезаписывает `header.key` целиком, помечая ключ экспортируемым); сертификат для него
    извлекается из контейнера автоматически через CryptoAPI
    (`CryptGetKeyParam(KP_CERTIFICATE)`), пока токен вставлен.
 
@@ -277,6 +280,8 @@ src/Core/           библиотека (net10.0-windows)
   Pkcs11Token.cs       токены по PKCS#11 (Рутокен + JaCarta + ESMART): тип, PIN, контейнеры, .cer без CSP
   CertFromContainer.cs извлечение .cer и проверка прав ключа (CryptoAPI P/Invoke)
   ContainerKeyExtractor.cs закрытый ключ и сертификат из файлов контейнера, без CSP
+  ContainerFiles.cs    шесть *.key контейнера в памяти (диск, APDU или синтетика)
+  ExportableContainerBuilder.cs  экспортируемая копия контейнера без CSP (бит экспорта + MAC)
   GostKeyExport.cs     закрытый ключ ГОСТ в PKCS#8/PEM
   Pkcs12Export.cs      сборка .pfx своими силами (без certmgr и CSP)
   P12Utility.cs        обёртка p12utility (--cprepair/--keyexport/--cppublic)
@@ -382,6 +387,7 @@ CryptoProExport.exe export <destDir> [pin]
 CryptoProExport.exe tokenexport <reader> <outDir> [pin] [--container <technical-id>]
 CryptoProExport.exe tokenfull <reader> <outDir> [pin] [--container <technical-id>]
 CryptoProExport.exe keyexport <folder> <cert.cer> [pass]
+CryptoProExport.exe exportable <folder> <outFolder> [pass]  # экспортируемая копия без CSP и p12utility
 CryptoProExport.exe install <folder> [name]
 CryptoProExport.exe installed
 CryptoProExport.exe uninstall <folder>
@@ -407,10 +413,18 @@ CryptoProExport.exe --lang <код>          # язык вывода; можно
 Типичный сценарий без токена под рукой — контейнер уже снят в папку:
 
 ```
-CryptoProExport.exe keyexport C:\backup\mykey C:\backup\mykey\cert_exchange.cer
-CryptoProExport.exe install   C:\backup\mykey "Мой ключ (копия)"
+CryptoProExport.exe exportable C:\backup\mykey C:\backup\mykey-exp
+CryptoProExport.exe install    C:\backup\mykey-exp "Мой ключ (копия)"
 CryptoProExport.exe checkexport "Мой ключ (копия)"
-CryptoProExport.exe topfx     "Мой ключ (копия)" C:\backup\mykey.pfx пароль
+CryptoProExport.exe topfx      "Мой ключ (копия)" C:\backup\mykey.pfx пароль
+```
+
+`exportable` не нужны ни КриптоПро CSP, ни `p12utility`, и запрет снимается сразу с обоих
+ключей контейнера — в отличие от `keyexport`, который за вызов правит один ключ. Прежний путь
+через `p12utility` остаётся рабочим запасным вариантом:
+
+```
+CryptoProExport.exe keyexport C:\backup\mykey C:\backup\mykey\cert_exchange.cer
 ```
 
 Журналы каждого запуска — в `%LOCALAPPDATA%\CryptoProExport\logs`. Пароли в них не пишутся.

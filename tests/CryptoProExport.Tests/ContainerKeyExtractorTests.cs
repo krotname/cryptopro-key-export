@@ -271,34 +271,12 @@ namespace CryptoProExport.Tests
         }
 
         /// <summary>
-        /// Сертификат X.509 нужной формы: подпись фиктивная, потому что проверяется не она,
-        /// а разбор и выбор по открытому ключу. Открытый ключ лежит как у КриптоПро —
-        /// OCTET STRING из 64 байт (X‖Y little-endian) внутри BIT STRING.
+        /// Сертификат X.509 нужной формы для синтетического контейнера. Тело — в
+        /// <see cref="SyntheticContainer"/>: тот же сертификат нужен и сборщику
+        /// экспортируемой копии, и второго экземпляра для этого быть не должно.
         /// </summary>
-        internal static byte[] FakeCertificate(byte[] x, byte[] y, string name)
-        {
-            byte[] pub = new byte[64];
-            Array.Copy(ContainerKeyExtractor.Reverse(x), 0, pub, 0, 32);
-            Array.Copy(ContainerKeyExtractor.Reverse(y), 0, pub, 32, 32);
-
-            var algId = new AlgorithmIdentifier(
-                new DerObjectIdentifier("1.2.643.7.1.1.1.1"),
-                new DerSequence(new DerObjectIdentifier(CurveOid),
-                                new DerObjectIdentifier("1.2.643.7.1.1.2.2")));
-            var sigAlg = new AlgorithmIdentifier(new DerObjectIdentifier("1.2.643.7.1.1.3.2"));
-
-            var tbs = new V3TbsCertificateGenerator();
-            tbs.SetSerialNumber(new DerInteger(BigInteger.One));
-            tbs.SetIssuer(new X509Name(name));
-            tbs.SetSubject(new X509Name(name));
-            tbs.SetSignature(sigAlg);
-            tbs.SetStartDate(new Time(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
-            tbs.SetEndDate(new Time(new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
-            tbs.SetSubjectPublicKeyInfo(new SubjectPublicKeyInfo(algId, new DerOctetString(pub)));
-
-            return new DerSequence(tbs.GenerateTbsCertificate(), sigAlg,
-                                   new DerBitString(new byte[64])).GetEncoded();
-        }
+        internal static byte[] FakeCertificate(byte[] x, byte[] y, string name) =>
+            SyntheticContainer.FakeCertificate(x, y, name);
 
         private static BigInteger RandomMod(Random rng, BigInteger q)
         {
