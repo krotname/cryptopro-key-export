@@ -16,6 +16,19 @@ namespace CryptoProExport
         private const int FirstSlot = 1;
         private const int LastSlot = 9;
 
+        /// <summary>
+        /// Второй допущенный профиль — ESMART Token ГОСТ (MIK51, 72 КБ). В отличие от
+        /// «ISBC ESMART Token» и «ESMART Token USB 64K» он показывает не собственное имя, а
+        /// универсальный CCID-считыватель Feitian SCR301, в который можно вставить любую
+        /// смарт-карту. Поэтому имени считывателя здесь недостаточно: допуск требует точную
+        /// пару model/manufacturer PKCS#11 и live ATR самой карты, как у eToken PRO.
+        /// </summary>
+        internal const string GostExactAtr =
+            "3B 7C 95 00 00 45 53 4D 41 52 54 47 4F 53 54 31 30";
+        private const string GostExactModel = "ESMARTToken GOST";
+        private const string GostExactManufacturer = "ISBC";
+        private const string GostReaderFamily = "Feitian SCR301";
+
         private static readonly (int Suffix, string File)[] Files =
         {
             (0x06, "name.key"), (0x03, "header.key"),
@@ -27,10 +40,70 @@ namespace CryptoProExport
         public CancellationToken Cancel { get; set; } = CancellationToken.None;
         private void Say(string message) => Log?.Invoke(message);
 
+        /// <summary>Считыватель универсального CCID-семейства, за которым может стоять любая карта.</summary>
+        internal static bool IsGostReader(string reader)
+            => IsIndexedReader(reader, GostReaderFamily);
+
+        /// <summary>
+        /// Статическая часть допуска ESMART Token ГОСТ: точные model/manufacturer PKCS#11 и ATR
+        /// из метаданных. Одного свидетельства ESMART в модели мало — за универсальным
+        /// считывателем может оказаться другая карта того же вендора.
+        /// </summary>
+        internal static bool IsExactGostMetadata(Pkcs11TokenInfo token)
+            => token != null
+            && token.Kind == RutokenKind.Esmart
+            && IsGostReader(token.Reader)
+            && string.Equals((token.Model ?? string.Empty).Trim(), GostExactModel,
+                StringComparison.OrdinalIgnoreCase)
+            && string.Equals((token.Manufacturer ?? string.Empty).Trim(), GostExactManufacturer,
+                StringComparison.OrdinalIgnoreCase)
+            && IsExactGostAtr(token.Atr);
+
+        /// <summary>
+        /// Динамическая часть допуска: тот же считыватель прямо сейчас держит ровно одну карту и
+        /// её ATR совпадает с проверенным. Между опросом PKCS#11 и APDU карту можно подменить,
+        /// поэтому статических метаданных недостаточно.
+        /// </summary>
+        internal static bool IsExactLiveGostReader(Pkcs11TokenInfo token,
+                                                   IEnumerable<PcscReader> readers)
+        {
+            if (!IsExactGostMetadata(token)) return false;
+            int matches = 0;
+            foreach (PcscReader reader in readers ?? Array.Empty<PcscReader>())
+            {
+                if (reader == null || !reader.CardPresent
+                    || !string.Equals((reader.Name ?? string.Empty).Trim(), token.Reader.Trim(),
+                        StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (!IsExactGostAtr(reader.Atr)) return false;
+                matches++;
+            }
+            return matches == 1;
+        }
+
+        /// <summary>
+        /// ATR, который обязан показать считыватель при открытии сессии: у универсального SCR301 —
+        /// точная карта ESMART ГОСТ, у эксклюзивных имён имя считывателя уже задаёт модель.
+        /// </summary>
+        internal static string ExpectedAtr(string reader)
+            => IsGostReader(reader) ? GostExactAtr : null;
+
+        private static bool IsExactGostAtr(string atr)
+            => string.Equals((atr ?? string.Empty).Trim(), GostExactAtr,
+                StringComparison.OrdinalIgnoreCase);
+
+        private static bool IsIndexedReader(string reader, string family)
+        {
+            string value = (reader ?? string.Empty).Trim();
+            if (!value.StartsWith(family + " ", StringComparison.OrdinalIgnoreCase)) return false;
+            string index = value.Substring(family.Length + 1);
+            return index.Length > 0 && index.All(character => character is >= '0' and <= '9');
+        }
+
         public List<DirectTokenContainerRef> ListContainers(string reader)
         {
             var result = new List<DirectTokenContainerRef>();
-            using var session = PcscApduSession.Open(reader);
+            using var session = PcscApduSession.Open(reader, ExpectedAtr(reader));
             SelectStore(session);
             for (int slot = FirstSlot; slot <= LastSlot; slot++)
             {
@@ -69,7 +142,7 @@ namespace CryptoProExport
                 throw new LiteApduException(Strings.Format("err.lite.pin", "—"));
 
             var blobs = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
-            using var session = PcscApduSession.Open(reader);
+            using var session = PcscApduSession.Open(reader, ExpectedAtr(reader));
             SelectStore(session);
             VerifyPin(session, pin);
             foreach (var mapping in Files)

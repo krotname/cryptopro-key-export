@@ -806,6 +806,28 @@ GitHub Actions **работает** (`.github/workflows/ci.yml`). Прежнее
       (`SetProcessDpiAwarenessContext(-4)`), иначе Windows отдаёт ему виртуализированные
       координаты и снимок получается обрезанным.
 
+47. **ESMART Token ГОСТ (MIK51) — отдельный backend `EsmartGostApdu`, полный E2E (02.09.2026).**
+    - Носитель показывает **универсальный** CCID-считыватель `Feitian SCR301 0`
+      (`VID_096E/PID_0503`), а не собственное имя. Поэтому имя reader ничего не гарантирует:
+      допуск к APDU требует точную пару PKCS#11 `ESMARTToken GOST`/`ISBC` **и** live ATR
+      `3B 7C 95 … ESMARTGOST10` (как у eToken PRO). См. `EsmartApdu.IsExactGostMetadata` /
+      `IsExactLiveGostReader`; маршрут в `DirectTokenApdu` выбирается по `EsmartApdu.IsGostReader`.
+    - Файловая раскладка иная, чем у старого `EsmartApdu`, и **вынесена в `EsmartGostApdu`**:
+      `SELECT MF` → апплеты `F0 49 53 42 43 44 48` (ISBCDH) и `F0 49 53 42 43` (ISBC) →
+      контейнер по пути `8F01/7F0X` → ключевые EF плоско в `F011…F016` обычным DER (без
+      префикса `01`, добито нулями) → чтение открывает `VERIFY PIN` по ссылке **0x83** (не 0x81).
+      Суффиксы подряд: `01`=masks, `02`=primary, `03`=header, `04`=masks2, `05`=primary2,
+      `06`=name. Одна папка на контейнер, обе пары вместе. Backend без команд записи.
+    - Ключ читается открытым текстом (подтверждено и трассировкой `csptest` winscard-прокси):
+      `tokenfull` → 6 файлов → `p12utility` поднял обе пары до `0x0013089C`/`0x0012289C` →
+      HDIMAGE виден CSP → PFX обоими путями (`extractpfx` для OpenSSL, `topfx`/certmgr для
+      КриптоПро). Уборка удалила только своё; `deletekeyset` с токена показал диалог
+      «Аутентификация — КриптоПро CSP» (PIN вводится SendInput/SendKeys). Разбор:
+      `docs/hardware/esmart-token-gost.md`.
+    - Фото добавлены в серию: оригиналы несут EXIF `Orientation=RightTop`, поэтому
+      `build/token-photo-series.ps1` теперь делает `-auto-orient` до поворота (для прочих
+      оригиналов с `Undefined` это no-op — их `studio`-файлы байт-в-байт прежние).
+
 ## Git-процесс
 - Приватный репозиторий `krotname/cryptopro-key-export`, ветка `main`.
 - Перед завершением: `dotnet build -warnaserror` + `dotnet test` + `--selftest` OK + `git status` чистый + зелёный CI на PR.

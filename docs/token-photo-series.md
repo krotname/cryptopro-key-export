@@ -1,8 +1,8 @@
 # Каноническая фотосерия физических USB-токенов
 
-Срез от 27.08.2026 объединяет девять точно идентифицированных физических
-экземпляров: существующий eToken PRO и восемь новых моделей. Два оригинала в
-каждом каталоге остаются доказательными файлами, а `studio`-кадр служит только
+Срез объединяет десять точно идентифицированных физических экземпляров: eToken PRO,
+восемь моделей от 27.08.2026 и ESMART Token ГОСТ (добавлен 02.09.2026). Два оригинала
+в каждом каталоге остаются доказательными файлами, а `studio`-кадр служит только
 для навигации и визуального сравнения. Модельная идентификация и аппаратные
 признаки приведены в [рыночной и лабораторной матрице](token-market.md).
 
@@ -15,6 +15,8 @@
 | [![JaCarta LT](images/jacarta-lt/jacarta-lt-front-rear-studio.png)](images/jacarta-lt/jacarta-lt-front-rear-studio.png) | [![JaCarta LT Nano](images/jacarta-lt-nano/jacarta-lt-nano-front-rear-studio.png)](images/jacarta-lt-nano/jacarta-lt-nano-front-rear-studio.png) | [![Рутокен ЭЦП 2.0](images/rutoken-ecp-2/rutoken-ecp-2-front-rear-studio.png)](images/rutoken-ecp-2/rutoken-ecp-2-front-rear-studio.png) |
 | Рутокен ЭЦП 3.0 | Рутокен Lite | Рутокен S |
 | [![Рутокен ЭЦП 3.0](images/rutoken-ecp-3/rutoken-ecp-3-front-rear-studio.png)](images/rutoken-ecp-3/rutoken-ecp-3-front-rear-studio.png) | [![Рутокен Lite](images/rutoken-lite/rutoken-lite-front-rear-studio.png)](images/rutoken-lite/rutoken-lite-front-rear-studio.png) | [![Рутокен S](images/rutoken-s/rutoken-s-front-rear-studio.png)](images/rutoken-s/rutoken-s-front-rear-studio.png) |
+| ESMART Token ГОСТ | | |
+| [![ESMART Token ГОСТ](images/esmart-token-gost/esmart-token-gost-front-rear-studio.png)](images/esmart-token-gost/esmart-token-gost-front-rear-studio.png) | | |
 
 ## Воспроизводимая обработка
 
@@ -29,6 +31,10 @@ pwsh build/token-photo-series.ps1
 ImageMagick `7.1.2-27 Q16-HDRI x64`.
 
 - каждый ракурс берётся прямо из соответствующего `*-original.jpg/png`;
+- EXIF-ориентация нормализуется в пиксели через `-auto-orient` **до** поворота: снимки
+  ESMART Token ГОСТ несут флаг `Orientation=RightTop`, а разные операции ImageMagick
+  применяют его непоследовательно; для оригиналов без флага (`Undefined`) это no-op, и
+  прежние девять `studio`-файлов остаются байт-в-байт прежними;
 - разрешены только явно записанные в скрипте повороты на `0°`, `90°` или `180°`,
   crop, масштабирование и компоновка; отражение, маска, генеративная дорисовка и
   локальная ретушь не используются;
@@ -44,7 +50,7 @@ ImageMagick `7.1.2-27 Q16-HDRI x64`.
 - PNG очищаются от метаданных и сохраняются как 8-битный `sRGB` RGB.
 
 Два последовательных полных запуска на одной проверенной версии ImageMagick дали
-одинаковые SHA-256 всех девяти `studio`-файлов.
+одинаковые SHA-256 всех десяти `studio`-файлов.
 
 ## Размеры и SHA-256
 
@@ -120,14 +126,31 @@ ImageMagick `7.1.2-27 Q16-HDRI x64`.
 | [rear-original](images/rutoken-s/rutoken-s-rear-original.jpg) | `957×1280` | 94416 | `ba31587e9823c83247e1ba21e0f297bfb538eb8c0352f43439fd77850a3e0a6b` |
 | [front-rear-studio](images/rutoken-s/rutoken-s-front-rear-studio.png) | `2048×1152` | 1189536 | `d402da83aad7301898386eb8fe3d15e1dd144f59e10d902548afd620e25dbb12` |
 
+### ESMART Token ГОСТ
+
+Оригиналы сняты телефоном и несут EXIF `Orientation=RightTop` (хранимые пиксели
+`4000×3000`, к просмотру разворачиваются в `3000×4000`); сборка нормализует их
+`-auto-orient` до поворота.
+
+| Файл | Размер | Байты | SHA-256 |
+|---|---:|---:|---|
+| [front-original](images/esmart-token-gost/esmart-token-gost-front-original.jpg) | `4000×3000` | 1438228 | `fa21c3116c2af0293647c9863313059560dadd070e686cf3aa85d5849dcf7fa4` |
+| [rear-original](images/esmart-token-gost/esmart-token-gost-rear-original.jpg) | `4000×3000` | 1245790 | `fe26d291b080511ccd51579a2766808c906d781b5c078c0fd9b67b6655e407c6` |
+| [front-rear-studio](images/esmart-token-gost/esmart-token-gost-front-rear-studio.png) | `2048×1152` | 1267490 | `64eb0f3f53bc151a1d0a00fa15a142b39fd682b862b2d6f471349d5940bafaf5` |
+
 ## Проверки приёмки
 
-- в каждом из девяти модельных каталогов ровно три файла;
+- в каждом из десяти модельных каталогов ровно три файла;
 - 16 новых оригиналов побайтово совпадают с локальными raw-источниками по
-  SHA-256; два оригинала eToken PRO также не изменены;
-- все девять `studio`-кадров имеют `2048×1152`, лицевую сторону сверху,
+  SHA-256; два оригинала eToken PRO также не изменены; два оригинала ESMART Token
+  ГОСТ совпадают с исходными кадрами телефона;
+- все десять `studio`-кадров имеют `2048×1152`, лицевую сторону сверху,
   обратную снизу и USB-штекер слева;
 - каждый итоговый кадр сверялся с оригиналами на полном размере; надписи,
   контакты, отверстия, царапины и геометрия сохранены;
+- у ESMART Token ГОСТ наклейка напечатана для штекера справа, поэтому при
+  каноническом «штекер слева» лицевой текст читается перевёрнутым (как перевёрнутый
+  стикер на существующем ESMART Token) — все символы сохранены, зеркалирование не
+  применялось;
 - серийная маркировка Рутокен ЭЦП 3.0 остаётся только внутри доказательной
   фотографии и не переносится в текст.

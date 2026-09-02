@@ -7,7 +7,8 @@ APDU (мимо CSP), не читая боевых ключей владельц�
 `tokenfull → install → checkexport`, затем удалить только своё.
 
 Проверено 30.08.2026 разом на семи носителях: Рутокен S, Рутокен Lite, eToken
-PRO, два ESMART, две JaCarta LT (AGENTS.md п.43).
+PRO, два ESMART, две JaCarta LT (AGENTS.md п.43). ESMART Token ГОСТ (MIK51) добавлен
+02.09.2026 отдельным backend `EsmartGostApdu` (AGENTS.md п.47).
 
 ## 0. Безопасность (обязательно)
 
@@ -286,7 +287,8 @@ PKCS#11 не виден — холодный сброс карты (PC/SC `SCARD
 | Рутокен Lite | `RutokenLiteApdu` | **две** папки: базовая `<id>` (обмен) + `<id>_signature` | контейнеры = DF-индексы `lite_XX` |
 | eToken PRO | `JaCartaProApdu` | **две** папки | `--container` обязателен, только технический `jacartapro_XX` |
 | JaCarta LT | `JaCartaLtApdu` | одна папка, оба ключа | несколько контейнеров различаются байтом Type в таблице объектов (0x03, 0x0E…) — см. AGENTS п.43 |
-| ESMART (оба) | `EsmartApdu` | одна папка | `makecert`/`deletekeyset` показывают PIN-диалог; нужен `-password`/SendInput |
+| ESMART (USB 64K / Token) | `EsmartApdu` | одна папка | `makecert`/`deletekeyset` показывают PIN-диалог; нужен `-password`/SendInput |
+| ESMART Token ГОСТ (MIK51) | `EsmartGostApdu` | одна папка, оба ключа; контейнер `esmartgost_7F0X` | **универсальный** reader `Feitian SCR301 N`: имя ничего не гарантирует, допуск по точным model/manufacturer `ESMARTToken GOST`/`ISBC` + live ATR; путь `8F01/7F0X`, файлы `F011…F016`, VERIFY PIN reference `0x83`; `deletekeyset` — PIN-диалог, как у ESMART. См. AGENTS п.47 |
 
 - **Селектор `--container` матчит технический `OutputName`** (`rutokens_0B00`,
   `jacartalt_0F`), а не видимое имя. При вводе имени — «Контейнер «…» не найден».
