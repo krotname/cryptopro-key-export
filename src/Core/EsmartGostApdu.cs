@@ -27,6 +27,8 @@ namespace CryptoProExport
         private const int LastContainer = 16;   // 7F01…7F10
 
         // Апплеты, устанавливающие контекст чтения (порядок и значения — из трассы csptest).
+        // У ISBCDH хвостовой байт 00 обязателен: карта отвечает на точный 8-байтный AID
+        // (Lc=08). Проверено на железе — 7-байтный `F0 49 53 42 43 44 48` даёт 6A82.
         private static readonly byte[] AppletIsbcDh = Convert.FromHexString("F049534243444800");
         private static readonly byte[] AppletIsbc = Convert.FromHexString("F049534243");
 
@@ -39,10 +41,11 @@ namespace CryptoProExport
             (0x05, "primary2.key"), (0x04, "masks2.key"),
         };
 
-        // Ссылки PIN: 0x83 открывает чтение всех ключевых EF; 0x81 подтверждаем best-effort,
-        // чтобы совпасть с порядком штатного драйвера.
-        private static readonly byte[] PinReferences = { 0x81, 0x83 };
-        private const byte RequiredPinReference = 0x83;
+        // Чтение всех ключевых EF (обе пары) открывает VERIFY по одной ссылке 0x83 —
+        // проверено на железе. Спекулятивный VERIFY по 0x81 не шлём: если у карты
+        // разные секреты 0x81/0x83, подстановка 0x83-PIN в 0x81 молча сжигала бы попытку
+        // и могла заблокировать этот credential при повторных экспортах.
+        private const byte ReadPinReference = 0x83;
 
         public Action<string> Log { get; set; }
         public CancellationToken Cancel { get; set; } = CancellationToken.None;
@@ -196,24 +199,14 @@ namespace CryptoProExport
             if (pin.Length is < 4 or > 100 || pin.Any(character => character > 0x7F))
                 throw new LiteApduException(Strings.Format("err.lite.pin", "0x6A80"));
             byte[] bytes = System.Text.Encoding.ASCII.GetBytes(pin);
-            bool requiredOk = false;
-            foreach (byte reference in PinReferences)
-            {
-                var command = new byte[5 + bytes.Length];
-                command[0] = 0x00; command[1] = 0x20; command[2] = 0x00;
-                command[3] = reference; command[4] = checked((byte)bytes.Length);
-                Array.Copy(bytes, 0, command, 5, bytes.Length);
-                byte[] response = session.Transmit(command);
-                bool ok = PcscApduSession.IsOk(response);
-                if (reference == RequiredPinReference)
-                {
-                    if (!ok)
-                        throw new LiteApduException(Strings.Format(
-                            "err.lite.pin", "0x" + PcscApduSession.Status(response).ToString("X4")));
-                    requiredOk = true;
-                }
-            }
-            if (!requiredOk) throw ProtocolError("PIN_REF");
+            var command = new byte[5 + bytes.Length];
+            command[0] = 0x00; command[1] = 0x20; command[2] = 0x00;
+            command[3] = ReadPinReference; command[4] = checked((byte)bytes.Length);
+            Array.Copy(bytes, 0, command, 5, bytes.Length);
+            byte[] response = session.Transmit(command);
+            if (!PcscApduSession.IsOk(response))
+                throw new LiteApduException(Strings.Format(
+                    "err.lite.pin", "0x" + PcscApduSession.Status(response).ToString("X4")));
         }
 
         private static void ValidateBlobs(IReadOnlyDictionary<string, byte[]> blobs, string source)
