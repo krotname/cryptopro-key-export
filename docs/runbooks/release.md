@@ -108,8 +108,22 @@ Get-FileHash "$env:TEMP\rel\CryptoProExport-1.8.0.0-portable-x86.exe" -Algorithm
 Get-Content "$env:TEMP\rel\CryptoProExport-1.8.0.0-portable-x86.exe.sha256"
 ```
 
-Последний шаг — запустить скачанный exe с `--selftest`: релиз проверяется тем же
-способом, что и сборка, но уже на файле, который получит пользователь.
+Последний шаг — самопроверка **скачанного** файла: релиз проверяется тем же
+способом, что и сборка, но уже на том, что получит пользователь. Просто запустить
+exe недостаточно: это WinExe, своей консоли у него нет, и `SELFTEST OK` виден
+только в перенаправленном файле (AGENTS п. 1). Нужны и код возврата, и маркер:
+
+```powershell
+$exe = "$env:TEMPel\CryptoProExport-1.8.0.0-portable-x86.exe"
+$log = "$env:TEMPel\selftest.txt"
+$p = Start-Process $exe '--selftest' -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput $log
+$out = [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($log))
+$out
+if ($p.ExitCode -ne 0 -or $out -notmatch 'SELFTEST OK') { throw 'Самопроверка релиза не прошла' }
+```
+
+Из этого же вывода сверить строку «Процесс: x86, версия <версия>» — она должна
+совпадать с версией в имени файла.
 
 ## 6. Если job упал
 
