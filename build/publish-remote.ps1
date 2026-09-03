@@ -15,15 +15,15 @@
     данные. Результат — один exe — забирается обратно, для него считается SHA-256.
 
 .PARAMETER SshHost
-    Алиас или адрес сборщика. По умолчанию ubuntu-xeon (домашний Ubuntu-сервер).
+    Алиас или адрес сборщика. По умолчанию adler-black-u2.lan (домашний Ubuntu-сервер).
 
 .EXAMPLE
     pwsh build\publish-remote.ps1
-    pwsh build\publish-remote.ps1 -SshHost ubuntu-xeon -OutDir publish-remote
+    pwsh build\publish-remote.ps1 -SshHost adler-black-u2.lan -OutDir publish-remote
 #>
 [CmdletBinding()]
 param(
-    [string]$SshHost = 'ubuntu-xeon',
+    [string]$SshHost = 'adler-black-u2.lan',
     [string]$Rid = 'win-x86',
     [string]$Configuration = 'Release',
     [string]$OutDir = 'publish',

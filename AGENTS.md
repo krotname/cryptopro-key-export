@@ -60,7 +60,7 @@ Start-Process $exe "list"       -Wait -RedirectStandardOutput ls.txt -WindowStyl
 Портативная сборка (один exe, всё внутри):
 ```powershell
 pwsh build\publish.ps1           # publish\CryptoProExport.exe, ~53 МБ, других файлов в папке нет
-pwsh build\publish-remote.ps1    # то же, но собирает домашний Ubuntu-сервер (ubuntu-xeon)
+pwsh build\publish-remote.ps1    # то же, но собирает домашний Ubuntu-сервер (adler-black-u2)
 ```
 Сборка на Linux работает благодаря `EnableWindowsTargeting` в csproj: SDK берёт
 reference-пакеты Windows Desktop из NuGet. Компилируется там всё, включая WinForms;
@@ -114,7 +114,7 @@ GitHub Actions **работает** (`.github/workflows/ci.yml`). Прежнее
 `CI_RUNS_ON_WINDOWS` (`["windows-latest"]`) и `CI_RUNS_ON` (`["ubuntu-latest"]`) — они разные,
 значения несовместимы.
 
-**Резерв — домашний Linux-раннер `adler-ubuntu-xeon`** (метки `self-hosted,Linux,adler-ubuntu-xeon`,
+**Резерв — домашний Linux-раннер `adler-black-u2`** (каноническое имя хоста;
 всегда включён). На Linux компилируется весь проект, включая WinForms (`EnableWindowsTargeting`),
 и собирается портативный exe — этим он и полезен для ручной сборки (`build\publish-remote.ps1`).
 **Но автоматическим фолбэком CI он не является**: job'ы `build`/`architectures` в текущем `ci.yml`
