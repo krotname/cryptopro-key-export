@@ -1406,8 +1406,8 @@ namespace CryptoProExport.App
 
                 File.WriteAllBytes(dest, Pkcs12Export.Build(r, pfxPass, cert, name));
                 Log(Strings.Format("log.extractpfx.done", dest));
-                // Ограничение говорим сразу и на месте: иначе владелец решит, что это
-                // резервная копия, из которой ключ вернётся в КриптоПро (замечание Codex).
+                // Совместимость сообщаем сразу и на месте: это полноценная резервная
+                // копия, которую КриптоПро принимает при обратном импорте.
                 Log("  " + Strings.Get("log.extractpfx.note"));
             }
             catch (ContainerKeyException e)

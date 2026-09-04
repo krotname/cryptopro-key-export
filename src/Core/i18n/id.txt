@@ -45,10 +45,10 @@ group.service = Служебное:
 
 # --- выбор способа .pfx (только по-русски, AGENTS п. 17) ---
 btn.pfx.choice = Сохранить в PFX…
-tip.pfx.choice = Собрать файл .pfx с закрытым ключом. Способа два, и файлы получаются разные —\nвыбор со всеми пояснениями появится по нажатию:\n  • через КриптоПро (certmgr) — такой файл КриптоПро потом примет обратно;\n  • без КриптоПро, из папки снятого контейнера — для OpenSSL и других программ.
+tip.pfx.choice = Сохранить закрытый ключ в PFX одним из двух способов:\n  • через КриптоПро (certmgr) — из выбранного установленного контейнера;\n  • без КриптоПро — прямо из папки снятого контейнера.\nОба файла импортируются в КриптоПро; второй не требует установленного CSP при создании.
 dlg.pfx.choice.title = Сохранить в PFX
-dlg.pfx.choice.prompt = Оба способа дают файл .pfx с закрытым ключом, но это разные файлы. Выберите нужный.
-dlg.pfx.choice.csp = Такой файл КриптоПро потом примет обратно — берите его, если .pfx нужен как резервная копия ключа для КриптоПро.
+dlg.pfx.choice.prompt = Выберите источник ключа для PFX: установленный контейнер КриптоПро или папка снятого контейнера.
+dlg.pfx.choice.csp = Штатный certmgr экспортирует выбранный установленный контейнер; нужен КриптоПро CSP и экспортируемый ключ.
 
 tip.refresh = Langkah 1. Tampilkan daftar kontainer kunci:\n  • yang terlihat oleh CryptoPro CSP (termasuk pada token yang terpasang);\n  • yang ditemukan langsung pada Rutoken yang terhubung.\nTidak mengubah apa pun — hanya membaca. Tombol yang nyaman untuk memulai.
 tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
@@ -343,8 +343,7 @@ cli.token.certfail = gagal menyimpan sertifikat «{0}»: {1}
 btn.extractkey = Ekstrak kunci (PEM)
 btn.extractpfx = Buat PFX (tanpa CSP)
 tip.extractkey = Ekstrak kunci privat langsung dari kontainer berkas (6 berkas *.key), tanpa CryptoPro CSP.\nKunci didekripsi dengan primitif GOST bawaan dan disimpan sebagai PKCS#8/PEM (kompatibel dengan OpenSSL gost-engine).\nHanya bekerja untuk kontainer berkas (bukan untuk kunci yang tidak dapat diekstrak pada token). Perhatian: berkas .pem adalah kunci privat Anda — simpan sebagai rahasia.
-tip.extractpfx = Buat berkas PKCS#12 (.pfx) langsung dari kontainer berkas — tanpa CryptoPro CSP dan tanpa certmgr.\nKunci privat didekripsi dengan primitif GOST bawaan, sertifikat diambil dari header.key (jika tidak ada di sana, Anda dapat menunjuk berkas .cer).\nKunci di dalam .pfx dilindungi kata sandi (3DES PKCS#12), sertifikat disimpan terbuka. Perhatian: berkas .pfx berisi kunci privat Anda — jaga kerahasiaannya.
-Penting: CryptoPro TIDAK mengimpor berkas seperti ini — berkas ini untuk OpenSSL dan perangkat lunak non-CryptoPro lainnya. Untuk mengembalikan kunci ke CryptoPro gunakan tombol «Ekspor ke PFX» (lewat certmgr, perlu CSP terpasang).
+tip.extractpfx = Собрать файл PKCS#12 (.pfx) прямо из папки файлового контейнера — без КриптоПро CSP и без certmgr.\nЗакрытый ключ защищается совместимым с КриптоПро PBE 1.2.840.113549.1.12.1.80, сертификат берётся из header.key или указанного .cer.\nПолученный PFX импортируется в КриптоПро. Внимание: файл содержит закрытый ключ, храните его как секрет.
 status.extractkey = Mengekstrak kunci privat…
 status.extractpfx = Membuat PKCS#12…
 dlg.extractkey.save = Tempat menyimpan kunci privat (PEM)
@@ -360,7 +359,7 @@ log.extractkey.fail = Gagal mengekstrak kunci: {0}
 log.extractpfx.done = PKCS#12 dibuat tanpa CSP: {0}
 log.extractpfx.nocert = Kontainer tidak memuat sertifikat — tunjuk berkas .cer
 log.extractpfx.fail = Gagal membuat PKCS#12: {0}
-log.extractpfx.note = CryptoPro tidak mengimpor berkas ini — berkas ini untuk OpenSSL. Untuk CryptoPro gunakan «Ekspor ke PFX» (certmgr).
+log.extractpfx.note = PFX совместим с КриптоПро: при импорте создаётся контейнер с экспортируемым закрытым ключом.
 cli.usage.extractkey = ekstrak kunci privat dari kontainer berkas ke PKCS#8/PEM (tanpa CSP)
 cli.usage.extractpfx = buat PKCS#12 dari kontainer berkas (tanpa CSP dan certmgr)
 cli.extractkey.ok = Kunci privat disimpan (PKCS#8/PEM): {0}

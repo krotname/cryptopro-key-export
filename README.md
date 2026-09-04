@@ -283,6 +283,7 @@ src/Core/           библиотека (net10.0-windows)
   ContainerFiles.cs    шесть *.key контейнера в памяти (диск, APDU или синтетика)
   ExportableContainerBuilder.cs  экспортируемая копия контейнера без CSP (бит экспорта + MAC)
   GostKeyExport.cs     закрытый ключ ГОСТ в PKCS#8/PEM
+  CryptoProPbe.cs      проприетарная PBE-защита ключа для PFX КриптоПро
   Pkcs12Export.cs      сборка .pfx своими силами (без certmgr и CSP)
   P12Utility.cs        обёртка p12utility (--cprepair/--keyexport/--cppublic)
   CertMgr.cs           обёртка certmgr: сертификат в хранилище + экспорт в .pfx
@@ -359,8 +360,8 @@ pwsh build\publish.ps1
    видимость проверяется именно в HDIMAGE, а найденный сертификат привязывается к
    точной HDIMAGE-копии. В списке она показывается отдельно от одноимённого токена.
 7. *Сохранить в PFX…* — собрать `.pfx` с закрытым ключом. Способ спрашивается в диалоге:
-   через certmgr КриптоПро (такой файл КриптоПро примет обратно; нужна выбранная строка)
-   либо без CSP из папки снятого контейнера (для OpenSSL, КриптоПро его не импортирует).
+   через certmgr КриптоПро из выбранной строки либо без CSP из папки снятого контейнера.
+   Оба варианта создают файл, который импортируется обратно в КриптоПро.
    Недоступный сейчас способ в диалоге погашен, и рядом написано почему.
 8. *Журнал* — открыть папку с журналами работы.
 9. *Справка* — встроенное руководство: сценарии, кнопки, команды, разбор ошибок.
@@ -393,7 +394,7 @@ CryptoProExport.exe installed
 CryptoProExport.exe uninstall <folder>
 CryptoProExport.exe topfx <containerName> <out.pfx> [password]
 CryptoProExport.exe extractkey <folder> <out.pem> [password]  # закрытый ключ в PKCS#8/PEM без CSP
-CryptoProExport.exe extractpfx <folder> <out.pfx> <pfxPass> [password] [cert.cer]  # .pfx без CSP, для OpenSSL
+CryptoProExport.exe extractpfx <folder> <out.pfx> <pfxPass> [password] [cert.cer]  # PFX без CSP, для КриптоПро
 CryptoProExport.exe liteexport <reader> <outDir> [pin]  # снять Lite по APDU; extractkey/extractpfx понимают неэкспортируемую форму primary.key
 CryptoProExport.exe full <destDir> [cert.cer] [pin]
 CryptoProExport.exe fingerprint           # отпечаток этой машины (для получения лицензии)

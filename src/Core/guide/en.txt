@@ -145,15 +145,12 @@ interface languages fall back to the English text.
   does not fit the selected row is greyed out, and its own tooltip
   says why.
 
-  "Save to PFX..." asks which file you need, and the files are
-  DIFFERENT. "Export to PFX" goes through CryptoPro's certmgr, and
-  CryptoPro will take that file back; it works on the row selected in
-  the list. "Build PFX (no CSP)" builds the file on its own from the
-  extracted container folder — but CryptoPro will NOT import it: it is
-  meant for OpenSSL and other software. For a backup you plan to
-  restore into CryptoPro, take the first one. The dialog spells the
-  difference out next to each button, and a way that is not available
-  right now is greyed out with the reason beside it.
+  "Save to PFX..." offers two sources for the same compatible result.
+  "Export to PFX" goes through CryptoPro's certmgr and works on the row
+  selected in the list. "Build PFX (no CSP)" reads an extracted
+  container folder itself and does not require CryptoPro when creating
+  the file. Both files import into CryptoPro. A way that is not
+  available right now is greyed out with the reason beside it.
 
 
 5. COMMAND LINE
@@ -175,7 +172,7 @@ interface languages fall back to the English text.
   uninstall <folder>                  remove an installed container
   topfx <container> <file.pfx> [pw]   export to PKCS#12
   extractkey <folder> <file.pem> [pw] extract the key to PKCS#8/PEM (no CSP)
-  extractpfx <folder> <file.pfx> <pw> build a PKCS#12 for OpenSSL;
+  extractpfx <folder> <file.pfx> <pw> build a PKCS#12 without CSP;
                                       then [container-pw] [cert.cer]
   liteexport <reader> <dir> [pin]     read a Lite container by APDU + recover
   full <folder> [cert.cer] [pin]      file-backed Rutoken S cycle

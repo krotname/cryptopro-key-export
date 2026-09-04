@@ -11,7 +11,6 @@ using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Macs;
 using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Paddings;
-using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Security;
 
 namespace CryptoProExport
@@ -24,31 +23,33 @@ namespace CryptoProExport
     /// Что внутри получившегося файла:
     ///   PFX { version 3, authSafe = ContentInfo(data), macData }
     ///   authSafe → AuthenticatedSafe = SEQUENCE OF ContentInfo:
-    ///     • ContentInfo(data) → SafeContents { certBag }        — сертификат открытым текстом;
-    ///     • ContentInfo(data) → SafeContents { pkcs8ShroudedKeyBag } — закрытый ключ под паролем.
+    ///     • ContentInfo(data) → SafeContents { pkcs8ShroudedKeyBag } — ключ под PBE КриптоПро;
+    ///     • ContentInfo(encryptedData) → SafeContents { certBag } — сертификат под стандартным PBE.
     ///
-    /// Защита ключа — <c>pbeWithSHAAnd3-KeyTripleDES-CBC</c> (PKCS#12 KDF на SHA-1 + 3DES-CBC),
-    /// имитовставка файла — HMAC-SHA-1. Это самый широко читаемый набор: ГОСТ-овые PBE понимает
-    /// только КриптоПро, а 3DES/SHA-1 читают и КриптоПро, и Windows, и OpenSSL. Сертификат не
-    /// шифруется намеренно: он публичен, а незашифрованный certBag принимают все реализации.
+    /// Защита ключа — проприетарный PBE КриптоПро <c>1.2.840.113549.1.12.1.80</c>,
+    /// имитовставка файла — HMAC-SHA-1. Именно такой key bag КриптоПро принимает при обратном
+    /// импорте. Сертификат шифруется 3DES-PBE, как в файлах, созданных certmgr.
     ///
-    /// Закрытый ключ кладётся в том же виде, что и в <see cref="GostKeyExport"/> — PKCS#8 с
-    /// algorithm id-tc26-gost3410-12-256. Собирать его через <c>PrivateKeyInfoFactory</c> нельзя:
-    /// BouncyCastle подставляет туда OID gost2001 (1.2.643.2.2.19) и получается ключ, который
+    /// Внутренний ключевой blob повторяет формат PFX КриптоПро и содержит закрытый ключ
+    /// ГОСТ Р 34.10-2012 длиной 256 бит. Собирать его через <c>PrivateKeyInfoFactory</c> нельзя:
+    /// BouncyCastle подставляет OID gost2001 (1.2.643.2.2.19) и получается ключ, который
     /// объявляет себя алгоритмом 2001 года при параметрах 2012-го.
     /// </summary>
     public static class Pkcs12Export
     {
-        /// <summary>Итераций в PBE и в имитовставке. 2048 — то же, что кладут OpenSSL и Windows.</summary>
-        private const int Iterations = 2048;
+        /// <summary>Итераций в PBE и в имитовставке — как в файлах КриптоПро.</summary>
+        private const int Iterations = 2000;
 
-        private const int SaltLength = 8;
+        private const int MacSaltLength = 20;
+
+        private const string CryptoProProviderName =
+            "Crypto-Pro GOST R 34.10-2012 Cryptographic Service Provider";
 
         /// <summary>
         /// Собрать .pfx из результата разбора контейнера. Сертификат берётся из
         /// <paramref name="certificate"/>, а если он не задан — из самого контейнера
         /// (<see cref="ContainerKeyExtractor.Result.Certificate"/>). Имя <paramref name="friendlyName"/>
-        /// попадает в атрибут friendlyName обоих мешков; пустое — атрибут не добавляется.
+        /// попадает в атрибут friendlyName ключевого мешка; пустое — атрибут не добавляется.
         /// </summary>
         public static byte[] Build(ContainerKeyExtractor.Result result, string password,
                                    byte[] certificate = null, string friendlyName = null)
@@ -60,30 +61,28 @@ namespace CryptoProExport
                 throw new ContainerKeyException(Strings.Get("err.pfx.nocert"));
             CheckCertificateMatchesKey(certDer, result);
 
-            byte[] pkcs8 = GostKeyExport.ToPkcs8Der(result);
             var random = new SecureRandom();
 
-            // localKeyId связывает сертификат с ключом: без него Windows ставит их в хранилище
-            // как несвязанную пару, и «сертификат с закрытым ключом» не собирается.
-            byte[] localKeyId = Sha1(result.PublicX);
+            // В PFX КриптоПро localKeyId — little-endian KeySpec: 1 для обмена, 2 для подписи.
+            byte[] localKeyId = { result.SignatureKey ? (byte)2 : (byte)1, 0, 0, 0 };
 
             var certBag = new SafeBag(
                 PkcsObjectIdentifiers.CertBag,
                 new CertBag(PkcsObjectIdentifiers.X509Certificate, new DerOctetString(certDer)).ToAsn1Object(),
-                Attributes(localKeyId, friendlyName));
+                Attributes(localKeyId, friendlyName: null, includeProvider: false));
 
             var keyBag = new SafeBag(
                 PkcsObjectIdentifiers.Pkcs8ShroudedKeyBag,
-                Shroud(pkcs8, password, random).ToAsn1Object(),
-                Attributes(localKeyId, friendlyName));
+                CryptoProPbe.Shroud(result, password, random).ToAsn1Object(),
+                Attributes(localKeyId, friendlyName, includeProvider: true));
 
             byte[] authSafe = new DerSequence(
-                DataContentInfo(new DerSequence(certBag)),
-                DataContentInfo(new DerSequence(keyBag))).GetEncoded();
+                DataContentInfo(new DerSequence(keyBag)),
+                EncryptedContentInfo(new DerSequence(certBag).GetEncoded(), password, random)).GetEncoded();
 
             return new Pfx(
-                new ContentInfo(PkcsObjectIdentifiers.Data, new BerOctetString(authSafe)),
-                Mac(authSafe, password, random)).GetEncoded();
+                new ContentInfo(PkcsObjectIdentifiers.Data, new DerOctetString(authSafe)),
+                Mac(authSafe, password, random)).GetEncoded(Asn1Encodable.Der);
         }
 
         /// <summary>
@@ -104,26 +103,10 @@ namespace CryptoProExport
                 throw new ContainerKeyException(Strings.Get("err.pfx.certmismatch"));
         }
 
-        /// <summary>Зашифровать PKCS#8 паролем: pbeWithSHAAnd3-KeyTripleDES-CBC.</summary>
-        private static EncryptedPrivateKeyInfo Shroud(byte[] pkcs8, string password, SecureRandom random)
-        {
-            byte[] salt = new byte[SaltLength];
-            random.NextBytes(salt);
-
-            var cipher = new PaddedBufferedBlockCipher(new CbcBlockCipher(new DesEdeEngine()));
-            cipher.Init(true, DeriveCipherParameters(password, salt));
-            byte[] encrypted = cipher.DoFinal(pkcs8);
-
-            var algId = new AlgorithmIdentifier(
-                PkcsObjectIdentifiers.PbeWithShaAnd3KeyTripleDesCbc,
-                new Pkcs12PbeParams(salt, Iterations));
-            return new EncryptedPrivateKeyInfo(algId, encrypted);
-        }
-
         /// <summary>Имитовставка всего файла: HMAC-SHA-1 на ключе, выведенном из пароля (PKCS#12 KDF, ID 3).</summary>
         private static MacData Mac(byte[] authSafe, string password, SecureRandom random)
         {
-            byte[] salt = new byte[SaltLength];
+            byte[] salt = new byte[MacSaltLength];
             random.NextBytes(salt);
 
             var gen = new Pkcs12ParametersGenerator(new Sha1Digest());
@@ -134,16 +117,8 @@ namespace CryptoProExport
             byte[] digest = new byte[mac.GetMacSize()];
             mac.DoFinal(digest, 0);
 
-            var algId = new AlgorithmIdentifier(OiwObjectIdentifiers.IdSha1, DerNull.Instance);
+            var algId = new AlgorithmIdentifier(OiwObjectIdentifiers.IdSha1);
             return new MacData(new DigestInfo(algId, digest), salt, Iterations);
-        }
-
-        /// <summary>Ключ и вектор инициализации 3DES по PKCS#12 KDF (SHA-1, ID 1 и 2).</summary>
-        private static ICipherParameters DeriveCipherParameters(string password, byte[] salt)
-        {
-            var gen = new Pkcs12ParametersGenerator(new Sha1Digest());
-            gen.Init(PbeParametersGenerator.Pkcs12PasswordToBytes(Chars(password)), salt, Iterations);
-            return gen.GenerateDerivedParameters("DESEDE", 192, 64);
         }
 
         /// <summary>Пустой пароль — пустой массив символов: BouncyCastle сам даёт для него пустую строку байт.</summary>
@@ -151,9 +126,32 @@ namespace CryptoProExport
 
         /// <summary>ContentInfo типа data, внутри которого лежит DER переданной структуры.</summary>
         private static ContentInfo DataContentInfo(Asn1Encodable content) =>
-            new ContentInfo(PkcsObjectIdentifiers.Data, new BerOctetString(content.GetEncoded()));
+            new ContentInfo(PkcsObjectIdentifiers.Data, new DerOctetString(content.GetEncoded()));
 
-        private static Asn1Set Attributes(byte[] localKeyId, string friendlyName)
+        private static ContentInfo EncryptedContentInfo(byte[] content, string password,
+                                                        SecureRandom random)
+        {
+            byte[] salt = new byte[8];
+            random.NextBytes(salt);
+            var generator = new Pkcs12ParametersGenerator(new Sha1Digest());
+            generator.Init(PbeParametersGenerator.Pkcs12PasswordToBytes(Chars(password)),
+                           salt, Iterations);
+            var cipher = new PaddedBufferedBlockCipher(new CbcBlockCipher(new DesEdeEngine()));
+            cipher.Init(true, generator.GenerateDerivedParameters("DESEDE", 192, 64));
+            byte[] encrypted = cipher.DoFinal(content);
+
+            var algorithm = new AlgorithmIdentifier(
+                PkcsObjectIdentifiers.PbeWithShaAnd3KeyTripleDesCbc,
+                new Pkcs12PbeParams(salt, Iterations));
+            var encryptedContent = new DerSequence(
+                PkcsObjectIdentifiers.Data,
+                algorithm,
+                new DerTaggedObject(false, 0, new DerOctetString(encrypted)));
+            var encryptedData = new DerSequence(DerInteger.ValueOf(0), encryptedContent);
+            return new ContentInfo(PkcsObjectIdentifiers.EncryptedData, encryptedData);
+        }
+
+        private static Asn1Set Attributes(byte[] localKeyId, string friendlyName, bool includeProvider)
         {
             var attrs = new List<Asn1Encodable>
             {
@@ -161,19 +159,14 @@ namespace CryptoProExport
             };
             if (!string.IsNullOrEmpty(friendlyName))
                 attrs.Add(Attribute(PkcsObjectIdentifiers.Pkcs9AtFriendlyName, new DerBmpString(friendlyName)));
+            if (includeProvider)
+                attrs.Add(Attribute(new DerObjectIdentifier("1.3.6.1.4.1.311.17.1"),
+                                    new DerBmpString(CryptoProProviderName)));
             return new DerSet(attrs.ToArray());
         }
 
         private static Asn1Sequence Attribute(DerObjectIdentifier oid, Asn1Encodable value) =>
             new DerSequence(oid, new DerSet(value));
 
-        private static byte[] Sha1(byte[] data)
-        {
-            var d = new Sha1Digest();
-            d.BlockUpdate(data, 0, data.Length);
-            byte[] outp = new byte[d.GetDigestSize()];
-            d.DoFinal(outp, 0);
-            return outp;
-        }
     }
 }
