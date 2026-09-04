@@ -4,9 +4,13 @@ using System.Linq;
 using CryptoProExport;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.Pkcs;
-using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.Math;
-using Org.BouncyCastle.Pkcs;
+using Org.BouncyCastle.Asn1.X509;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Generators;
+using Org.BouncyCastle.Crypto.Modes;
+using Org.BouncyCastle.Crypto.Paddings;
 using Xunit;
 
 namespace CryptoProExport.Tests
@@ -14,15 +18,15 @@ namespace CryptoProExport.Tests
     /// <summary>
     /// Сборка PKCS#12 своими силами. Проверка круговая и на синтетике: контейнер собирается тем
     /// же кодом, что и разбирается (см. <see cref="ContainerKeyExtractorTests"/>), из него
-    /// строится .pfx, затем .pfx читается обратно независимым разбором BouncyCastle — так
-    /// проверяются сразу имитовставка, PBE, структура мешков, ключ и сертификат.
+    /// строится .pfx, затем независимо проверяются структура мешков, CryptoPro PBE, ключ
+    /// и зашифрованный мешок сертификата.
     /// </summary>
     public class Pkcs12ExportTests
     {
         private const string PfxPassword = "pfx-пароль";
 
         [Fact]
-        public void Pfx_RoundTripsThroughBouncyCastle()
+        public void Pfx_HasCryptoProCompatibleStructure()
         {
             string dir = NewTempDir();
             try
@@ -32,19 +36,47 @@ namespace CryptoProExport.Tests
 
                 byte[] pfx = Pkcs12Export.Build(result, PfxPassword, friendlyName: "тест");
 
-                var store = new Pkcs12StoreBuilder().Build();   // сам проверит имитовставку файла
-                store.Load(new MemoryStream(pfx), PfxPassword.ToCharArray());
+                var parsed = Pfx.GetInstance(Asn1Object.FromByteArray(pfx));
+                byte[] authSafe = Asn1OctetString.GetInstance(parsed.AuthSafe.Content).GetOctets();
+                var contents = Asn1Sequence.GetInstance(Asn1Object.FromByteArray(authSafe));
+                Assert.Equal(2, contents.Count);
 
-                string alias = store.Aliases.Single();
-                Assert.True(store.IsKeyEntry(alias));
+                var keyContent = ContentInfo.GetInstance(contents[0]);
+                Assert.Equal(PkcsObjectIdentifiers.Data, keyContent.ContentType);
+                var keySafe = Asn1Sequence.GetInstance(Asn1Object.FromByteArray(
+                    Asn1OctetString.GetInstance(keyContent.Content).GetOctets()));
+                var keyBag = SafeBag.GetInstance(keySafe[0]);
+                Assert.Equal(PkcsObjectIdentifiers.Pkcs8ShroudedKeyBag, keyBag.BagID);
+                var encryptedKey = EncryptedPrivateKeyInfo.GetInstance(keyBag.BagValue);
+                Assert.Equal(CryptoProPbe.Oid, encryptedKey.EncryptionAlgorithm.Algorithm.Id);
+                Assert.Equal(ContainerKeyExtractor.Reverse(built.PrivateKey),
+                             CryptoProPbe.Unshroud(encryptedKey, PfxPassword));
 
-                var priv = (ECPrivateKeyParameters)store.GetKey(alias).Key;
-                Assert.Equal(new BigInteger(1, built.PrivateKey), priv.D);
-
-                byte[] cert = store.GetCertificate(alias).Certificate.GetEncoded();
-                Assert.Equal(built.Certificate, cert);
+                var certContent = ContentInfo.GetInstance(contents[1]);
+                Assert.Equal(PkcsObjectIdentifiers.EncryptedData, certContent.ContentType);
+                byte[] certSafeDer = DecryptCertificateSafe(certContent, PfxPassword);
+                var certSafe = Asn1Sequence.GetInstance(Asn1Object.FromByteArray(certSafeDer));
+                var certBag = CertBag.GetInstance(SafeBag.GetInstance(certSafe[0]).BagValue);
+                Assert.Equal(built.Certificate, Asn1OctetString.GetInstance(certBag.CertValue).GetOctets());
             }
             finally { TryDelete(dir); }
+        }
+
+        private static byte[] DecryptCertificateSafe(ContentInfo contentInfo, string password)
+        {
+            var encryptedData = Asn1Sequence.GetInstance(contentInfo.Content);
+            var encryptedContentInfo = Asn1Sequence.GetInstance(encryptedData[1]);
+            var algorithm = AlgorithmIdentifier.GetInstance(encryptedContentInfo[1]);
+            Assert.Equal(PkcsObjectIdentifiers.PbeWithShaAnd3KeyTripleDesCbc, algorithm.Algorithm);
+            var pbe = Pkcs12PbeParams.GetInstance(algorithm.Parameters);
+            var tagged = Asn1TaggedObject.GetInstance(encryptedContentInfo[2]);
+            byte[] ciphertext = Asn1OctetString.GetInstance(tagged, false).GetOctets();
+            var generator = new Pkcs12ParametersGenerator(new Sha1Digest());
+            generator.Init(PbeParametersGenerator.Pkcs12PasswordToBytes(password.ToCharArray()),
+                           pbe.GetIV(), pbe.Iterations.IntValueExact);
+            var cipher = new PaddedBufferedBlockCipher(new CbcBlockCipher(new DesEdeEngine()));
+            cipher.Init(false, generator.GenerateDerivedParameters("DESEDE", 192, 64));
+            return cipher.DoFinal(ciphertext);
         }
 
         [Fact]
@@ -56,8 +88,15 @@ namespace CryptoProExport.Tests
                 ContainerKeyExtractorTests.BuildSyntheticContainer(dir, seed: 4, password: "");
                 byte[] pfx = Pkcs12Export.Build(ContainerKeyExtractor.Extract(dir, ""), PfxPassword);
 
-                var store = new Pkcs12StoreBuilder().Build();
-                Assert.ThrowsAny<Exception>(() => store.Load(new MemoryStream(pfx), "не тот".ToCharArray()));
+                var parsed = Pfx.GetInstance(Asn1Object.FromByteArray(pfx));
+                byte[] authSafe = Asn1OctetString.GetInstance(parsed.AuthSafe.Content).GetOctets();
+                var contents = Asn1Sequence.GetInstance(Asn1Object.FromByteArray(authSafe));
+                var keyContent = ContentInfo.GetInstance(contents[0]);
+                var keySafe = Asn1Sequence.GetInstance(Asn1Object.FromByteArray(
+                    Asn1OctetString.GetInstance(keyContent.Content).GetOctets()));
+                var encrypted = EncryptedPrivateKeyInfo.GetInstance(
+                    SafeBag.GetInstance(keySafe[0]).BagValue);
+                Assert.ThrowsAny<Exception>(() => CryptoProPbe.Unshroud(encrypted, "не тот"));
             }
             finally { TryDelete(dir); }
         }

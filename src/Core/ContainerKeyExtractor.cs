@@ -87,6 +87,15 @@ namespace CryptoProExport
             /// </summary>
             public byte[] Certificate { get; internal set; }
 
+            /// <summary>Ключ относится к паре подписи (<c>primary2.key</c>), а не обмена.</summary>
+            internal bool SignatureKey { get; set; }
+
+            /// <summary>Срок действия ключа из <c>header.key</c> в формате GeneralizedTime.</summary>
+            internal string KeyExpirationUtc { get; set; }
+
+            /// <summary>Кривая из AlgorithmIdentifier пары ключей в <c>header.key</c>.</summary>
+            internal string KeyAlgorithmCurveOid { get; set; }
+
             internal BigInteger D { get; set; }
         }
 
@@ -233,6 +242,11 @@ namespace CryptoProExport
                         PublicY = y,
                         FingerprintVerified = fingerprintMatched || certificate != null,
                         Certificate = certificate,
+                        SignatureKey = signature,
+                        KeyExpirationUtc = header.KeyExpirationUtc,
+                        KeyAlgorithmCurveOid = signature
+                            ? header.SignatureCurveOid
+                            : header.AgreementCurveOid,
                         D = d,
                     };
                 }
@@ -329,6 +343,12 @@ namespace CryptoProExport
 
             /// <summary>Сертификаты, найденные в header.key, в порядке появления (обычно 1–2).</summary>
             public List<byte[]> Certificates = new List<byte[]>();
+
+            /// <summary>Срок действия ключа из атрибута 1.2.643.2.2.37.3.10.</summary>
+            public string KeyExpirationUtc;
+
+            public string SignatureCurveOid;
+            public string AgreementCurveOid;
         }
 
         /// <summary>
@@ -348,6 +368,9 @@ namespace CryptoProExport
             var octets8 = new List<byte[]>();
             var header = new Header();
             Walk(root, oids, octets8, header.Certificates);
+            header.KeyExpirationUtc = FindKeyExpiration(root);
+            header.SignatureCurveOid = FindAlgorithmCurve(root, "1.2.643.7.1.1.1.1");
+            header.AgreementCurveOid = FindAlgorithmCurve(root, "1.2.643.7.1.1.6.1");
 
             foreach (string id in oids)
                 if (IsCurveOid(id) && !header.CurveOids.Contains(id)) header.CurveOids.Add(id);
@@ -358,6 +381,84 @@ namespace CryptoProExport
             header.Fingerprints.AddRange(octets8);
             header.Fingerprint = header.Fingerprints.Count > 0 ? header.Fingerprints[0] : null;
             return header;
+        }
+
+        private static string FindKeyExpiration(Asn1Object value)
+        {
+            switch (value)
+            {
+                case Asn1Sequence sequence:
+                    if (sequence.Count >= 2
+                        && sequence[0].ToAsn1Object() is DerObjectIdentifier oid
+                        && oid.Id == "1.2.643.2.2.37.3.10")
+                    {
+                        try
+                        {
+                            byte[] encoded = Asn1OctetString.GetInstance(sequence[1]).GetOctets();
+                            var inner = Asn1Sequence.GetInstance(Asn1Object.FromByteArray(encoded));
+                            var tagged = Asn1TaggedObject.GetInstance(inner[0]);
+                            return Asn1GeneralizedTime.GetInstance(tagged, false).TimeString;
+                        }
+                        catch (Exception)
+                        {
+                            return null;
+                        }
+                    }
+                    foreach (Asn1Encodable item in sequence)
+                    {
+                        string found = FindKeyExpiration(item.ToAsn1Object());
+                        if (found != null) return found;
+                    }
+                    break;
+                case Asn1Set set:
+                    foreach (Asn1Encodable item in set)
+                    {
+                        string found = FindKeyExpiration(item.ToAsn1Object());
+                        if (found != null) return found;
+                    }
+                    break;
+                case Asn1TaggedObject tagged:
+                    return FindKeyExpiration(tagged.GetBaseObject().ToAsn1Object());
+            }
+            return null;
+        }
+
+        private static string FindAlgorithmCurve(Asn1Object value, string algorithmOid)
+        {
+            switch (value)
+            {
+                case Asn1Sequence sequence:
+                    if (sequence.Count >= 2
+                        && sequence[0].ToAsn1Object() is DerObjectIdentifier oid
+                        && oid.Id == algorithmOid)
+                    {
+                        try
+                        {
+                            var parameters = Asn1Sequence.GetInstance(sequence[1]);
+                            return DerObjectIdentifier.GetInstance(parameters[0]).Id;
+                        }
+                        catch (Exception)
+                        {
+                            return null;
+                        }
+                    }
+                    foreach (Asn1Encodable item in sequence)
+                    {
+                        string found = FindAlgorithmCurve(item.ToAsn1Object(), algorithmOid);
+                        if (found != null) return found;
+                    }
+                    break;
+                case Asn1Set set:
+                    foreach (Asn1Encodable item in set)
+                    {
+                        string found = FindAlgorithmCurve(item.ToAsn1Object(), algorithmOid);
+                        if (found != null) return found;
+                    }
+                    break;
+                case Asn1TaggedObject tagged:
+                    return FindAlgorithmCurve(tagged.GetBaseObject().ToAsn1Object(), algorithmOid);
+            }
+            return null;
         }
 
         /// <summary>

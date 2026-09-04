@@ -45,10 +45,10 @@ group.service = Служебное:
 
 # --- выбор способа .pfx (только по-русски, AGENTS п. 17) ---
 btn.pfx.choice = Сохранить в PFX…
-tip.pfx.choice = Собрать файл .pfx с закрытым ключом. Способа два, и файлы получаются разные —\nвыбор со всеми пояснениями появится по нажатию:\n  • через КриптоПро (certmgr) — такой файл КриптоПро потом примет обратно;\n  • без КриптоПро, из папки снятого контейнера — для OpenSSL и других программ.
+tip.pfx.choice = Сохранить закрытый ключ в PFX одним из двух способов:\n  • через КриптоПро (certmgr) — из выбранного установленного контейнера;\n  • без КриптоПро — прямо из папки снятого контейнера.\nОба файла импортируются в КриптоПро; второй не требует установленного CSP при создании.
 dlg.pfx.choice.title = Сохранить в PFX
-dlg.pfx.choice.prompt = Оба способа дают файл .pfx с закрытым ключом, но это разные файлы. Выберите нужный.
-dlg.pfx.choice.csp = Такой файл КриптоПро потом примет обратно — берите его, если .pfx нужен как резервная копия ключа для КриптоПро.
+dlg.pfx.choice.prompt = Выберите источник ключа для PFX: установленный контейнер КриптоПро или папка снятого контейнера.
+dlg.pfx.choice.csp = Штатный certmgr экспортирует выбранный установленный контейнер; нужен КриптоПро CSP и экспортируемый ключ.
 
 tip.refresh = 1. adım. Anahtar kapsayıcılarının listesini göster:\n  • CryptoPro CSP’nin gördükleri (takılı belirteçtekiler dâhil);\n  • bağlı Rutoken’larda doğrudan bulunanlar.\nHiçbir şeyi değiştirmez — yalnızca okur. Başlamak için uygun düğme.
 tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
@@ -343,8 +343,7 @@ cli.token.certfail = «{0}» sertifikası kaydedilemedi: {1}
 btn.extractkey = Anahtarı çıkar (PEM)
 btn.extractpfx = PFX oluştur (CSP'siz)
 tip.extractkey = Özel anahtarı doğrudan bir dosya kabından (6 *.key dosyası) çıkarın — CryptoPro CSP olmadan.\nAnahtar yerleşik GOST ilkelleriyle çözülür ve PKCS#8/PEM olarak kaydedilir (OpenSSL gost-engine ile uyumlu).\nYalnızca dosya kapları için çalışır (token üzerindeki çıkarılamaz anahtarlar için değil). Dikkat: .pem dosyası sizin özel anahtarınızdır — gizli tutun.
-tip.extractpfx = PKCS#12 (.pfx) dosyasını doğrudan bir dosya kapsayıcısından oluşturun — CryptoPro CSP ve certmgr olmadan.\nÖzel anahtar yerleşik GOST ilkelleriyle çözülür, sertifika header.key içinden alınır (orada yoksa bir .cer dosyası gösterebilirsiniz).\n.pfx içindeki anahtar parolayla korunur (PKCS#12 3DES), sertifika açık durur. Dikkat: .pfx dosyası özel anahtarınızı içerir — gizli tutun.
-Önemli: CryptoPro böyle bir dosyayı içe AKTARMAZ — bu dosya OpenSSL ve CryptoPro dışındaki yazılımlar içindir. Anahtarı CryptoPro'ya geri almak için «PFX'e aktar» düğmesini kullanın (certmgr ile, kurulu CSP gerekir).
+tip.extractpfx = Собрать файл PKCS#12 (.pfx) прямо из папки файлового контейнера — без КриптоПро CSP и без certmgr.\nЗакрытый ключ защищается совместимым с КриптоПро PBE 1.2.840.113549.1.12.1.80, сертификат берётся из header.key или указанного .cer.\nПолученный PFX импортируется в КриптоПро. Внимание: файл содержит закрытый ключ, храните его как секрет.
 status.extractkey = Özel anahtar çıkarılıyor…
 status.extractpfx = PKCS#12 oluşturuluyor…
 dlg.extractkey.save = Özel anahtar nereye kaydedilsin (PEM)
@@ -360,7 +359,7 @@ log.extractkey.fail = Anahtar çıkarılamadı: {0}
 log.extractpfx.done = PKCS#12 CSP olmadan oluşturuldu: {0}
 log.extractpfx.nocert = Kapsayıcıda sertifika yok — bir .cer dosyası gösterin
 log.extractpfx.fail = PKCS#12 oluşturulamadı: {0}
-log.extractpfx.note = CryptoPro bu dosyayı içe aktarmaz — dosya OpenSSL içindir. CryptoPro için «PFX'e aktar» düğmesini kullanın (certmgr).
+log.extractpfx.note = PFX совместим с КриптоПро: при импорте создаётся контейнер с экспортируемым закрытым ключом.
 cli.usage.extractkey = özel anahtarı bir dosya kabından PKCS#8/PEM'e çıkar (CSP olmadan)
 cli.usage.extractpfx = dosya kapsayıcısından PKCS#12 oluştur (CSP ve certmgr olmadan)
 cli.extractkey.ok = Özel anahtar kaydedildi (PKCS#8/PEM): {0}

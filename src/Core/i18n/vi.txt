@@ -45,10 +45,10 @@ group.service = Служебное:
 
 # --- выбор способа .pfx (только по-русски, AGENTS п. 17) ---
 btn.pfx.choice = Сохранить в PFX…
-tip.pfx.choice = Собрать файл .pfx с закрытым ключом. Способа два, и файлы получаются разные —\nвыбор со всеми пояснениями появится по нажатию:\n  • через КриптоПро (certmgr) — такой файл КриптоПро потом примет обратно;\n  • без КриптоПро, из папки снятого контейнера — для OpenSSL и других программ.
+tip.pfx.choice = Сохранить закрытый ключ в PFX одним из двух способов:\n  • через КриптоПро (certmgr) — из выбранного установленного контейнера;\n  • без КриптоПро — прямо из папки снятого контейнера.\nОба файла импортируются в КриптоПро; второй не требует установленного CSP при создании.
 dlg.pfx.choice.title = Сохранить в PFX
-dlg.pfx.choice.prompt = Оба способа дают файл .pfx с закрытым ключом, но это разные файлы. Выберите нужный.
-dlg.pfx.choice.csp = Такой файл КриптоПро потом примет обратно — берите его, если .pfx нужен как резервная копия ключа для КриптоПро.
+dlg.pfx.choice.prompt = Выберите источник ключа для PFX: установленный контейнер КриптоПро или папка снятого контейнера.
+dlg.pfx.choice.csp = Штатный certmgr экспортирует выбранный установленный контейнер; нужен КриптоПро CSP и экспортируемый ключ.
 
 tip.refresh = Bước 1. Hiển thị danh sách container khoá:\n  • những cái CryptoPro CSP nhìn thấy (kể cả trên token đã cắm);\n  • những cái tìm thấy trực tiếp trên các Rutoken đang kết nối.\nKhông thay đổi gì — chỉ đọc. Bắt đầu từ nút này là tiện nhất.
 tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
@@ -343,8 +343,7 @@ cli.token.certfail = không lưu được chứng chỉ «{0}»: {1}
 btn.extractkey = Trích khóa (PEM)
 btn.extractpfx = Tạo PFX (không cần CSP)
 tip.extractkey = Trích khóa riêng trực tiếp từ vùng chứa tệp (6 tệp *.key), không cần CryptoPro CSP.\nKhóa được giải mã bằng các nguyên hàm GOST tích hợp và lưu dưới dạng PKCS#8/PEM (tương thích với OpenSSL gost-engine).\nChỉ hoạt động với vùng chứa tệp (không dùng cho khóa không thể trích xuất trên token). Cảnh báo: tệp .pem là khóa riêng của bạn — hãy giữ bí mật.
-tip.extractpfx = Tạo tệp PKCS#12 (.pfx) trực tiếp từ vùng chứa tệp — không cần CryptoPro CSP và không cần certmgr.\nKhóa riêng được giải mã bằng các nguyên hàm GOST tích hợp, chứng chỉ lấy từ header.key (nếu không có ở đó, bạn có thể chỉ tới tệp .cer).\nKhóa trong .pfx được bảo vệ bằng mật khẩu (3DES của PKCS#12), chứng chỉ để nguyên không mã hóa. Lưu ý: tệp .pfx chứa khóa riêng của bạn — hãy giữ bí mật.
-Quan trọng: CryptoPro KHÔNG nhập tệp như vậy — tệp này dành cho OpenSSL và các phần mềm ngoài CryptoPro. Để đưa khóa trở lại CryptoPro, hãy dùng nút «Xuất ra PFX» (qua certmgr, cần cài CSP).
+tip.extractpfx = Собрать файл PKCS#12 (.pfx) прямо из папки файлового контейнера — без КриптоПро CSP и без certmgr.\nЗакрытый ключ защищается совместимым с КриптоПро PBE 1.2.840.113549.1.12.1.80, сертификат берётся из header.key или указанного .cer.\nПолученный PFX импортируется в КриптоПро. Внимание: файл содержит закрытый ключ, храните его как секрет.
 status.extractkey = Đang trích khóa riêng…
 status.extractpfx = Đang tạo PKCS#12…
 dlg.extractkey.save = Nơi lưu khóa riêng (PEM)
@@ -360,7 +359,7 @@ log.extractkey.fail = Không thể trích khóa: {0}
 log.extractpfx.done = Đã tạo PKCS#12 không cần CSP: {0}
 log.extractpfx.nocert = Vùng chứa không có chứng chỉ — hãy chỉ tới tệp .cer
 log.extractpfx.fail = Không tạo được PKCS#12: {0}
-log.extractpfx.note = CryptoPro không nhập tệp này — tệp dành cho OpenSSL. Với CryptoPro hãy dùng «Xuất ra PFX» (certmgr).
+log.extractpfx.note = PFX совместим с КриптоПро: при импорте создаётся контейнер с экспортируемым закрытым ключом.
 cli.usage.extractkey = trích khóa riêng từ vùng chứa tệp sang PKCS#8/PEM (không cần CSP)
 cli.usage.extractpfx = tạo PKCS#12 từ vùng chứa tệp (không cần CSP và certmgr)
 cli.extractkey.ok = Đã lưu khóa riêng (PKCS#8/PEM): {0}

@@ -45,10 +45,10 @@ group.service = Служебное:
 
 # --- выбор способа .pfx (только по-русски, AGENTS п. 17) ---
 btn.pfx.choice = Сохранить в PFX…
-tip.pfx.choice = Собрать файл .pfx с закрытым ключом. Способа два, и файлы получаются разные —\nвыбор со всеми пояснениями появится по нажатию:\n  • через КриптоПро (certmgr) — такой файл КриптоПро потом примет обратно;\n  • без КриптоПро, из папки снятого контейнера — для OpenSSL и других программ.
+tip.pfx.choice = Сохранить закрытый ключ в PFX одним из двух способов:\n  • через КриптоПро (certmgr) — из выбранного установленного контейнера;\n  • без КриптоПро — прямо из папки снятого контейнера.\nОба файла импортируются в КриптоПро; второй не требует установленного CSP при создании.
 dlg.pfx.choice.title = Сохранить в PFX
-dlg.pfx.choice.prompt = Оба способа дают файл .pfx с закрытым ключом, но это разные файлы. Выберите нужный.
-dlg.pfx.choice.csp = Такой файл КриптоПро потом примет обратно — берите его, если .pfx нужен как резервная копия ключа для КриптоПро.
+dlg.pfx.choice.prompt = Выберите источник ключа для PFX: установленный контейнер КриптоПро или папка снятого контейнера.
+dlg.pfx.choice.csp = Штатный certmgr экспортирует выбранный установленный контейнер; нужен КриптоПро CSP и экспортируемый ключ.
 
 tip.refresh = Schritt 1. Die Liste der Schlüsselcontainer anzeigen:\n  • die für CryptoPro CSP sichtbaren (auch auf dem eingesteckten Token);\n  • die direkt auf angeschlossenen Rutoken gefundenen.\nÄndert nichts — liest nur. Ein guter Startpunkt.
 tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
@@ -343,8 +343,7 @@ cli.token.certfail = Zertifikat „{0}“ konnte nicht gespeichert werden: {1}
 btn.extractkey = Schlüssel extrahieren (PEM)
 btn.extractpfx = PFX erzeugen (ohne CSP)
 tip.extractkey = Den privaten Schlüssel direkt aus einem Dateicontainer (6 *.key-Dateien) extrahieren — ohne CryptoPro CSP.\nDer Schlüssel wird mit integrierten GOST-Primitiven entschlüsselt und als PKCS#8/PEM gespeichert (kompatibel mit OpenSSL gost-engine).\nFunktioniert nur für Dateicontainer (nicht für nicht extrahierbare Schlüssel auf einem Token). Achtung: Die .pem-Datei ist Ihr privater Schlüssel — bewahren Sie sie geheim auf.
-tip.extractpfx = Eine PKCS#12-Datei (.pfx) direkt aus einem Dateicontainer erzeugen — ohne CryptoPro CSP und ohne certmgr.\nDer private Schlüssel wird mit eingebauten GOST-Primitiven entschlüsselt, das Zertifikat stammt aus header.key (fehlt es dort, kann eine .cer-Datei angegeben werden).\nDer Schlüssel in der .pfx ist mit einem Passwort geschützt (PKCS#12 3DES), das Zertifikat liegt unverschlüsselt. Achtung: Die .pfx-Datei enthält Ihren privaten Schlüssel — bewahren Sie sie geheim auf.
-Wichtig: CryptoPro importiert eine solche Datei NICHT — sie ist für OpenSSL und andere Software außerhalb von CryptoPro gedacht. Um den Schlüssel zurück in CryptoPro zu bringen, nutzen Sie die Schaltfläche «Export nach PFX» (über certmgr, ein installiertes CSP ist nötig).
+tip.extractpfx = Собрать файл PKCS#12 (.pfx) прямо из папки файлового контейнера — без КриптоПро CSP и без certmgr.\nЗакрытый ключ защищается совместимым с КриптоПро PBE 1.2.840.113549.1.12.1.80, сертификат берётся из header.key или указанного .cer.\nПолученный PFX импортируется в КриптоПро. Внимание: файл содержит закрытый ключ, храните его как секрет.
 status.extractkey = Privater Schlüssel wird extrahiert…
 status.extractpfx = PKCS#12 wird erzeugt…
 dlg.extractkey.save = Wohin den privaten Schlüssel speichern (PEM)
@@ -360,7 +359,7 @@ log.extractkey.fail = Schlüssel konnte nicht extrahiert werden: {0}
 log.extractpfx.done = PKCS#12 ohne CSP erzeugt: {0}
 log.extractpfx.nocert = Im Container ist kein Zertifikat — geben Sie eine .cer-Datei an
 log.extractpfx.fail = PKCS#12 konnte nicht erzeugt werden: {0}
-log.extractpfx.note = CryptoPro importiert diese Datei nicht — sie ist für OpenSSL. Für CryptoPro nutzen Sie «Export nach PFX» (certmgr).
+log.extractpfx.note = PFX совместим с КриптоПро: при импорте создаётся контейнер с экспортируемым закрытым ключом.
 cli.usage.extractkey = privaten Schlüssel aus einem Dateicontainer als PKCS#8/PEM extrahieren (ohne CSP)
 cli.usage.extractpfx = PKCS#12 aus einem Dateicontainer erzeugen (ohne CSP und certmgr)
 cli.extractkey.ok = Privater Schlüssel gespeichert (PKCS#8/PEM): {0}

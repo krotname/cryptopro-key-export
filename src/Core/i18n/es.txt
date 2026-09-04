@@ -45,10 +45,10 @@ group.service = Служебное:
 
 # --- выбор способа .pfx (только по-русски, AGENTS п. 17) ---
 btn.pfx.choice = Сохранить в PFX…
-tip.pfx.choice = Собрать файл .pfx с закрытым ключом. Способа два, и файлы получаются разные —\nвыбор со всеми пояснениями появится по нажатию:\n  • через КриптоПро (certmgr) — такой файл КриптоПро потом примет обратно;\n  • без КриптоПро, из папки снятого контейнера — для OpenSSL и других программ.
+tip.pfx.choice = Сохранить закрытый ключ в PFX одним из двух способов:\n  • через КриптоПро (certmgr) — из выбранного установленного контейнера;\n  • без КриптоПро — прямо из папки снятого контейнера.\nОба файла импортируются в КриптоПро; второй не требует установленного CSP при создании.
 dlg.pfx.choice.title = Сохранить в PFX
-dlg.pfx.choice.prompt = Оба способа дают файл .pfx с закрытым ключом, но это разные файлы. Выберите нужный.
-dlg.pfx.choice.csp = Такой файл КриптоПро потом примет обратно — берите его, если .pfx нужен как резервная копия ключа для КриптоПро.
+dlg.pfx.choice.prompt = Выберите источник ключа для PFX: установленный контейнер КриптоПро или папка снятого контейнера.
+dlg.pfx.choice.csp = Штатный certmgr экспортирует выбранный установленный контейнер; нужен КриптоПро CSP и экспортируемый ключ.
 
 tip.refresh = Paso 1. Mostrar la lista de contenedores de claves:\n  • los visibles para CryptoPro CSP (incluido el token insertado);\n  • los encontrados directamente en los Rutoken conectados.\nNo modifica nada, solo lee. Es un buen punto de partida.
 tip.refresh.auto = Выполняется автоматически при показе окна; клавиша F5 делает то же самое.
@@ -343,8 +343,7 @@ cli.token.certfail = no se pudo guardar el certificado «{0}»: {1}
 btn.extractkey = Extraer clave (PEM)
 btn.extractpfx = Crear PFX (sin CSP)
 tip.extractkey = Extraer la clave privada directamente de un contenedor de archivos (6 archivos *.key), sin CryptoPro CSP.\nLa clave se descifra con primitivas GOST integradas y se guarda como PKCS#8/PEM (compatible con OpenSSL gost-engine).\nSolo funciona con contenedores de archivos (no con claves no exportables en un token). Atención: el archivo .pem es su clave privada; guárdelo en secreto.
-tip.extractpfx = Crear un archivo PKCS#12 (.pfx) directamente desde un contenedor de archivos, sin CryptoPro CSP y sin certmgr.\nLa clave privada se descifra con primitivas GOST integradas y el certificado se toma de header.key (si no está allí, puede indicar un archivo .cer).\nLa clave dentro del .pfx está protegida con contraseña (3DES de PKCS#12); el certificado queda sin cifrar. Atención: el archivo .pfx contiene su clave privada — guárdelo en secreto.
-Importante: CryptoPro NO importa este archivo: es para OpenSSL y otros programas ajenos a CryptoPro. Para devolver la clave a CryptoPro use el botón «Exportar a PFX» (mediante certmgr, requiere el CSP instalado).
+tip.extractpfx = Собрать файл PKCS#12 (.pfx) прямо из папки файлового контейнера — без КриптоПро CSP и без certmgr.\nЗакрытый ключ защищается совместимым с КриптоПро PBE 1.2.840.113549.1.12.1.80, сертификат берётся из header.key или указанного .cer.\nПолученный PFX импортируется в КриптоПро. Внимание: файл содержит закрытый ключ, храните его как секрет.
 status.extractkey = Extrayendo la clave privada…
 status.extractpfx = Creando PKCS#12…
 dlg.extractkey.save = Dónde guardar la clave privada (PEM)
@@ -360,7 +359,7 @@ log.extractkey.fail = No se pudo extraer la clave: {0}
 log.extractpfx.done = PKCS#12 creado sin CSP: {0}
 log.extractpfx.nocert = El contenedor no tiene certificado: indique un archivo .cer
 log.extractpfx.fail = No se pudo crear el PKCS#12: {0}
-log.extractpfx.note = CryptoPro no importa este archivo: es para OpenSSL. Para CryptoPro use «Exportar a PFX» (certmgr).
+log.extractpfx.note = PFX совместим с КриптоПро: при импорте создаётся контейнер с экспортируемым закрытым ключом.
 cli.usage.extractkey = extraer la clave privada de un contenedor de archivos a PKCS#8/PEM (sin CSP)
 cli.usage.extractpfx = crear un PKCS#12 desde un contenedor de archivos (sin CSP ni certmgr)
 cli.extractkey.ok = Clave privada guardada (PKCS#8/PEM): {0}
