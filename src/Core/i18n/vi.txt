@@ -454,3 +454,13 @@ log.token.replaced = Thiết bị trong đầu đọc đã bị thay; hãy làm 
 log.token.state.unknown = Không đọc được trạng thái hiện tại của thiết bị; thao tác đã dừng
 tip.pin.show = Hiện PIN trong ô nhập.\nHiện tại các ký tự đang bị ẩn.
 tip.pin.hide = Ẩn PIN trong ô nhập.\nHiện tại các ký tự đang hiển thị.
+
+# --- изоляция rtCOMLite ---
+err.rtcom.worker.noexe = Не удалось определить исполняемый файл для изолированного процесса rtCOMLite
+err.rtcom.worker.start = Не удалось запустить изолированный процесс rtCOMLite ({0}): {1}
+err.rtcom.worker.cancelled = Изолированная операция rtCOMLite остановлена по отмене
+err.rtcom.worker.timeout = Изолированный процесс rtCOMLite не ответил за {0} мс и был остановлен; приложение продолжает работу
+err.rtcom.worker.malformed = Изолированный процесс rtCOMLite вернул повреждённый ответ и был остановлен; приложение продолжает работу
+err.rtcom.worker.failed = Изолированная операция rtCOMLite завершилась ошибкой: {0}
+err.rtcom.worker.crashed = Изолированный процесс rtCOMLite аварийно завершился (код {0}); приложение продолжает работу
+err.rtcom.worker.incomplete = Изолированный процесс rtCOMLite вернул неполный ответ; приложение продолжает работу

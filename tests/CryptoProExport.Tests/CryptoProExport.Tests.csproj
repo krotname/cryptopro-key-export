@@ -17,5 +17,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Core\CryptoProExport.Core.csproj" />
+    <ProjectReference Include="..\CryptoProExport.WorkerFixture\CryptoProExport.WorkerFixture.csproj" />
   </ItemGroup>
 </Project>

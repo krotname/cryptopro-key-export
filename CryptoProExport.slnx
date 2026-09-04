@@ -8,5 +8,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/CryptoProExport.Tests/CryptoProExport.Tests.csproj" />
+    <Project Path="tests/CryptoProExport.WorkerFixture/CryptoProExport.WorkerFixture.csproj" />
   </Folder>
 </Solution>

@@ -454,3 +454,13 @@ log.token.replaced = Il supporto nel lettore è stato sostituito; aggiorna l'ele
 log.token.state.unknown = Non è stato possibile leggere lo stato attuale del supporto; operazione interrotta
 tip.pin.show = Mostrare il PIN nel campo.\nOra i caratteri sono nascosti.
 tip.pin.hide = Nascondere il PIN nel campo.\nOra i caratteri sono visibili.
+
+# --- изоляция rtCOMLite ---
+err.rtcom.worker.noexe = Не удалось определить исполняемый файл для изолированного процесса rtCOMLite
+err.rtcom.worker.start = Не удалось запустить изолированный процесс rtCOMLite ({0}): {1}
+err.rtcom.worker.cancelled = Изолированная операция rtCOMLite остановлена по отмене
+err.rtcom.worker.timeout = Изолированный процесс rtCOMLite не ответил за {0} мс и был остановлен; приложение продолжает работу
+err.rtcom.worker.malformed = Изолированный процесс rtCOMLite вернул повреждённый ответ и был остановлен; приложение продолжает работу
+err.rtcom.worker.failed = Изолированная операция rtCOMLite завершилась ошибкой: {0}
+err.rtcom.worker.crashed = Изолированный процесс rtCOMLite аварийно завершился (код {0}); приложение продолжает работу
+err.rtcom.worker.incomplete = Изолированный процесс rtCOMLite вернул неполный ответ; приложение продолжает работу

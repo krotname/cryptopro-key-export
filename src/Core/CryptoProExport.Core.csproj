@@ -11,7 +11,9 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="CryptoProExport" />
     <InternalsVisibleTo Include="CryptoProExport.Tests" />
+    <InternalsVisibleTo Include="CryptoProExport.WorkerFixture" />
   </ItemGroup>
   <!--
     PKCS#11 для Рутокен ЭЦП/Lite: их файловая память через rtCOMLite не видна, а PKCS#11

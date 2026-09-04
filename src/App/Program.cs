@@ -14,6 +14,12 @@ namespace CryptoProExport.App
         [STAThread]
         private static int Main(string[] args)
         {
+            // Worker стартует до SessionLog/CLI/GUI: machine-readable IPC идёт только по
+            // anonymous pipes, а дочерний процесс не создаёт второй журнал сеанса.
+            if (args.Length > 0 && string.Equals(args[0], RtComWorkerServer.Command,
+                                                  StringComparison.Ordinal))
+                return RtComWorkerServer.Run(args.Skip(1).ToArray());
+
             SessionLog.Prune();
             UseUtf8Output();
 
