@@ -109,10 +109,14 @@ interface languages fall back to the English text.
   Service:
     License               install a license (.jws) and verify it
     Show log              expand the log pane at the bottom
+    Level: normal         filter the visible log by detail level
     Log                   open the folder with the program logs
     Language...           interface language, tooltips and messages
     Help                  this window
     Cancel                stop the operation that is running
+
+  Level cycles through detailed, normal, warnings and errors. The session
+  file always keeps every line with a DEBUG/INFO/WARN/ERROR tag.
 
   The log pane at the bottom starts collapsed: the status bar is
   normally enough — it shows what is running and how the previous
