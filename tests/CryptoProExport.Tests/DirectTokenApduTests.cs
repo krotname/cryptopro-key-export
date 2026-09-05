@@ -382,6 +382,9 @@ namespace CryptoProExport.Tests
         [InlineData(RutokenKind.Esmart, true)]
         [InlineData(RutokenKind.Bifit, true)]
         [InlineData(RutokenKind.RutokenEcp, false)]
+        // JaCartaGost — доказанно АКТИВНЫЙ носитель (подпись на чипе, primary.key не читается;
+        // реверс 05.09.2026, docs/hardware/jacarta-2-gost.md). Как и RutokenEcp, остаётся вне
+        // Supports НЕ из-за незавершённого реверса, а потому что ключ из чипа не выходит.
         [InlineData(RutokenKind.JaCartaGost, false)]
         [InlineData(RutokenKind.Other, false)]
         public void Supports_ListsOnlyProvenPassiveBackends(RutokenKind kind, bool expected)
