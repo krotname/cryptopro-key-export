@@ -166,6 +166,7 @@ namespace CryptoProExport
                 case RutokenKind.RutokenEcp: return Find("Rutoken ECP / 2.0 / 3.0");
                 case RutokenKind.JaCartaLt: return Find("JaCarta LT");
                 case RutokenKind.JaCartaPro: return Find("eToken PRO (Java) / JaCarta PRO");
+                case RutokenKind.JaCartaGost: return Find("JaCarta-2 GOST");
                 case RutokenKind.Esmart: return Find("ESMART Token / ESMART Token GOST");
                 case RutokenKind.Bifit: return Find("MS_KEY K ANGARA (BIFIT)");
                 default: return null;

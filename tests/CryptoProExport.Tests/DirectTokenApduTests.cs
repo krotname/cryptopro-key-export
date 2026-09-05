@@ -249,6 +249,54 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void NonProBackends_AlsoSelectByVisibleContainerName()
+        {
+            // UX-фикс: у не-PRO семейств --container принимает и видимое имя контейнера, а не
+            // только технический OutputName. Совпадение по имени работает лишь когда оно
+            // однозначно и по OutputName ничего не нашлось.
+            var token = new Pkcs11TokenInfo
+            {
+                Kind = RutokenKind.RutokenLite,
+                Reader = "Aktiv Rutoken lite 0",
+            };
+            var containers = new[]
+            {
+                DirectRef(token, 1, "Иванов И.И."),
+                DirectRef(token, 2, "second"),
+            };
+
+            // Видимое имя приводит к нужной строке.
+            Assert.Equal("lite_01", Assert.Single(
+                DirectTokenApdu.SelectContainers(token, containers, "Иванов И.И.")).OutputName);
+            // Технический OutputName по-прежнему работает.
+            Assert.Equal("lite_02", Assert.Single(
+                DirectTokenApdu.SelectContainers(token, containers, "second")).OutputName);
+            // Неизвестное имя — по-прежнему ошибка.
+            Assert.Throws<ArgumentException>(() =>
+                DirectTokenApdu.SelectContainers(token, containers, "нет такого"));
+        }
+
+        [Fact]
+        public void JaCartaProSelection_NeverMatchesByVisibleName()
+        {
+            // Для eToken PRO/PRO имя из name.key намеренно не участвует в выборе: защищённые
+            // файлы читаются только у явно выбранного технического индекса.
+            var token = new Pkcs11TokenInfo
+            {
+                Kind = RutokenKind.JaCartaPro,
+                Reader = "Aladdin Token JC 0",
+            };
+            var containers = new[]
+            {
+                DirectRef(token, 1, "synthetic-one"),
+                DirectRef(token, 7, "personal-looking-name"),
+            };
+
+            Assert.Throws<ArgumentException>(() =>
+                DirectTokenApdu.SelectContainers(token, containers, "synthetic-one"));
+        }
+
+        [Fact]
         public void GlobalBatch_RejectsJaCartaProBeforeAnyContainerCanBeRead()
         {
             var tokens = new[]
@@ -332,7 +380,9 @@ namespace CryptoProExport.Tests
         [InlineData(RutokenKind.JaCartaLt, true)]
         [InlineData(RutokenKind.JaCartaPro, true)]
         [InlineData(RutokenKind.Esmart, true)]
+        [InlineData(RutokenKind.Bifit, true)]
         [InlineData(RutokenKind.RutokenEcp, false)]
+        [InlineData(RutokenKind.JaCartaGost, false)]
         [InlineData(RutokenKind.Other, false)]
         public void Supports_ListsOnlyProvenPassiveBackends(RutokenKind kind, bool expected)
         {

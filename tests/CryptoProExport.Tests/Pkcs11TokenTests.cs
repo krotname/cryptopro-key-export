@@ -253,6 +253,68 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void ConfirmedJaCartaPro_AcceptsSafeNetTokenJcReaderFamily()
+        {
+            // Тот же апплет PRO (model=PRO, manufacturer=Aladdin R.D., ATR как у eToken PRO)
+            // встречается и на носителе SafeNet под именем reader «SafeNet Token JC N».
+            var token = new Pkcs11TokenInfo
+            {
+                Kind = RutokenKind.JaCartaPro,
+                Reader = "SafeNet Token JC 0",
+                Model = "PRO",
+                Manufacturer = "Aladdin R.D.",
+                Atr = JaCartaProApdu.ExactAtr,
+            };
+
+            Assert.True(Pkcs11Token.IsConfirmedJaCartaPro(token));
+            Assert.True(JaCartaProApdu.IsExactLiveReader(token, new[]
+            {
+                new PcscReader { Name = token.Reader, CardPresent = true, Atr = JaCartaProApdu.ExactAtr },
+            }));
+
+            // Чужое имя reader к backend по-прежнему не допускается.
+            token.Reader = "Contoso Token JC 0";
+            Assert.False(Pkcs11Token.IsConfirmedJaCartaPro(token));
+        }
+
+        [Fact]
+        public void Classify_RecognizesJaCartaGostOnlyWithVendorEvidence()
+        {
+            // Живой JaCarta-2 ГОСТ сообщает PKCS#11-модель «eToken GOST» при manufacturer «Aladdin R.D.».
+            Assert.Equal(RutokenKind.JaCartaGost,
+                Pkcs11Token.Classify("eToken GOST", "Aladdin R.D."));
+            Assert.Equal(RutokenKind.JaCartaGost,
+                Pkcs11Token.Classify("JaCarta-2 GOST", "Aladdin R.D."));
+            Assert.Equal(RutokenKind.JaCartaGost,
+                Pkcs11Token.Classify("JaCarta GOST", "JaCarta"));
+
+            // Без независимого свидетельства вендора модель ГОСТ остаётся безопасным Other.
+            Assert.Equal(RutokenKind.Other, Pkcs11Token.Classify("eToken GOST"));
+            Assert.Equal(RutokenKind.Other, Pkcs11Token.Classify("JaCarta GOST"));
+
+            // Апплет JaCarta Laser — не ГОСТ, сюда не попадает.
+            Assert.Equal(RutokenKind.Other,
+                Pkcs11Token.Classify("JaCarta Laser", "Aladdin R.D."));
+
+            // Название семейства — торговая марка, одинаковая на всех языках.
+            Assert.Equal("JaCarta-2 GOST", Pkcs11Token.KindName(RutokenKind.JaCartaGost));
+        }
+
+        [Fact]
+        public void SmartCardReaders_ExcludesJaCartaGostFromFileWalk()
+        {
+            var tokens = new List<Pkcs11TokenInfo>
+            {
+                new Pkcs11TokenInfo { Reader = "ARDS JaCarta 0", Kind = RutokenKind.JaCartaGost },
+            };
+
+            var set = Pkcs11Token.SmartCardReaders(tokens);
+
+            Assert.Contains("ARDS JaCarta 0", set);
+            Assert.False(RutokenExporter.ShouldWalk("ARDS JaCarta 0", set));
+        }
+
+        [Fact]
         public void AttachPcscAtr_MatchesByReaderNameAndRequiresPresentCard()
         {
             var exact = new Pkcs11TokenInfo { Reader = "Aladdin Token JC 0" };

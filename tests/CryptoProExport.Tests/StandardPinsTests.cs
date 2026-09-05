@@ -43,6 +43,21 @@ namespace CryptoProExport.Tests
         /// а подставлять его за пользователя нельзя — это подтверждает и DirectTokenApduTests.
         /// </summary>
         [Fact]
+        public void ForKind_MapsJaCartaGostToRecognisedButUnsupportedEntry()
+        {
+            // JaCarta-2 ГОСТ распознаётся (имя, PIN в справке), но прямого APDU-пути ещё нет,
+            // поэтому запись помечена Supported=false и заводской PIN не подставляется автоматически.
+            StandardPin pin = StandardPins.ForKind(RutokenKind.JaCartaGost);
+
+            Assert.NotNull(pin);
+            Assert.Equal("JaCarta-2 GOST", pin.Model);
+            Assert.Equal("1234567890", pin.UserPin);
+            Assert.Equal("0987654321", pin.AdminPin);
+            Assert.False(pin.Supported);
+            Assert.Null(StandardPins.AutoFillUserPinFor(RutokenKind.JaCartaGost));
+        }
+
+        [Fact]
         public void AutoFill_IsOffForJaCartaProButValueStaysAvailable()
         {
             Assert.Equal("1234567890", StandardPins.UserPinFor(RutokenKind.JaCartaPro));

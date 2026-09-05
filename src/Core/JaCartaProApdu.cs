@@ -19,7 +19,15 @@ namespace CryptoProExport
         internal const string ExactAtr = "3B D5 18 00 81 31 FE 7D 80 73 C8 21 10 F4";
         private const string ExactModel = "PRO";
         private const string ExactManufacturer = "Aladdin R.D.";
-        private const string ReaderFamily = "Aladdin Token JC";
+
+        /// <summary>
+        /// Проверенные семейства считывателя апплета PRO. Корпус eToken PRO (Java) появляется под
+        /// именем <c>Aladdin Token JC N</c>; тот же апплет PRO на носителе SafeNet — под
+        /// <c>SafeNet Token JC N</c>. У обоих совпадают model=<c>PRO</c>, manufacturer=
+        /// <c>Aladdin R.D.</c> и live ATR <see cref="ExactAtr"/>, поэтому протокол чтения один и тот
+        /// же. Список закрытый: любое другое имя reader к этому backend не допускается.
+        /// </summary>
+        private static readonly string[] ReaderFamilies = { "Aladdin Token JC", "SafeNet Token JC" };
         private const string DisplayName = "eToken PRO (Java) / PRO";
         private const int LastContainerIndex = 15;
 
@@ -71,9 +79,14 @@ namespace CryptoProExport
         private static bool IsIndexedReader(string reader)
         {
             string value = (reader ?? string.Empty).Trim();
-            if (!value.StartsWith(ReaderFamily + " ", StringComparison.Ordinal)) return false;
-            string index = value.Substring(ReaderFamily.Length + 1);
-            return index.Length > 0 && index.All(character => character is >= '0' and <= '9');
+            foreach (string family in ReaderFamilies)
+            {
+                if (!value.StartsWith(family + " ", StringComparison.Ordinal)) continue;
+                string index = value.Substring(family.Length + 1);
+                if (index.Length > 0 && index.All(character => character is >= '0' and <= '9'))
+                    return true;
+            }
+            return false;
         }
 
         private static bool IsExactAtr(string atr)
