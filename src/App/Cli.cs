@@ -30,6 +30,7 @@ namespace CryptoProExport.App
             ("tokenfull <reader> <outDir> [pin] [--container <id>]",   "cli.usage.tokenfull"),
             ("keyexport <folder> <cert.cer> [pass]", "cli.usage.keyexport"),
             ("exportable <folder> <outFolder> [pass]", "cli.usage.exportable"),
+            ("restore <key.pem> <cert.cer> <outFolder> [pass]", "cli.usage.restore"),
             ("install <folder> [name]",              "cli.usage.install"),
             ("installed",                            "cli.usage.installed"),
             ("uninstall <folder>",                   "cli.usage.uninstall"),
@@ -53,7 +54,7 @@ namespace CryptoProExport.App
         /// и ввести лицензию.
         /// </summary>
         private static readonly string[] LicensedCommands =
-            { "export", "tokenexport", "tokenfull", "full", "keyexport", "exportable", "extractkey", "extractpfx", "liteexport", "angaraexport", "topfx" };
+            { "export", "tokenexport", "tokenfull", "full", "keyexport", "exportable", "restore", "extractkey", "extractpfx", "liteexport", "angaraexport", "topfx" };
 
         public static int Run(string[] args)
         {
@@ -375,6 +376,20 @@ namespace CryptoProExport.App
                             finally { rebuilt.WipeKeyMaterial(); }
                         }
                         finally { source.WipeKeyMaterial(); }
+                        return 0;
+                    }
+                    case "restore":
+                    {
+                        // Обратный CSP-free путь: незашифрованный PKCS#8 + обязательный
+                        // сертификат превращаются в новый файловый контейнер. Core до записи
+                        // проверяет алгоритм, кривую и d·G, а конечная папка появляется только
+                        // после повторного чтения временного контейнера.
+                        if (args.Length < 4) { Usage(); return 1; }
+                        var restored = Pkcs8ContainerRestore.RestoreToDirectory(
+                            args[1], args[2], args[3], args.Length > 4 ? args[4] : "");
+                        Out(Strings.Format("cli.restore.ok", restored.Directory));
+                        Out("  " + Strings.Format("cli.restore.key", restored.CurveOid,
+                            Convert.ToHexString(restored.PublicX)));
                         return 0;
                     }
                     case "install":

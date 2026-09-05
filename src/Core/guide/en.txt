@@ -81,6 +81,13 @@ interface languages fall back to the English text.
   the source folder is left untouched. Then install and topfx as
   usual; keyexport via p12utility remains the fallback.
 
+  The reverse no-CSP path is the restore command. It accepts a
+  PKCS#8 private key in DER or PEM and a mandatory X.509 certificate.
+  The algorithm, curve and d·G are verified before writing. The
+  container is built and read back in a temporary folder; the final
+  folder appears only after that check. Encrypted PKCS#8 is not yet
+  supported.
+
   About the container name: CryptoPro matches the name against the
   contents, so renaming a copy does not always work. If it fails,
   the program restores the original name and says so — the container
@@ -171,6 +178,8 @@ interface languages fall back to the English text.
                                       token + all remaining steps
   keyexport <folder> <cert.cer> [pw]  lift the export ban
   exportable <folder> <new> [pw]      exportable copy (no CSP)
+  restore <key.pem> <cert.cer> <new> [pw]
+                                      restore a container (no CSP)
   install <folder> [name]             install a container into CSP
   installed                           show installed containers
   uninstall <folder>                  remove an installed container
