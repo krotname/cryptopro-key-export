@@ -454,3 +454,13 @@ log.token.replaced = 读卡器中的载体已更换，请刷新列表后重试
 log.token.state.unknown = 无法读取载体的当前状态，操作已停止
 tip.pin.show = 在输入框中显示 PIN。\n当前字符已隐藏。
 tip.pin.hide = 隐藏输入框中的 PIN。\n当前字符可见。
+
+# --- изоляция rtCOMLite ---
+err.rtcom.worker.noexe = Не удалось определить исполняемый файл для изолированного процесса rtCOMLite
+err.rtcom.worker.start = Не удалось запустить изолированный процесс rtCOMLite ({0}): {1}
+err.rtcom.worker.cancelled = Изолированная операция rtCOMLite остановлена по отмене
+err.rtcom.worker.timeout = Изолированный процесс rtCOMLite не ответил за {0} мс и был остановлен; приложение продолжает работу
+err.rtcom.worker.malformed = Изолированный процесс rtCOMLite вернул повреждённый ответ и был остановлен; приложение продолжает работу
+err.rtcom.worker.failed = Изолированная операция rtCOMLite завершилась ошибкой: {0}
+err.rtcom.worker.crashed = Изолированный процесс rtCOMLite аварийно завершился (код {0}); приложение продолжает работу
+err.rtcom.worker.incomplete = Изолированный процесс rtCOMLite вернул неполный ответ; приложение продолжает работу

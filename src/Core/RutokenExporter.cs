@@ -114,6 +114,9 @@ namespace CryptoProExport
         private const int RT_LEAVE  = 0;   // CloseReader
         private const int OpenTimeoutMs = 5000;
 
+        /// <summary>Общий предел одного изолированного обхода rtCOMLite.</summary>
+        private const int DefaultWorkerTimeoutMs = 120000;
+
         /// <summary>Предохранитель: сколько объектов максимум берём из одного каталога токена.</summary>
         private const int MaxEntries = 512;
 
@@ -132,8 +135,8 @@ namespace CryptoProExport
         public Action<string> Log { get; set; } = _ => { };
 
         /// <summary>
-        /// Отмена. Проверяется между шагами обхода токена: вызов в COM прервать нельзя,
-        /// поэтому текущий файл дочитывается, а дальше работа прекращается.
+        /// Отмена. Родитель останавливает весь изолированный worker-процесс, поэтому зависший
+        /// или аварийный нативный вызов не удерживает GUI/CLI и не продолжает работу в фоне.
         /// </summary>
         public CancellationToken Cancel { get; set; } = CancellationToken.None;
 
@@ -215,12 +218,30 @@ namespace CryptoProExport
         /// </summary>
         public bool Started { get; private set; }
 
+        internal RtComWorkerLaunch WorkerLaunch { get; set; }
+        internal int WorkerTimeoutMs { get; set; } = DefaultWorkerTimeoutMs;
+
         public List<RutokenContainer> ReadAllContainers()
+        {
+            Started = false;
+            Cancel.ThrowIfCancellationRequested();
+            WorkerLaunch ??= RtComWorkerLaunch.CurrentApplication();
+            return RtComWorkerClient.Run(
+                WorkerLaunch, WorkerTimeoutMs, UserPin, SkipReaders, Log,
+                () => Started = true, Cancel);
+        }
+
+        /// <summary>
+        /// Небезопасная часть обхода. Вызывается только скрытой worker-точкой входа:
+        /// rtCOMLite остаётся в дочернем процессе, и native heap corruption не роняет GUI/CLI.
+        /// </summary>
+        internal List<RutokenContainer> ReadAllContainersInCurrentProcess(Action onStarted)
         {
             Cancel.ThrowIfCancellationRequested();
             var result = new List<RutokenContainer>();
             dynamic ctx = CreateContext();
             Started = true;
+            onStarted?.Invoke();
             Log(Strings.Get("token.connect"));
             try
             {

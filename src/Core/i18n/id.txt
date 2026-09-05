@@ -454,3 +454,13 @@ log.token.replaced = Media di pembaca diganti; segarkan daftar lalu coba lagi
 log.token.state.unknown = Status media saat ini tidak terbaca; operasi dihentikan
 tip.pin.show = Tampilkan PIN di kolom.\nSaat ini karakter disembunyikan.
 tip.pin.hide = Sembunyikan PIN di kolom.\nSaat ini karakter terlihat.
+
+# --- изоляция rtCOMLite ---
+err.rtcom.worker.noexe = Не удалось определить исполняемый файл для изолированного процесса rtCOMLite
+err.rtcom.worker.start = Не удалось запустить изолированный процесс rtCOMLite ({0}): {1}
+err.rtcom.worker.cancelled = Изолированная операция rtCOMLite остановлена по отмене
+err.rtcom.worker.timeout = Изолированный процесс rtCOMLite не ответил за {0} мс и был остановлен; приложение продолжает работу
+err.rtcom.worker.malformed = Изолированный процесс rtCOMLite вернул повреждённый ответ и был остановлен; приложение продолжает работу
+err.rtcom.worker.failed = Изолированная операция rtCOMLite завершилась ошибкой: {0}
+err.rtcom.worker.crashed = Изолированный процесс rtCOMLite аварийно завершился (код {0}); приложение продолжает работу
+err.rtcom.worker.incomplete = Изолированный процесс rtCOMLite вернул неполный ответ; приложение продолжает работу

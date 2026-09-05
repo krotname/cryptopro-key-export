@@ -454,3 +454,13 @@ log.token.replaced = 리더의 매체가 교체되었습니다. 목록을 새로
 log.token.state.unknown = 매체의 현재 상태를 읽지 못해 작업을 중단했습니다
 tip.pin.show = 입력란의 PIN을 표시합니다.\n지금은 문자가 가려져 있습니다.
 tip.pin.hide = 입력란의 PIN을 가립니다.\n지금은 문자가 보입니다.
+
+# --- изоляция rtCOMLite ---
+err.rtcom.worker.noexe = Не удалось определить исполняемый файл для изолированного процесса rtCOMLite
+err.rtcom.worker.start = Не удалось запустить изолированный процесс rtCOMLite ({0}): {1}
+err.rtcom.worker.cancelled = Изолированная операция rtCOMLite остановлена по отмене
+err.rtcom.worker.timeout = Изолированный процесс rtCOMLite не ответил за {0} мс и был остановлен; приложение продолжает работу
+err.rtcom.worker.malformed = Изолированный процесс rtCOMLite вернул повреждённый ответ и был остановлен; приложение продолжает работу
+err.rtcom.worker.failed = Изолированная операция rtCOMLite завершилась ошибкой: {0}
+err.rtcom.worker.crashed = Изолированный процесс rtCOMLite аварийно завершился (код {0}); приложение продолжает работу
+err.rtcom.worker.incomplete = Изолированный процесс rtCOMLite вернул неполный ответ; приложение продолжает работу

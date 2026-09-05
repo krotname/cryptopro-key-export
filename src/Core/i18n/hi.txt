@@ -454,3 +454,13 @@ log.token.replaced = रीडर में टोकन बदल गया —
 log.token.state.unknown = टोकन की मौजूदा स्थिति नहीं पढ़ी जा सकी — कार्रवाई रोक दी गई
 tip.pin.show = फ़ील्ड में PIN दिखाएँ.\nअभी अक्षर छिपे हुए हैं.
 tip.pin.hide = फ़ील्ड में PIN छिपाएँ.\nअभी अक्षर दिख रहे हैं.
+
+# --- изоляция rtCOMLite ---
+err.rtcom.worker.noexe = Не удалось определить исполняемый файл для изолированного процесса rtCOMLite
+err.rtcom.worker.start = Не удалось запустить изолированный процесс rtCOMLite ({0}): {1}
+err.rtcom.worker.cancelled = Изолированная операция rtCOMLite остановлена по отмене
+err.rtcom.worker.timeout = Изолированный процесс rtCOMLite не ответил за {0} мс и был остановлен; приложение продолжает работу
+err.rtcom.worker.malformed = Изолированный процесс rtCOMLite вернул повреждённый ответ и был остановлен; приложение продолжает работу
+err.rtcom.worker.failed = Изолированная операция rtCOMLite завершилась ошибкой: {0}
+err.rtcom.worker.crashed = Изолированный процесс rtCOMLite аварийно завершился (код {0}); приложение продолжает работу
+err.rtcom.worker.incomplete = Изолированный процесс rtCOMLite вернул неполный ответ; приложение продолжает работу
