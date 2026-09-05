@@ -11,8 +11,8 @@ namespace CryptoProExport.App
     internal static class Cli
     {
         /// <summary>Вывод дублируется в журнал сеанса — чтобы было что показать после сбоя.</summary>
-        private static readonly Action<string> Out = SessionLog.Tee(Console.WriteLine);
-        private static readonly Action<string> Err = SessionLog.Tee(Console.Error.WriteLine);
+        private static readonly Action<string> Out = SessionLog.Tee(Console.WriteLine, LogLevel.Information);
+        private static readonly Action<string> Err = SessionLog.Tee(Console.Error.WriteLine, LogLevel.Error);
 
         /// <summary>
         /// Синтаксис команд не переводится: это литералы, которые набирают в консоли.
@@ -651,7 +651,7 @@ namespace CryptoProExport.App
                         // (диагностика протокола, всегда по-русски) остаётся в файле журнала.
                         Err(LicenseGate.ReasonText(info));
                         if (!string.IsNullOrEmpty(info.VerifierDiagnostic))
-                            SessionLog.Write(info.VerifierDiagnostic);
+                            SessionLog.Write(info.VerifierDiagnostic, LogLevel.Debug);
                         return 2;
                     }
                     default:

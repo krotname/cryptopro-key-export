@@ -146,7 +146,7 @@ namespace CryptoProExport.Tests
             Assert.Contains("Log(Strings.Get(\"log.need.container\"));", gui, StringComparison.Ordinal);
             // Сертификат-сирота не должен уходить в CryptoAPI и certmgr даже мимо погашенной кнопки.
             Assert.Equal(2, System.Text.RegularExpressions.Regex.Matches(
-                gui, @"IsCertificateOnly\(selected\)\) \{ Log\(Strings\.Get\(""hint\.row\.certonly""\)\); return; \}").Count);
+                gui, @"IsCertificateOnly\(selected\)\) \{ LogWarning\(Strings\.Get\(""hint\.row\.certonly""\)\); return; \}").Count);
         }
 
         /// <summary>Все причины отказа, которые умеет назвать таблица.</summary>

@@ -38,8 +38,12 @@ namespace CryptoProExport
             }
         }
 
-        /// <summary>Записать строку. Ошибки записи не мешают работе программы.</summary>
-        public static void Write(string message)
+        /// <summary>
+        /// Записать строку вместе с уровнем. Файл всегда содержит все уровни: фильтрация
+        /// относится только к текущему представлению в GUI, иначе диагностические данные
+        /// пропадали бы именно в сеансе со сбоем. Ошибки записи не мешают работе программы.
+        /// </summary>
+        public static void Write(string message, LogLevel level = LogLevel.Information)
         {
             if (_failed) return;
             try
@@ -49,7 +53,8 @@ namespace CryptoProExport
                 {
                     Directory.CreateDirectory(Dir);
                     File.AppendAllText(path,
-                        DateTime.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture) + "  " + message + Environment.NewLine);
+                        DateTime.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture)
+                        + " [" + LogLevels.Tag(level) + "] " + message + Environment.NewLine);
                 }
             }
             catch (Exception)
@@ -59,9 +64,9 @@ namespace CryptoProExport
         }
 
         /// <summary>Обернуть приёмник лога так, чтобы всё дублировалось в файл.</summary>
-        public static Action<string> Tee(Action<string> inner) => message =>
+        public static Action<string> Tee(Action<string> inner, LogLevel level = LogLevel.Information) => message =>
         {
-            Write(message);
+            Write(message, level);
             inner?.Invoke(message);
         };
 

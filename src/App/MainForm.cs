@@ -52,6 +52,10 @@ namespace CryptoProExport.App
         private Button _btnCancel;
         /// <summary>Переключатель нижней панели журнала: по умолчанию она свёрнута.</summary>
         private Button _btnLogPane;
+        /// <summary>Фильтр видимого журнала; файл сеанса при этом сохраняет все уровни.</summary>
+        private Button _btnLogLevel;
+        private LogLevel _minimumLogLevel = LogLevel.Information;
+        private readonly List<(LogLevel Level, string Message)> _logEntries = new();
         /// <summary>Высота списка при развёрнутом журнале — чтобы вернуть её, а не половину окна.</summary>
         private int _logSplit;
         private Button[] _actionButtons;
@@ -159,9 +163,9 @@ namespace CryptoProExport.App
 
             Run("status.deps", cancel =>
             {
-                Log(Strings.Get("log.deps.header"));
+                LogDebug(Strings.Get("log.deps.header"));
                 foreach (var line in CryptoProExport.Diagnostics.Report())
-                    Log("  " + line);
+                    LogDebug("  " + line);
                 Log(Strings.Format("log.session", SessionLog.FilePath));
                 Log(LicenseGate.StatusText());
                 // Отпечаток нужен, чтобы получить лицензию, — обещан в подсказке и README, показываем сразу.
@@ -286,6 +290,7 @@ namespace CryptoProExport.App
             // стоит рядом с кнопкой, открывающей папку журналов: обе про одно и то же, но одна
             // разворачивает текст в этом окне, а вторая ведёт к файлам прошлых запусков.
             _btnLogPane = MakeButton((_, __) => ToggleLogPane());
+            _btnLogLevel = MakeButton((_, __) => CycleLogLevel());
             _btnLang = MakeButton((_, __) => PickLanguage());
             _btnHelp = MakeButton((_, __) => Guide.Show(this));
             _btnCancel = MakeButton((_, __) => CancelCurrent());
@@ -300,12 +305,12 @@ namespace CryptoProExport.App
                 _btnView, _btnInstall, _btnPfx, _btnExtractKey, _btnLicense, _btnLogs,
                 _btnLang, _btnHelp,
             };
-            // «Показать журнал» занятостью не гасится: развернуть журнал нужнее всего как раз
-            // во время долгой операции — это единственный способ увидеть её ход целиком.
+            // «Показать журнал» и фильтр уровня занятостью не гасятся: развернуть журнал или
+            // включить диагностику нужнее всего как раз во время долгой операции.
             // Остальные кнопки к выделению безразличны: «Обновить» перечитывает весь список,
             // «Установить» и «Извлечь ключ» спрашивают папку диалогом, «Сохранить в PFX»
             // проверяет строку уже в своём диалоге (там же пишет причину отказа), а
-            // «Лицензия», «Журнал» и «Справка» к носителям вообще не обращаются.
+            // «Лицензия», управление журналом и «Справка» к носителям вообще не обращаются.
             _rowButtons = new[]
             {
                 (_btnExport, RowAction.Export),
@@ -321,7 +326,7 @@ namespace CryptoProExport.App
                 AddButtonRow(buttons, "group.steps", _btnExport, _btnExtract, _btnFull, _btnInstall),
                 AddButtonRow(buttons, "group.result", _btnPfx, _btnExtractKey),
                 AddButtonRow(buttons, "group.service",
-                             _btnLicense, _btnLogPane, _btnLogs, _btnLang, _btnHelp, _btnCancel),
+                             _btnLicense, _btnLogPane, _btnLogLevel, _btnLogs, _btnLang, _btnHelp, _btnCancel),
             };
             // Подсказка выключенной кнопки: Windows не шлёт мыши сообщения выключенному окну,
             // поэтому ToolTip сам её не покажет — а причина отказа нужна именно там. Сообщения
@@ -491,6 +496,7 @@ namespace CryptoProExport.App
             // Надпись переключателя зависит от текущего состояния панели, поэтому её ставит
             // ApplyLogPaneState — и здесь, и на каждом нажатии.
             ApplyLogPaneState();
+            ApplyLogLevelState(rebuild: false);
             SetButton(_btnLang, "btn.lang", "tip.lang");
             SetButton(_btnHelp, "btn.help", "tip.help");
             SetButton(_btnCancel, "btn.cancel", "tip.cancel");
@@ -771,22 +777,22 @@ namespace CryptoProExport.App
             // Токены по PKCS#11: метаданные и профиль механизмов видны без PIN;
             // публичные сертификаты показываются только когда реально присутствуют.
             cancel.ThrowIfCancellationRequested();
-            var tokens = Pkcs11Token.Enumerate(readContainers: true, log: Log, cancel: cancel);
+            var tokens = Pkcs11Token.Enumerate(readContainers: true, log: LogDebug, cancel: cancel);
             // Библиотека токен показала — это ещё не значит, что его объекты прочитаны:
             // сессия могла не открыться, а поиск объектов упасть. Тогда пустой перечень
             // контейнеров ничего не доказывает (замечание Codex на PR #83). Флаг осмыслен
             // именно здесь: контейнеры мы как раз просили прочитать.
             foreach (var t in tokens) if (t != null && !t.ContainersKnown) scanFailed = true;
-            Log("[PKCS#11] " + Strings.Format("token.found", tokens.Count));
+            LogDebug("[PKCS#11] " + Strings.Format("token.found", tokens.Count));
             foreach (var t in tokens)
             {
-                Log("  " + Strings.Format("cli.token.line",
+                LogDebug("  " + Strings.Format("cli.token.line",
                     t.Reader ?? "?", t.Label ?? "?", Pkcs11Token.KindName(t.Kind),
                     t.Serial ?? "?", t.Firmware ?? "?"));
-                Log("    " + Strings.Format("cli.token.pin", Pkcs11Token.PinState(t)));
-                Log("    " + Pkcs11Token.CapabilitySummary(t));
+                LogDebug("    " + Strings.Format("cli.token.pin", Pkcs11Token.PinState(t)));
+                LogDebug("    " + Pkcs11Token.CapabilitySummary(t));
                 if (t.Kind == RutokenKind.RutokenEcp)
-                    Log("    " + Strings.Get("token.boundary.ecp"));
+                    LogDebug("    " + Strings.Get("token.boundary.ecp"));
 
                 bool hasDirectRow = false;
                 foreach (var c in t.Containers)
@@ -813,7 +819,7 @@ namespace CryptoProExport.App
                     try
                     {
                         var direct = new DirectTokenApdu
-                            { Log = m => Log("[APDU] " + m), Cancel = cancel };
+                            { Log = m => LogDebug("[APDU] " + m), Cancel = cancel };
                         foreach (var c in direct.ListContainers(t))
                         {
                             AddRow($"{t.Reader} [{Pkcs11Token.KindName(t.Kind)}]", "APDU",
@@ -826,7 +832,7 @@ namespace CryptoProExport.App
                     catch (Exception e)
                     {
                         scanFailed = true;
-                        Log("[APDU] " + Strings.Format("log.tokens.unavailable", e.Message));
+                        LogWarning("[APDU] " + Strings.Format("log.tokens.unavailable", e.Message));
                     }
                 }
 
@@ -845,13 +851,13 @@ namespace CryptoProExport.App
             cancel.ThrowIfCancellationRequested();
             // Сбой опроса PC/SC оставляет пустой список — но это «неизвестно», а не «носителей
             // нет»: звать вставить носитель по нему нельзя (замечание Codex на PR #83).
-            var pcscReaders = PcscReaders.List(m => Log("[PC/SC] " + m), out bool pcscComplete);
+            var pcscReaders = PcscReaders.List(m => LogDebug("[PC/SC] " + m), out bool pcscComplete);
             if (!pcscComplete) scanFailed = true;
             var pkcs11Readers = new List<string>();
             foreach (var t in tokens)
                 if (t?.Reader != null) pkcs11Readers.Add(t.Reader);
             foreach (var line in PcscReaders.CoverageLines(pcscReaders, pkcs11Readers))
-                Log("[PC/SC] " + line);
+                LogDebug("[PC/SC] " + line);
             var uncovered = PcscReaders.Uncovered(pcscReaders, pkcs11Readers);
             foreach (var r in uncovered)
                 // В колонке контейнера — вендор носителя, а не «нет»: контейнеры КриптоПро на
@@ -864,7 +870,7 @@ namespace CryptoProExport.App
             cancel.ThrowIfCancellationRequested();
             var exp = new RutokenExporter
             {
-                Log = m => Log("[rtCOMLite] " + m),
+                Log = m => LogDebug("[rtCOMLite] " + m),
                 Cancel = cancel,
                 SkipReaders = Pkcs11Token.SmartCardReaders(tokens),
             };
@@ -884,7 +890,7 @@ namespace CryptoProExport.App
                 // обход: контекст создан, носители пошли, и пустота больше не доказана
                 // (замечания Codex на PR #83).
                 if (exp.Started) scanFailed = true;
-                Log(Strings.Format("log.tokens.unavailable", e.Message));
+                LogWarning(Strings.Format("log.tokens.unavailable", e.Message));
             }
             SuggestFactoryPin(tokens);
             // Считаем носители, а не считыватели: пустой слот — это «вставьте носитель», а не
@@ -942,8 +948,8 @@ namespace CryptoProExport.App
             catch (OperationCanceledException) { throw; }
             catch (Exception e)
             {
-                Log(Strings.Format("log.tokens.unavailable", e.Message));
-                Log(Strings.Get("log.token.state.unknown"));
+                LogWarning(Strings.Format("log.tokens.unavailable", e.Message));
+                LogWarning(Strings.Get("log.token.state.unknown"));
                 return null;
             }
             foreach (var token in live)
@@ -955,17 +961,17 @@ namespace CryptoProExport.App
                 // тождество нечем: пустой серийник считаем неизвестным состоянием, а не совпадением.
                 if (string.IsNullOrEmpty(snapshot.Serial) || string.IsNullOrEmpty(token.Serial))
                 {
-                    Log(Strings.Get("log.token.state.unknown"));
+                    LogWarning(Strings.Get("log.token.state.unknown"));
                     return null;
                 }
                 if (!string.Equals(token.Serial, snapshot.Serial, StringComparison.Ordinal))
                 {
-                    Log(Strings.Get("log.token.replaced"));
+                    LogWarning(Strings.Get("log.token.replaced"));
                     return null;
                 }
                 return token;
             }
-            Log(Strings.Get("log.token.state.unknown"));
+            LogWarning(Strings.Get("log.token.state.unknown"));
             return null;
         }
 
@@ -1037,7 +1043,7 @@ namespace CryptoProExport.App
         private bool RequireLicense()
         {
             if (LicenseGate.IsLicensed()) return true;
-            Log(Strings.Get("license.required"));
+            LogWarning(Strings.Get("license.required"));
             Log(LicenseGate.StatusText());
             Log(LicenseGate.FingerprintText());
             return false;
@@ -1070,14 +1076,14 @@ namespace CryptoProExport.App
                 // протокола, всегда по-русски) остаётся в файле журнала.
                 if (!info.Ok)
                 {
-                    Log("  " + LicenseGate.ReasonText(info));
+                    LogWarning("  " + LicenseGate.ReasonText(info));
                     if (!string.IsNullOrEmpty(info.VerifierDiagnostic))
-                        SessionLog.Write("  " + info.VerifierDiagnostic);
+                        SessionLog.Write("  " + info.VerifierDiagnostic, LogLevel.Debug);
                 }
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
-                Log(Strings.Format("log.error", e.Message));
+                LogError(Strings.Format("log.error", e.Message));
             }
         }
 
@@ -1092,7 +1098,7 @@ namespace CryptoProExport.App
                 Log(Strings.Get("log.export.directonly"));
                 return;
             }
-            var pipe = new ExportPipeline() { Log = Log, Cancel = cancel };
+            var pipe = new ExportPipeline() { Log = LogDebug, Cancel = cancel };
             int saved;
             if (selected?.Apdu != null)
             {
@@ -1130,7 +1136,7 @@ namespace CryptoProExport.App
             {
                 if (tokenSelection.Certificate == null)
                 {
-                    Log(Strings.Get("log.cert.fail"));
+                    LogError(Strings.Get("log.cert.fail"));
                     return;
                 }
                 Directory.CreateDirectory(dest);
@@ -1145,7 +1151,7 @@ namespace CryptoProExport.App
             Log(Strings.Format("log.cert.exchange", ex ?? Strings.Get("common.none")));
             Log(Strings.Format("log.cert.sign", sg ?? Strings.Get("common.none")));
             if (ex == null && sg == null)
-                Log(Strings.Get("log.cert.fail"));
+                LogError(Strings.Get("log.cert.fail"));
         }
 
         private void DoFull(CancellationToken cancel)
@@ -1161,7 +1167,7 @@ namespace CryptoProExport.App
                     var (exchange, signature) = CheckExportability(selected.Target);
                     if (CertFromContainer.AllFoundKeysExportable(exchange, signature))
                     {
-                        Log(Strings.Format("log.error", Strings.Get("err.container.exportable")));
+                        LogError(Strings.Format("log.error", Strings.Get("err.container.exportable")));
                         return;
                     }
                 }
@@ -1177,7 +1183,7 @@ namespace CryptoProExport.App
             string dest = AskDestination();
             if (dest == null) { Log(Strings.Get("log.cancelled.user")); return; }
 
-            var pipe = new ExportPipeline() { Log = Log, Cancel = cancel };
+            var pipe = new ExportPipeline() { Log = LogDebug, Cancel = cancel };
             ExportPipelineResult result;
             if (selected?.Apdu != null)
             {
@@ -1200,7 +1206,7 @@ namespace CryptoProExport.App
             ContainerSelection selected = SelectedContainer();
             string container = selected?.Target;
             if (container == null) { Log(Strings.Get("log.need.container")); return; }
-            if (IsCertificateOnly(selected)) { Log(Strings.Get("hint.row.certonly")); return; }
+            if (IsCertificateOnly(selected)) { LogWarning(Strings.Get("hint.row.certonly")); return; }
             var (ex, sg) = CheckExportability(container);
             Log(Strings.Format("log.check.container", container));
             Log("  " + Strings.Get("col.location") + ": " + selected.Location);
@@ -1230,7 +1236,7 @@ namespace CryptoProExport.App
             if (folder == null) { Log(Strings.Get("log.cancelled")); return; }
             if (!ContainerStore.LooksLikeContainer(folder))
             {
-                Log(Strings.Get("log.install.notcontainer"));
+                LogWarning(Strings.Get("log.install.notcontainer"));
                 return;
             }
 
@@ -1247,13 +1253,13 @@ namespace CryptoProExport.App
             if (name != current && !installed.Renamed)
                 Log(Strings.Format("log.install.norename", installed.Name));
             if (installed.Verified && !installed.VisibleToCsp)
-                Log(Strings.Get("log.install.invisible"));
+                LogWarning(Strings.Get("log.install.invisible"));
             else if (installed.VisibleToCsp)
             {
                 string certMgrPath = CertMgr.Locate();
                 if (certMgrPath != null)
                 {
-                    var cm = new CertMgr(certMgrPath) { Log = Log, Cancel = cancel };
+                    var cm = new CertMgr(certMgrPath) { Log = LogDebug, Cancel = cancel };
                     var linked = cm.InstallContainerCertificates(
                         folder, CertMgr.HdImageContainer(installed.Name));
                     foreach (ToolResult failure in linked.Results)
@@ -1304,10 +1310,10 @@ namespace CryptoProExport.App
             ContainerSelection selected = SelectedContainer();
             string container = selected?.Target;
             if (container == null) { Log(Strings.Get("log.need.container")); return; }
-            if (IsCertificateOnly(selected)) { Log(Strings.Get("hint.row.certonly")); return; }
+            if (IsCertificateOnly(selected)) { LogWarning(Strings.Get("hint.row.certonly")); return; }
 
             string exe = CertMgr.Locate();
-            if (exe == null) { Log(Strings.Get("log.pfx.nocertmgr")); return; }
+            if (exe == null) { LogError(Strings.Get("log.pfx.nocertmgr")); return; }
 
             string dest = AskSaveFile(Strings.Get("dlg.pfx.save"),
                                       "PKCS#12 (*.pfx)|*.pfx|" + Strings.Get("files.all") + "|*.*",
@@ -1318,9 +1324,10 @@ namespace CryptoProExport.App
                                   "", password: true);
             if (pass == null) { Log(Strings.Get("log.cancelled")); return; }
 
-            var cm = new CertMgr(exe) { Log = Log, Cancel = cancel };
+            var cm = new CertMgr(exe) { Log = LogDebug, Cancel = cancel };
             var r = cm.ExportContainerToPfx(container, dest, pass);
-            Log(r.Success ? Strings.Format("log.pfx.done", dest) : Strings.Format("log.pfx.fail", r.Output));
+            if (r.Success) Log(Strings.Format("log.pfx.done", dest));
+            else LogError(Strings.Format("log.pfx.fail", r.Output));
         }
 
         /// <summary>
@@ -1334,7 +1341,7 @@ namespace CryptoProExport.App
             if (folder == null) { Log(Strings.Get("log.cancelled")); return; }
             if (!ContainerStore.LooksLikeContainer(folder))
             {
-                Log(Strings.Get("log.install.notcontainer"));
+                LogWarning(Strings.Get("log.install.notcontainer"));
                 return;
             }
 
@@ -1356,7 +1363,7 @@ namespace CryptoProExport.App
             }
             catch (ContainerKeyException e)
             {
-                Log(Strings.Format("log.extractkey.fail", e.Message));
+                LogError(Strings.Format("log.extractkey.fail", e.Message));
             }
         }
 
@@ -1371,7 +1378,7 @@ namespace CryptoProExport.App
             if (folder == null) { Log(Strings.Get("log.cancelled")); return; }
             if (!ContainerStore.LooksLikeContainer(folder))
             {
-                Log(Strings.Get("log.install.notcontainer"));
+                LogWarning(Strings.Get("log.install.notcontainer"));
                 return;
             }
 
@@ -1412,7 +1419,7 @@ namespace CryptoProExport.App
             }
             catch (ContainerKeyException e)
             {
-                Log(Strings.Format("log.extractpfx.fail", e.Message));
+                LogError(Strings.Format("log.extractpfx.fail", e.Message));
             }
         }
 
@@ -1423,7 +1430,7 @@ namespace CryptoProExport.App
                 Directory.CreateDirectory(SessionLog.Dir);
                 Process.Start(new ProcessStartInfo(SessionLog.Dir) { UseShellExecute = true });
             }
-            catch (Exception ex) { Log(Strings.Format("log.logs.fail", ex.Message)); }
+            catch (Exception ex) { LogError(Strings.Format("log.logs.fail", ex.Message)); }
         }
 
         // ---------- helpers ----------
@@ -1497,7 +1504,7 @@ namespace CryptoProExport.App
             {
                 try { work(cancellation.Token); }
                 catch (OperationCanceledException) { Log(Strings.Get("log.cancel.done")); }
-                catch (Exception ex) { Log(Strings.Format("log.error", ex.Message)); }
+                catch (Exception ex) { LogError(Strings.Format("log.error", ex.Message)); }
                 finally
                 {
                     _cancellation = null;
@@ -1528,7 +1535,8 @@ namespace CryptoProExport.App
             // общего нужен и на входе, и на выходе: список мог обновиться самой операцией.
             UpdateRowActions();
             _btnCancel.Enabled = busy;
-            // Кнопка языка гасится вместе с остальными служебными: она в _actionButtons.
+            // Кнопка языка гасится вместе с остальными служебными: она в _actionButtons;
+            // фильтр журнала, как и его панель, остаётся доступен во время операции.
             _progress.Visible = busy;
             _status.Text = busy ? title : Strings.Get("status.ready");
             ShowLastLogLine();
@@ -1858,23 +1866,52 @@ namespace CryptoProExport.App
             };
         }
 
-        private void Log(string msg)
+        private void Log(string msg) => Log(LogLevel.Information, msg);
+        private void LogDebug(string msg) => Log(LogLevel.Debug, msg);
+        private void LogWarning(string msg) => Log(LogLevel.Warning, msg);
+        private void LogError(string msg) => Log(LogLevel.Error, msg);
+
+        private void Log(LogLevel level, string msg)
         {
-            SessionLog.Write(msg);
-            AppendLog(msg);
+            SessionLog.Write(msg, level);
+            AppendLog(level, msg);
         }
 
-        private void AppendLog(string msg)
+        private void AppendLog(LogLevel level, string msg)
         {
-            if (InvokeRequired) { BeginInvoke(new Action(() => AppendLog(msg))); return; }
-            _txtLog.AppendText(msg + Environment.NewLine);
+            if (InvokeRequired) { BeginInvoke(new Action(() => AppendLog(level, msg))); return; }
+            _logEntries.Add((level, msg));
+            if (!LogLevels.IsVisible(level, _minimumLogLevel)) return;
+            AppendVisibleLog(level, msg);
+        }
+
+        private void AppendVisibleLog(LogLevel level, string msg)
+        {
+            _txtLog.AppendText(VisibleLogLine(level, msg) + Environment.NewLine);
             // Со свёрнутой панелью журнал виден одной последней строкой в строке состояния.
             // Пустые строки — это отбивки между разделами: держим на месте предыдущую строку,
             // иначе после каждого раздела состояние обнулялось бы в пустоту.
             if (string.IsNullOrWhiteSpace(msg)) return;
-            _lastLog.Text = OneLine(msg);
+            _lastLog.Text = OneLine(VisibleLogLine(level, msg));
             // Строка состояния узкая — целиком сообщение показывает своя подсказка.
             _lastLog.ToolTipText = _lastLog.Text;
+            ShowLastLogLine();
+        }
+
+        /// <summary>INFO остаётся без шума; уровни, требующие внимания, помечаются явно.</summary>
+        private static string VisibleLogLine(LogLevel level, string message) => level == LogLevel.Information
+            ? message
+            : "[" + LogLevels.Tag(level) + "] " + message;
+
+        private void RebuildVisibleLog()
+        {
+            if (InvokeRequired) { BeginInvoke(new Action(RebuildVisibleLog)); return; }
+            _txtLog.Clear();
+            _lastLog.Text = string.Empty;
+            _lastLog.ToolTipText = string.Empty;
+            foreach (var entry in _logEntries)
+                if (LogLevels.IsVisible(entry.Level, _minimumLogLevel))
+                    AppendVisibleLog(entry.Level, entry.Message);
             ShowLastLogLine();
         }
 
@@ -1887,7 +1924,9 @@ namespace CryptoProExport.App
         private void ShowLastLogLine()
         {
             if (InvokeRequired) { BeginInvoke(new Action(ShowLastLogLine)); return; }
-            _lastLog.Visible = _split.Panel2Collapsed && !SameLine(_lastLog.Text, _status.Text);
+            _lastLog.Visible = _split.Panel2Collapsed
+                               && !string.IsNullOrWhiteSpace(_lastLog.Text)
+                               && !SameLine(_lastLog.Text, _status.Text);
         }
 
         /// <summary>Одна и та же мысль с точкой на конце и без неё — это одна строка.</summary>
@@ -1942,6 +1981,24 @@ namespace CryptoProExport.App
             bool collapsed = _split.Panel2Collapsed;
             SetButton(_btnLogPane, collapsed ? "btn.logpane.show" : "btn.logpane.hide", "tip.logpane");
             ShowLastLogLine();
+        }
+
+        /// <summary>
+        /// Переключить фильтр по кругу. Уже полученные DEBUG-строки не теряются: они остаются
+        /// в файле и памяти сеанса и появляются, если включить подробный режим позже.
+        /// </summary>
+        private void CycleLogLevel()
+        {
+            _minimumLogLevel = LogLevels.Next(_minimumLogLevel);
+            ApplyLogLevelState(rebuild: true);
+        }
+
+        private void ApplyLogLevelState(bool rebuild)
+        {
+            _btnLogLevel.Text = Strings.Format("btn.loglevel", Strings.Get(LogLevels.NameKey(_minimumLogLevel)));
+            Tip(_btnLogLevel, "tip.loglevel");
+            if (rebuild) RebuildVisibleLog();
+            FitButtonGroups();
         }
 
         /// <summary>

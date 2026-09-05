@@ -205,13 +205,13 @@ namespace CryptoProExport.Tests
         public void GuiAndCli_KeepVerifierDiagnosticOutOfVisibleOutput()
         {
             string gui = File.ReadAllText(RepoFile("src", "App", "MainForm.cs"));
-            Assert.Contains("Log(\"  \" + LicenseGate.ReasonText(info));", gui, StringComparison.Ordinal);
-            Assert.Contains("SessionLog.Write(\"  \" + info.VerifierDiagnostic);", gui, StringComparison.Ordinal);
+            Assert.Contains("LogWarning(\"  \" + LicenseGate.ReasonText(info));", gui, StringComparison.Ordinal);
+            Assert.Contains("SessionLog.Write(\"  \" + info.VerifierDiagnostic, LogLevel.Debug);", gui, StringComparison.Ordinal);
             Assert.DoesNotContain("Log(\"  \" + info.VerifierDiagnostic", gui, StringComparison.Ordinal);
 
             string cli = File.ReadAllText(RepoFile("src", "App", "Cli.cs"));
             Assert.Contains("Err(LicenseGate.ReasonText(info));", cli, StringComparison.Ordinal);
-            Assert.Contains("SessionLog.Write(info.VerifierDiagnostic);", cli, StringComparison.Ordinal);
+            Assert.Contains("SessionLog.Write(info.VerifierDiagnostic, LogLevel.Debug);", cli, StringComparison.Ordinal);
             Assert.DoesNotContain("Err(info.VerifierDiagnostic", cli, StringComparison.Ordinal);
         }
 
