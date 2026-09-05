@@ -287,6 +287,7 @@ src/Core/           библиотека (net10.0-windows)
   ContainerFiles.cs    шесть *.key контейнера в памяти (диск, APDU или синтетика)
   ExportableContainerBuilder.cs  экспортируемая копия контейнера без CSP (бит экспорта + MAC)
   GostKeyExport.cs     закрытый ключ ГОСТ в PKCS#8/PEM
+  Pkcs8ContainerRestore.cs  PKCS#8/PEM + X.509 в проверенный контейнер
   CryptoProPbe.cs      проприетарная PBE-защита ключа для PFX КриптоПро
   Pkcs12Export.cs      сборка .pfx своими силами (без certmgr и CSP)
   P12Utility.cs        обёртка p12utility (--cprepair/--keyexport/--cppublic)
@@ -380,6 +381,12 @@ pwsh build\publish.ps1
 9. *Журнал* — открыть папку с журналами работы.
 10. *Справка* — встроенное руководство: сценарии, кнопки, команды, разбор ошибок.
 
+Обратный CSP-free путь доступен в CLI: `restore` принимает незашифрованный PKCS#8
+(DER или PEM) и обязательный сертификат X.509, проверяет алгоритм, кривую и `d·G`,
+затем создаёт новый экспортируемый файловый контейнер. Результат строится во временной
+папке, повторно читается существующим экстрактором и только после этого атомарно
+публикуется по указанному пути; существующий путь не перезаписывается.
+
 В лог при запуске выводится, откуда берутся зависимости и виден ли КриптоПро CSP.
 `deps` также проверяет PnP-present устройства class `SmartCardReader`: reader с не
 запустившимся драйвером (например, Code 10) больше не теряется из диагностики вслед за
@@ -403,6 +410,7 @@ CryptoProExport.exe tokenexport <reader> <outDir> [pin] [--container <technical-
 CryptoProExport.exe tokenfull <reader> <outDir> [pin] [--container <technical-id>]
 CryptoProExport.exe keyexport <folder> <cert.cer> [pass]
 CryptoProExport.exe exportable <folder> <outFolder> [pass]  # экспортируемая копия без CSP и p12utility
+CryptoProExport.exe restore <key.pem> <cert.cer> <outFolder> [pass]  # PKCS#8 + X.509 -> контейнер без CSP
 CryptoProExport.exe install <folder> [name]
 CryptoProExport.exe installed
 CryptoProExport.exe uninstall <folder>

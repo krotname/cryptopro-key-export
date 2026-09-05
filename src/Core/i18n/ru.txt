@@ -472,3 +472,15 @@ err.rtcom.worker.malformed = Изолированный процесс rtCOMLite
 err.rtcom.worker.failed = Изолированная операция rtCOMLite завершилась ошибкой: {0}
 err.rtcom.worker.crashed = Изолированный процесс rtCOMLite аварийно завершился (код {0}); приложение продолжает работу
 err.rtcom.worker.incomplete = Изолированный процесс rtCOMLite вернул неполный ответ; приложение продолжает работу
+cli.usage.restore = восстановить файловый контейнер из PKCS#8/PEM и сертификата (без CSP)
+cli.restore.ok = Контейнер восстановлен и проверен: {0}
+cli.restore.key = кривая {0}, открытый ключ X={1}
+err.restore.target = Путь назначения уже существует или недопустим: {0}
+err.restore.input = Закрытый ключ PKCS#8 повреждён или не поддерживается: {0}
+err.restore.certificate = Сертификат X.509 повреждён или не поддерживается: {0}
+err.restore.encrypted = Зашифрованный PKCS#8 пока не поддерживается
+err.restore.algorithm = Алгоритм {0} ({1}) не поддерживается
+err.restore.parameters = Параметры ГОСТ повреждены или не поддерживаются: {0}
+err.restore.curve.mismatch = Кривая закрытого ключа не совпадает с кривой сертификата
+err.restore.key.mismatch = Закрытый ключ не соответствует открытому ключу сертификата
+err.restore.verify = Повторная проверка восстановленного контейнера не прошла
