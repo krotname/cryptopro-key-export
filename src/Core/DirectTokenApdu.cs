@@ -113,6 +113,16 @@ namespace CryptoProExport
 
             var matches = candidates.FindAll(candidate => string.Equals(
                 candidate.OutputName, outputName, StringComparison.OrdinalIgnoreCase));
+
+            // UX: в CLI и GUI пользователь видит имя контейнера (из name.key), а технический
+            // OutputName (rutokens_0B00, jacartalt_0F, …) — деталь реализации. Поэтому если по
+            // OutputName ничего не нашлось, для не-PRO семейств селектор принимает и видимое имя,
+            // но только когда оно однозначно (ровно одна строка). Для eToken PRO/PRO имена в выборе
+            // намеренно не участвуют: защищённые файлы читаются лишь у явно выбранного индекса.
+            if (matches.Count == 0 && token.Kind != RutokenKind.JaCartaPro)
+                matches = candidates.FindAll(candidate => !string.IsNullOrEmpty(candidate.Name)
+                    && string.Equals(candidate.Name, outputName, StringComparison.OrdinalIgnoreCase));
+
             if (matches.Count != 1) throw ContainerSelectionError(outputName);
             return matches;
         }

@@ -27,6 +27,15 @@ namespace CryptoProExport
         /// APDU только после точного подтверждения модели, производителя, reader и ATR.
         /// </summary>
         JaCartaPro,
+        /// <summary>
+        /// JaCarta-2 ГОСТ (апплет ГОСТ, PKCS#11-модель <c>eToken GOST</c>). Смарт-карточный
+        /// носитель Aladdin: контейнеры КриптоПро на нём есть, но прямой APDU-путь их чтения ещё
+        /// не подтверждён физическим E2E. Семейство заведено, чтобы носитель честно попадал в
+        /// перечень с верным именем и заводским PIN и никогда не уходил в файловый обход rtCOMLite
+        /// или в чужой APDU. Как только протокол подтверждён байтово — добавляется в
+        /// <see cref="DirectTokenApdu.Supports"/>.
+        /// </summary>
+        JaCartaGost,
         /// <summary>ESMART Token: пассивный CSP-раздел читается прямым APDU.</summary>
         Esmart,
         /// <summary>
@@ -414,6 +423,12 @@ namespace CryptoProExport
             // эвристики Rutoken Lite. Короткое 'DS' намеренно недостаточно.
             if (IsJaCartaLt(model, manufacturer)) return RutokenKind.JaCartaLt;
 
+            // Апплет ГОСТ семейства JaCarta (PKCS#11-модель «eToken GOST», «JaCarta GOST»,
+            // «JaCarta-2 GOST») распознаём до общей классификации, где подстрока «etoken»/«jacarta»
+            // увела бы носитель в Other без имени и заводского PIN. Требуется независимое
+            // свидетельство вендора Aladdin — одной строки модели, как и у LT/PRO, недостаточно.
+            if (IsJaCartaGost(model, manufacturer)) return RutokenKind.JaCartaGost;
+
             // Маркер LT/Datastore без независимого свидетельства вендора недостаточен:
             // не понижаем безопасный Unknown до общего Other только из-за слова JaCarta
             // внутри самой модели.
@@ -556,6 +571,30 @@ namespace CryptoProExport
         }
 
         /// <summary>
+        /// Апплет ГОСТ семейства JaCarta: живой JaCarta-2 ГОСТ сообщает PKCS#11-модель
+        /// <c>eToken GOST</c> (рядом лежит апплет <c>JaCarta Laser</c>), у отдельных ревизий —
+        /// <c>JaCarta GOST</c> / <c>JaCarta-2 GOST</c>. Как и у LT/PRO, одной строки модели мало:
+        /// слова <c>etoken</c>/<c>jacarta</c> встречаются и у чужих носителей, поэтому требуется
+        /// независимое свидетельство вендора Aladdin (в производителе или в имени reader).
+        /// Апплет <c>JaCarta Laser</c> — не ГОСТ и сюда намеренно не попадает.
+        ///
+        /// Чистая функция: покрыта тестами без обращения к железу.
+        /// </summary>
+        internal static bool IsJaCartaGost(string model, string manufacturer)
+        {
+            string m = (model ?? string.Empty).Trim().ToLowerInvariant();
+            if (m.Length == 0 || !m.Contains("gost")) return false;
+            if (!m.Contains("etoken") && !m.Contains("jacarta")) return false;
+
+            string vendor = (manufacturer ?? string.Empty).Trim().ToLowerInvariant();
+            bool vendorMetadata = vendor.Contains("aladdin") || vendor.Contains("jacarta");
+            // «jacarta» в модели — само название продукта, не доказательство вендора; как и в
+            // IsJaCartaLt, независимым свидетельством в имени reader служит «aladdin».
+            bool vendorInReaderName = m.Contains("aladdin");
+            return vendorMetadata || vendorInReaderName;
+        }
+
+        /// <summary>
         /// Fail-closed признак только для маршрутизации файлового обхода. Он намеренно шире
         /// точной идентификации: bare LT/Datastore остаётся <see cref="RutokenKind.Unknown"/>,
         /// но к такому считывателю нельзя применять файловый API Рутокен S.
@@ -604,6 +643,7 @@ namespace CryptoProExport
                 if (t.Kind == RutokenKind.RutokenS
                     || t.Kind == RutokenKind.RutokenEcp || t.Kind == RutokenKind.RutokenLite
                     || t.Kind == RutokenKind.JaCartaLt || t.Kind == RutokenKind.JaCartaPro
+                    || t.Kind == RutokenKind.JaCartaGost
                     || t.Kind == RutokenKind.Esmart
                     || t.Kind == RutokenKind.Bifit
                     || t.Kind == RutokenKind.Other
@@ -619,6 +659,7 @@ namespace CryptoProExport
             // Название продукта — торговая марка и во всех языках остаётся одинаковым.
             if (kind == RutokenKind.JaCartaLt) return "JaCarta LT";
             if (kind == RutokenKind.JaCartaPro) return "eToken PRO (Java) / PRO";
+            if (kind == RutokenKind.JaCartaGost) return "JaCarta-2 GOST";
             if (kind == RutokenKind.Esmart) return "ESMART";
             if (kind == RutokenKind.Bifit) return "BIFIT";
             return Strings.Get(kind switch

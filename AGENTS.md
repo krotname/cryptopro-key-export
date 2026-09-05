@@ -893,6 +893,46 @@ GitHub Actions **работает** (`.github/workflows/ci.yml`). Прежнее
       output и оба вида плохого IPC без
       физического токена. Полный итог: 746 тестов; portable x86 `SELFTEST OK` на 20 языках.
 
+51. **Два новых носителя: SafeNet Token (профиль PRO) и JaCarta-2 ГОСТ (05.09.2026).** Владелец
+    подключил два новых токена; на хосте одновременно 10 считывателей. Опознание — пассивно
+    (`SCardConnect`+`SCardStatus` для ATR, `Get-PnpDevice` для VID/PID, PKCS#11-зонд по вендорным
+    библиотекам для model/manufacturer/serial; `SCardGetStatusChange` из PowerShell давал
+    `SCARD_E_INVALID_PARAMETER` из-за маршалинга структуры — не использовать).
+    - **SafeNet Token JC — тот же апплет PRO, что и eToken PRO.** PKCS#11 (`jcPKCS11-2`):
+      model `PRO`, manufacturer `Aladdin R.D.`, serial `023721CD`, ATR
+      `3B D5 18 00 81 31 FE 7D 80 73 C8 21 10 F4` — **побайтно совпадает** с eToken PRO
+      (`Aladdin Token JC`). Отличается только имя reader. Экземпляр в поставке
+      **неинициализирован** (`CK_TOKEN_INFO.flags=0x5`: только RNG+LOGIN_REQUIRED, без
+      `TOKEN_INITIALIZED`/`USER_PIN_INITIALIZED`, метка пустая). `Classify("PRO","Aladdin R.D.")`
+      уже даёт `JaCartaPro`; единственная правка — `JaCartaProApdu` теперь принимает **набор**
+      проверенных семейств reader (`Aladdin Token JC` **и** `SafeNet Token JC`), model/manufacturer/
+      live ATR и обязательный selector `jacartapro_XX` сверяются как прежде. Физический E2E на
+      синтетическом контейнере не делался: носитель пуст, контейнер надо сперва создать (CSP,
+      требует инициализации) — отложено до готовности носителя. На Android правки не нужно: там
+      идентификация по USB `0529:0620`, которую SafeNet делит с eToken PRO, → уже `JACARTA_PRO`.
+    - **JaCarta-2 ГОСТ — новое семейство, распознавание + fail-closed.** `ARDS JaCarta 0`,
+      `VID_24DC/PID_0101` (новый PID: LT — `0102`, IDProtect — `0402`). PKCS#11 показывает **два**
+      апплета на одной карте: `eToken GOST` (ГОСТ, `flags=0x405`) и `JaCarta Laser` (RSA/PKI);
+      serial `0C53001525186035`. ATR `3B DC 18 FF 81 91 FE 1F C3 80 73 C8 21 13 66 01 06 11 59 00 01 28`
+      **совпадает с JaCarta IDProtect** (п. 40) — по ATR их не различить, решает поведение/PKCS#11
+      (ср. п. 43). Заведено семейство `RutokenKind.JaCartaGost`: `Classify` распознаёт модель ГОСТ
+      апплета JaCarta только при независимом свидетельстве вендора Aladdin (как LT/PRO; `JaCarta Laser`
+      сюда не попадает), `KindName` → «JaCarta-2 GOST», исключён из файлового обхода rtCOMLite,
+      привязан к записи PIN `JaCarta-2 GOST`. **`DirectTokenApdu.Supports` его не включает** —
+      прямой APDU-путь чтения контейнера ещё не реверсирован (это следующий срез: создать
+      синтетический контейнер, снять APDU winscard-прокси csptest, проверить, тот ли Datastore, что
+      у LT, или иной). На Android: `TokenModel.JACARTA_GOST` (`readerKind=null`), распознан по
+      `24DC:0101`, ViewModel даёт честное «пока не реализовано», без пробы чужих протоколов.
+    - **Заодно (UX-баг из п. 43):** `DirectTokenApdu.SelectContainers` для не-PRO семейств теперь
+      принимает и видимое имя контейнера (`name.key`), а не только технический `OutputName` —
+      совпадение по имени работает, лишь когда оно однозначно и по `OutputName` ничего не нашлось.
+      Для eToken PRO/PRO имена в выборе по-прежнему не участвуют.
+    - Итог: `dotnet build -warnaserror` 0/0, целевые тесты зелёные (206 в затронутых классах;
+      +6 новых), `SELFTEST OK` на 20 языках (portable x86 52,8 МБ). Три теста
+      `CancellationTests.ProcessRunner_*` в общем прогоне падали из-за перегрузки машины (прогон
+      1 ч 23 мин), но проходят изолированно (5/5) — это флейк окружения, не регрессия. Android
+      `:core:test` + `:app:compileDebugKotlin` — `BUILD SUCCESSFUL`.
+
 ## Git-процесс
 - Приватный репозиторий `krotname/cryptopro-key-export`, ветка `main`.
 - Перед завершением: `dotnet build -warnaserror` + `dotnet test` + `--selftest` OK + `git status` чистый + зелёный CI на PR.
