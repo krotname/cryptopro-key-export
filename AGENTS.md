@@ -906,9 +906,19 @@ GitHub Actions **работает** (`.github/workflows/ci.yml`). Прежнее
       `TOKEN_INITIALIZED`/`USER_PIN_INITIALIZED`, метка пустая). `Classify("PRO","Aladdin R.D.")`
       уже даёт `JaCartaPro`; единственная правка — `JaCartaProApdu` теперь принимает **набор**
       проверенных семейств reader (`Aladdin Token JC` **и** `SafeNet Token JC`), model/manufacturer/
-      live ATR и обязательный selector `jacartapro_XX` сверяются как прежде. Физический E2E на
-      синтетическом контейнере не делался: носитель пуст, контейнер надо сперва создать (CSP,
-      требует инициализации) — отложено до готовности носителя. На Android правки не нужно: там
+      live ATR и обязательный selector `jacartapro_XX` сверяются как прежде. **Физический E2E на
+      синтетическом контейнере не достигнут (06.09.2026).** `csptest -newkeyset` на eToken-керриере
+      КриптоПро (`safenet_pro`, `pcsc.dll` без media-DLL) даёт `0x8009001F` (NTE_BAD_KEYSET_PARAM)
+      в `AcquireContext` мгновенно, **без единой APDU к карте** (снято APDU-прокси). Проверено
+      построением и опровергнуто как причины: оболочка/бэкслеши; состояние карты (поставил SafeNet
+      Authentication Client 10.8-R9, переинициализировал носитель нативным `eTPKCS11` C_InitToken +
+      C_InitPIN); кэш SCardSvr (реальный PnP remove/insert ридера); конфиг ридеров (auto `PNP PCSC`).
+      **Ключевое:** тот же `0x8009001F` без APDU воспроизводится на рабочем eToken PRO PROFELTORG
+      (тот же ATR, `E00E0B00` присутствует, E2E проходил 27.08), а `enum_cont` показывает ноль
+      контейнеров на обоих eToken при живых ESMART/HDIMAGE. Значит блокер — в eToken-пути keyset
+      самого КриптоПро (регрессия окружения), а не в персонализации SafeNet; наличие `E00E0B00` не
+      решает, SAC блокер не снимает (SafeNet падал так же и до установки SAC). Разбор —
+      `docs/hardware/safenet-pro.md`. На Android правки не нужно: там
       идентификация по USB `0529:0620`, которую SafeNet делит с eToken PRO, → уже `JACARTA_PRO`.
     - **JaCarta-2 ГОСТ — новое семейство, распознавание + fail-closed.** `ARDS JaCarta 0`,
       `VID_24DC/PID_0101` (новый PID: LT — `0102`, IDProtect — `0402`). PKCS#11 показывает **два**
