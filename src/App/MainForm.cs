@@ -863,7 +863,7 @@ namespace CryptoProExport.App
                 // В колонке контейнера — вендор носителя, а не «нет»: контейнеры КриптоПро на
                 // таком носителе быть могут (проверено на BIFIT ANGARA), просто показывает их
                 // не PKCS#11, а CSP — отдельной строкой выше.
-                AddRow(r.Name, "PC/SC", Strings.Get(PcscReaders.CarrierHintKey(r.Name)),
+                AddRow(r.Name, "PC/SC", Strings.Get(PcscReaders.CarrierHintKey(r.Name, r.Atr)),
                        Strings.Format("cli.pcsc.row", r.Atr ?? "?"),
                        new TokenDeviceSelection());
 

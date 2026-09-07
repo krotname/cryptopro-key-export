@@ -118,6 +118,26 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void CarrierHintKey_UsesAtrWhenReaderNameSaysNothing()
+        {
+            // Живой ATR YubiKey 5C Nano (07.09.2026): historical bytes несут ASCII `YubiKey`.
+            // Случай универсального считывателя — его имя принадлежит ридеру, а не карте, ровно как
+            // у ESMART Token ГОСТ в `Feitian SCR301`.
+            const string yubikeyAtr =
+                "3B FD 13 00 00 81 31 FE 15 80 73 C0 21 C0 57 59 75 62 69 4B 65 79 40";
+            Assert.Equal("carrier.yubikey", PcscReaders.CarrierHintKey("Generic CCID Reader 0", yubikeyAtr));
+            // Имя считывателя сильнее печатного хвоста чужого ATR: у распознанного вендора
+            // поведение не меняется ни в одном случае.
+            Assert.Equal("carrier.rutoken", PcscReaders.CarrierHintKey("Aktiv Co. ruToken 0", yubikeyAtr));
+            // Без ATR и с мусором вместо него — прежний ответ, догадок не изобретаем.
+            Assert.Equal("carrier.unknown", PcscReaders.CarrierHintKey("Generic CCID Reader 0", null));
+            Assert.Equal("carrier.unknown", PcscReaders.CarrierHintKey("Generic CCID Reader 0", "?"));
+            Assert.Equal("carrier.unknown", PcscReaders.CarrierHintKey("Generic CCID Reader 0", "3B 8B 01"));
+            // Прямое подключение по-прежнему решается именем — ATR для этого не нужен.
+            Assert.Equal("carrier.yubikey", PcscReaders.CarrierHintKey("Yubico YubiKey OTP+FIDO+CCID 0", null));
+        }
+
+        [Fact]
         public void CarrierHintKey_EsmartAngaraStaysEsmart()
         {
             // «ANGARA» носят обе линейки: ESMART Token ANGARA и БИФИТ MS_KEY K «АНГАРА».
