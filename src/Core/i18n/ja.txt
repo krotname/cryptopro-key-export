@@ -427,6 +427,7 @@ carrier.rutoken = Rutoken
 carrier.esmart = ESMART
 carrier.bifit = BIFIT (MS_KEY K / iBank2Key)
 carrier.etoken = eToken / SafeNet
+carrier.yubikey = YubiKey (PIV/FIDO)
 carrier.unknown = 不明な媒体
 pcsc.contextfail = PC/SC: スマートカードサービスに接続できませんでした ({0})
 pcsc.statusfail = PC/SC: リーダーの状態を読み取れませんでした ({0})

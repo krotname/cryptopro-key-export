@@ -429,6 +429,7 @@ carrier.rutoken = Рутокен
 carrier.esmart = ESMART
 carrier.bifit = БИФИТ (MS_KEY K / iBank2Key)
 carrier.etoken = eToken / SafeNet
+carrier.yubikey = YubiKey (PIV/FIDO)
 carrier.unknown = неизвестный носитель
 pcsc.contextfail = PC/SC: не удалось подключиться к службе смарт-карт ({0})
 pcsc.statusfail = PC/SC: не удалось прочитать состояние считывателей ({0})

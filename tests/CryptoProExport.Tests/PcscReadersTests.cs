@@ -95,6 +95,9 @@ namespace CryptoProExport.Tests
         [InlineData("ESMART Token 0", "carrier.esmart")]
         [InlineData("ISBC reader", "carrier.esmart")]
         [InlineData("SafeNet eToken 5110", "carrier.etoken")]
+        // Реальное имя считывателя проверенного 07.09.2026 YubiKey 5C Nano. Носителем
+        // КриптоПро он не является, но названный вендор честнее «неизвестного носителя».
+        [InlineData("Yubico YubiKey OTP+FIDO+CCID 0", "carrier.yubikey")]
         [InlineData("ACS ACR38U 0", "carrier.unknown")]
         [InlineData("", "carrier.unknown")]
         [InlineData(null, "carrier.unknown")]

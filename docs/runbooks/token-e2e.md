@@ -290,6 +290,15 @@ PKCS#11 не виден — холодный сброс карты (PC/SC `SCARD
 | ESMART (USB 64K / Token) | `EsmartApdu` | одна папка | `makecert`/`deletekeyset` показывают PIN-диалог; нужен `-password`/SendInput |
 | ESMART Token ГОСТ (MIK51) | `EsmartGostApdu` | одна папка, оба ключа; контейнер `esmartgost_7F0X` | **универсальный** reader `Feitian SCR301 N`: имя ничего не гарантирует, допуск по точным model/manufacturer `ESMARTToken GOST`/`ISBC` + live ATR; путь `8F01/7F0X`, файлы `F011…F016`, VERIFY PIN reference `0x83`; `deletekeyset` — PIN-диалог, как у ESMART. См. AGENTS п.47 |
 
+- **Носитель может оказаться вообще не носителем КриптоПро — тогда прогон честно кончается
+  на §3.** Признак: `-newkeyset` поднимает «Выбор ключевого носителя», а считыватель стоит в
+  группе «Недоступные для данной операции» с описанием «Смарт-карта не читается в устройстве
+  чтения из-за конфликтов настройки ATR». Конфликта при этом обычно нет — ATR просто не
+  заявляет ни один карт-модуль CSP, и вендорского драйвера, который это исправит, не
+  существует. Снимать код надо силентом (`CryptAcquireContext` с `CRYPT_SILENT`), потому что
+  диалоговый путь даёт лишь `0x8010006E` от закрытого харнессом окна. Примеры —
+  [YubiKey 5C Nano](../hardware/yubikey-5c-nano.md) и БИФИТ iBank2Key
+  ([hardware/bifit.md](../hardware/bifit.md)).
 - **Селектор `--container` матчит технический `OutputName`** (`rutokens_0B00`,
   `jacartalt_0F`), а не видимое имя. При вводе имени — «Контейнер «…» не найден».
 - **stdout WinExe виден только при redirect в файл** (см. помощник `Run` в §1);
