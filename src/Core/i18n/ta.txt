@@ -427,6 +427,7 @@ carrier.rutoken = Rutoken
 carrier.esmart = ESMART
 carrier.bifit = BIFIT (MS_KEY K / iBank2Key)
 carrier.etoken = eToken / SafeNet
+carrier.yubikey = YubiKey (PIV/FIDO)
 carrier.unknown = அறியப்படாத ஊடகம்
 pcsc.contextfail = PC/SC: ஸ்மார்ட் கார்டு சேவையுடன் இணைக்க முடியவில்லை ({0})
 pcsc.statusfail = PC/SC: ரீடர் நிலையைப் படிக்க முடியவில்லை ({0})

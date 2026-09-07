@@ -309,6 +309,11 @@ namespace CryptoProExport
             if (n.Contains("rutoken") || n.Contains("aktiv")) return "carrier.rutoken";
             if (n.Contains("esmart") || n.Contains("isbc")) return "carrier.esmart";
             if (n.Contains("etoken") || n.Contains("safenet")) return "carrier.etoken";
+            // YubiKey 5 (PIV/FIDO) вообще не носитель КриптоПро: ГОСТ-апплета нет, ISO-файловой
+            // системы нет (SELECT 3F00 → 6D 00), ATR не совпал ни с одной из 83 записей
+            // KeyCarriers CSP. Имя всё равно называем — строка «неизвестный носитель» толкает
+            // владельца искать несуществующий драйвер. См. docs/hardware/yubikey-5c-nano.md.
+            if (n.Contains("yubikey") || n.Contains("yubico")) return "carrier.yubikey";
             // БИФИТ проверяется после ESMART: «ANGARA» носят обе линейки, и точное
             // свидетельство ESMART должно сработать первым.
             if (Pkcs11Token.HasBifitEvidence(n)) return "carrier.bifit";

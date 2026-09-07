@@ -427,6 +427,7 @@ carrier.rutoken = Rutoken
 carrier.esmart = ESMART
 carrier.bifit = BIFIT (MS_KEY K / iBank2Key)
 carrier.etoken = eToken / SafeNet
+carrier.yubikey = YubiKey (PIV/FIDO)
 carrier.unknown = vật mang không xác định
 pcsc.contextfail = PC/SC: không thể kết nối tới dịch vụ thẻ thông minh ({0})
 pcsc.statusfail = PC/SC: không thể đọc trạng thái đầu đọc ({0})
