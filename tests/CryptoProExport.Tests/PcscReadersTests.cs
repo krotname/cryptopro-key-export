@@ -129,10 +129,21 @@ namespace CryptoProExport.Tests
             // Имя считывателя сильнее печатного хвоста чужого ATR: у распознанного вендора
             // поведение не меняется ни в одном случае.
             Assert.Equal("carrier.rutoken", PcscReaders.CarrierHintKey("Aktiv Co. ruToken 0", yubikeyAtr));
+            // Форма записи ATR решать не должна: внутри проекта строку даёт Hex() через пробел,
+            // но метод публичный, а в дампах и логах тот же ATR встречается сплошным и с «:».
+            Assert.Equal("carrier.yubikey", PcscReaders.CarrierHintKey(
+                "Generic CCID Reader 0", yubikeyAtr.Replace(" ", "")));
+            Assert.Equal("carrier.yubikey", PcscReaders.CarrierHintKey(
+                "Generic CCID Reader 0", yubikeyAtr.Replace(' ', ':')));
+            Assert.Equal("carrier.yubikey", PcscReaders.CarrierHintKey(
+                "Generic CCID Reader 0", yubikeyAtr.ToLowerInvariant()));
             // Без ATR и с мусором вместо него — прежний ответ, догадок не изобретаем.
             Assert.Equal("carrier.unknown", PcscReaders.CarrierHintKey("Generic CCID Reader 0", null));
             Assert.Equal("carrier.unknown", PcscReaders.CarrierHintKey("Generic CCID Reader 0", "?"));
             Assert.Equal("carrier.unknown", PcscReaders.CarrierHintKey("Generic CCID Reader 0", "3B 8B 01"));
+            // Непарный хвост и не-hex символ — не ATR: по обрубку не гадаем.
+            Assert.Equal("carrier.unknown", PcscReaders.CarrierHintKey("Generic CCID Reader 0", "3B FD 1"));
+            Assert.Equal("carrier.unknown", PcscReaders.CarrierHintKey("Generic CCID Reader 0", "ATR=3B FD"));
             // Прямое подключение по-прежнему решается именем — ATR для этого не нужен.
             Assert.Equal("carrier.yubikey", PcscReaders.CarrierHintKey("Yubico YubiKey OTP+FIDO+CCID 0", null));
         }

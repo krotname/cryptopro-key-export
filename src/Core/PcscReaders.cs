@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
@@ -350,12 +351,18 @@ namespace CryptoProExport
         private static string AtrPrintable(string atrHex)
         {
             if (string.IsNullOrWhiteSpace(atrHex)) return string.Empty;
-            var sb = new System.Text.StringBuilder(atrHex.Length / 3 + 1);
-            foreach (var part in atrHex.Split(new[] { ' ', '\t', ':', '-' }, StringSplitOptions.RemoveEmptyEntries))
+            // Разделители в дампах ATR бывают разные, а бывает, что их нет вовсе: «3B FD 13»,
+            // «3B:FD:13» и «3BFD13» — одна и та же карта. Внутри проекта строка всегда приходит
+            // от Hex() через пробел, но метод публичный, и молча не узнать носитель из-за формы
+            // записи — худший исход, чем лишние три Replace.
+            string compact = atrHex.Replace(" ", "").Replace("\t", "").Replace(":", "").Replace("-", "");
+            // Непарный хвост означает, что это не ATR: догадок по обрубку не строим.
+            if (compact.Length < 2 || compact.Length % 2 != 0) return string.Empty;
+            var sb = new StringBuilder(compact.Length / 2);
+            for (int i = 0; i < compact.Length; i += 2)
             {
-                if (part.Length != 2) continue;
-                if (!byte.TryParse(part, System.Globalization.NumberStyles.HexNumber,
-                        System.Globalization.CultureInfo.InvariantCulture, out byte value)) continue;
+                if (!byte.TryParse(compact.AsSpan(i, 2), NumberStyles.HexNumber,
+                        CultureInfo.InvariantCulture, out byte value)) return string.Empty;
                 if (value >= 0x20 && value <= 0x7E) sb.Append(char.ToLowerInvariant((char)value));
             }
             return sb.ToString();
