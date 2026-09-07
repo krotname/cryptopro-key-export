@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
@@ -291,7 +292,7 @@ namespace CryptoProExport
             lines.Add(Strings.Get("cli.pcsc.uncovered"));
             foreach (var r in uncovered)
                 lines.Add("  " + Strings.Format("cli.pcsc.line",
-                    r.Name, Strings.Get(CarrierHintKey(r.Name)), r.Atr ?? "?"));
+                    r.Name, Strings.Get(CarrierHintKey(r.Name, r.Atr)), r.Atr ?? "?"));
             return lines;
         }
 
@@ -318,6 +319,53 @@ namespace CryptoProExport
             // свидетельство ESMART должно сработать первым.
             if (Pkcs11Token.HasBifitEvidence(n)) return "carrier.bifit";
             return "carrier.unknown";
+        }
+
+        /// <summary>
+        /// То же, но с запасным признаком по ATR карты, когда имя считывателя ничего не говорит.
+        /// Нужно для универсальных ридеров: их имя принадлежит самому ридеру, а не вставленной
+        /// карте (тот же случай, что у ESMART Token ГОСТ в <c>Feitian SCR301</c>).
+        ///
+        /// Порядок жёсткий: сначала имя, и только на <c>carrier.unknown</c> смотрим ATR. Так у
+        /// уже распознаваемых вендоров поведение не меняется ни в одном случае, а ATR лишь
+        /// закрывает пробел. Обратный порядок был бы опаснее: имя ридера известного вендора —
+        /// более сильное свидетельство, чем печатный хвост чужого ATR.
+        ///
+        /// Чистая функция: покрыта тестами.
+        /// </summary>
+        public static string CarrierHintKey(string readerName, string atrHex)
+        {
+            string byName = CarrierHintKey(readerName);
+            if (byName != "carrier.unknown") return byName;
+            // Historical bytes YubiKey 5 несут ASCII `YubiKey` (живой ATR
+            // `3B FD 13 00 00 81 31 FE 15 80 73 C0 21 C0 57 59 75 62 69 4B 65 79 40`).
+            if (AtrPrintable(atrHex).Contains("yubikey")) return "carrier.yubikey";
+            return "carrier.unknown";
+        }
+
+        /// <summary>
+        /// Печатные ASCII-байты ATR в нижнем регистре, непечатные выброшены. Из «3B FD … 59 75 62
+        /// 69 4B 65 79 40» получается «yubikey» — по такому хвосту и опознаются семейства,
+        /// которые пишут модель прямо в historical bytes.
+        /// </summary>
+        private static string AtrPrintable(string atrHex)
+        {
+            if (string.IsNullOrWhiteSpace(atrHex)) return string.Empty;
+            // Разделители в дампах ATR бывают разные, а бывает, что их нет вовсе: «3B FD 13»,
+            // «3B:FD:13» и «3BFD13» — одна и та же карта. Внутри проекта строка всегда приходит
+            // от Hex() через пробел, но метод публичный, и молча не узнать носитель из-за формы
+            // записи — худший исход, чем лишние три Replace.
+            string compact = atrHex.Replace(" ", "").Replace("\t", "").Replace(":", "").Replace("-", "");
+            // Непарный хвост означает, что это не ATR: догадок по обрубку не строим.
+            if (compact.Length < 2 || compact.Length % 2 != 0) return string.Empty;
+            var sb = new StringBuilder(compact.Length / 2);
+            for (int i = 0; i < compact.Length; i += 2)
+            {
+                if (!byte.TryParse(compact.AsSpan(i, 2), NumberStyles.HexNumber,
+                        CultureInfo.InvariantCulture, out byte value)) return string.Empty;
+                if (value >= 0x20 && value <= 0x7E) sb.Append(char.ToLowerInvariant((char)value));
+            }
+            return sb.ToString();
         }
     }
 }
