@@ -92,6 +92,27 @@ namespace CryptoProExport.Tests
             Assert.Equal(RutokenKind.Unknown, new Pkcs11TokenInfo().Kind);
         }
 
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("ESMART Token Nano 192K 0")]
+        public void Place_MetadataFailureDoesNotInventTokenOrSuppressRetry(string reader)
+        {
+            var result = new List<Pkcs11TokenInfo>();
+            var seen = new Dictionary<string, Pkcs11ReadState>();
+            Assert.False(Pkcs11Token.Place(result, seen, new Pkcs11TokenInfo { Reader = reader },
+                capabilitiesRead: false, containersRead: false, metadataRead: false));
+            Assert.Empty(result);
+            Assert.Empty(seen);
+            Assert.False(Pkcs11Token.AlreadyRead(seen, reader, readContainers: true));
+
+            var recovered = new Pkcs11TokenInfo { Reader = reader, PinLocked = true };
+            Assert.True(Pkcs11Token.Place(result, seen, recovered,
+                capabilitiesRead: true, containersRead: true, metadataRead: true));
+            Assert.Same(recovered, Assert.Single(result));
+            Assert.True(result[0].PinLocked);
+        }
+
         [Fact]
         public void ResolveReaderKind_FallsBackForMissingOrIncompleteMetadata()
         {
