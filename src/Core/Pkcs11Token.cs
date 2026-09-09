@@ -884,8 +884,13 @@ namespace CryptoProExport
         /// Возвращает <c>false</c>, если новая успешная стадия не добавлена. Покрыта тестами.
         /// </summary>
         internal static bool Place(List<Pkcs11TokenInfo> result, Dictionary<string, Pkcs11ReadState> seen,
-                                   Pkcs11TokenInfo info, bool capabilitiesRead, bool containersRead)
+                                   Pkcs11TokenInfo info, bool capabilitiesRead, bool containersRead,
+                                   bool metadataRead = true)
         {
+            // Ошибка C_GetTokenInfo не создаёт токен с выдуманным состоянием PIN.
+            // Reader остаётся доступным для повторной попытки через другую библиотеку.
+            if (!metadataRead) return false;
+
             if (string.IsNullOrEmpty(info.Reader))
             {
                 result.Add(info);
@@ -974,6 +979,7 @@ namespace CryptoProExport
                     // дёргать драйвер и незачем показывать один носитель дважды.
                     if (AlreadyRead(seen, info.Reader, readContainers)) continue;
 
+                    bool metadataRead = false;
                     bool capabilitiesRead = false;
                     bool containersRead = false;
                     try
@@ -997,6 +1003,7 @@ namespace CryptoProExport
                         info.PinCountLow = f.UserPinCountLow;
                         info.PinFinalTry = f.UserPinFinalTry;
                         info.PinLocked = f.UserPinLocked;
+                        metadataRead = true;
 
                         // C_GetMechanismList/C_GetMechanismInfo не требуют PIN и не читают объекты.
                         // Профиль поколения строится только по этим возможностям.
@@ -1015,7 +1022,7 @@ namespace CryptoProExport
                     }
 
                     info.ContainersKnown = containersRead;
-                    Place(result, seen, info, capabilitiesRead, containersRead);
+                    Place(result, seen, info, capabilitiesRead, containersRead, metadataRead);
                 }
             }
             finally
