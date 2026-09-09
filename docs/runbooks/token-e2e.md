@@ -299,8 +299,9 @@ PKCS#11 не виден — холодный сброс карты (PC/SC `SCARD
   диалоговый путь даёт лишь `0x8010006E` от закрытого харнессом окна. Примеры —
   [YubiKey 5C Nano](../hardware/yubikey-5c-nano.md) и БИФИТ iBank2Key
   ([hardware/bifit.md](../hardware/bifit.md)).
-- **Селектор `--container` матчит технический `OutputName`** (`rutokens_0B00`,
-  `jacartalt_0F`), а не видимое имя. При вводе имени — «Контейнер «…» не найден».
+- **Для E2E используй технический `OutputName`** (`rutokens_0B00`, `jacartalt_0F`).
+  Для не-PRO семейств также принимается однозначное видимое имя. Для eToken PRO
+  обязателен технический `jacartapro_XX`: выбор по видимому имени не разрешён.
 - **stdout WinExe виден только при redirect в файл** (см. помощник `Run` в §1);
   читать в UTF-8. `.exe` из git-bash не запускается — только `Start-Process`.
 - **FQCN контейнера — с двойным ведущим слэшем** `\\.\<reader>\<имя>`: в PowerShell

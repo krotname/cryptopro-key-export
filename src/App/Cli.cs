@@ -248,7 +248,7 @@ namespace CryptoProExport.App
                                 StringComparison.OrdinalIgnoreCase));
                         if (token == null)
                         {
-                            Err(Strings.Format("err.lite.none", reader));
+                            Err(reader + ": " + Strings.Get("cli.pcsc.hint"));
                             return 2;
                         }
                         if (!DirectTokenApdu.Supports(token.Kind))
@@ -296,7 +296,7 @@ namespace CryptoProExport.App
                                 StringComparison.OrdinalIgnoreCase));
                         if (token == null)
                         {
-                            Err(Strings.Format("err.lite.none", reader));
+                            Err(reader + ": " + Strings.Get("cli.pcsc.hint"));
                             return 2;
                         }
                         if (!DirectTokenApdu.Supports(token.Kind))

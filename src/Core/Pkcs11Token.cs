@@ -1018,7 +1018,11 @@ namespace CryptoProExport
                     catch (OperationCanceledException) { throw; }   // отмена — не ошибка токена
                     catch (Exception e)
                     {
-                        log(Strings.Format("pkcs11.tokenfail", info.Reader ?? "?", e.Message));
+                        // Драйвер может вернуть пустое описание слота. В таком случае
+                        // без DLL и SlotId невозможно определить источник живого сбоя.
+                        string reader = string.IsNullOrWhiteSpace(info.Reader) ? "?" : info.Reader;
+                        log(Strings.Format("pkcs11.tokenfail", reader,
+                            $"{lib} [slot {slot.SlotId}]: {e.Message}"));
                     }
 
                     info.ContainersKnown = containersRead;
