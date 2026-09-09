@@ -187,7 +187,12 @@ namespace CryptoProExport
         private const string RutokenLegacyDll = "rtPKCS11.dll";
         private const string JaCartaDll = "jcPKCS11-2.dll";
         private const string EsmartDll = "isbc_pkcs11_main.dll";
-        private const string EsmartCompanionDll = "isbc_esmart_token_mod.dll";
+        private static readonly string[] EsmartBackendDlls =
+        {
+            "isbc_esmart_token_mod.dll",
+            "isbc_esmart_token_192k_mod.dll",
+            "esmart_token_gost_mod.dll",
+        };
         private const string CryptoProApp = "CryptoPro CSP";
 
         /// <summary>
@@ -286,8 +291,8 @@ namespace CryptoProExport
             // ESMART без backend-модуля рядом не инициализируется — распаковываем пару целиком,
             // и только потом отдаём entry module кандидатом (полноту проверит IsLibraryComplete).
             if (string.Equals(dll, EsmartDll, StringComparison.OrdinalIgnoreCase))
-                BundledTools.TryExtract(BundledTools.ResourceName(EsmartCompanionDll),
-                                        EsmartCompanionDll, out _);
+                foreach (string backend in EsmartBackendDlls)
+                    BundledTools.TryExtract(BundledTools.ResourceName(backend), backend, out _);
 
             return RegFreeCom.MatchesProcess(path, out _) ? path : null;
         }
@@ -328,13 +333,18 @@ namespace CryptoProExport
                 string dir = Path.GetDirectoryName(mainPath);
                 if (string.IsNullOrEmpty(dir)) return false;
 
-                string companion = Path.Combine(dir, EsmartCompanionDll);
-                if (!File.Exists(companion)) return false;
-
-                // Оба файла должны быть PE текущего процесса: соседняя x64 DLL не делает
-                // x86 entry module полным набором (и наоборот).
-                return RegFreeCom.MatchesProcess(mainPath, out _)
-                    && RegFreeCom.MatchesProcess(companion, out _);
+                // Entry module загружает отдельные backend-модули по семействам. Требуем весь
+                // проверенный набор, иначе первый системный кандидат скрывает полную вшитую
+                // копию и один из подключённых ESMART пропадает из диагностики.
+                if (!RegFreeCom.MatchesProcess(mainPath, out _)) return false;
+                foreach (string backend in EsmartBackendDlls)
+                {
+                    string backendPath = Path.Combine(dir, backend);
+                    if (!File.Exists(backendPath)
+                        || !RegFreeCom.MatchesProcess(backendPath, out _))
+                        return false;
+                }
+                return true;
             }
             catch
             {
@@ -539,7 +549,8 @@ namespace CryptoProExport
         {
             string value = (reader ?? string.Empty).Trim();
             return IsIndexedReader(value, "ESMART Token USB 64K")
-                || IsIndexedReader(value, "ISBC ESMART Token");
+                || IsIndexedReader(value, "ISBC ESMART Token")
+                || IsIndexedReader(value, "ESMART Token Nano 192K");
         }
 
         private static bool IsIndexedReader(string value, string family)
