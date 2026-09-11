@@ -26,6 +26,8 @@ namespace CryptoProExport
         private static readonly byte[] AppletAid = Convert.FromHexString("A0000003120202");
         private static readonly byte[] ContainerRoot = Convert.FromHexString("66665000E00E0B00");
         private static readonly byte[] ServiceSaltPath = Convert.FromHexString("66665000000F");
+        private const int LegacyServiceSaltLength = 20;
+        private const int CurrentServiceSaltLength = 43;
 
         private static readonly (byte Id, string File, bool Protected)[] Files =
         {
@@ -135,6 +137,7 @@ namespace CryptoProExport
                 using var session = PcscApduSession.Open(reader, ExactAtr);
                 SelectApplet(session);
                 byte[] saltResponse = null;
+                byte[] saltPayload = null;
                 byte[] salt = null;
                 try
                 {
@@ -150,14 +153,14 @@ namespace CryptoProExport
                     }
                     saltResponse = session.Transmit(ReadAt(0));
                     PcscApduSession.RequireOk(saltResponse, $"READ {DisplayName} service salt");
-                    salt = PcscApduSession.Data(saltResponse);
-                    if (salt.Length != 20)
-                        throw ProtocolError("SERVICE_SALT_LENGTH");
+                    saltPayload = PcscApduSession.Data(saltResponse);
+                    salt = ExtractServiceSalt(saltPayload);
                     key = DeriveKey(pin, salt);
                 }
                 finally
                 {
                     if (salt != null) CryptographicOperations.ZeroMemory(salt);
+                    if (saltPayload != null) CryptographicOperations.ZeroMemory(saltPayload);
                     if (saltResponse != null) CryptographicOperations.ZeroMemory(saltResponse);
                 }
 
@@ -459,6 +462,21 @@ namespace CryptoProExport
                 if (repeated != null) CryptographicOperations.ZeroMemory(repeated);
                 if (!completed && output != null) CryptographicOperations.ZeroMemory(output);
             }
+        }
+
+        internal static bool IsSupportedServiceSaltLength(int length)
+            => length == LegacyServiceSaltLength || length == CurrentServiceSaltLength;
+
+        internal static byte[] ExtractServiceSalt(byte[] payload)
+        {
+            if (payload == null) throw new ArgumentNullException(nameof(payload));
+            if (!IsSupportedServiceSaltLength(payload.Length))
+                throw ProtocolError("SERVICE_SALT_LENGTH");
+            // The current PRO EF is a 43-byte record; only its first 20 bytes participate
+            // in the legacy challenge KDF. Keep the complete payload separately for cleanup.
+            var salt = new byte[LegacyServiceSaltLength];
+            Array.Copy(payload, salt, salt.Length);
+            return salt;
         }
 
         private static byte[] RepeatToBlock(byte[] value, int blockSize)
