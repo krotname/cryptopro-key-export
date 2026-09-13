@@ -33,7 +33,8 @@ namespace CryptoProExport.Tests
                 Assert.Equal(CryptoProPbe.Oid, encrypted.EncryptionAlgorithm.Algorithm.Id);
                 Assert.Equal(ContainerKeyExtractor.Reverse(result.PrivateKey),
                              CryptoProPbe.Unshroud(encrypted, Password));
-                Assert.Equal("1.2.643.7.1.1.6.1", InnerAlgorithm(encrypted));
+                Assert.Equal(("1.2.643.7.1.1.6.1", "0720000046AA00004D41473120000000", "030205A0"),
+                    KeyMetadata(encrypted));
             });
         }
 
@@ -46,7 +47,9 @@ namespace CryptoProExport.Tests
 
                 Assert.Equal(ContainerKeyExtractor.Reverse(result.PrivateKey),
                              CryptoProPbe.Unshroud(encrypted, Password));
-                Assert.Equal("1.2.643.7.1.1.1.1", InnerAlgorithm(encrypted));
+                // Эталон: подписной PFX, экспортированный CryptoPro CSP 5.0.
+                Assert.Equal(("1.2.643.7.1.1.1.1", "07200000492E00004D41473120000000", "03020780"),
+                    KeyMetadata(encrypted));
             });
         }
 
@@ -99,7 +102,7 @@ namespace CryptoProExport.Tests
                 Convert.FromHexString("000102030405060708090A0B0C0D0E0F"),
                 Convert.FromHexString("1011121314151617"));
 
-        private static string InnerAlgorithm(EncryptedPrivateKeyInfo encrypted)
+        private static (string Algorithm, string Header, string Usage) KeyMetadata(EncryptedPrivateKeyInfo encrypted)
         {
             var parameters = Asn1Sequence.GetInstance(encrypted.EncryptionAlgorithm.Parameters);
             byte[] salt = Asn1OctetString.GetInstance(parameters[0]).GetOctets();
@@ -114,7 +117,9 @@ namespace CryptoProExport.Tests
             var privateKey = Asn1Sequence.GetInstance(taggedPrivateKey, false);
             var taggedAlgorithm = Asn1TaggedObject.GetInstance(privateKey[1]);
             var algorithm = Asn1Sequence.GetInstance(taggedAlgorithm, false);
-            return DerObjectIdentifier.GetInstance(algorithm[0]).Id;
+            return (DerObjectIdentifier.GetInstance(algorithm[0]).Id,
+                Convert.ToHexString(payload.AsSpan(0, 16)),
+                Convert.ToHexString(privateKey[0].GetEncoded()));
         }
 
         private static void WithContainer(bool signature, Action<ContainerKeyExtractor.Result> test)

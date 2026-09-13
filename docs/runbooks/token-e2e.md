@@ -62,15 +62,13 @@ function Run($a){                        # $a — аргументы CryptoProEx
 }
 ```
 
-### PIN известных носителей (см. `secrets.txt`, вне гита)
+### PIN известных носителей
 
-| Носитель | PIN |
-|---|---|
-| Рутокен S / Lite / ЭЦП | `12345678` (заводской) |
-| eToken PRO «PROFELTORG» | не заводской — **см. `secrets.txt`** (в гит не коммитить) |
-| ESMART (ISBC/64K) | `12345678` (заводской) |
-| ESMART Nano 192K / Token ГОСТ | `12345678` (заводской) |
-| JaCarta LT / DS | `1234567890` (заводской) |
+Актуальный PIN берётся из Vaultwarden по модели и серийному номеру.
+Перед входом сверить считыватель, серийный номер, модель, VID/PID и ATR.
+Не переносить PIN в файлы репозитория, логи или командную строку оснастки.
+Заводское значение допустимо только при разрешении владельца и проверенных
+счётчиках попыток; список кандидатов не перебирать.
 
 `-password` у `csptest` на смарт-карте **служит PIN'ом носителя** (контейнер при
 `-protected=none` остаётся беспарольным). Поэтому в командах ниже `-password <PIN>`.
@@ -169,21 +167,21 @@ New-Item -ItemType Directory $out | Out-Null
 # технический id берётся из вывода list (шаг 2)
 Run "tokenfull `"<reader>`" `"$out`" <PIN> --container <технический-id> --lang ru"
 ```
-Ожидаемо: `[APDU]` читает шесть `*.key`, извлекается сертификат, `p12utility
---cprepair --keyexport` помечает ключ(и) экспортируемыми, `header.key` растёт
-~1.3 КБ → ~3 КБ. Токен при этом **только читается**.
+Ожидаемо: `[APDU]` читает файлы контейнера; сохранённая копия получает
+право экспорта. Для PRO используется нативная проверка заголовка,
+для остальных семейств — соответствующий путь p12utility. Токен читается.
 
 **Раскладка результата зависит от семейства (важно для шагов 5–7):**
-- Рутокен S, JaCarta LT, ESMART — **одна** папка `<технический-id>`, оба ключа в
+- Рутокен S, JaCarta LT/PRO, ESMART — **одна** папка `<технический-id>`, оба ключа в
   одном контейнере;
-- Рутокен Lite и eToken PRO — **две** папки: `<технический-id>` (обмен) и
+- Рутокен Lite — **две** папки: `<технический-id>` (обмен) и
   `<технический-id>_signature` (подпись). `ExportPipeline.MakeLiteSavedContainerExportable`
   раскладывает двухключевой контейнер на две одноключевые HDIMAGE-копии, обходя
   дефект `p12utility 4.0.8`.
 
 ## 5. Установка в CSP и доказательство экспортируемости
 
-Обработать **каждую** полученную папку из шага 4 (для Lite/PRO — обе).
+Обработать **каждую** полученную папку из шага 4 (для Lite — обе).
 
 **Проверять именно HDIMAGE-копию по полному FQCN `\\.\HDIMAGE\<имя>`.** Токен в
 этот момент ещё подключён, а его контейнер носит **то же логическое имя**, что и
@@ -192,11 +190,11 @@ Run "tokenfull `"<reader>`" `"$out`" <PIN> --container <технический-i
 принимает FQCN (проверено на HDIMAGE-контейнере).
 
 ```powershell
-# одноключевой случай (S/LT/ESMART):
+# одна папка (S/LT/PRO/ESMART):
 Run "install `"$out\<технический-id>`" --lang ru"                       # HDIMAGE-копия, видна CSP
 Run 'checkexport "\\.\HDIMAGE\cpxt_<tag>" --lang ru'                    # ждём 0x0013089C И 0x0012289C
 
-# Lite/PRO — обе папки и обе CSP-копии по отдельности:
+# Lite — обе папки и обе CSP-копии по отдельности:
 Run "install `"$out\<технический-id>`" --lang ru"
 Run "install `"$out\<технический-id>_signature`" --lang ru"
 Run 'checkexport "\\.\HDIMAGE\cpxt_<tag> [exchange]" --lang ru'         # ждём обмен 0x0013089C
@@ -204,14 +202,28 @@ Run 'checkexport "\\.\HDIMAGE\cpxt_<tag> [signature]" --lang ru'        # ждё
 ```
 `…9C` — главное доказательство: запрет на экспорт снят. **Проверять обе пары.**
 `checkexport` возвращает успех и когда один тип ключа отсутствует («ключ не
-найден»), поэтому одной проверки на split-контейнере недостаточно: для Lite/PRO
+найден»), поэтому одной проверки на split-контейнере недостаточно: для Lite
 проверяй именно обе копии, иначе E2E считается пройденным, а подписная ветка —
 нет.
 
+Для PRO с v1.9.0 запрет снимает `ExportableContainerBuilder`: первичные файлы
+и маски сохраняются, меняются только проверенные флаги и MAC заголовка.
+Сверять обе пары по публичным ключам и сертификатам исходного токена;
+одного кода успеха или флага экспорта недостаточно.
+
 ## 6. PFX (обе ветки)
 
+Для PRO обе пары находятся в одной копии. `topfx` и `extractpfx` выбирают обменную
+пару; отдельную подписную ветвь проверять через production API
+`CertMgr.ExportContainerToPfx(signatureKey: true)` и `Pkcs12Export.Build`
+с результатом `ContainerKeyExtractor.ExtractAll` для `KeyUsage.Signature`.
+Каждый PFX проверить временным `PFXImportCertStore(PKCS12_NO_PERSIST_KEY)`,
+подписью, проверкой подписи и совпадением сертификата с исходным KeySpec.
+BouncyCastle `Pkcs12Store.Load` не поддерживает CryptoPro PBE OID `.1.80`;
+его отказ не заменяет проверку совместимости с целевым CSP.
+
 `extractpfx` работает с папкой на диске, `topfx` — с **установленной CSP-копией**
-(по её имени из шага 5). Для split-контейнеров Lite/PRO это две папки и две
+(по её имени из шага 5). Для split-контейнеров Lite это две папки и две
 CSP-копии, поэтому PFX собирается для каждой ветви отдельно, в разные файлы —
 иначе подписной PFX не создаётся, а `topfx cpxt_<tag>` без суффикса не находит
 HDIMAGE-копию (имена там `[exchange]`/`[signature]`) либо адресует ещё
@@ -226,7 +238,7 @@ Run "extractpfx `"$out\<технический-id>`" `"$out\<tag>.pfx`" <pfx-pas
 Run "topfx `"\\.\HDIMAGE\cpxt_<tag>`" `"$out\<tag>_cp.pfx`" <pfx-pass> --lang ru"              # для КриптоПро (certmgr)
 certutil -p <pfx-pass> -dump "$out\<tag>_cp.pfx" | Select-String 'Provider|Container'
 
-# Lite/PRO — обе ветви в разные файлы:
+# Lite — обе ветви в разные файлы:
 Run "extractpfx `"$out\<технический-id>`" `"$out\<tag>_ex.pfx`" <pfx-pass> `"`" --lang ru"
 Run "extractpfx `"$out\<технический-id>_signature`" `"$out\<tag>_sg.pfx`" <pfx-pass> `"`" --lang ru"
 Run "topfx `"\\.\HDIMAGE\cpxt_<tag> [exchange]`" `"$out\<tag>_ex_cp.pfx`" <pfx-pass> --lang ru"
@@ -244,12 +256,12 @@ Run "topfx `"\\.\HDIMAGE\cpxt_<tag> [signature]`" `"$out\<tag>_sg_cp.pfx`" <pfx-
 #    на этих контейнерах даёт 0x8009001F — не годится, чистить через csptest.
 
 # b) HDIMAGE-копии (без PIN). S/LT/ESMART — одна "cpxt_<tag>";
-#    Lite/PRO — ДВЕ, "cpxt_<tag> [exchange]" и "cpxt_<tag> [signature]":
+#    Lite — ДВЕ, "cpxt_<tag> [exchange]" и "cpxt_<tag> [signature]":
 & $csptest -keyset -deletekeyset -container "\\.\HDIMAGE\cpxt_<tag>" -provtype 80
 & $csptest -keyset -deletekeyset -container "\\.\HDIMAGE\cpxt_<tag> [exchange]" -provtype 80
 & $csptest -keyset -deletekeyset -container "\\.\HDIMAGE\cpxt_<tag> [signature]" -provtype 80
 
-# c) сертификаты из «Личное» — ТОЛЬКО текущего тега (у Lite/PRO их два, оба с
+# c) сертификаты из «Личное» — ТОЛЬКО текущего тега (у Lite их два, оба с
 #    CN=cpxt_<tag>). Граница (,|$): CN бывает и с хвостом (CN=cpxt_<tag>, E=…),
 #    и без него (CN=cpxt_<tag>). Wildcard '*CN=cpxt_*' снёс бы чужие cpxt_-тесты:
 Get-ChildItem Cert:\CurrentUser\My | ? { $_.Subject -match 'CN=cpxt_<tag>(,|$)' } |
@@ -287,7 +299,7 @@ PKCS#11 не виден — холодный сброс карты (PC/SC `SCARD
 |---|---|---|---|
 | Рутокен S | `RutokenSApdu` | одна папка, оба ключа | `rtCOMLite` не использовать |
 | Рутокен Lite | `RutokenLiteApdu` | **две** папки: базовая `<id>` (обмен) + `<id>_signature` | контейнеры = DF-индексы `lite_XX` |
-| eToken PRO | `JaCartaProApdu` | **две** папки | `--container` обязателен, только технический `jacartapro_XX` |
+| eToken PRO | `JaCartaProApdu` | одна папка, обе пары | `--container` обязателен, только технический `jacartapro_XX` |
 | JaCarta LT | `JaCartaLtApdu` | одна папка, оба ключа | несколько контейнеров различаются байтом Type в таблице объектов (0x03, 0x0E…) — см. AGENTS п.43 |
 | ESMART (USB 64K / Token) | `EsmartApdu` | одна папка | `makecert`/`deletekeyset` показывают PIN-диалог; нужен `-password`/SendInput |
 | ESMART Token ГОСТ (MIK51) | `EsmartGostApdu` | одна папка, оба ключа; первый id `esmartgost_7F01`, следующие включают реальную базу EF, например `esmartgost_7F01_F020` | **универсальный** reader `Feitian SCR301 N`: имя ничего не гарантирует, допуск по точным model/manufacturer `ESMARTToken GOST`/`ISBC` + live ATR; общий путь `8F01/7F01`, 24 слота по таблице CSP `F010…F0F0, F110…F190`, VERIFY PIN reference `0x83`; `deletekeyset` — PIN-диалог, как у ESMART. |

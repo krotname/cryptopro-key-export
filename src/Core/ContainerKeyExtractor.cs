@@ -197,6 +197,9 @@ namespace CryptoProExport
             List<byte[]> primaryCandidates = PrimaryCiphertexts(primaryRaw);
             var (mask, salt) = ParseMasks(masksRaw);
             var header = ParseHeader(headerRaw);
+            byte[] expectedFingerprint = signature ? header.SignatureFingerprint : header.ExchangeFingerprint;
+            if (signature && !files.Has("primary.key") && expectedFingerprint == null)
+                expectedFingerprint = header.ExchangeFingerprint;
 
             // Ключ хранения из пароля и соли; на пустом пароле функция даёт нетривиальный ключ.
             byte[] storageKey = GostContainerCrypto.DeriveStorageKey(password ?? "", salt);
@@ -225,15 +228,21 @@ namespace CryptoProExport
                     byte[] y = Pad32(pub.AffineYCoord.ToBigInteger());
                     byte[] fpComputed = Slice(Reverse(x), 8);
                     bool fingerprintMatched = false;
-                    foreach (byte[] fingerprint in header.Fingerprints)
+                    foreach (byte[] fingerprint in expectedFingerprint == null
+                        ? (IEnumerable<byte[]>)header.Fingerprints : new[] { expectedFingerprint })
                         if (fpComputed.AsSpan().SequenceEqual(fingerprint))
                         { fingerprintMatched = true; break; }
                     byte[] certificate = PickCertificate(header.Certificates, x, y);
 
                     // Нужен хотя бы один независимый оракул из заголовка. В контейнере с
-                    // двумя ключами перебираются обе кривые и оба отпечатка, поэтому порядок
+                    // двумя ключами перебираются обе кривые; отпечаток выбирается по назначению.
+                    // В старых форматах без тегов роли доступен общий набор, поэтому порядок
                     // полей p12utility/носителя больше не влияет на выбор.
-                    if (!fingerprintMatched && certificate == null) continue;
+                    // У двухключевого PRO поле [0] обменного primary может восстанавливать
+                    // подписной ключ. Его сертификат тоже есть в header, поэтому совпадение
+                    // с произвольной парой не доказывает назначение выбранного primary.
+                    if (expectedFingerprint != null ? !fingerprintMatched
+                        : !fingerprintMatched && certificate == null) continue;
                     return new Result
                     {
                         PrivateKey = Pad32(d),
@@ -340,6 +349,8 @@ namespace CryptoProExport
             /// <summary>Отпечаток открытого ключа: первые 8 байт X little-endian (или null).</summary>
             public byte[] Fingerprint;
             public List<byte[]> Fingerprints = new List<byte[]>();
+            public byte[] ExchangeFingerprint;
+            public byte[] SignatureFingerprint;
 
             /// <summary>Сертификаты, найденные в header.key, в порядке появления (обычно 1–2).</summary>
             public List<byte[]> Certificates = new List<byte[]>();
@@ -368,6 +379,20 @@ namespace CryptoProExport
             var octets8 = new List<byte[]>();
             var header = new Header();
             Walk(root, oids, octets8, header.Certificates);
+            if (root is Asn1Sequence outer)
+            {
+                Asn1Sequence content = outer.Count == 2 && outer[0] is Asn1Sequence inner
+                    ? inner : outer;
+                foreach (Asn1Encodable item in content)
+                {
+                    if (item.ToAsn1Object() is not Asn1TaggedObject tagged
+                        || tagged.TagNo is not (10 or 11)) continue;
+                    byte[] fingerprint = Asn1OctetString.GetInstance(tagged, false).GetOctets();
+                    if (fingerprint.Length != 8) throw Corrupt("header.key key fingerprint length");
+                    if (tagged.TagNo == 10) header.ExchangeFingerprint = fingerprint;
+                    else header.SignatureFingerprint = fingerprint;
+                }
+            }
             header.KeyExpirationUtc = FindKeyExpiration(root);
             header.SignatureCurveOid = FindAlgorithmCurve(root, "1.2.643.7.1.1.1.1");
             header.AgreementCurveOid = FindAlgorithmCurve(root, "1.2.643.7.1.1.6.1");

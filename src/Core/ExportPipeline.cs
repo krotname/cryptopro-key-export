@@ -244,10 +244,38 @@ namespace CryptoProExport
         {
             RequireFullCycle();
             var saved = ExportDirectContainer(token, selected, destParent, userPin);
+            if (token.Kind == RutokenKind.JaCartaPro)
+            {
+                // p12utility меняет обёртки PRO и может вернуть успех с другим ключом.
+                // Сохраняем обе исходные пары и меняем только проверенный заголовок.
+                MakeProSavedContainerExportable(saved.folder, containerPassword);
+                Log(Strings.Format("pipe.keyexport.ok", saved.folder));
+                return new ExportPipelineResult { Exported = 1, Completed = 1 };
+            }
             return CompleteOne(saved.container, saved.folder,
                 certExchange, certSignature, containerPassword,
-                normalizeLite: token.Kind == RutokenKind.RutokenLite
-                    || token.Kind == RutokenKind.JaCartaPro);
+                normalizeLite: token.Kind == RutokenKind.RutokenLite);
+        }
+
+        internal static void MakeProSavedContainerExportable(string folder, string password = null)
+        {
+            ContainerFiles source = ContainerFiles.FromDirectory(folder);
+            ContainerFiles rebuilt = null;
+            Dictionary<string, byte[]> blobs = null;
+            try
+            {
+                rebuilt = ExportableContainerBuilder.Build(source, password ?? "");
+                blobs = rebuilt.CopyMap();
+                RutokenLiteApdu.SaveFiles(folder, blobs);
+            }
+            finally
+            {
+                source.WipeKeyMaterial();
+                rebuilt?.WipeKeyMaterial();
+                if (blobs != null)
+                    foreach (byte[] bytes in blobs.Values)
+                        System.Security.Cryptography.CryptographicOperations.ZeroMemory(bytes);
+            }
         }
 
         private ExportPipelineResult CompleteOne(

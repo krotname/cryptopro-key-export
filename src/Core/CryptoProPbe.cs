@@ -37,6 +37,13 @@ namespace CryptoProExport
             0x4D, 0x41, 0x47, 0x31, 0x20, 0x00, 0x00, 0x00,
         };
 
+        // CALG_GR3410_2012_256 для AT_SIGNATURE; обмен использует CALG_DH_GR3410_2012_256.
+        private static readonly byte[] SignatureKeyBlobHeader =
+        {
+            0x07, 0x20, 0x00, 0x00, 0x49, 0x2E, 0x00, 0x00,
+            0x4D, 0x41, 0x47, 0x31, 0x20, 0x00, 0x00, 0x00,
+        };
+
         private static readonly byte[] CryptoProASBox = Gost28147Engine.GetSBox("E-A");
 
         internal static EncryptedPrivateKeyInfo Shroud(ContainerKeyExtractor.Result result,
@@ -88,7 +95,9 @@ namespace CryptoProExport
                         new DerObjectIdentifier(keyCurveOid),
                         new DerObjectIdentifier(GostDigest_2012_256)));
                 var privateKeyInfo = new DerSequence(
-                    new DerBitString(new byte[] { 0xA0 }, 5),
+                    result.SignatureKey
+                        ? new DerBitString(new byte[] { 0x80 }, 7)
+                        : new DerBitString(new byte[] { 0xA0 }, 5),
                     new DerTaggedObject(false, 0, keyAlgorithm));
                 var value = new DerSequence(
                     new DerOctetString(ukm),
@@ -99,7 +108,8 @@ namespace CryptoProExport
 
                 byte[] exportDer = exportBlob.GetEncoded();
                 byte[] payload = new byte[KeyBlobHeader.Length + exportDer.Length];
-                Array.Copy(KeyBlobHeader, payload, KeyBlobHeader.Length);
+                Array.Copy(result.SignatureKey ? SignatureKeyBlobHeader : KeyBlobHeader,
+                    payload, KeyBlobHeader.Length);
                 Array.Copy(exportDer, 0, payload, KeyBlobHeader.Length, exportDer.Length);
                 var blobItems = new List<Asn1Encodable>
                 {
@@ -158,7 +168,8 @@ namespace CryptoProExport
                 var blob = Asn1Sequence.GetInstance(Asn1Object.FromByteArray(plain));
                 byte[] payload = Asn1OctetString.GetInstance(blob[2]).GetOctets();
                 if (payload.Length <= KeyBlobHeader.Length
-                    || !payload.AsSpan(0, KeyBlobHeader.Length).SequenceEqual(KeyBlobHeader))
+                    || (!payload.AsSpan(0, KeyBlobHeader.Length).SequenceEqual(KeyBlobHeader)
+                        && !payload.AsSpan(0, KeyBlobHeader.Length).SequenceEqual(SignatureKeyBlobHeader)))
                     throw new ArgumentException("key blob", nameof(encrypted));
 
                 var export = Asn1Sequence.GetInstance(
