@@ -15,7 +15,8 @@ namespace CryptoProExport
     ///
     /// Файловая раскладка тоже иная и подтверждена трассировкой штатного csptest на собственном
     /// экземпляре: MF → апплеты <c>F0 49 53 42 43 44 48</c> (ISBCDH) и <c>F0 49 53 42 43</c> (ISBC),
-    /// контейнер выбирается по пути <c>8F01/7F0X</c>, ключевые EF лежат плоско в <c>F011…F016</c>
+    /// хранилище выбирается по пути <c>8F01/7F01</c>, а контейнеры занимают группы EF
+    /// <c>F011…F016</c>, <c>F021…F026</c> и далее по таблице carrier CSP
     /// обычным DER (без служебного префикса старого ESMART), доступ на чтение открывает VERIFY PIN
     /// по ссылке <c>0x83</c>. Команды создания, записи и удаления backend не отправляет никогда —
     /// закрытый ключ (primary+masks) сходит с карты открытым текстом, как у прочих пассивных
@@ -23,8 +24,8 @@ namespace CryptoProExport
     /// </summary>
     internal sealed class EsmartGostApdu
     {
-        private const int FirstContainer = 1;
-        private const int LastContainer = 16;   // 7F01…7F10
+        private const int FirstSlot = 1;
+        private const int LastSlot = 24;
 
         // Апплеты, устанавливающие контекст чтения (порядок и значения — из трассы csptest).
         // У ISBCDH хвостовой байт 00 обязателен: карта отвечает на точный 8-байтный AID
@@ -55,12 +56,10 @@ namespace CryptoProExport
         {
             var result = new List<DirectTokenContainerRef>();
             using var session = PcscApduSession.Open(reader, EsmartApdu.GostExactAtr);
-            SelectApplets(session);
-            for (int slot = FirstContainer; slot <= LastContainer; slot++)
+            SelectStore(session);
+            for (int slot = FirstSlot; slot <= LastSlot; slot++)
             {
                 Cancel.ThrowIfCancellationRequested();
-                if (!SelectContainer(session, slot)) continue;
-
                 // Контейнер считается настоящим только с header.key и хотя бы одной парой ключей.
                 bool header = SelectFile(session, FileId(slot: slot, suffix: 0x03)) != null;
                 bool exchange = FileExists(session, slot, 0x02) && FileExists(session, slot, 0x01);
@@ -75,7 +74,7 @@ namespace CryptoProExport
                     Kind = RutokenKind.Esmart,
                     Reader = reader,
                     Name = RutokenLiteApdu.ParseName(name),
-                    OutputName = $"esmartgost_7F{slot:X2}",
+                    OutputName = OutputName(slot),
                     Index = slot,
                 });
             }
@@ -85,16 +84,14 @@ namespace CryptoProExport
         public RutokenContainer ReadContainer(string reader, DirectTokenContainerRef selected,
                                               string pin)
         {
-            if (selected == null || selected.Index is < FirstContainer or > LastContainer)
+            if (selected == null || selected.Index is < FirstSlot or > LastSlot)
                 throw new ArgumentException(nameof(selected));
             if (string.IsNullOrEmpty(pin))
                 throw new LiteApduException(Strings.Format("err.lite.pin", "—"));
 
             var blobs = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
             using var session = PcscApduSession.Open(reader, EsmartApdu.GostExactAtr);
-            SelectApplets(session);
-            if (!SelectContainer(session, selected.Index))
-                throw ProtocolError("NO_CONTAINER");
+            SelectStore(session);
             VerifyPin(session, pin);
             foreach (var mapping in Files)
             {
@@ -111,7 +108,7 @@ namespace CryptoProExport
             return new RutokenContainer
             {
                 TokenName = reader,
-                TokenDir = $"APDU/ESMARTGOST/7F{selected.Index:X2}",
+                TokenDir = $"APDU/ESMARTGOST/{OutputName(selected.Index)}",
                 ContainerName = blobs.TryGetValue("name.key", out byte[] name)
                     ? RutokenLiteApdu.ParseName(name) ?? selected.Name : selected.Name,
                 Files = blobs,
@@ -120,18 +117,42 @@ namespace CryptoProExport
 
         internal static ushort FileId(int slot, int suffix)
         {
-            if (slot is < FirstContainer or > LastContainer || suffix is < 0 or > 0x0F)
+            if (slot is < FirstSlot or > LastSlot || suffix is < 0 or > 0x0F)
                 throw new ArgumentOutOfRangeException(nameof(slot));
-            // EF выбирается по FID под текущим контейнером: 0xF010 | suffix (F011…F016).
-            return checked((ushort)(0xF010 | suffix));
+            return checked((ushort)(FolderId(slot) | suffix));
         }
 
-        private void SelectApplets(PcscApduSession session)
+        internal static ushort FolderId(int slot)
+        {
+            if (slot is < FirstSlot or > LastSlot) throw new ArgumentOutOfRangeException(nameof(slot));
+            // Точная таблица ESMARTTokenGOST/Default/Folders из CryptoPro CSP:
+            // F010…F0F0, затем F110…F190 (F100 зарезервирован и пропущен).
+            return checked((ushort)(slot <= 15
+                ? 0xF000 | (slot << 4)
+                : 0xF100 | ((slot - 15) << 4)));
+        }
+
+        // До исправления многослотового обхода первый контейнер уже публиковался как 7F01.
+        // Сохраняем этот идентификатор и добавляем к нему реальный FID для следующих слотов.
+        internal static string OutputName(int slot)
+        {
+            if (slot is < FirstSlot or > LastSlot) throw new ArgumentOutOfRangeException(nameof(slot));
+            return slot == 1 ? "esmartgost_7F01" : $"esmartgost_7F01_{FolderId(slot):X4}";
+        }
+
+        private void SelectStore(PcscApduSession session)
         {
             byte[] mf = session.TransmitWithGetResponse(new byte[] { 0x00, 0xA4, 0x00, 0x00, 0x02, 0x3F, 0x00 });
             PcscApduSession.RequireOk(mf, "SELECT ESMART GOST MF");
             SelectAidExact(session, AppletIsbcDh, "SELECT ISBCDH");
             SelectAidExact(session, AppletIsbc, "SELECT ISBC");
+            byte[] path = { 0x8F, 0x01, 0x7F, 0x01 };
+            var command = new byte[5 + path.Length];
+            command[0] = 0x00; command[1] = 0xA4; command[2] = 0x08; command[3] = 0x00;
+            command[4] = checked((byte)path.Length);
+            Array.Copy(path, 0, command, 5, path.Length);
+            PcscApduSession.RequireOk(session.TransmitWithGetResponse(command),
+                "SELECT ESMART GOST 8F01/7F01");
         }
 
         private static void SelectAidExact(PcscApduSession session, byte[] aid, string label)
@@ -141,20 +162,6 @@ namespace CryptoProExport
             command[4] = checked((byte)aid.Length);
             Array.Copy(aid, 0, command, 5, aid.Length);
             PcscApduSession.RequireOk(session.TransmitWithGetResponse(command), label);
-        }
-
-        /// <summary>Выбрать контейнер по пути <c>8F01/7F0X</c>. <c>false</c> — контейнера нет.</summary>
-        private static bool SelectContainer(PcscApduSession session, int slot)
-        {
-            byte[] path = { 0x8F, 0x01, 0x7F, checked((byte)slot) };
-            var command = new byte[5 + path.Length];
-            command[0] = 0x00; command[1] = 0xA4; command[2] = 0x08; command[3] = 0x00;
-            command[4] = checked((byte)path.Length);
-            Array.Copy(path, 0, command, 5, path.Length);
-            byte[] response = session.TransmitWithGetResponse(command);
-            if (PcscApduSession.Status(response) == 0x6A82) return false;
-            PcscApduSession.RequireOk(response, $"SELECT ESMART GOST 8F01/7F{slot:X2}");
-            return true;
         }
 
         private static bool FileExists(PcscApduSession session, int slot, int suffix) =>

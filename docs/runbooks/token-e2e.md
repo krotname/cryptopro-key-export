@@ -8,7 +8,8 @@ APDU (мимо CSP), не читая боевых ключей владельц�
 
 Проверено 30.08.2026 разом на семи носителях: Рутокен S, Рутокен Lite, eToken
 PRO, два ESMART, две JaCarta LT (AGENTS.md п.43). ESMART Token ГОСТ (MIK51) добавлен
-02.09.2026 отдельным backend `EsmartGostApdu` (AGENTS.md п.47).
+02.09.2026 отдельным backend `EsmartGostApdu`; его многослотовая адресация и ESMART
+Nano 192K повторно проверены 10.09.2026.
 
 ## 0. Безопасность (обязательно)
 
@@ -68,6 +69,7 @@ function Run($a){                        # $a — аргументы CryptoProEx
 | Рутокен S / Lite / ЭЦП | `12345678` (заводской) |
 | eToken PRO «PROFELTORG» | не заводской — **см. `secrets.txt`** (в гит не коммитить) |
 | ESMART (ISBC/64K) | `12345678` (заводской) |
+| ESMART Nano 192K / Token ГОСТ | `12345678` (заводской) |
 | JaCarta LT / DS | `1234567890` (заводской) |
 
 `-password` у `csptest` на смарт-карте **служит PIN'ом носителя** (контейнер при
@@ -288,7 +290,7 @@ PKCS#11 не виден — холодный сброс карты (PC/SC `SCARD
 | eToken PRO | `JaCartaProApdu` | **две** папки | `--container` обязателен, только технический `jacartapro_XX` |
 | JaCarta LT | `JaCartaLtApdu` | одна папка, оба ключа | несколько контейнеров различаются байтом Type в таблице объектов (0x03, 0x0E…) — см. AGENTS п.43 |
 | ESMART (USB 64K / Token) | `EsmartApdu` | одна папка | `makecert`/`deletekeyset` показывают PIN-диалог; нужен `-password`/SendInput |
-| ESMART Token ГОСТ (MIK51) | `EsmartGostApdu` | одна папка, оба ключа; контейнер `esmartgost_7F0X` | **универсальный** reader `Feitian SCR301 N`: имя ничего не гарантирует, допуск по точным model/manufacturer `ESMARTToken GOST`/`ISBC` + live ATR; путь `8F01/7F0X`, файлы `F011…F016`, VERIFY PIN reference `0x83`; `deletekeyset` — PIN-диалог, как у ESMART. См. AGENTS п.47 |
+| ESMART Token ГОСТ (MIK51) | `EsmartGostApdu` | одна папка, оба ключа; первый id `esmartgost_7F01`, следующие включают реальную базу EF, например `esmartgost_7F01_F020` | **универсальный** reader `Feitian SCR301 N`: имя ничего не гарантирует, допуск по точным model/manufacturer `ESMARTToken GOST`/`ISBC` + live ATR; общий путь `8F01/7F01`, 24 слота по таблице CSP `F010…F0F0, F110…F190`, VERIFY PIN reference `0x83`; `deletekeyset` — PIN-диалог, как у ESMART. |
 
 - **Носитель может оказаться вообще не носителем КриптоПро — тогда прогон честно кончается
   на §3.** Признак: `-newkeyset` поднимает «Выбор ключевого носителя», а считыватель стоит в
