@@ -176,6 +176,7 @@ interface languages fall back to the English text.
                                       copy from the selected token
   tokenfull <reader> <dir> [pin] [--container <id>]
                                       token + all remaining steps
+  Для PRO tokenfull сохраняет обе пары в одной папке.
   keyexport <folder> <cert.cer> [pw]  lift the export ban
   exportable <folder> <new> [pw]      exportable copy (no CSP)
   restore <key.pem> <cert.cer> <new> [pw]

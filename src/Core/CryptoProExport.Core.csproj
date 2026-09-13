@@ -6,7 +6,7 @@
     <AssemblyName>CryptoProExport.Core</AssemblyName>
     <RootNamespace>CryptoProExport</RootNamespace>
     <LangVersion>latest</LangVersion>
-    <Version>1.8.0</Version>
+    <Version>1.9.0</Version>
     <!-- позволяет собирать библиотеку для Windows на Linux-сборщике -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
@@ -66,6 +66,14 @@
     <EmbeddedResource Include="..\..\tools\isbc_esmart_token_mod.dll"
                       Condition="Exists('..\..\tools\isbc_esmart_token_mod.dll')">
       <LogicalName>CryptoProExport.Tools.isbc_esmart_token_mod.dll</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\tools\isbc_esmart_token_192k_mod.dll"
+                      Condition="Exists('..\..\tools\isbc_esmart_token_192k_mod.dll')">
+      <LogicalName>CryptoProExport.Tools.isbc_esmart_token_192k_mod.dll</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\tools\esmart_token_gost_mod.dll"
+                      Condition="Exists('..\..\tools\esmart_token_gost_mod.dll')">
+      <LogicalName>CryptoProExport.Tools.esmart_token_gost_mod.dll</LogicalName>
     </EmbeddedResource>
     <!--
       Руководство пользователя: тоже внутрь сборки, снаружи файлов быть не должно.

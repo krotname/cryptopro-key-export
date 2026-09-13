@@ -114,7 +114,8 @@ namespace CryptoProExport
                 status = PcscApduSession.Status(nameSelect);
                 if (IsMissing(status)) continue;
                 PcscApduSession.RequireOk(nameSelect, $"SELECT {DisplayName} F006/{index:X2}");
-                byte[] name = ReadDer(session, null);
+                byte[] name = ReadDer(session, null, allowEmptySlot: true);
+                if (name == null) continue;
                 try
                 {
                     result.Add(new DirectTokenContainerRef
@@ -260,7 +261,8 @@ namespace CryptoProExport
             (byte)(offset >> 8), (byte)offset, 0x00,
         };
 
-        private static byte[] ReadDer(PcscApduSession session, byte[] key)
+        private static byte[] ReadDer(PcscApduSession session, byte[] key,
+                                      bool allowEmptySlot = false)
         {
             byte[] first = null;
             byte[] chunk = null;
@@ -268,6 +270,7 @@ namespace CryptoProExport
             try
             {
                 first = ReadChunk(session, 0, key);
+                if (allowEmptySlot && IsEmptySlot(first)) return null;
                 int total = DerLength(first);
                 result = new byte[total];
                 int copied = Math.Min(total, first.Length);
@@ -326,6 +329,9 @@ namespace CryptoProExport
             if (total > ushort.MaxValue) throw ProtocolError("OBJECT_SIZE");
             return total;
         }
+
+        internal static bool IsEmptySlot(byte[] value)
+            => value != null && value.Length > 0 && value.All(item => item == 0);
 
         private static void Authenticate(PcscApduSession session, byte[] key)
         {

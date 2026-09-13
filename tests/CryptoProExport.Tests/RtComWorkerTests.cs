@@ -52,12 +52,15 @@ namespace CryptoProExport.Tests
         [Fact]
         public void Worker_TimesOutAndStopsChild()
         {
-            var worker = Exporter("timeout", 250);
+            var worker = Exporter("timeout", 5000);
+            int childId = 0;
+            worker.Log = text => childId = ParseChildId(text);
             var timer = Stopwatch.StartNew();
             var error = Assert.Throws<RtComWorkerException>(() => worker.ReadAllContainers());
             timer.Stop();
             Assert.Equal(RtComWorkerFailure.Timeout, error.Failure);
             Assert.True(worker.Started);
+            AssertChildStopped(childId);
             Assert.True(timer.Elapsed < TimeSpan.FromSeconds(10), $"timeout took {timer.Elapsed}");
         }
 
@@ -65,14 +68,20 @@ namespace CryptoProExport.Tests
         public void Worker_CancellationStopsChild()
         {
             using var cancellation = new CancellationTokenSource();
-            cancellation.CancelAfter(250);
             var worker = Exporter("timeout", 10000);
             worker.Cancel = cancellation.Token;
+            int childId = 0;
+            worker.Log = text =>
+            {
+                childId = ParseChildId(text);
+                cancellation.CancelAfter(250);
+            };
 
             var timer = Stopwatch.StartNew();
             Assert.ThrowsAny<OperationCanceledException>(() => worker.ReadAllContainers());
             timer.Stop();
             Assert.True(worker.Started);
+            AssertChildStopped(childId);
             Assert.True(timer.Elapsed < TimeSpan.FromSeconds(10), $"cancel took {timer.Elapsed}");
         }
 
@@ -93,6 +102,24 @@ namespace CryptoProExport.Tests
             var error = Assert.Throws<RtComWorkerException>(() => worker.ReadAllContainers());
             Assert.Equal(RtComWorkerFailure.Malformed, error.Failure);
             Assert.True(worker.Started);
+        }
+
+        private static int ParseChildId(string text)
+        {
+            Assert.StartsWith("fixture-pid:", text);
+            return int.Parse(text.Substring("fixture-pid:".Length),
+                System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        private static void AssertChildStopped(int childId)
+        {
+            Assert.True(childId > 0, "fixture did not report its process id");
+            try
+            {
+                using var child = Process.GetProcessById(childId);
+                Assert.True(child.HasExited, "worker process survived cancellation or timeout");
+            }
+            catch (ArgumentException) { } // Процесс уже удалён из системного списка.
         }
 
         private static RutokenExporter Exporter(string mode, int timeoutMs) => new RutokenExporter

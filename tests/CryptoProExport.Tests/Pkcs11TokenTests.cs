@@ -376,6 +376,20 @@ namespace CryptoProExport.Tests
                 Reader = "ISBC ESMART Token 3",
                 Manufacturer = "ISBC CORP.",
             }));
+            Assert.True(Pkcs11Token.IsConfirmedEsmart(new Pkcs11TokenInfo
+            {
+                Kind = RutokenKind.Esmart,
+                Reader = "ESMART Token Nano 192K 0",
+                Model = "ESMART Token 192K",
+                Manufacturer = "ISBC",
+            }));
+            Assert.False(Pkcs11Token.IsConfirmedEsmart(new Pkcs11TokenInfo
+            {
+                Kind = RutokenKind.Esmart,
+                Reader = "ESMART Token Nano 192K",
+                Model = "ESMART Token 192K",
+                Manufacturer = "ISBC",
+            }));
             Assert.False(Pkcs11Token.IsConfirmedEsmart(new Pkcs11TokenInfo
             {
                 Kind = RutokenKind.Esmart,
@@ -978,13 +992,14 @@ namespace CryptoProExport.Tests
         [Fact]
         public void BundledCandidate_UnpacksEsmartBackendNextToItsEntryModule()
         {
-            // Один isbc_pkcs11_main.dll без backend-модуля рядом не даёт рабочей диагностики,
-            // поэтому пара обязана распаковываться целиком — независимо от разрядности процесса
-            // (сам кандидат в x64 отбрасывается, но файлы на месте должны быть оба).
+            // Entry module без всех backend-модулей теряет отдельные семейства ESMART,
+            // поэтому комплект распаковывается целиком независимо от разрядности процесса.
             Pkcs11Token.BundledCandidate("isbc_pkcs11_main.dll");
 
             Assert.True(File.Exists(Path.Combine(BundledTools.CacheDir, "isbc_pkcs11_main.dll")));
             Assert.True(File.Exists(Path.Combine(BundledTools.CacheDir, "isbc_esmart_token_mod.dll")));
+            Assert.True(File.Exists(Path.Combine(BundledTools.CacheDir, "isbc_esmart_token_192k_mod.dll")));
+            Assert.True(File.Exists(Path.Combine(BundledTools.CacheDir, "esmart_token_gost_mod.dll")));
         }
 
         [Fact]
@@ -1170,12 +1185,14 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
-        public void IsLibraryComplete_EsmartRequiresMainAndCompanionTogether()
+        public void IsLibraryComplete_EsmartRequiresMainAndAllBackendsTogether()
         {
             string dir = Path.Combine(Path.GetTempPath(), "cpx-esmart-libs-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(dir);
             string main = Path.Combine(dir, "isbc_pkcs11_main.dll");
             string companion = Path.Combine(dir, "isbc_esmart_token_mod.dll");
+            string nano = Path.Combine(dir, "isbc_esmart_token_192k_mod.dll");
+            string gost = Path.Combine(dir, "esmart_token_gost_mod.dll");
             try
             {
                 WritePeStub(main, RuntimeInformation.ProcessArchitecture);
@@ -1186,6 +1203,8 @@ namespace CryptoProExport.Tests
                 Assert.False(Pkcs11Token.IsLibraryComplete("isbc_pkcs11_main.dll", main));
 
                 WritePeStub(main, RuntimeInformation.ProcessArchitecture);
+                WritePeStub(nano, RuntimeInformation.ProcessArchitecture);
+                WritePeStub(gost, RuntimeInformation.ProcessArchitecture);
                 Assert.True(Pkcs11Token.IsLibraryComplete("isbc_pkcs11_main.dll", main));
 
                 Architecture otherArchitecture = RuntimeInformation.ProcessArchitecture == Architecture.X86

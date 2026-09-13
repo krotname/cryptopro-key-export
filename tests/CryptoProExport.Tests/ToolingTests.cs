@@ -323,6 +323,10 @@ namespace CryptoProExport.Tests
             Assert.True(BundledTools.Has(BundledTools.ResourceName("isbc_pkcs11_main.dll")), "ESMART");
             Assert.True(BundledTools.Has(BundledTools.ResourceName("isbc_esmart_token_mod.dll")),
                 "ESMART backend");
+            Assert.True(BundledTools.Has(BundledTools.ResourceName("isbc_esmart_token_192k_mod.dll")),
+                "ESMART 192K backend");
+            Assert.True(BundledTools.Has(BundledTools.ResourceName("esmart_token_gost_mod.dll")),
+                "ESMART GOST backend");
             Assert.False(BundledTools.Has(BundledTools.ResourceName("rtPKCS11.dll")), "Rutoken S");
         }
 

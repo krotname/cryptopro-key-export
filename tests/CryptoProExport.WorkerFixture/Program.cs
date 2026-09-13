@@ -64,6 +64,8 @@ namespace CryptoProExport.WorkerFixture
 
                 case "timeout":
                     Send(response, new RtComWorkerMessage { Type = "started" });
+                    Send(response, new RtComWorkerMessage
+                        { Type = "log", Text = "fixture-pid:" + Environment.ProcessId });
                     Thread.Sleep(Timeout.Infinite);
                     return 19;
 

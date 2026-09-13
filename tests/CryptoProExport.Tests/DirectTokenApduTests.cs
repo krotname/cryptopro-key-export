@@ -170,6 +170,15 @@ namespace CryptoProExport.Tests
         }
 
         [Fact]
+        public void JaCartaProEmptyPublicSlot_RequiresOnlyNonEmptyAllZeroPayload()
+        {
+            Assert.True(JaCartaProApdu.IsEmptySlot(new byte[256]));
+            Assert.False(JaCartaProApdu.IsEmptySlot(Array.Empty<byte>()));
+            Assert.False(JaCartaProApdu.IsEmptySlot(null));
+            Assert.False(JaCartaProApdu.IsEmptySlot(new byte[] { 0, 0, 1, 0 }));
+        }
+
+        [Fact]
         public void JaCartaProAuthentication_MatchesIndependentPublicVector()
         {
             byte[] salt = Enumerable.Range(0, 20).Select(value => (byte)value).ToArray();
@@ -499,12 +508,26 @@ namespace CryptoProExport.Tests
         public void EsmartGostFileIds_AreFlatUnderTheSelectedContainer()
         {
             // Раскладка ГОСТ: суффиксы 1..6 = masks/primary/header/masks2/primary2/name,
-            // все под текущим контейнером как 0xF011..0xF016 (не слот-адресация старого ESMART).
+            // слоты идут группами F01x, F02x ... внутри общего DF 8F01/7F01.
             Assert.Equal(0xF011, EsmartGostApdu.FileId(1, 0x01));
             Assert.Equal(0xF016, EsmartGostApdu.FileId(1, 0x06));
-            Assert.Equal(0xF013, EsmartGostApdu.FileId(16, 0x03));
+            Assert.Equal(0xF023, EsmartGostApdu.FileId(2, 0x03));
+            Assert.Equal(0xF0F3, EsmartGostApdu.FileId(15, 0x03));
+            Assert.Equal(0xF113, EsmartGostApdu.FileId(16, 0x03));
+            Assert.Equal(0xF193, EsmartGostApdu.FileId(24, 0x03));
             Assert.Throws<ArgumentOutOfRangeException>(() => EsmartGostApdu.FileId(0, 0x01));
-            Assert.Throws<ArgumentOutOfRangeException>(() => EsmartGostApdu.FileId(17, 0x01));
+            Assert.Throws<ArgumentOutOfRangeException>(() => EsmartGostApdu.FileId(25, 0x01));
+        }
+
+        [Fact]
+        public void EsmartGostOutputName_PreservesFirstSlotAndDisambiguatesFollowingSlots()
+        {
+            Assert.Equal("esmartgost_7F01", EsmartGostApdu.OutputName(1));
+            Assert.Equal("esmartgost_7F01_F020", EsmartGostApdu.OutputName(2));
+            Assert.Equal("esmartgost_7F01_F0F0", EsmartGostApdu.OutputName(15));
+            Assert.Equal("esmartgost_7F01_F110", EsmartGostApdu.OutputName(16));
+            Assert.Equal("esmartgost_7F01_F190", EsmartGostApdu.OutputName(24));
+            Assert.Throws<ArgumentOutOfRangeException>(() => EsmartGostApdu.OutputName(25));
         }
     }
 }
