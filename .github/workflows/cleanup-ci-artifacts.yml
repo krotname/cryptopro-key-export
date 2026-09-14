@@ -5,6 +5,11 @@ on:
     - cron: '23 3 * * *'
   workflow_dispatch:
     inputs:
+      dry-run:
+        description: Validate the package and list expired versions without deleting them.
+        required: false
+        type: boolean
+        default: false
       delete-canary-probes:
         description: Delete probe-only versions created during the GHCR rollout.
         required: false
@@ -24,6 +29,7 @@ jobs:
       - name: Delete only expired versions of this repository package
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
         env:
+          DRY_RUN: ${{ inputs.dry-run || 'false' }}
           DELETE_CANARY_PROBES: ${{ inputs.delete-canary-probes || 'false' }}
           EXPECTED_PACKAGE_ID: ${{ vars.CI_ARTIFACT_PACKAGE_ID }}
         with:
@@ -133,6 +139,18 @@ jobs:
               }
 
               candidates.push({ id: version.id, digest, tags });
+            }
+
+            if (process.env.DRY_RUN === 'true') {
+              await core.summary
+                .addHeading(`GHCR cleanup preview: ${packageName}`, 2)
+                .addRaw(`Would delete: ${candidates.length}\n\n`)
+                .addList(candidates.length
+                  ? candidates.map((item) => `${item.id}@${item.digest}: ${item.tags.join(', ')}`)
+                  : ['Nothing expired'])
+                .addRaw(`\nSkipped: ${skipped.length}\nNo versions were deleted.\n`)
+                .write();
+              return;
             }
 
             const deleted = [];
