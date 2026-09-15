@@ -906,19 +906,18 @@ GitHub Actions **работает** (`.github/workflows/ci.yml`). Прежнее
       `TOKEN_INITIALIZED`/`USER_PIN_INITIALIZED`, метка пустая). `Classify("PRO","Aladdin R.D.")`
       уже даёт `JaCartaPro`; единственная правка — `JaCartaProApdu` теперь принимает **набор**
       проверенных семейств reader (`Aladdin Token JC` **и** `SafeNet Token JC`), model/manufacturer/
-      live ATR и обязательный selector `jacartapro_XX` сверяются как прежде. **Физический E2E на
-      синтетическом контейнере не достигнут (06.09.2026).** `csptest -newkeyset` на eToken-керриере
-      КриптоПро (`safenet_pro`, `pcsc.dll` без media-DLL) даёт `0x8009001F` (NTE_BAD_KEYSET_PARAM)
-      в `AcquireContext` мгновенно, **без единой APDU к карте** (снято APDU-прокси). Проверено
-      построением и опровергнуто как причины: оболочка/бэкслеши; состояние карты (поставил SafeNet
-      Authentication Client 10.8-R9, переинициализировал носитель нативным `eTPKCS11` C_InitToken +
-      C_InitPIN); кэш SCardSvr (реальный PnP remove/insert ридера); конфиг ридеров (auto `PNP PCSC`).
-      **Ключевое:** тот же `0x8009001F` без APDU воспроизводится на рабочем eToken PRO PROFELTORG
-      (тот же ATR, `E00E0B00` присутствует, E2E проходил 27.08), а `enum_cont` показывает ноль
-      контейнеров на обоих eToken при живых ESMART/HDIMAGE. Значит блокер — в eToken-пути keyset
-      самого КриптоПро (регрессия окружения), а не в персонализации SafeNet; наличие `E00E0B00` не
-      решает, SAC блокер не снимает (SafeNet падал так же и до установки SAC). Разбор —
-      `docs/hardware/safenet-pro.md`. На Android правки не нужно: там
+      live ATR и обязательный selector `jacartapro_XX` сверяются как прежде. **Блокер `0x8009001F`
+      снят, E2E воспроизведён (15.09.2026).** На 06.09 `csptest -newkeyset` падал `0x8009001F`
+      (NTE_BAD_KEYSET_PARAM) в `AcquireContext` мгновенно, без единой APDU (и на SafeNet, и на
+      PROFELTORG) — считалось регрессией eToken-пути keyset самого КриптоПро. К 15.09 блокер ушёл:
+      `csptest -newkeyset` на пустом эталонном PROFELTORG (`00A7A257`, **заводской PIN `1234567890`**,
+      не 1122) проходит `AcquireContext`, создаёт контейнер и оба ГОСТ-ключа (`exit=0`), а CSP-free
+      `tokenexport … --container jacartapro_01` снимает его по APDU без CryptoPro (6 файлов; баг
+      декодера соли `SERVICE_SALT_LENGTH` исправлен в PR #108, тест `JaCartaProSaltTests`). Полный
+      create(CSP)→read(CSP-free) E2E на eToken PRO подтверждён; тестовый контейнер удалён. Прежний
+      вывод «keyset eToken PRO мёртв» снят. SafeNet-юнит `023721CD` заново не прогонялся. Грабли:
+      `deletekeyset` без inline `-password` дёргает GUI-диалог PIN КриптоПро — передавай `-password`.
+      Разбор и история — `docs/hardware/safenet-pro.md`. На Android правки не нужно: там
       идентификация по USB `0529:0620`, которую SafeNet делит с eToken PRO, → уже `JACARTA_PRO`.
     - **JaCarta-2 ГОСТ — новое семейство, распознавание + fail-closed.** `ARDS JaCarta 0`,
       `VID_24DC/PID_0101` (новый PID: LT — `0102`, IDProtect — `0402`). PKCS#11 показывает **два**
