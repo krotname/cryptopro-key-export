@@ -630,9 +630,12 @@ JaCarta LT, а 27.08 — eToken PRO с профилем PRO и оба досту
 - **Два новых носителя подключены 05.09.2026 (AGENTS п. 51):**
   - **SafeNet Token (профиль PRO)** — тот же апплет PRO, что и eToken PRO (model/manufacturer/ATR
     совпадают побайтно). `JaCartaProApdu` теперь принимает семейства reader `Aladdin Token JC` и
-    `SafeNet Token JC`; на Android распознаётся по общему USB `0529:0620` → `JACARTA_PRO`. Экземпляр
-    в поставке пуст → **осталось**: инициализировать носитель, создать синтетический двухключевой
-    неэкспортируемый контейнер, прогнать `tokenfull → HDIMAGE → PFX` (E2E, как у прочих PRO).
+    `SafeNet Token JC`; на Android распознаётся по общему USB `0529:0620` → `JACARTA_PRO`.
+    **Блокер `0x8009001F` снят, E2E воспроизведён 15.09.2026** на эталонном eToken PRO PROFELTORG
+    (`00A7A257`, заводской PIN `1234567890`): `csptest -newkeyset` создаёт контейнер с обоими
+    ГОСТ-ключами, CSP-free `tokenexport` снимает его по APDU (баг декодера соли исправлен в PR #108).
+    **Осталось** лишь при желании прогнать тот же E2E на самом SafeNet-юните `023721CD` (в сессии
+    15.09 не запускался; блокер окружения, который его останавливал, устранён).
   - **JaCarta-2 ГОСТ** (`VID_24DC/PID_0101`, апплет PKCS#11 `eToken GOST`) — заведено семейство
     `RutokenKind.JaCartaGost`/`TokenModel.JACARTA_GOST`: распознавание, имя, PIN, исключение из
     rtCOMLite, fail-closed (не в `Supports`). **Осталось**: реверс APDU-пути чтения контейнера
